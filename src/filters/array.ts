@@ -258,7 +258,14 @@ export function * find_exp<T extends object> (this: FilterImpl, arr: T[], itemNa
 export function uniq<T> (this: FilterImpl, arr: T[]): T[] {
   arr = toArray(arr)
   this.context.memoryLimit.use(arr.length)
-  return [...new Set(arr)]
+  // under `numberSemantics: 'ruby'` decimals are wrapper objects: merge them by value, and keep 2.0 apart from 2 as Ruby's `eql?` does
+  const decimals = new Set<number>()
+  return [...new Set(arr)].filter(item => {
+    if (!(item instanceof LiquidFloat)) return true
+    if (decimals.has(item.value)) return false
+    decimals.add(item.value)
+    return true
+  })
 }
 
 export function sample<T> (this: FilterImpl, v: T[] | string, count = 1): T | string | (T | string)[] {

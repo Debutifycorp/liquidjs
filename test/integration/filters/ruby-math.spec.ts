@@ -1,4 +1,4 @@
-import { Liquid } from '../../../src'
+import { Liquid, LiquidFloat } from '../../../src'
 
 const ruby = new Liquid({ numberSemantics: 'ruby' })
 const js = new Liquid()
@@ -36,6 +36,8 @@ describe('numberSemantics: ruby', () => {
     it('divides a negative decimal by zero to negative infinity', async () => expect(await render('{{ -10.0 | divided_by: 0.0 }}')).toBe('-Infinity'))
     it('divides a decimal zero by a decimal zero to NaN', async () => expect(await render('{{ 0.0 | divided_by: 0.0 }}')).toBe('NaN'))
     it('divides a decimal string by zero to infinity', async () => expect(await render('{{ "10.0" | divided_by: 0 }}')).toBe('Infinity'))
+    it('divides a whole zero by a decimal zero to NaN', async () => expect(await render('{{ 0 | divided_by: 0.0 }}')).toBe('NaN'))
+    it('divides by a negative decimal zero to negative infinity', async () => expect(await render('{{ 1 | divided_by: -0.0 }}')).toBe('-Infinity'))
     it('still refuses a decimal modulo zero', async () => expect(render('{{ 10.0 | modulo: 0.0 }}')).rejects.toThrow(/divided by 0/))
   })
   describe('plus, minus, times, modulo', () => {
@@ -76,6 +78,9 @@ describe('numberSemantics: ruby', () => {
     it('treats a zero decimal as present in default', async () => expect(await render('{{ 0.0 | default: 1 }}')).toBe('0.0'))
     it('slices a decimal as Ruby prints it', async () => expect(await render('{{ 2.0 | slice: 0, 3 }}')).toBe('2.0'))
     it.each(['join', 'compact', 'reverse', 'sort', 'sort_natural', 'uniq'])('keeps a lone decimal in %s', async (name) => expect(await render(`{% assign a = 0.0 %}{{ a | ${name} }}`)).toBe('0.0'))
+    it('removes equal decimals in uniq', async () => expect(await render('{{ a | uniq | join: "," }}', { a: [new LiquidFloat(2), 1, new LiquidFloat(2)] })).toBe('2.0,1'))
+    it('keeps a decimal apart from the equal whole number in uniq', async () => expect(await render('{{ a | uniq | join: "," }}', { a: [new LiquidFloat(2), 2, new LiquidFloat(2)] })).toBe('2.0,2'))
+    it('treats 0.0 and -0.0 as one decimal in uniq', async () => expect(await render('{{ a | uniq | join: "," }}', { a: [new LiquidFloat(0), new LiquidFloat(-0)] })).toBe('0.0'))
   })
   describe('default semantics are unchanged', () => {
     it('still divides as JavaScript does', async () => expect(await js.parseAndRender('{{ 10 | divided_by: 4 }}')).toBe('2.5'))
