@@ -25,4 +25,9 @@ export class RawBodyTag extends Tag {
   render (): unknown {
     return this.body
   }
+
+  /** Ruby Liquid's `Raw#blank?`: a raw tag with nothing in it prints nothing, so an error in a block that holds only that is recorded without being written (`inlineErrors`). A subclass can override it. */
+  blank (): boolean {
+    return this.body === ''
+  }
 }

@@ -3,6 +3,7 @@ import { toPromise, RenderError, LiquidErrors, LiquidError } from '../util'
 import { Context } from '../context'
 import { Template } from '../template'
 import { Emitter, KeepingTypeEmitter, StreamedEmitter, SimpleEmitter } from '../emitters'
+import { inlineErrorMessage, isLimitError, isSilentError } from '../util/inline-error'
 
 export class Render {
   public renderTemplatesToNodeStream (templates: Template[], ctx: Context): NodeJS.ReadableStream {
@@ -27,6 +28,12 @@ export class Render {
         if (ctx.breakCalled || ctx.continueCalled) break
       } catch (e) {
         const err = LiquidError.is(e) ? e : new RenderError(e as Error, tpl)
+        // a limit is never written inline: it takes the path it takes without `inlineErrors`
+        if (ctx.opts.inlineErrors && !isLimitError(err)) {
+          ctx.errors.push(err)
+          if (!isSilentError(err, tpl)) emitter.write(inlineErrorMessage(err))
+          continue
+        }
         if (ctx.opts.catchAllErrors) errors.push(err)
         else throw err
       }

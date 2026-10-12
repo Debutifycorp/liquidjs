@@ -1,4 +1,4 @@
-import { assert } from './assert'
+import { LimitError } from './error'
 
 export class Limiter {
   private message: string
@@ -10,13 +10,13 @@ export class Limiter {
   }
   use (count: number) {
     if (+count > 0) {
-      assert(this.base + +count <= this.limit, this.message)
+      if (!(this.base + +count <= this.limit)) throw new LimitError(this.message)
       this.base += +count
     }
   }
   check (count: number) {
     if (+count > 0) {
-      assert(+count <= this.limit, this.message)
+      if (!(+count <= this.limit)) throw new LimitError(this.message)
     }
   }
 }

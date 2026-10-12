@@ -1,4 +1,4 @@
-import { Liquid, RawBodyTag, Tokenizer, TokenizationError, ParseError, defaultOptions } from '../../../src'
+import { Liquid, LiquidOptions, RawBodyTag, Tokenizer, TokenizationError, ParseError, defaultOptions } from '../../../src'
 
 class VerbatimTag extends RawBodyTag {}
 class SilentTag extends RawBodyTag {
@@ -98,6 +98,19 @@ describe('rawTags option', () => {
       const explicit = new Liquid({ rawTags: ['raw'] })
       expect(await explicit.parseAndRender('{% raw %}x{%- endraw %}')).toBe('x')
       expect(await explicit.parseAndRender('{% raw %}x{% endraw-%} y')).toBe('xy')
+    })
+    it.each([undefined, null])('behaves as upstream when rawTags is passed as %p', async (rawTags) => {
+      const engine = new Liquid({ rawTags } as LiquidOptions)
+      expect(engine.options.rawTags).toBe(defaultOptions.rawTags)
+      expect(await engine.parseAndRender('{% raw %}{{ x }}{% endraw %}ok')).toBe('{{ x }}ok')
+      const err = await rejection(engine.parseAndRender('{% raw %}x{%- endraw %}'))
+      expect(err).toBeInstanceOf(TokenizationError)
+      expect(err.message).toMatch(/^raw "\{% raw %\}x.*" not closed/)
+    })
+    it('cannot be changed through the default list', () => {
+      expect(Object.isFrozen(defaultOptions.rawTags)).toBe(true)
+      expect(() => upstream.options.rawTags.push('verbatim')).toThrow(TypeError)
+      expect(new Liquid().options.rawTags).toEqual(['raw'])
     })
   })
 

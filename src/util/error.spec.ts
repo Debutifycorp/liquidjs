@@ -1,6 +1,6 @@
 import { Template } from '../template'
 import { NumberToken } from '../tokens'
-import { LiquidErrors, LiquidError, ParseError, RenderError } from './error'
+import { LiquidErrors, LiquidError, ParseError, RenderError, AssertionError, LimitError } from './error'
 
 describe('LiquidError', () => {
   describe('.is()', () => {
@@ -35,6 +35,27 @@ describe('RenderError', () => {
         render: () => ''
       } as any as Template
       expect(RenderError.is(new RenderError(err, tpl))).toBeTruthy()
+    })
+  })
+})
+
+describe('LimitError', () => {
+  it('is an AssertionError by name and message', () => {
+    const err = new LimitError('memory alloc limit exceeded')
+    expect(err).toBeInstanceOf(AssertionError)
+    expect(err.name).toBe('AssertionError')
+    expect(err.message).toBe('memory alloc limit exceeded')
+  })
+  describe('.is()', () => {
+    it('should return true for a LimitError', () => {
+      expect(LimitError.is(new LimitError('limit'))).toBeTruthy()
+    })
+    it('should return false for any other error', () => {
+      expect(LimitError.is(new AssertionError('limit'))).toBeFalsy()
+      expect(LimitError.is(new Error('limit'))).toBeFalsy()
+    })
+    it('should return false for null', () => {
+      expect(LimitError.is(null)).toBeFalsy()
     })
   })
 })

@@ -3,6 +3,7 @@ import { Drop } from '../drop/drop'
 import { __assign } from 'tslib'
 import { NormalizedFullOptions, defaultOptions, RenderOptions } from '../liquid-options'
 import { createScope, Scope } from './scope'
+import type { LiquidError } from '../util/error'
 import { hasOwnProperty, isArray, isNil, isUndefined, isString, isFunction, isNumber, toLiquid, InternalUndefinedVariableError, toValueSync, isObject, Limiter, toValue, readArrayElement } from '../util'
 
 type PropertyKey = string | number;
@@ -42,7 +43,9 @@ export class Context {
   public ownPropertyOnly: boolean;
   public memoryLimit: Limiter;
   public renderLimit: Limiter;
-  public constructor (env: object = {}, opts: NormalizedFullOptions = defaultOptions, renderOptions: RenderOptions = {}, { memoryLimit, renderLimit, liquid }: { memoryLimit?: Limiter, renderLimit?: Limiter, liquid?: any } = {}) {
+  /** Errors handled inline during this render (`inlineErrors`); shared with spawned contexts. */
+  public errors: LiquidError[];
+  public constructor (env: object = {}, opts: NormalizedFullOptions = defaultOptions, renderOptions: RenderOptions = {}, { memoryLimit, renderLimit, liquid, errors }: { memoryLimit?: Limiter, renderLimit?: Limiter, liquid?: any, errors?: LiquidError[] } = {}) {
     this.sync = !!renderOptions.sync
     this.opts = opts
     this.globals = renderOptions.globals ?? opts.globals
@@ -52,6 +55,7 @@ export class Context {
     this.memoryLimit = memoryLimit ?? new Limiter('memory alloc', renderOptions.memoryLimit ?? opts.memoryLimit)
     this.renderLimit = renderLimit ?? new Limiter('template render', getPerformance().now() + (renderOptions.renderLimit ?? opts.renderLimit))
     this.liquid = liquid
+    this.errors = errors ?? renderOptions.errors ?? []
   }
   public getRegister<T> (key: string, defaultValue: T = undefined as T): T {
     return (this.registers[key] = this.registers[key] || defaultValue)
@@ -116,7 +120,8 @@ export class Context {
     }, {
       renderLimit: this.renderLimit,
       memoryLimit: this.memoryLimit,
-      liquid: this.liquid
+      liquid: this.liquid,
+      errors: this.errors
     })
   }
   private findScope (key: string | number) {

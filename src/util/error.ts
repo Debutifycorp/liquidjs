@@ -104,6 +104,17 @@ export class AssertionError extends Error {
   }
 }
 
+/** Thrown when `memoryLimit`, `renderLimit` or `parseLimit` is exceeded. Named and worded as the `AssertionError` it extends, so callers that matched that keep matching. Test for it with `LimitError.is()`, never `instanceof`, which fails in the ES5 bundles. */
+export class LimitError extends AssertionError {
+  public constructor (message: string) {
+    super(message)
+    Object.defineProperty(this, TRAIT, { value: 'LimitError', enumerable: false })
+  }
+  static is (obj: unknown): obj is LimitError {
+    return (obj as Record<string, unknown> | null | undefined)?.[TRAIT] === 'LimitError'
+  }
+}
+
 function mkContext (token: Token) {
   const [line, col] = token.getPosition()
   const lines = token.input.split('\n')

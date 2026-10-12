@@ -7,6 +7,7 @@ import { defaultOperators, Operators } from './render'
 import misc from './filters/misc'
 import { escape } from './filters/html'
 import { MapFS } from './fs/map-fs'
+import type { LiquidError } from './util/error'
 
 type OutputEscape = (value: any) => string
 type OutputEscapeOption = 'escape' | 'json' | OutputEscape
@@ -34,6 +35,8 @@ export interface LiquidOptions {
   numberSemantics?: 'js' | 'ruby';
   /** Tags whose body is read as raw text up to `end<name>` and never parsed, so `{{` and `{%` inside them are kept as text. A listed `comment` also nests, as in Shopify Liquid. Register a `RawBodyTag` subclass for each new name. Setting this option, even to the default list, also lets an end tag carry a whitespace-control marker (`{%- endraw %}`, `{% endraw-%}`); under the default list such an end tag stays unclosed, as in upstream LiquidJS. Defaults to `['raw']`. */
   rawTags?: string[];
+  /** Write a render error where it happened as `Liquid error (<file> line <n>): <message>` and keep rendering, as Shopify does, instead of throwing. Which errors are written follows Ruby Liquid: a tag that prints nothing (`assign`, `capture`, a block with a blank body) and an undefined variable or filter are only recorded, and a limit (`memoryLimit`, `renderLimit`, `parseLimit`) still throws. Collect the errors with `RenderOptions.errors`. Defaults to `false`. */
+  inlineErrors?: boolean;
   /** If set, treat the `filepath` parameter in `{%include filepath %}` and `{%layout filepath%}` as a variable, otherwise as a literal value. Defaults to `true`. */
   dynamicPartials?: boolean;
   /** Whether or not to assert filter existence. If set to `false`, undefined filters will be skipped. Otherwise, undefined filters will cause an exception. Defaults to `false`. */
@@ -102,6 +105,8 @@ export interface LiquidOptions {
 }
 
 export interface RenderOptions {
+  /** With `inlineErrors`, every error handled inline during this render is also pushed onto this array, including the ones that are recorded without being written. */
+  errors?: LiquidError[];
   /**
    * This call is sync or async? It's used by Liquid internal methods, you'll not need this.
    */
@@ -149,6 +154,7 @@ export interface NormalizedFullOptions extends NormalizedOptions {
   jsTruthy: boolean;
   numberSemantics: 'js' | 'ruby';
   rawTags: string[];
+  inlineErrors: boolean;
   dynamicPartials: boolean;
   fs: FS;
   strictFilters: boolean;
@@ -189,7 +195,9 @@ export const defaultOptions: NormalizedFullOptions = {
   dynamicPartials: true,
   jsTruthy: false,
   numberSemantics: 'js',
-  rawTags: ['raw'],
+  // frozen, and compared by identity in the tokenizer: a list given as an option is a different array, even when it reads ['raw']
+  rawTags: Object.freeze(['raw']) as string[],
+  inlineErrors: false,
   dateFormat: '%A, %B %-e, %Y at %-l:%M %P %z',
   locale: '',
   trimTagRight: false,
@@ -228,6 +236,7 @@ export function normalize (options: LiquidOptions): NormalizedFullOptions {
     options.cache = cache
   }
   options = { ...defaultOptions, ...(options.jekyllInclude ? { dynamicPartials: false } : {}), ...options }
+  options.rawTags ??= defaultOptions.rawTags
   if ((!options.fs!.dirname || !options.fs!.sep) && options.relativeReference) {
     console.warn('[LiquidJS] `fs.dirname` and `fs.sep` are required for relativeReference, set relativeReference to `false` to suppress this warning')
     options.relativeReference = false
