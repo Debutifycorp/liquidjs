@@ -15,21 +15,26 @@ const { Liquid } = require('@debutify/liquidjs')
 const liquid = new Liquid({ numberSemantics: 'ruby', rawTags: ['raw', 'comment'], inlineErrors: true })
 
 const errors = []
-const html = await liquid.parseAndRender('{{ 10 | divided_by: 4 }} {{ 2.0 }} {{ 1 | divided_by: 0 }}', {}, { errors })
-// html is '2 2.0 Liquid error (line 1): divided by 0', and errors holds one LiquidError
+liquid.parseAndRender('{{ 10 | divided_by: 4 }} {{ 2.0 }} {{ 1 | divided_by: 0 }}', {}, { errors }).then(html => {
+  console.log(html)          // 2 2.0 Liquid error (line 1): divided by 0
+  console.log(errors.length) // 1
+})
 ```
 
 Details that do not fit the table:
 
 - With `numberSemantics: 'ruby'`, decimal values that reach API callers (`evalValue`, `evalValueSync`, values written by `assign`) are `LiquidFloat` objects: read `.value`, or use `Number(x)`.
-- Setting `rawTags` explicitly, even to the default list, also lets an end tag carry a whitespace-control marker (`{%- endraw -%}`); under the default list such an end tag stays unclosed, as in upstream LiquidJS.
-- With `inlineErrors`, a tag that prints nothing (`assign`, `capture`, a block with a blank body) and an undefined variable or filter are recorded in `errors` but not written, and a limit error (`memoryLimit`, `renderLimit`, `parseLimit`) still throws.
+- Setting `rawTags` explicitly, even to the default list, lets an end tag carry a whitespace-control marker in the forms `{%- endraw -%}`, `{% endraw-%}` and `{%- endraw %}`. Under the default list those three stay unclosed, as in upstream LiquidJS, while `{% endraw -%}` closes either way.
+- With `inlineErrors`, an error in a tag that prints nothing (`assign`, `capture`, a block with a blank body) is recorded in `errors` and not written.
+- With `inlineErrors`, an undefined variable is recorded and not written, but it is an error only under `strictVariables`; by default nothing is recorded.
+- With `inlineErrors`, an undefined filter is recorded and not written only when it is met while rendering, for example inside a grouped expression (`groupedExpressions`). Under `strictFilters` a misspelt filter in an ordinary tag is a parse error and still throws, as in upstream LiquidJS, and without `strictFilters` it is not an error at all.
+- With `inlineErrors`, a syntax error met while rendering, such as in a partial parsed at render time, is written as `Liquid syntax error (<file> line <n>): <message>`. A syntax error in the template you pass to `parse` still throws, and so does a limit error (`memoryLimit`, `renderLimit`, `parseLimit`).
 
 All three defaults are upstream LiquidJS's behaviour, so none of this changes anything until you opt in.
 
 ## Shopify compatibility
 
-With all three options on, 3859 of the 4553 specs in Shopify's [liquid-spec](https://github.com/Shopify/liquid-spec) (commit 84bf25e) pass (84.8%). CI runs them on every push and fails if a spec that passed starts failing (`spec/liquid-spec/`).
+With all three options on, 3859 of the 4553 specs in Shopify's [liquid-spec](https://github.com/Shopify/liquid-spec) (commit 84bf25e) pass (84.8%). CI runs them on every push to `master` and on every pull request, and fails if a spec that passed starts failing (`spec/liquid-spec/`).
 
 The upstream README follows.
 

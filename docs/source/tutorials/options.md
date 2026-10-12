@@ -172,13 +172,15 @@ class Schema extends RawBodyTag {
 }
 const engine = new Liquid({ rawTags: ['raw', 'comment', 'schema'] })
 engine.registerTag('schema', Schema)
+engine.parseAndRender('a{% schema %}{ "name": "{{ x }}" }{% endschema %}b').then(console.log)
+// ab
 ```
 
-Setting `rawTags`, even to the default list, also lets an end tag carry a whitespace-control marker such as `{%- endraw -%}`. Under the default list such an end tag stays unclosed, as in upstream LiquidJS.
+Setting `rawTags`, even to the default list, lets an end tag carry a whitespace-control marker in the forms `{%- endraw -%}`, `{% endraw-%}` and `{%- endraw %}`. Under the default list those three stay unclosed, as in upstream LiquidJS, while `{% endraw -%}` closes either way.
 
 ## inlineErrors
 
-**inlineErrors** is added by the `@debutify/liquidjs` fork and does not exist in upstream LiquidJS. When it is `true`, a render error is written where it happened as `Liquid error (<file> line <n>): <message>` and rendering carries on, as Shopify does, instead of throwing. It defaults to `false`.
+**inlineErrors** is added by the `@debutify/liquidjs` fork and does not exist in upstream LiquidJS. When it is `true`, a render error is written where it happened as `Liquid error (<file> line <n>): <message>` (`Liquid syntax error (<file> line <n>): <message>` for a syntax error met while rendering, such as in a partial parsed at render time) and rendering carries on, as Shopify does, instead of throwing. It defaults to `false`.
 
 Pass an array as the `errors` render option to collect every error handled this way:
 
@@ -192,7 +194,12 @@ engine.parseAndRender('a {{ 1 | divided_by: 0 }} b', {}, { errors }).then(html =
 })
 ```
 
-Which errors are written follows Ruby Liquid: a tag that prints nothing (`assign`, `capture`, a block with a blank body) and an undefined variable or filter are only recorded in `errors`, and a limit (`memoryLimit`, `renderLimit`, `parseLimit`) still throws.
+Which errors are written follows Ruby Liquid:
+
+- An error in a tag that prints nothing (`assign`, `capture`, a block with a blank body) is recorded in `errors` and not written.
+- An undefined variable is recorded and not written, but it is an error only under `strictVariables`; by default nothing is recorded.
+- An undefined filter is recorded and not written only when it is met while rendering, for example inside a grouped expression (`groupedExpressions`). Under `strictFilters` a misspelt filter in an ordinary tag is a parse error and still throws, as in upstream LiquidJS, and without `strictFilters` it is not an error at all.
+- A syntax error in the template you pass to `parse` still throws, and so does a limit error (`memoryLimit`, `renderLimit`, `parseLimit`).
 
 [liquid]: /api/classes/Liquid.html
 [caching]: ./caching.html
