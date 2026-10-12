@@ -47,6 +47,7 @@ describe('rawTags option', () => {
       const custom = new Liquid({ rawTags: ['raw', 'comment'], tagDelimiterLeft: '<%', tagDelimiterRight: '%>' })
       expect(await custom.parseAndRender('a<% comment %>x<% comment %>y<% endcomment %>z<% endcomment %>b')).toBe('ab')
     })
+    it('nests inside a liquid tag', async () => expect(await render('{% liquid\ncomment\n  comment\n    x\n  endcomment\n  still in the outer comment\nendcomment\necho "A"\n%}')).toBe('A'))
   })
 
   describe('whitespace control', () => {
@@ -77,6 +78,11 @@ describe('rawTags option', () => {
       const err = await rejection(upstream.parseAndRender('a{% comment %}x{% comment %}y{% endcomment %}z{% endcomment %}b'))
       expect(err).toBeInstanceOf(ParseError)
       expect(err.message).toMatch(/^tag "endcomment" not found/)
+    })
+    it('leaves a comment inside a liquid tag unnested', async () => {
+      const err = await rejection(upstream.parseAndRender('{% liquid\ncomment\n  comment\n  endcomment\n  still in the outer comment\nendcomment\n%}'))
+      expect(err).toBeInstanceOf(ParseError)
+      expect(err.message).toMatch(/^tag "still" not found/)
     })
     it('still parses a comment body', async () => {
       const err = await rejection(upstream.parseAndRender('{% comment %}{{ unclosed {% endcomment %}ok'))

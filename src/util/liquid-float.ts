@@ -1,14 +1,14 @@
 import { Drop } from '../drop/drop'
 
 /**
- * Formats a number the way Ruby's `Float#to_s` does, which is what Shopify Liquid prints: a whole-valued decimal keeps `.0`, and exponent form is used below 1e-4 and from 1e16 up, with at least two exponent digits.
+ * Formats a number the way Ruby's `Float#to_s` does, which is what Shopify Liquid prints: a whole-valued decimal keeps `.0`, and exponent form is used below 1e-4, from 1e16 up, and for a whole number from 1e15 up (3.0e+15, while 3000000000000000.5 stays in fixed form), with at least two exponent digits.
  */
 export function formatRubyFloat (n: number): string {
   if (Number.isNaN(n)) return 'NaN'
   if (!Number.isFinite(n)) return n > 0 ? 'Infinity' : '-Infinity'
   if (n === 0) return Object.is(n, -0) ? '-0.0' : '0.0'
   const abs = Math.abs(n)
-  if (abs >= 1e16 || abs < 1e-4) {
+  if (abs >= 1e16 || abs < 1e-4 || (abs >= 1e15 && Number.isInteger(n))) {
     const [mantissa, exponent] = n.toExponential().split('e')
     const digits = mantissa.includes('.') ? mantissa : `${mantissa}.0`
     const power = Number(exponent)

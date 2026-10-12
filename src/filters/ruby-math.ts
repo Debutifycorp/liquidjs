@@ -98,8 +98,11 @@ function scaleToIntegers (a: number, b: number): Scaled | undefined {
 function dividedBy (input: unknown, operand: unknown) {
   const a = toRubyNumber(input)
   const b = toRubyNumber(operand)
-  zeroCheck(b.value)
-  if (!a.float && !b.float) return Math.floor(a.value / b.value)
+  // only whole numbers raise: a decimal on either side divides as a Float does, to Infinity, -Infinity or NaN
+  if (!a.float && !b.float) {
+    zeroCheck(b.value)
+    return Math.floor(a.value / b.value)
+  }
   const scaled = scaleToIntegers(a.value, b.value)
   return new LiquidFloat(scaled ? scaled.a / scaled.b : a.value / b.value)
 }

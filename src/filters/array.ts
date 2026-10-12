@@ -6,25 +6,26 @@ import type { Scope } from '../context'
 import { EmptyDrop } from '../drop'
 import { LiquidFloat } from '../util/liquid-float'
 
-export const join = argumentsToValue(function (this: FilterImpl, v: any[], arg: string) {
+// `join` and `reverse` unwrap their input through `toArray`, not `argumentsToValue`, so a lone decimal under `numberSemantics: 'ruby'` keeps its point
+export function join (this: FilterImpl, v: any[], arg: string) {
   const array = toArray(v)
-  const sep = isNil(arg) ? ' ' : stringify(arg)
+  const sep = isNil(toValue(arg)) ? ' ' : stringify(arg)
   let outputSize = sep.length * Math.max(array.length - 1, 0)
   for (let i = 0; i < array.length; i++) outputSize += String(array[i]).length
   this.context.memoryLimit.use(outputSize)
   return Array.prototype.join.call(array, sep)
-})
+}
 export const last = argumentsToValue(function (this: FilterImpl, v: any) {
   return isArrayLike(v) ? readArrayElement(v, -1, this.context.ownPropertyOnly) : ''
 })
 export const first = argumentsToValue(function (this: FilterImpl, v: any) {
   return isArrayLike(v) ? readArrayElement(v, 0, this.context.ownPropertyOnly) : ''
 })
-export const reverse = argumentsToValue(function (this: FilterImpl, v: any[]) {
+export function reverse (this: FilterImpl, v: any[]) {
   const array = toArray(v)
   this.context.memoryLimit.use(array.length)
   return [...array].reverse()
-})
+}
 
 function * sortBy<T> (this: FilterImpl, arr: T[], property: string | undefined, comparator: (a: unknown, b: unknown) => number): IterableIterator<unknown> {
   const values: [T, unknown][] = []

@@ -60,6 +60,8 @@ export function toEnumerable<T = unknown> (val: any): T[] {
 }
 
 export function toArray (val: any) {
+  // a decimal under `numberSemantics: 'ruby'` stays wrapped so it still prints with its point
+  if (val instanceof LiquidFloat) return [val]
   val = toValue(val)
   if (isNil(val)) return []
   if (isArray(val)) return val

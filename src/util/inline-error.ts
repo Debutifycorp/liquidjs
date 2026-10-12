@@ -13,8 +13,9 @@ const BLOCK_TAGS = ['if', 'unless', 'case', 'for', 'tablerow', 'liquid']
 // the names are compared, never `instanceof`: `extends Error` loses its prototype chain in the ES5 bundles (see `src/util/error.ts`)
 const SYNTAX_ERRORS = ['ParseError', 'TokenizationError']
 
-function rawMessage (err: Error): string {
-  if (LiquidError.is(err) && err.originalError) return rawMessage(err.originalError)
+/** The message of `err` as Ruby Liquid words it: the innermost error's own text, without the `, line:1, col:1` position this fork appends. */
+export function liquidErrorText (err: Error): string {
+  if (LiquidError.is(err) && err.originalError) return liquidErrorText(err.originalError)
   return err.message.replace(POSITION, '')
 }
 
@@ -23,7 +24,7 @@ export function inlineErrorMessage (err: LiquidError): string {
   const [line] = err.token.getPosition()
   const file = err.token.file ? `${err.token.file.replace(/^\.\//, '').replace(/\.liquid$/, '')} ` : ''
   const kind = SYNTAX_ERRORS.includes(err.name) ? 'Liquid syntax error' : 'Liquid error'
-  return `${kind} (${file}line ${line}): ${rawMessage(err)}`
+  return `${kind} (${file}line ${line}): ${liquidErrorText(err)}`
 }
 
 /** Whether `err` is one of the engine's limits (`memoryLimit`, `renderLimit`, `parseLimit`). `inlineErrors` never handles these: Ruby Liquid re-raises its `MemoryError` rather than print it. */

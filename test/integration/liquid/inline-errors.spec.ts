@@ -1,4 +1,4 @@
-import { Liquid, LiquidError, ParseError, RawBodyTag, Tag, UndefinedVariableError } from '../../../src'
+import { LimitError, Liquid, LiquidError, ParseError, RawBodyTag, Tag, UndefinedVariableError, liquidErrorText } from '../../../src'
 
 const liquid = new Liquid({ inlineErrors: true, numberSemantics: 'ruby' })
 
@@ -151,5 +151,22 @@ describe('inlineErrors option', () => {
     it('lets a raw-body tag declare it', async () => expect(await engine.parseAndRender('{% if 1 | divided_by: 0 %}{% quietraw %}x{% endquietraw %}{% endif %}a')).toBe('a'))
     it('counts a declared blank tag towards a block that prints nothing', async () => expect(await engine.parseAndRender('{% if 1 | divided_by: 0 %}{% quiet %}{% endif %}a')).toBe('a'))
     it('counts a tag that is not blank towards a block that prints something', async () => expect(await engine.parseAndRender('{% if 1 | divided_by: 0 %}{% notblank %}{% endif %}a')).toBe('Liquid error (line 1): divided by 0a'))
+  })
+})
+
+describe('error exports', () => {
+  it('exports LimitError', () => expect(LimitError.is(new LimitError('memory alloc limit exceeded'))).toBe(true))
+  it('exports the error text without its position', async () => {
+    const errors: LiquidError[] = []
+    await liquid.parseAndRender('{{ 1 | divided_by: 0 }}', {}, { errors })
+    expect(liquidErrorText(errors[0])).toBe('divided by 0')
+    let syntaxError: unknown
+    try {
+      liquid.parse('{% nosuchtag %}')
+    } catch (err) {
+      syntaxError = err
+    }
+    expect(ParseError.is(syntaxError)).toBe(true)
+    expect(liquidErrorText(syntaxError as Error)).toBe('tag "nosuchtag" not found')
   })
 })
