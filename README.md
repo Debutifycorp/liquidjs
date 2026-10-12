@@ -1,3 +1,11 @@
+# @debutify/liquidjs
+
+Debutify's fork of [LiquidJS](https://github.com/harttle/liquidjs) for rendering Shopify themes outside Shopify. With default options it is LiquidJS (see `NOTICE.md`). Install with `npm install @debutify/liquidjs`.
+
+The upstream README follows.
+
+---
+
 # LiquidJS
 
 A simple, expressive, extensible Liquid template engine for JavaScript — Shopify, Jekyll and GitHub Pages compatible, for Node.js, browsers, and the CLI, with TypeScript support.

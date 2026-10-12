@@ -1,8 +1,10 @@
 {
-  "name": "liquidjs",
-  "version": "10.30.0",
+  "name": "@debutify/liquidjs",
+  "version": "0.0.0",
   "sideEffects": false,
-  "description": "A simple, expressive, extensible Liquid template engine for JavaScript — Shopify, Jekyll and GitHub Pages compatible, for Node.js, browsers, and the CLI, with TypeScript support.",
+  "description": "Debutify's fork of LiquidJS with Shopify Liquid semantics, for rendering Shopify themes outside Shopify.",
+  "upstreamLiquidjs": "10.30.0",
+  "packageManager": "pnpm@12.11.2",
   "main": "dist/liquid.node.js",
   "module": "dist/liquid.node.mjs",
   "es2015": "dist/liquid.browser.mjs",
@@ -45,7 +47,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/harttle/liquidjs.git"
+    "url": "git+https://github.com/Debutifycorp/liquidjs.git"
   },
   "funding": {
     "type": "opencollective",
@@ -55,6 +57,7 @@
     "bin/liquid.js",
     "dist",
     "LICENSE",
+    "NOTICE.md",
     "README.md"
   ],
   "keywords": [
@@ -67,16 +70,16 @@
   "author": "Harttle",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/harttle/liquidjs/issues"
+    "url": "https://github.com/Debutifycorp/liquidjs/issues"
   },
-  "homepage": "https://github.com/harttle/liquidjs#readme",
+  "homepage": "https://github.com/Debutifycorp/liquidjs#readme",
   "devDependencies": {
     "@commitlint/cli": "^12.1.4",
     "@commitlint/config-conventional": "^8.2.0",
     "@semantic-release/changelog": "^6.0.2",
     "@semantic-release/commit-analyzer": "^9.0.2",
     "@semantic-release/git": "^10.0.1",
-    "@semantic-release/npm": "^13.1.5",
+    "@semantic-release/npm": "^13.2.0",
     "@semantic-release/release-notes-generator": "^10.0.3",
     "@types/benchmark": "^1.0.31",
     "@types/express": "^4.17.2",
@@ -123,6 +126,7 @@
   },
   "release": {
     "branch": "master",
+    "tagFormat": "debutify-v${version}",
     "plugins": [
       "@semantic-release/commit-analyzer",
       "@semantic-release/release-notes-generator",
@@ -133,7 +137,6 @@
         {
           "assets": [
             "package.json",
-            "package-lock.json",
             "CHANGELOG.md"
           ],
           "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
@@ -161,6 +164,7 @@
     ]
   },
   "publishConfig": {
+    "access": "public",
     "provenance": true
   },
   "nyc": {

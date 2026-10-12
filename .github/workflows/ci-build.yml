@@ -17,12 +17,8 @@ jobs:
   test:
     needs: build
     uses: ./.github/workflows/test.yml
-  coverage:
-    uses: ./.github/workflows/coverage.yml
   performance:
     needs: build
     uses: ./.github/workflows/performance.yml
     with:
       os: ubuntu-latest
-  docs:
-    uses: ./.github/workflows/docs.yml
