@@ -103,7 +103,7 @@
     "jest": "^29.5.0",
     "jsdom": "^16.5.0",
     "npm-run-all2": "^8.0.4",
-    "rollup": "^1.26.3",
+    "rollup": "^4.64.5",
     "rollup-plugin-replace": "^2.1.0",
     "rollup-plugin-typescript2": "^0.31.1",
     "rollup-plugin-uglify": "^6.0.4",
