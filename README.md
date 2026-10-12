@@ -2,6 +2,35 @@
 
 Debutify's fork of [LiquidJS](https://github.com/harttle/liquidjs) for rendering Shopify themes outside Shopify. With default options it is LiquidJS (see `NOTICE.md`). Install with `npm install @debutify/liquidjs`.
 
+## Options added by this fork
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `numberSemantics` | `'js'` | `'ruby'` keeps whole numbers and decimals apart as Shopify Liquid does (`{{ 10 \| divided_by: 4 }}` is `2`, `{{ 2.0 }}` prints `2.0`, decimal arithmetic is exact). |
+| `rawTags` | `['raw']` | Tags whose bodies are never parsed; register a `RawBodyTag` subclass for each new name. A listed `comment` nests. |
+| `inlineErrors` | `false` | Write render errors inline (`Liquid error (line 1): …`) and keep rendering; collect them with `render(tpl, scope, { errors })`. |
+
+```js
+const { Liquid } = require('@debutify/liquidjs')
+const liquid = new Liquid({ numberSemantics: 'ruby', rawTags: ['raw', 'comment'], inlineErrors: true })
+
+const errors = []
+const html = await liquid.parseAndRender('{{ 10 | divided_by: 4 }} {{ 2.0 }} {{ 1 | divided_by: 0 }}', {}, { errors })
+// html is '2 2.0 Liquid error (line 1): divided by 0', and errors holds one LiquidError
+```
+
+Details that do not fit the table:
+
+- With `numberSemantics: 'ruby'`, decimal values that reach API callers (`evalValue`, `evalValueSync`, values written by `assign`) are `LiquidFloat` objects: read `.value`, or use `Number(x)`.
+- Setting `rawTags` explicitly, even to the default list, also lets an end tag carry a whitespace-control marker (`{%- endraw -%}`); under the default list such an end tag stays unclosed, as in upstream LiquidJS.
+- With `inlineErrors`, a tag that prints nothing (`assign`, `capture`, a block with a blank body) and an undefined variable or filter are recorded in `errors` but not written, and a limit error (`memoryLimit`, `renderLimit`, `parseLimit`) still throws.
+
+All three defaults are upstream LiquidJS's behaviour, so none of this changes anything until you opt in.
+
+## Shopify compatibility
+
+With all three options on, 3859 of the 4553 specs in Shopify's [liquid-spec](https://github.com/Shopify/liquid-spec) (commit 84bf25e) pass (84.8%). CI runs them on every push and fails if a spec that passed starts failing (`spec/liquid-spec/`).
+
 The upstream README follows.
 
 ---

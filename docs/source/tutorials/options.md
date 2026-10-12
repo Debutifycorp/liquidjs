@@ -148,6 +148,52 @@ Nonexistent tags always throw errors during parsing and this behavior cannot be 
 
 Parameter orders are ignored by default, for example `{% for i in (1..8) reversed limit:3 %}` will always perform `limit` before `reversed`, even if `reversed` occurs before `limit`. To make parameter order respected, set **orderedFilterParameters** to `true`. Its default value is `false`.
 
+## numberSemantics
+
+**numberSemantics** is added by the `@debutify/liquidjs` fork and does not exist in upstream LiquidJS. It defaults to `'js'`, where `2.0` and `2` are the same number and arithmetic is JavaScript's. Set it to `'ruby'` to follow Shopify Liquid, which keeps whole numbers and decimals apart: `{% raw %}{{ 10 | divided_by: 4 }}{% endraw %}` is `2`, `{% raw %}{{ 2.0 }}{% endraw %}` prints `2.0`, and decimal arithmetic is exact for decimals within the safe-integer range.
+
+```javascript
+const { Liquid } = require('@debutify/liquidjs')
+const engine = new Liquid({ numberSemantics: 'ruby' })
+engine.parseAndRender('{{ 10 | divided_by: 4 }} {{ 2.0 }} {{ 0.1 | plus: 0.2 }}').then(console.log)
+// 2 2.0 0.3
+```
+
+Decimal values that reach API callers (`evalValue`, `evalValueSync`, values written by `assign`) are `LiquidFloat` objects: read `.value`, or use `Number(x)`, for the number.
+
+## rawTags
+
+**rawTags** is added by the `@debutify/liquidjs` fork and does not exist in upstream LiquidJS. It lists the tags whose body is read as raw text up to `end<name>` and never parsed, so Liquid syntax inside them is kept as text. It defaults to `['raw']`. Register a `RawBodyTag` subclass for each name you add, and list `comment` to make `comment` nest as it does in Shopify Liquid.
+
+```javascript
+const { Liquid, RawBodyTag } = require('@debutify/liquidjs')
+class Schema extends RawBodyTag {
+  render () { return '' }
+}
+const engine = new Liquid({ rawTags: ['raw', 'comment', 'schema'] })
+engine.registerTag('schema', Schema)
+```
+
+Setting `rawTags`, even to the default list, also lets an end tag carry a whitespace-control marker such as `{%- endraw -%}`. Under the default list such an end tag stays unclosed, as in upstream LiquidJS.
+
+## inlineErrors
+
+**inlineErrors** is added by the `@debutify/liquidjs` fork and does not exist in upstream LiquidJS. When it is `true`, a render error is written where it happened as `Liquid error (<file> line <n>): <message>` and rendering carries on, as Shopify does, instead of throwing. It defaults to `false`.
+
+Pass an array as the `errors` render option to collect every error handled this way:
+
+```javascript
+const { Liquid } = require('@debutify/liquidjs')
+const engine = new Liquid({ numberSemantics: 'ruby', inlineErrors: true })
+const errors = []
+engine.parseAndRender('a {{ 1 | divided_by: 0 }} b', {}, { errors }).then(html => {
+  console.log(html)          // a Liquid error (line 1): divided by 0 b
+  console.log(errors.length) // 1
+})
+```
+
+Which errors are written follows Ruby Liquid: a tag that prints nothing (`assign`, `capture`, a block with a blank body) and an undefined variable or filter are only recorded in `errors`, and a limit (`memoryLimit`, `renderLimit`, `parseLimit`) still throws.
+
 [liquid]: /api/classes/Liquid.html
 [caching]: ./caching.html
 [abstract-fs]: ./render-file.html#Abstract-File-System
