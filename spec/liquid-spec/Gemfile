@@ -1,0 +1,4 @@
+source "https://rubygems.org"
+
+# Never `gem install liquid-spec`: on RubyGems that name is an unrelated placeholder (0.1.0, "place holder for bug bounty poc"), not Shopify's suite.
+gem "liquid-spec", git: "https://github.com/Shopify/liquid-spec", ref: "84bf25e"

@@ -4,3 +4,4 @@ demo
 coverage
 docs
 private.*
+spec/liquid-spec/

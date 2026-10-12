@@ -1,0 +1,31 @@
+name: liquid-spec
+on:
+  push:
+    branches: [master]
+  pull_request:
+jobs:
+  liquid-spec:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BUNDLE_GEMFILE: ${{ github.workspace }}/spec/liquid-spec/Gemfile
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: bundle exec liquid-spec run spec/liquid-spec/adapter.rb --no-max-failures --json > liquid-spec.json || true
+      - run: node spec/liquid-spec/compare.mjs liquid-spec.json spec/liquid-spec/baseline.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: liquid-spec-result
+          path: liquid-spec.json
