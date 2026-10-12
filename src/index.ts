@@ -16,6 +16,7 @@ export type { RangeToken, LiteralToken, QuotedToken, PropertyAccessToken, Number
 export { TokenKind, Tokenizer, ParseStream, Parser } from './parser'
 export { filters } from './filters'
 export * from './tags'
+export { RawBodyTag } from './tags/raw-body'
 export { defaultOptions } from './liquid-options'
 export type { LiquidOptions, RenderOptions, RenderFileOptions } from './liquid-options'
 export { FS, LookupType } from './fs'

@@ -11,6 +11,7 @@ export class Tokenizer {
   N: number
   public groupedExpressions: boolean
   private rawBeginAt = -1
+  private rawTagName = ''
   private opTrie: Trie<OperatorHandler>
   private literalTrie: Trie<LiteralValue>
 
@@ -152,7 +153,10 @@ export class Tokenizer {
       throw this.error(`tag ${this.snapshot(begin)} not closed`, begin)
     }
     const token = new TagToken(input, begin, this.p, options, file)
-    if (token.name === 'raw') this.rawBeginAt = begin
+    if (options.rawTags.includes(token.name)) {
+      this.rawBeginAt = begin
+      this.rawTagName = token.name
+    }
     return token
   }
 
@@ -182,9 +186,25 @@ export class Tokenizer {
   readEndrawOrRawContent (options: NormalizedFullOptions): HTMLToken | TagToken {
     const { tagDelimiterLeft, tagDelimiterRight } = options
     const begin = this.p
+    const name = this.rawTagName
+    const endName = `end${name}`
+    // upstream reads `{%- endraw %}` and `{% endraw-%}` as unclosed, so the default list keeps that; setting `rawTags` reads them as Shopify does
+    const markers = options.rawTags !== defaultOptions.rawTags
+    const nests = name === 'comment'
+    let depth = 0
     let leftPos = this.readTo(tagDelimiterLeft) - tagDelimiterLeft.length
     while (this.p < this.N) {
-      if (this.readIdentifier().getText() !== 'endraw') {
+      // a whitespace marker is a word character: step over a leading one, and drop a trailing one that touches the closing delimiter, before comparing names
+      if (markers && this.peek() === '-') this.p++
+      let identifier = this.readIdentifier().getText()
+      if (markers && identifier.endsWith('-') && this.match(tagDelimiterRight)) identifier = identifier.slice(0, -1)
+      if (nests && identifier === name) {
+        depth++
+        leftPos = this.readTo(tagDelimiterLeft) - tagDelimiterLeft.length
+        continue
+      }
+      if (identifier !== endName || depth > 0) {
+        if (identifier === endName) depth--
         leftPos = this.readTo(tagDelimiterLeft) - tagDelimiterLeft.length
         continue
       }
@@ -193,6 +213,7 @@ export class Tokenizer {
           const end = this.p
           if (begin === leftPos) {
             this.rawBeginAt = -1
+            this.rawTagName = ''
             return new TagToken(this.input, begin, end, options, this.file)
           } else {
             this.p = leftPos
@@ -203,7 +224,7 @@ export class Tokenizer {
         this.p++
       }
     }
-    throw this.error(`raw ${this.snapshot(this.rawBeginAt)} not closed`, begin)
+    throw this.error(`${name} ${this.snapshot(this.rawBeginAt)} not closed`, begin)
   }
 
   readLiquidTagTokens (options: NormalizedFullOptions = defaultOptions): LiquidTagToken[] {

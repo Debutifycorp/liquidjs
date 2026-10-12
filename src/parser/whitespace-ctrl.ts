@@ -13,8 +13,8 @@ export function whiteSpaceCtrl (tokens: Token[], options: NormalizedFullOptions)
     }
 
     if (isTagToken(token)) {
-      if (token.name === 'raw') inRaw = true
-      else if (token.name === 'endraw') inRaw = false
+      if (options.rawTags.includes(token.name)) inRaw = true
+      else if (token.name.startsWith('end') && options.rawTags.includes(token.name.slice(3))) inRaw = false
     }
 
     if (!inRaw && token.trimRight) {

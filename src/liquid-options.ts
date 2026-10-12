@@ -32,6 +32,8 @@ export interface LiquidOptions {
   jsTruthy?: boolean;
   /** `'ruby'` keeps whole numbers and decimals apart as Shopify Liquid does: `{{ 10 | divided_by: 4 }}` is `2`, `{{ 2.0 }}` prints `2.0`, and decimal arithmetic is exact for decimals within the safe-integer range. Decimal values that reach API callers (`evalValue`, `evalValueSync`, values written by `assign`) are `LiquidFloat` objects: read `.value`, or use `Number(x)`, for the number. Defaults to `'js'`. */
   numberSemantics?: 'js' | 'ruby';
+  /** Tags whose body is read as raw text up to `end<name>` and never parsed, so `{{` and `{%` inside them are kept as text. A listed `comment` also nests, as in Shopify Liquid. Register a `RawBodyTag` subclass for each new name. Setting this option, even to the default list, also lets an end tag carry a whitespace-control marker (`{%- endraw %}`, `{% endraw-%}`); under the default list such an end tag stays unclosed, as in upstream LiquidJS. Defaults to `['raw']`. */
+  rawTags?: string[];
   /** If set, treat the `filepath` parameter in `{%include filepath %}` and `{%layout filepath%}` as a variable, otherwise as a literal value. Defaults to `true`. */
   dynamicPartials?: boolean;
   /** Whether or not to assert filter existence. If set to `false`, undefined filters will be skipped. Otherwise, undefined filters will cause an exception. Defaults to `false`. */
@@ -146,6 +148,7 @@ export interface NormalizedFullOptions extends NormalizedOptions {
   cache?: LiquidCache;
   jsTruthy: boolean;
   numberSemantics: 'js' | 'ruby';
+  rawTags: string[];
   dynamicPartials: boolean;
   fs: FS;
   strictFilters: boolean;
@@ -186,6 +189,7 @@ export const defaultOptions: NormalizedFullOptions = {
   dynamicPartials: true,
   jsTruthy: false,
   numberSemantics: 'js',
+  rawTags: ['raw'],
   dateFormat: '%A, %B %-e, %Y at %-l:%M %P %z',
   locale: '',
   trimTagRight: false,
