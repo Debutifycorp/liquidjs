@@ -20,7 +20,7 @@ function engine (filesystem) {
     inlineErrors: true,
     extname: '.liquid',
     templates: filesystem ?? {},
-    // a runaway spec (endless partial recursion) must end with an error before the harness's own timeout kills the whole server
+    // wall-clock milliseconds for one render() call, partials included. A runaway spec (endless partial recursion) must end with an error before the harness's own timeout kills the whole server
     renderLimit: 1000
   })
 }
@@ -31,10 +31,10 @@ function errorShape (type, err) {
 }
 
 // liquid-spec's adapter (at the pinned ref) raises a render error only from a JSON-RPC error with code -32001; it ignores `result.error` on a render, where it would take `output: null` for an empty page
-function sendRenderError (id, err) {
+function sendRenderError (id, err, strict) {
   const { message, ...data } = errorShape('render_error', err)
-  // a raised error reads as Ruby's does, `Liquid error (line 5): divided by 0`, with the partial's name when it came from one
-  send({ id, error: { code: -32001, message: err?.token ? inlineErrorMessage(err) : message, data } })
+  // a raised error reads as Ruby's does, `Liquid error (line 5): divided by 0`, with the partial's name when it came from one. The adapter writes the inline form itself (`Liquid error: <message>`), so when errors are not strict the message is the bare text
+  send({ id, error: { code: -32001, message: strict && err?.token ? inlineErrorMessage(err) : message, data } })
 }
 
 async function handle (request) {
@@ -47,6 +47,8 @@ async function handle (request) {
     try {
       const template = liquid.parse(params.template)
       const templateId = `tmpl_${nextId++}`
+      // liquid-spec renders a template right after compiling it, so only the latest one is kept
+      templates.clear()
       templates.set(templateId, { liquid, template })
       return send({ id, result: { template_id: templateId } })
     } catch (err) {
@@ -62,9 +64,9 @@ async function handle (request) {
     try {
       output = await entry.liquid.render(entry.template, params.environment ?? {}, { errors })
     } catch (err) {
-      return sendRenderError(id, err)
+      return sendRenderError(id, err, strict)
     }
-    if (strict && errors.length) return sendRenderError(id, errors[0])
+    if (strict && errors.length) return sendRenderError(id, errors[0], strict)
     return send({ id, result: { output, errors: errors.map((e) => errorShape('render_error', e)) } })
   }
   if (method === 'quit') process.exit(0)
