@@ -4,6 +4,7 @@ import { Value, FilterImpl } from '../template'
 import { Tokenizer } from '../parser'
 import type { Scope } from '../context'
 import { EmptyDrop } from '../drop'
+import { LiquidFloat } from '../util/liquid-float'
 
 export const join = argumentsToValue(function (this: FilterImpl, v: any[], arg: string) {
   const array = toArray(v)
@@ -110,9 +111,11 @@ export function shift<T> (this: FilterImpl, v: T[]): T[] {
 }
 
 export function slice<T> (this: FilterImpl, v: T[] | string, begin: number, length = 1): T[] | string {
+  const original = v
   v = toValue(v)
   if (isNil(v)) return []
-  if (!isArray(v)) v = stringify(v)
+  // a decimal under `numberSemantics: 'ruby'` is stringified from its wrapper so it keeps its point
+  if (!isArray(v)) v = stringify(original instanceof LiquidFloat ? original : v)
   begin = begin < 0 ? v.length + begin : begin
   if (begin < 0 || length < 0) return isArray(v) ? [] : ''
   this.context.memoryLimit.use(length)

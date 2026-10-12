@@ -8,6 +8,7 @@ import { Liquid } from '../liquid'
 import { Filter } from './filter'
 import { FilterToken } from '../tokens'
 import { toValue } from '../util'
+import { LiquidFloat } from '../util/liquid-float'
 
 export class Output extends TemplateImpl<OutputToken> implements Template {
   value: Value
@@ -23,7 +24,9 @@ export class Output extends TemplateImpl<OutputToken> implements Template {
     }
   }
   public * render (ctx: Context, emitter: Emitter): IterableIterator<unknown> {
-    const val = yield toValue(yield this.value.value(ctx, false))
+    // `render` is typed `IterableIterator<unknown>`, so TypeScript types a `yield` result as `undefined`; the cast avoids TS2358 on `instanceof`
+    const raw = (yield this.value.value(ctx, false)) as unknown
+    const val = raw instanceof LiquidFloat ? raw : yield toValue(raw)
     emitter.write(val)
   }
 

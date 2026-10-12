@@ -1,9 +1,10 @@
 import { QuotedToken, RangeToken, OperatorToken, Token, PropertyAccessToken, OperatorType, operatorTypes, FilteredValueToken } from '../tokens'
-import { isRangeToken, isPropertyAccessToken, isFilteredValueToken, UndefinedVariableError, range, isOperatorToken, assert, toValue } from '../util'
+import { isRangeToken, isPropertyAccessToken, isFilteredValueToken, UndefinedVariableError, range, isOperatorToken, isNumberToken, assert, toValue } from '../util'
 import type { Context } from '../context'
 import type { UnaryOperatorHandler } from '../render'
 import { Drop } from '../drop'
 import { Filter } from '../template/filter'
+import { LiquidFloat } from '../util/liquid-float'
 
 export class Expression {
   readonly postfix: Token[]
@@ -43,6 +44,7 @@ export class Expression {
  */
 export function * evalToken (token: Token | undefined, ctx: Context, lenient = false): IterableIterator<unknown> {
   if (!token) return
+  if (ctx.opts.numberSemantics === 'ruby' && isNumberToken(token) && token.isFloat) return new LiquidFloat(token.content)
   if ('content' in token) return token.content
   if (isPropertyAccessToken(token)) return yield evalPropertyAccessToken(token, ctx, lenient)
   if (isRangeToken(token)) return yield evalRangeToken(token, ctx)

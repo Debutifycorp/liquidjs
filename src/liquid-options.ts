@@ -30,6 +30,8 @@ export interface LiquidOptions {
   cache?: boolean | number | LiquidCache;
   /** Use JavaScript Truthiness. Defaults to `false`. */
   jsTruthy?: boolean;
+  /** `'ruby'` keeps whole numbers and decimals apart as Shopify Liquid does: `{{ 10 | divided_by: 4 }}` is `2`, `{{ 2.0 }}` prints `2.0`, and decimal arithmetic is exact for decimals within the safe-integer range. Decimal values that reach API callers (`evalValue`, `evalValueSync`, values written by `assign`) are `LiquidFloat` objects: read `.value`, or use `Number(x)`, for the number. Defaults to `'js'`. */
+  numberSemantics?: 'js' | 'ruby';
   /** If set, treat the `filepath` parameter in `{%include filepath %}` and `{%layout filepath%}` as a variable, otherwise as a literal value. Defaults to `true`. */
   dynamicPartials?: boolean;
   /** Whether or not to assert filter existence. If set to `false`, undefined filters will be skipped. Otherwise, undefined filters will cause an exception. Defaults to `false`. */
@@ -143,6 +145,7 @@ export interface NormalizedFullOptions extends NormalizedOptions {
   extname: string;
   cache?: LiquidCache;
   jsTruthy: boolean;
+  numberSemantics: 'js' | 'ruby';
   dynamicPartials: boolean;
   fs: FS;
   strictFilters: boolean;
@@ -182,6 +185,7 @@ export const defaultOptions: NormalizedFullOptions = {
   fs: fs,
   dynamicPartials: true,
   jsTruthy: false,
+  numberSemantics: 'js',
   dateFormat: '%A, %B %-e, %Y at %-l:%M %P %z',
   locale: '',
   trimTagRight: false,

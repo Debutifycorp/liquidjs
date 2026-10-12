@@ -1,6 +1,7 @@
 import { isFalsy } from '../render/boolean'
 import { identify, isArray, isString, toValue } from '../util/underscore'
 import { FilterImpl } from '../template'
+import { LiquidFloat } from '../util/liquid-float'
 
 function chargeJsonReplacerValue (memoryLimit: { use(count: number): void }, val: unknown) {
   if (typeof val === 'string') {
@@ -15,10 +16,13 @@ function chargeJsonReplacerValue (memoryLimit: { use(count: number): void }, val
 }
 
 function defaultFilter<T1 extends boolean, T2> (this: FilterImpl, value: T1, defaultValue: T2, ...args: Array<[string, any]>): T1 | T2 {
+  const input = value
   value = toValue(value)
   if (isArray(value) || isString(value)) return value.length ? value : defaultValue
   if (value === false && (new Map(args)).get('allow_false')) return false as T1
-  return isFalsy(value, this.context) ? defaultValue : value
+  if (isFalsy(value, this.context)) return defaultValue
+  // a decimal under `numberSemantics: 'ruby'` keeps its wrapper so it still prints with its point
+  return (input as unknown) instanceof LiquidFloat ? input : value
 }
 
 function json (this: FilterImpl, value: any, space = 0) {

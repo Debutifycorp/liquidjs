@@ -6,6 +6,7 @@ import { Render } from './render'
 import { Parser } from './parser'
 import { tags } from './tags'
 import { filters } from './filters'
+import { rubyMathFilters } from './filters/ruby-math'
 import { LiquidOptions, normalizeDirectoryList, NormalizedFullOptions, normalize, RenderOptions, RenderFileOptions } from './liquid-options'
 
 export class Liquid {
@@ -24,6 +25,9 @@ export class Liquid {
     this.parser = new Parser(this)
     forOwn(tags, (conf: TagClass, name: string) => this.registerTag(name, conf))
     forOwn(filters, (handler: FilterImplOptions, name: string) => this.registerFilter(name, handler))
+    if (this.options.numberSemantics === 'ruby') {
+      forOwn(rubyMathFilters, (handler: FilterImplOptions, name: string) => this.registerFilter(name, handler))
+    }
   }
   public parse (html: string, filepath?: string): Template[] {
     const parser = new Parser(this)

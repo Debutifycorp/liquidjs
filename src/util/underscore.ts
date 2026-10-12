@@ -1,4 +1,5 @@
 import { Drop } from '../drop/drop'
+import { LiquidFloat } from './liquid-float'
 
 export const toString = Object.prototype.toString
 const toLowerCase = String.prototype.toLowerCase
@@ -35,6 +36,7 @@ export function promisify (fn: any) {
 }
 
 export function stringify (value: any): string {
+  if (value instanceof LiquidFloat) return value.toString()
   value = toValue(value)
   if (isString(value)) return value
   if (isNil(value)) return ''
