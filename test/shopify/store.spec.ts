@@ -1,5 +1,13 @@
-import { buildGlobals, buildLinklists, buildProduct, buildStore, ColorSchemeDrop, createShopifyLiquid, filterStatus, HandleMap, isSafeUrl, renderLiquid, ReportCollector, resolveServices, sampleStoreData, sanitizeHtml, SettingsDrop, Translator } from '../../src/shopify'
-import type { SettingDefinition, SettingsEnv } from '../../src/shopify'
+import { ColorSchemeDrop, createShopifyLiquid, renderLiquid, sampleStoreData, SettingsDrop, Translator } from '../../src/shopify'
+import type { SettingDefinition } from '../../src/shopify'
+import { filterStatus } from '../../src/shopify/filters'
+import { HandleMap } from '../../src/shopify/objects/handle-map'
+import { ReportCollector } from '../../src/shopify/report'
+import { resolveServices } from '../../src/shopify/services'
+import type { SettingsEnv } from '../../src/shopify/settings'
+import { buildLinklists, buildProduct, buildStore } from '../../src/shopify/store/build'
+import { buildGlobals } from '../../src/shopify/store/globals'
+import { isSafeUrl, sanitizeHtml } from '../../src/shopify/util/sanitize'
 
 const store = buildStore(sampleStoreData)
 const liquid = createShopifyLiquid()

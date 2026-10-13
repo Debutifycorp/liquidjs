@@ -10,8 +10,13 @@ export interface RenderLiquidResult {
   report: RenderReport
 }
 
-/** Renders one Liquid source with a Shopify engine and a fresh state, returning the HTML and its render report. Use it for snippets and tests; `renderPage` renders whole themes. */
-export async function renderLiquid (liquid: Liquid, source: string, scope: object = {}, init: StateInit = {}, filepath?: string): Promise<RenderLiquidResult> {
+/** Renders one Liquid source with an engine from `createShopifyLiquid` and a fresh state, returning the HTML and its render report. `scope` is the template's scope. Use it for snippets; `renderPage` renders whole themes. */
+export async function renderLiquid (liquid: Liquid, source: string, scope: object = {}): Promise<RenderLiquidResult> {
+  return renderWithState(liquid, source, scope)
+}
+
+/** `renderLiquid` with `init` over the engine's default state, field by field (a request, frames that make the source render as if inside a section, theme hooks), and `filepath` as the source's file name. Internal: the package's tests use it. */
+export async function renderWithState (liquid: Liquid, source: string, scope: object = {}, init: StateInit = {}, filepath?: string): Promise<RenderLiquidResult> {
   const started = getPerformance().now()
   const state = stateFromDefaults(engineState(liquid.options.globals), init)
   const errors: LiquidError[] = []

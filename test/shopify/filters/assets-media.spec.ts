@@ -1,5 +1,7 @@
-import { attribute, createShopifyLiquid, ImageDrop, renderLiquid } from '../../../src/shopify'
+import { createShopifyLiquid, ImageDrop, renderLiquid } from '../../../src/shopify'
 import type { ShopifyServices } from '../../../src/shopify'
+import { attribute } from '../../../src/shopify/util/html'
+import { renderWithState } from '../../../src/shopify/render-liquid'
 
 // Every expected string below is copied from the shopify.dev page cited above its test, with the shop's CDN host as the image `src` the test passes in.
 const HOST = '//polinas-potent-potions.myshopify.com/cdn/shop'
@@ -9,7 +11,7 @@ const assetUrl = (path: string) => `${HOST}/t/4/assets/${path}?v=1`
 
 async function renderWithReport (source: string, scope: Record<string, unknown> = { product }, init = {}, services: Partial<ShopifyServices> = {}) {
   const liquid = createShopifyLiquid({ services: { assetUrl, ...services } })
-  return renderLiquid(liquid, source, scope, init)
+  return renderWithState(liquid, source, scope, init)
 }
 
 async function render (source: string, scope: Record<string, unknown> = { product }, init = {}, services: Partial<ShopifyServices> = {}) {

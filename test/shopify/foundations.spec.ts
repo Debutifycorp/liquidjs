@@ -1,8 +1,10 @@
-import { cdnStyleImageUrl, createShopifyLiquid, errorMessage, parseFontHandle, renderLiquid, ReportCollector, Translator, shopifyState } from '../../src/shopify'
+import { createShopifyLiquid, renderLiquid, Translator } from '../../src/shopify'
 import { attribute, escapeHtml, insertAttributes } from '../../src/shopify/util/html'
 import { has, plainValue, splitArgs } from '../../src/shopify/util/args'
-import { currentFrame, createState, sectionLocales } from '../../src/shopify/state'
+import { currentFrame, createState, sectionLocales, shopifyState } from '../../src/shopify/state'
 import { Liquid, LiquidError, LiquidFloat } from '../../src'
+import { errorMessage, ReportCollector } from '../../src/shopify/report'
+import { cdnStyleImageUrl, parseFontHandle } from '../../src/shopify/services'
 
 describe('the Shopify layer foundations', () => {
   describe('preset', () => {

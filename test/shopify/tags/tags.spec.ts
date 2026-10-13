@@ -1,8 +1,10 @@
-import { buildPaginate, createShopifyLiquid, createState, Drop, renderLiquid, SchemaTag, STATE } from '../../../src/shopify'
-import { engineState } from '../../../src/shopify/state'
+import { createShopifyLiquid, Drop, SchemaTag } from '../../../src/shopify'
+import { engineState, createState, STATE } from '../../../src/shopify/state'
+import { buildPaginate } from '../../../src/shopify/tags/paginate'
+import { renderWithState } from '../../../src/shopify/render-liquid'
 
 const liquid = createShopifyLiquid()
-const render = async (source: string, scope: object = {}, request = {}) => (await renderLiquid(liquid, source, scope, { request })).html
+const render = async (source: string, scope: object = {}, request = {}) => (await renderWithState(liquid, source, scope, { request })).html
 
 describe('raw-body Shopify tags', () => {
   it('renders schema as nothing and keeps Liquid inside it as text', async () => expect(await render('a{% schema %}{"name": "{{ x }}"}{% endschema %}b')).toBe('ab'))

@@ -122,6 +122,19 @@ An unknown filter returns its input and an unknown tag renders nothing, so one g
 
 `shopifyFilterRegistry()` lists every filter in Shopify's [theme-liquid-docs](https://github.com/Shopify/theme-liquid-docs) with a status: `exact` (matches output recorded from Shopify), `approx` (implemented from shopify.dev, not yet matched against Shopify), `stub` (documented but not implemented: renders nothing and is reported) or `engine` (a standard Liquid filter provided by the engine). This release has 154 filters: 56 `engine`, 51 `approx`, 47 `stub`, none `exact` yet; a filter becomes `exact` only after it matches output recorded from a Shopify store. `shopifyFilterRegistry().filter((filter) => filter.status === 'stub')` lists the stubs, among them `md5`, `sha1`, `hmac_sha1`, `base64_url_safe_encode`, `base64_url_safe_decode`, `payment_terms`, `asset_img_url`, `file_url`, `payment_type_img_url` and `inline_asset_content`.
 
+### Public API
+
+From 1.0.0, semver covers what `@debutify/liquidjs/shopify` exports, and nothing else:
+
+- the functions `createShopifyLiquid`, `renderLiquid`, `renderPage`, `renderSection`, `compileTheme`, `parseWrapper` and `shopifyFilterRegistry`, and the values `defaultServices`, `sampleStoreData` and `SHOPIFY_DEFAULT_LIMITS`;
+- the types of their options and results (`ShopifyLiquidOptions`, `RenderLiquidResult`, `ThemeInput`, `RenderPageOptions`, `RenderPageResult`, `RenderSectionResult`, `RequestInput`, `ShopifyServices`, `CompiledTheme`), the report types (`RenderReport`, `CountEntry`, `ErrorEntry`, `MissingEntry`, `MissingKind`, `SectionEntry`, `UnsupportedEntry`) and the data types (`StoreData` and the types it is made of, `SectionData`, `BlockData`, `ImageData`, `ImageUrlParams`, `FontInfo`, `LocaleTree`, `SettingDefinition`, `FilterStatus`, `ShopifyFilterEntry`);
+- `Translator` and `TranslationsInput`, for the `translator` option;
+- the drops a custom filter can be given (`SettingsDrop`, `ImageDrop`, `ImageUrlDrop`, `ColorDrop`, `ColorSchemeDrop`, `FontDrop`, `VideoUrlDrop`, `ExternalVideoUrlDrop`), for `instanceof` checks and their Liquid properties;
+- the Shopify tag classes (`SchemaTag`, `JavascriptTag`, `StylesheetTag`, `DocTag`, `StyleTag`, `FormTag`, `PaginateTag`, `SectionTag`, `SectionsTag`, `ContentForTag`, `ShopifyLayoutTag` and `ShopifyTablerowTag`, named so that they do not shadow the root's `LayoutTag` and `TablerowTag`);
+- every name of the root entry, which `/shopify` re-exports.
+
+The constructors of the drops and tags, the members of a `CompiledTheme` other than `templates(path)` (which parses one Liquid file of the theme and throws its parse error), and the modules the entry is built from are internal and may change in any release.
+
 ### Safety
 
 Theme files come only from the `files` map: no file-system access and no `require`. The preset turns on `ownPropertyOnly` and sets `parseLimit` (10,000,000 characters per file), `renderLimit` (2,000 ms per render) and `memoryLimit` (100,000,000 of LiquidJS's allocation units per render); callers may lower them. A render that runs past `renderLimit` or `memoryLimit` rejects instead of returning a page (`template render limit exceeded`, `memory alloc limit exceeded`); test what you catch with `isLimitError(err)`, as the options section above describes. These limits are cooperative, not isolation: render themes you did not write in a worker thread or child process with memory limits and a kill timeout, as LiquidJS's [security model](https://liquidjs.com/tutorials/security-model.html) advises.

@@ -181,7 +181,7 @@ function presetData (preset: Record<string, unknown>): { settings?: Record<strin
   return out
 }
 
-/** One theme, parsed once: an engine over its files and its parsed JSON, both re-read only when a file's contents change. */
+/** One theme, parsed once: an engine over its files and its parsed JSON, both re-read only when a file's contents change. Of its members only `templates(path)` is public API; the rest serve `renderPage` and may change in any release. */
 export class CompiledTheme {
   public readonly liquid: Liquid
   private readonly jsonCache = new Map<string, { source: string, value: unknown }>()
@@ -210,7 +210,7 @@ export class CompiledTheme {
     return value
   }
 
-  /** The parsed Liquid file, from the engine's cache when unchanged. Throws the parse error. */
+  /** The parsed Liquid file at `path` (`sections/header.liquid`), from the engine's cache when unchanged. Throws the parse error, so a caller can check every file of a theme before rendering it. */
   public templates (path: string): Template[] {
     return this.liquid.parseFileSync(path.replace(/\.liquid$/, ''))
   }

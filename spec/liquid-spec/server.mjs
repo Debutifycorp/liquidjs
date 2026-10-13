@@ -3,7 +3,7 @@ import { createInterface } from 'node:readline'
 import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
-const { createShopifyLiquid, LiquidFloat, SchemaTag, ThemeFS, inlineErrorMessage, liquidErrorText } = require('../../dist/shopify.node.js')
+const { createShopifyLiquid, LiquidFloat, SchemaTag, inlineErrorMessage, liquidErrorText } = require('../../dist/shopify.node.js')
 const pkg = require('../../package.json')
 
 const templates = new Map()
@@ -21,21 +21,38 @@ const flatName = (name) => {
   return lower.endsWith('.liquid') ? lower : `${lower}.liquid`
 }
 
-class FlatFS extends ThemeFS {
+class FlatFS {
   constructor (filesystem) {
-    super({})
+    this.sep = '/'
     this.sources = new Map()
     for (const [name, source] of Object.entries(filesystem)) if (!this.sources.has(flatName(name))) this.sources.set(flatName(name), source)
+  }
+
+  // every name exists, so a lookup resolves to it and `readFileSync` says what is missing
+  existsSync () {
+    return true
+  }
+
+  async exists () {
+    return true
   }
 
   resolve (dir, file) {
     return file
   }
 
+  dirname (file) {
+    return file.split('/').slice(0, -1).join('/')
+  }
+
   readFileSync (name) {
     const source = this.sources.get(flatName(name))
     if (source === undefined) throw new Error(`Could not find asset ${name}`)
     return source
+  }
+
+  async readFile (name) {
+    return this.readFileSync(name)
   }
 }
 

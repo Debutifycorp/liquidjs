@@ -1,6 +1,8 @@
 import { Liquid } from '../../../src'
-import { createShopifyLiquid, filterStatus, renderLiquid, shopifyFilterRegistry, SHOPIFY_FILTER_DOCS, SHOPIFY_FILTER_SETS, THEME_LIQUID_DOCS_REVISION } from '../../../src/shopify'
+import { createShopifyLiquid, renderLiquid, shopifyFilterRegistry } from '../../../src/shopify'
 import type { FilterStatus } from '../../../src/shopify'
+import { filterStatus, SHOPIFY_FILTER_SETS } from '../../../src/shopify/filters'
+import { SHOPIFY_FILTER_DOCS, THEME_LIQUID_DOCS_REVISION } from '../../../src/shopify/filters/registry.generated'
 
 /**
  * The status split is pinned by invariants, not counts, because every task that implements a filter moves it from `stub` to `exact` or `approx`:

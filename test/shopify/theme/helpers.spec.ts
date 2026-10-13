@@ -1,4 +1,7 @@
-import { contentForHeader, createShopifyLiquid, createState, deepMerge, HEADER_MARKER, newHeaderMarker, parseThemeJson, parseWrapper, renderLiquid } from '../../../src/shopify'
+import { createShopifyLiquid, parseWrapper, renderLiquid } from '../../../src/shopify'
+import { createState } from '../../../src/shopify/state'
+import { contentForHeader, HEADER_MARKER, newHeaderMarker } from '../../../src/shopify/theme/header'
+import { deepMerge, parseThemeJson } from '../../../src/shopify/theme/json'
 
 describe('shopify/theme/json', () => {
   it('parses a theme JSON file with or without the editor notice', () => {

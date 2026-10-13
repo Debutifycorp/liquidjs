@@ -1,5 +1,7 @@
-import { createShopifyLiquid, renderLiquid, Translator, createState, STATE } from '../../../src/shopify'
+import { createShopifyLiquid, renderLiquid, Translator } from '../../../src/shopify'
 import type { LocaleTree } from '../../../src/shopify'
+import { createState, STATE } from '../../../src/shopify/state'
+import { renderWithState } from '../../../src/shopify/render-liquid'
 
 const en: LocaleTree = {
   layout: { header: { hello_user: 'Hello {{ name }}!', announcement_html: 'Spend $50 and get <strong>{{ what }}</strong>', rock: 'Rock & Roll', price: 'Cost {{ p }}', price_html: 'Cost <b>{{ p }}</b>' } },
@@ -11,7 +13,7 @@ const fr: LocaleTree = { layout: { header: { hello_user: 'Bonjour {{ name }} !' 
 const translator = (locale: string) => new Translator({ locale, defaultLocale: 'en', locales: { en, fr }, schemaLocales: { en: { sections: { header: { name: 'Header' } } } } })
 
 const liquid = createShopifyLiquid({ moneyFormat: '${{amount}}', moneyWithCurrencyFormat: '${{amount}} CAD' }) // eslint-disable-line no-template-curly-in-string
-const render = async (source: string, scope: object = {}, locale = 'en') => (await renderLiquid(liquid, source, scope, { translator: translator(locale), services: { currentTime: () => new Date('2026-10-09T12:00:00Z') } })).html
+const render = async (source: string, scope: object = {}, locale = 'en') => (await renderWithState(liquid, source, scope, { translator: translator(locale), services: { currentTime: () => new Date('2026-10-09T12:00:00Z') } })).html
 
 describe('t', () => {
   // https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files
@@ -26,7 +28,7 @@ describe('t', () => {
   it('reads the requested locale first', async () => expect(await render("{{ 'layout.header.hello_user' | t: name: 'Jo' }}", {}, 'fr')).toBe('Bonjour Jo !'))
   it('leaves _html keys unescaped and escapes their values', async () => expect(await render("{{ 'layout.header.announcement_html' | t: what: '<b>FREE</b>' }}")).toBe('Spend $50 and get <strong>&lt;b&gt;FREE&lt;/b&gt;</strong>'))
   it('reports a missing key', async () => {
-    const { html, report } = await renderLiquid(liquid, "{{ 'nope.key' | t }}", {}, { translator: translator('en') })
+    const { html, report } = await renderWithState(liquid, "{{ 'nope.key' | t }}", {}, { translator: translator('en') })
     expect(html).toBe('translation missing: en.nope.key')
     expect(report.missing).toEqual([{ kind: 'translation', name: 'nope.key' }])
   })
@@ -37,7 +39,7 @@ describe('t', () => {
     expect(html).toBe('Diaporama')
   })
   it('escapes the text for a missing key, which can come from data', async () => {
-    const { html, report } = await renderLiquid(liquid, '{{ title | t }}', { title: '<b>x</b>' }, { translator: translator('en') })
+    const { html, report } = await renderWithState(liquid, '{{ title | t }}', { title: '<b>x</b>' }, { translator: translator('en') })
     expect(html).toBe('translation missing: en.&lt;b&gt;x&lt;/b&gt;')
     expect(report.missing).toEqual([{ kind: 'translation', name: '<b>x</b>' }])
   })
@@ -67,7 +69,7 @@ describe('money', () => {
   })
   it('reads a string as Ruby to_i does', async () => expect(await render("{{ '1000' | money }}|{{ ' 1050abc' | money }}|{{ 'abc' | money }}|{{ '' | money }}|{{ '12.9' | money }}")).toBe('$10.00|$10.50|$0.00|$0.00|$0.12'))
   it('prints nothing for what has no to_i, and reports it', async () => {
-    const { html, report } = await renderLiquid(liquid, '[{{ flag | money }}][{{ list | money_with_currency }}][{{ shape | money }}]', { flag: true, list: [5], shape: { a: 1 } }, { translator: translator('en') })
+    const { html, report } = await renderWithState(liquid, '[{{ flag | money }}][{{ list | money_with_currency }}][{{ shape | money }}]', { flag: true, list: [5], shape: { a: 1 } }, { translator: translator('en') })
     expect(html).toBe('[][][]')
     expect(report.unsupported).toEqual([{ feature: 'money input', detail: 'true' }, { feature: 'money input', detail: 'array' }, { feature: 'money input', detail: 'object' }])
   })
@@ -189,7 +191,7 @@ describe('date', () => {
   it('renders a Liquid error for a format name it does not know, and reports it', async () => {
     const message = "invalid date format 'no_such_format': it is not a built-in format and the locale file has no date_formats.no_such_format"
     for (const source of ["{{ '2022-04-14 16:56:02 -0400' | date: format: 'no_such_format' }}", "{{ '2022-04-14 16:56:02 -0400' | time_tag: format: 'no_such_format' }}"]) {
-      const { html, report } = await renderLiquid(liquid, source, {}, { translator: translator('en') })
+      const { html, report } = await renderWithState(liquid, source, {}, { translator: translator('en') })
       expect(html).toBe(`Liquid error (line 1): ${message}`)
       expect(report.errors).toEqual([{ message: `Liquid error (line 1): ${message}`, file: undefined, line: 1 }])
       expect(report.unsupported).toEqual([{ feature: 'date format', detail: 'no_such_format' }])

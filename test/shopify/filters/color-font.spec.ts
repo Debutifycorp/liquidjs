@@ -1,5 +1,6 @@
-import { ColorDrop, createShopifyLiquid, FontDrop, parseFontHandle, renderLiquid } from '../../../src/shopify'
+import { ColorDrop, createShopifyLiquid, FontDrop, renderLiquid } from '../../../src/shopify'
 import type { FontInfo } from '../../../src/shopify'
+import { parseFontHandle } from '../../../src/shopify/services'
 
 async function render (source: string, scope: object = {}, liquid = createShopifyLiquid()) {
   return (await renderLiquid(liquid, source, scope)).html

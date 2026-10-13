@@ -7,7 +7,7 @@ import { FormTag } from './form'
 import { PaginateTag } from './paginate'
 import { SectionTag, SectionsTag } from './section'
 import { ContentForTag } from './content-for'
-import { TablerowTag } from './tablerow'
+import { ShopifyTablerowTag } from './tablerow'
 
 /** Shopify's platform tags, by name. */
 export const SHOPIFY_TAGS: Record<string, TagClass> = {
@@ -22,7 +22,7 @@ export const SHOPIFY_TAGS: Record<string, TagClass> = {
   section: SectionTag,
   sections: SectionsTag,
   content_for: ContentForTag,
-  tablerow: TablerowTag
+  tablerow: ShopifyTablerowTag
 }
 
 export function registerShopifyTags (liquid: Liquid) {

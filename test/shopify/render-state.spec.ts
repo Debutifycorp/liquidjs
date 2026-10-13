@@ -1,7 +1,9 @@
 import { Context } from '../../src'
-import { createShopifyLiquid, renderLiquid, shopifyState, STATE, Translator } from '../../src/shopify'
-import type { ShopifyLiquidOptions, ShopifyState, ThemeHooks } from '../../src/shopify'
-import { currentFrame, engineState } from '../../src/shopify/state'
+import { createShopifyLiquid, renderLiquid, Translator } from '../../src/shopify'
+import type { ShopifyLiquidOptions } from '../../src/shopify'
+import { currentFrame, engineState, shopifyState, STATE } from '../../src/shopify/state'
+import type { ShopifyState, ThemeHooks } from '../../src/shopify/state'
+import { renderWithState } from '../../src/shopify/render-liquid'
 
 const frame = (id: string) => ({ kind: 'section' as const, section: { id, type: 'header', index: 1 }, container: {}, sectionObject: {} })
 const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
@@ -132,18 +134,11 @@ describe('the state of a render', () => {
   })
 
   describe('runtime', () => {
-    const runtime: ThemeHooks = { renderStaticSection: function * () { return '' }, renderSectionGroup: function * () { return '' }, renderBlocks: function * () { return '' }, renderStaticBlock: function * () { return '' } }
-    it('reaches every kind of render', async () => {
-      const { liquid, seen } = probed({ runtime })
-      await renderLiquid(liquid, '{{ 1 | probe }}')
-      await liquid.parseAndRender('{{ 1 | probe }}')
-      expect(seen.map(state => state.runtime)).toEqual([runtime, runtime])
-    })
-    it('is overridden by the one renderLiquid is given', async () => {
-      const other: ThemeHooks = { renderStaticSection: function * () { return 'other' }, renderSectionGroup: function * () { return '' }, renderBlocks: function * () { return '' }, renderStaticBlock: function * () { return '' } }
-      const { liquid, seen } = probed({ runtime })
-      await renderLiquid(liquid, '{{ 1 | probe }}', {}, { runtime: other })
-      expect(seen[0].runtime).toBe(other)
+    it('takes the theme hooks of the init argument', async () => {
+      const hooks: ThemeHooks = { renderStaticSection: function * () { return 'hooked' }, renderSectionGroup: function * () { return '' }, renderBlocks: function * () { return '' }, renderStaticBlock: function * () { return '' } }
+      const { liquid, seen } = probed()
+      expect((await renderWithState(liquid, "{{ 1 | probe }}{% section 'x' %}", {}, { runtime: hooks })).html).toBe('1hooked')
+      expect(seen[0].runtime).toBe(hooks)
     })
   })
 
@@ -184,7 +179,7 @@ describe('the state of a render', () => {
         request: { path: '/products' },
         frames: [frame('init-frame')]
       }
-      const { html } = await renderLiquid(describing(), '{{ 1 | describe }}', {}, init)
+      const { html } = await renderWithState(describing(), '{{ 1 | describe }}', {}, init)
       expect(JSON.parse(html)).toEqual({ money: '{{amount}} GBP', withCurrency: '{{amount}} EUR!', asset: '/engine/a.css', shopifyAsset: '/init-shopify/b.js', locale: 'de', frame: 'init-frame', path: '/products' })
     })
   })

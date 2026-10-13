@@ -3,7 +3,7 @@ import { Liquid } from '../liquid'
 import type { LiquidOptions, RenderOptions } from '../liquid-options'
 import type { Template } from '../template'
 import type { ShopifyServices } from './services'
-import { createState, engineState, ShopifyState, STATE, stateFromDefaults, ThemeHooks } from './state'
+import { createState, engineState, ShopifyState, STATE, stateFromDefaults } from './state'
 import { ThemeCache, ThemeFS } from './theme-fs'
 import { installFallbacks } from './fallbacks'
 import { registerShopifyFilters } from './filters'
@@ -37,7 +37,6 @@ export interface ShopifyLiquidOptions {
   moneyWithCurrencyFormat?: string
   /** `'report'` (default) renders unknown tags as nothing and reports them; `'error'` fails the parse with `Unknown tag 'name'`, as Shopify does (liquid-spec `specs/basics/error-handling.yml`: `unknown_tag_strict_parse_error`; shopify.dev does not document it). An unknown filter has no such option: set `engine: { strictFilters: true }` to make it a parse error. */
   unknownTags?: 'report' | 'error'
-  runtime?: ThemeHooks
   parseLimit?: number
   renderLimit?: number
   memoryLimit?: number
