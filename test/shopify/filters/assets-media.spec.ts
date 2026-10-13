@@ -118,7 +118,8 @@ describe('shopify/filters/media', () => {
   })
   it('the image_url result is a string to filters that read strings', async () => {
     expect(await render('{{ product | image_url: width: 450 | size }}')).toBe(String(`${BEAKERS}&width=450`.length))
-    expect(await render('{{ product | image_url: width: 450 | json }}')).toBe(JSON.stringify(`${BEAKERS}&width=450`))
+    // `json` escapes `/` as Shopify does, and `&` as a safety choice (see jsonFilters)
+    expect(await render('{{ product | image_url: width: 450 | json }}')).toBe(JSON.stringify(`${BEAKERS}&width=450`).replace(/\//g, '\\/').replace('&', '\\u0026'))
   })
   // https://shopify.dev/docs/api/liquid/filters/image_tag
   it('image_tag', async () => {
@@ -214,7 +215,7 @@ describe('shopify/filters/media', () => {
     const url = 'https://player.vimeo.com/video/1234?autoplay=1'
     const media = { ...external, host: 'vimeo', external_id: '1234' }
     expect(await render('{{ media | external_video_url: autoplay: 1 | size }}', { media })).toBe(String(url.length))
-    expect(await render('{{ media | external_video_url: autoplay: 1 | json }}', { media })).toBe(JSON.stringify(url))
+    expect(await render('{{ media | external_video_url: autoplay: 1 | json }}', { media })).toBe('"https:\\/\\/player.vimeo.com\\/video\\/1234?autoplay=1"')
   })
   it('external_video_url ignores hosts it does not embed, prototype names included', async () => {
     for (const host of ['dailymotion', 'constructor', '__proto__', 'toString']) expect(await render('[{{ media | external_video_url }}]', { media: { ...external, host } })).toBe('[]')

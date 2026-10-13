@@ -1,4 +1,4 @@
-import { buildGlobals, buildLinklists, buildProduct, buildStore, ColorSchemeDrop, createShopifyLiquid, HandleMap, isSafeUrl, renderLiquid, ReportCollector, resolveServices, sampleStoreData, sanitizeHtml, SettingsDrop, Translator } from '../../src/shopify'
+import { buildGlobals, buildLinklists, buildProduct, buildStore, ColorSchemeDrop, createShopifyLiquid, filterStatus, HandleMap, isSafeUrl, renderLiquid, ReportCollector, resolveServices, sampleStoreData, sanitizeHtml, SettingsDrop, Translator } from '../../src/shopify'
 import type { SettingDefinition, SettingsEnv } from '../../src/shopify'
 
 const store = buildStore(sampleStoreData)
@@ -59,7 +59,9 @@ describe('shopify/store', () => {
   })
   it('gives variants a hidden back reference to their product', async () => {
     const product = store.products.liquidMethodMissing('canvas-bag')
-    expect(await render('{{ p.variants[0].product.title }}|{{ p.variants[0] | json }}', { p: product })).toBe('Canvas Bag|' + JSON.stringify((product as any).variants[0]))
+    const [title, json] = (await render('{{ p.variants[0].product.title }}|{{ p.variants[0] | json }}', { p: product })).split('|')
+    expect(title).toBe('Canvas Bag')
+    expect(JSON.parse(json)).toEqual(JSON.parse(JSON.stringify((product as any).variants[0])))
   })
   it('iterates and looks up handle maps, with an implicit collections.all', async () => {
     expect(await render("{% for c in collections %}{{ c.handle }} {% endfor %}{{ collections.size }} {{ collections.all.products_count }} {{ collections['apparel'].title }} {{ all_products['ceramic-mug'].vendor }}", { collections: store.collections, all_products: store.products }))
@@ -198,14 +200,16 @@ describe('shopify/settings safety', () => {
   it('never prints a liquid setting raw through json or inspect', async () => {
     const s = new SettingsDrop(liquidDefinitions, { code: payload }, env())
     const html = await render('{{ s | json }}|{{ s | inspect }}|{{ s.code | json }}', { s })
-    expect(html).not.toContain('<img')
-    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;')
+    expect(html).not.toMatch(/[<>]/)
     expect(JSON.parse(await render('{{ s | json }}', { s }))).toEqual({ code: '&lt;/script&gt;&lt;img src=x onerror=alert(1)&gt;' })
+    expect(JSON.parse(await render('{{ s | inspect }}', { s }))).toEqual({ code: '&lt;/script&gt;&lt;img src=x onerror=alert(1)&gt;' })
   })
   it('prints trusted liquid settings through json as strings, also after one has rendered', async () => {
     const s = new SettingsDrop(liquidDefinitions, { code: '{{ greeting }} <b>' }, env({ trust: { liquidSettings: true, htmlSettings: false } }))
     const html = await render('{{ s.code }}|{{ s | json }}|{{ s.code }}', { s, greeting: 'Hi' })
-    expect(html).toBe('Hi <b>|{"code":"{{ greeting }} <b>"}|Hi <b>')
+    const [first, json, second] = html.split('|')
+    expect([first, second]).toEqual(['Hi <b>', 'Hi <b>'])
+    expect(JSON.parse(json)).toEqual({ code: '{{ greeting }} <b>' })
     // the parse cache is not a field of the setting, so nothing that walks the setting reaches it
     expect(Object.keys(SettingsDrop.value(s, 'code') as object)).toEqual(['source'])
   })
@@ -221,7 +225,7 @@ describe('shopify/settings safety', () => {
 
   const text = (id: string, type = 'text', extra: object = {}): SettingDefinition => ({ type, id, ...extra })
   it('passes plain text through unchanged and sanitises text that contains markup', async () => {
-    const definitions = [text('plain'), text('area', 'textarea'), text('pick', 'select'), text('markup'), text('lt'), text('fallback', 'text', { default: '<i onclick=x>d</i>' })]
+    const definitions = [text('plain'), text('area', 'textarea'), text('pick', 'select', { options: [{ value: 'option-1', label: 'One' }, { value: 'option-2', label: 'Two' }] }), text('markup'), text('lt'), text('fallback', 'text', { default: '<i onclick=x>d</i>' })]
     const stored = { plain: 'Fish & chips "x" > y', area: 'Line one\nLine two', pick: 'option-1', markup: '<img src=x onerror=alert(1)>Hi', lt: 'a < b', legacy: '<script>alert(1)</script>ok', nested: { list: ['<b onclick=x>t</b>', 3, null], clean: 'fine' } }
     const s = new SettingsDrop(definitions, stored, env())
     expect(await render('{{ s.plain }}|{{ s.area }}|{{ s.pick }}|{{ s.markup }}|{{ s.lt }}|{{ s.fallback }}|{{ s.legacy }}', { s })).toBe('Fish & chips "x" > y|Line one\nLine two|option-1|<img src="x">Hi|a &lt; b|<i>d</i>|ok')
@@ -233,15 +237,20 @@ describe('shopify/settings safety', () => {
     const definitions: SettingDefinition[] = [{ type: 'image_picker', id: 'bad' }, { type: 'image_picker', id: 'good' }, { type: 'color', id: 'color' }]
     const stored = { bad: { src: 'javascript:alert(1)', alt: 'x' }, good: { src: '/img.png', width: 3, height: 2, alt: '<img src=x onerror=y>t' }, color: '<img src=x onerror=1>' }
     const s = new SettingsDrop(definitions, stored, env())
-    expect(await render('[{{ s.bad }}]|{{ s.good }}|{{ s.good.alt }}|{{ s.color }}', { s })).toBe('[]|/img.png|<img src="x">t|<img src="x">')
+    expect(await render('[{{ s.bad }}]|{{ s.good }}|{{ s.good.alt }}|[{{ s.color }}]', { s })).toBe('[]|/img.png|<img src="x">t|[]')
     expect(await render('{{ s.good.alt }}|{{ s.color }}', { s: new SettingsDrop(definitions, stored, env({ trust: trusted })) })).toBe('<img src=x onerror=y>t|<img src=x onerror=1>')
   })
   it('drops url settings with an unsafe scheme and reports them', async () => {
     const definitions: SettingDefinition[] = [{ type: 'url', id: 'link' }, { type: 'video_url', id: 'video' }]
-    for (const bad of ['javascript:alert(2)', ' JavaScript:alert(2)', 'jav&#x09;ascript:alert(2)', 'data:text/html,<b>x', 'vbscript:x', 'file:///etc/passwd']) {
+    for (const bad of ['javascript:alert(2)', 'JavaScript:alert(2)', 'jav&#x09;ascript:alert(2)', 'vbscript:x', 'file:///etc/passwd']) {
       const e = env()
       expect(await render('[{{ s.link }}]', { s: new SettingsDrop(definitions, { link: bad }, e) })).toBe('[]')
       expect(e.report.toReport([], 0).unsupported).toEqual([{ feature: 'unsafe_url', detail: 'url setting link has a URL scheme other than http, https, mailto or tel and was dropped' }])
+    }
+    for (const bad of [' JavaScript:alert(2)', 'data:text/html,<b>x', 'https://x.example/"><script>alert(4)</script>', "/a' onfocus='x", '/a b', '/a\tb', '/a"b', "/a'b", '/a<b', '/a>b', '/a`b', '/a\u0001b', '/a\u007fb', '/a\u0085b', '/a\u00a0b', '/a\u2028b', 'https://x.example/`', 'shopify://products/<img src=x onerror=alert(3)>']) {
+      const e = env()
+      expect(await render('[{{ s.link }}]', { s: new SettingsDrop(definitions, { link: bad }, e) })).toBe('[]')
+      expect(e.report.toReport([], 0).unsupported).toEqual([{ feature: 'unsafe_url', detail: 'url setting link has a URL with a quote, angle bracket, backtick, space or control character and was dropped' }])
     }
     const e = env()
     expect(await render('[{{ s.video.type }}]', { s: new SettingsDrop(definitions, { video: 'javascript:alert(1)' }, e) })).toBe('[]')
@@ -336,6 +345,180 @@ describe('shopify/settings colour schemes', () => {
     expect(scheme.id).toBe('constructor')
     expect(Object.prototype.hasOwnProperty.call(scheme.settings, 'constructor')).toBe(true)
     expect(Object.getPrototypeOf(scheme.settings)).toBe(Object.prototype)
+  })
+})
+
+describe('shopify/settings forms', () => {
+  const trusted = { liquidSettings: true, htmlSettings: true }
+  const options = [{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }]
+  const one = (definition: SettingDefinition, stored: unknown, overrides: Partial<SettingsEnv> = {}) => {
+    const e = env(overrides)
+    const settings = new SettingsDrop([definition], stored === undefined ? {} : { [definition.id as string]: stored }, e)
+    return { value: SettingsDrop.value(settings, definition.id as string), unsupported: e.report.toReport([], 0).unsupported }
+  }
+  const text = (value: unknown) => (value as { valueOf: () => unknown }).valueOf()
+  const invalid = (type: string, id: string, reason: string) => ({ feature: 'invalid_setting', detail: `${type} setting ${id} ${reason}` })
+
+  it.each([
+    ['select', 'right', 'right', []],
+    ['select', 'x" autofocus onfocus="y', 'left', ['has a value that is not one of its options and was replaced by its default']],
+    ['select', 7, 'left', ['has a value that is not one of its options and was replaced by its default']],
+    ['select', undefined, 'left', []],
+    ['radio', 'nope', 'left', ['has a value that is not one of its options and was replaced by its default']]
+  ] as Array<[string, unknown, unknown, string[]]>)('holds a %s to its options: %p gives %p', (type, stored, expected, reasons) => {
+    const result = one({ type, id: 'layout', options, default: 'left' }, stored)
+    expect(result.value).toBe(expected)
+    expect(result.unsupported).toEqual(reasons.map(reason => invalid(type, 'layout', reason)))
+  })
+  it('gives a select nothing when neither its value nor its default is an option, and trusts nothing it must not print', () => {
+    expect(one({ type: 'select', id: 'layout', options, default: 'up' }, 'down').value).toBeNull()
+    expect(one({ type: 'select', id: 'layout', default: 'left' }, 'left').value).toBeNull()
+    expect(one({ type: 'select', id: 'layout', options: [{ value: 'a"b', label: 'A' }, { value: 'ok', label: 'O' }], default: 'a"b' }, 'a"b').value).toBeNull()
+    expect(one({ type: 'text_alignment', id: 'align', default: 'center' }, 'justify" x').value).toBe('center')
+    expect(one({ type: 'text_alignment', id: 'align' }, 'right').value).toBe('right')
+    expect(one({ type: 'text_alignment', id: 'align', default: 'left' }, 'justify').value).toBe('left')
+  })
+  it.each([
+    [5, 5, []],
+    ['7', 7, []],
+    [' 7.5 ', 7.5, []],
+    [-3, 0, ['has a value outside its min and max and was clamped']],
+    [500, 100, ['has a value outside its min and max and was clamped']],
+    ['1" onmouseover="alert(2)', 36, ['has a value that is not a number and was replaced by its default']],
+    [NaN, 36, ['has a value that is not a number and was replaced by its default']],
+    [Infinity, 36, ['has a value that is not a number and was replaced by its default']],
+    [['5'], 36, ['has a value that is not a number and was replaced by its default']],
+    [undefined, 36, []]
+  ] as Array<[unknown, number, string[]]>)('holds a range to a number in its bounds: %p gives %p', (stored, expected, reasons) => {
+    const result = one({ type: 'range', id: 'pad', min: 0, max: 100, step: 4, default: 36 }, stored)
+    expect(result.value).toBe(expected)
+    expect(result.unsupported).toEqual(reasons.map(reason => invalid('range', 'pad', reason)))
+  })
+  it('holds a number to a finite number, and leaves a range without bounds unclamped', () => {
+    expect(one({ type: 'number', id: 'count', default: 2 }, 'x').value).toBe(2)
+    expect(one({ type: 'number', id: 'count' }, 'x').value).toBeNull()
+    expect(one({ type: 'number', id: 'count' }, 1e6).value).toBe(1e6)
+    expect(one({ type: 'number', id: 'count', min: 0, max: 5 }, 9).value).toBe(9)
+    for (const odd of ['0x10', '1e3', '', ' ', '1,5', '--1', 'Infinity']) expect([odd, one({ type: 'range', id: 'pad', default: 3 }, odd).value]).toEqual([odd, 3])
+    expect(one({ type: 'range', id: 'pad', default: 1 }, 1e6).value).toBe(1e6)
+    expect(one({ type: 'range', id: 'pad', min: 10, default: 12 }, 1).value).toBe(10)
+    expect(one({ type: 'range', id: 'pad', max: 'x', default: 12 }, 20).value).toBe(20)
+  })
+  it.each([
+    [true, true, []],
+    [false, false, []],
+    ['true', false, ['has a value that is not a boolean and was replaced by its default']],
+    ['" autofocus onfocus="x', false, ['has a value that is not a boolean and was replaced by its default']],
+    [1, false, ['has a value that is not a boolean and was replaced by its default']],
+    [undefined, null, []]
+  ] as Array<[unknown, unknown, string[]]>)('holds a checkbox to a boolean: %p gives %p', (stored, expected, reasons) => {
+    const result = one({ type: 'checkbox', id: 'flag' }, stored)
+    expect(result.value).toBe(expected)
+    expect(result.unsupported).toEqual(reasons.map(reason => invalid('checkbox', 'flag', reason)))
+    expect(one({ type: 'checkbox', id: 'flag', default: true }, 'yes').value).toBe(true)
+  })
+  it('holds a colour to a colour, and a background to a colour or a gradient', async () => {
+    expect(text(one({ type: 'color', id: 'c', default: '#112233' }, '#abcdef').value)).toBe('#abcdef')
+    expect(text(one({ type: 'color', id: 'c', default: '#112233' }, 'rgb(1, 2, 3)').value)).toBe('rgb(1, 2, 3)')
+    expect(text(one({ type: 'color', id: 'c', default: '#112233' }, 'red" autofocus onfocus="x').value)).toBe('#112233')
+    expect(one({ type: 'color', id: 'c' }, 'red;}</style>').value).toBeNull()
+    expect(one({ type: 'color', id: 'c', default: 'not a colour' }, 'bad"').value).toBeNull()
+    expect(one({ type: 'color', id: 'c', default: '#112233' }, '').value).toBe('')
+    expect(one({ type: 'color', id: 'c' }, 4).value).toBeNull()
+    expect(one({ type: 'color', id: 'c' }, 'red" x', { trust: trusted }).value).toBe('red" x')
+    expect(one({ type: 'color', id: 'c', default: '#112233' }, 'red" autofocus').unsupported).toEqual([invalid('color', 'c', 'has a value that is not a colour and was replaced by its default')])
+    const gradient = 'linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0%, #fff 100%)'
+    expect(one({ type: 'color_background', id: 'b' }, gradient).value).toBe(gradient)
+    expect(one({ type: 'color_background', id: 'b' }, '#fff').value).toBe('#fff')
+    expect(one({ type: 'color_background', id: 'b' }, '').value).toBe('')
+    for (const bad of ['red;}</style>', 'url("x")', 'a" b', 'a\\b', 'a:b', 'a;b', 'a{b}', "x'y", 'a`b', 'x'.repeat(2001)]) {
+      expect([bad.slice(0, 20), one({ type: 'color_background', id: 'b', default: gradient }, bad).value]).toEqual([bad.slice(0, 20), gradient])
+      expect(one({ type: 'color_background', id: 'b' }, bad).value).toBeNull()
+    }
+    expect(one({ type: 'color_background', id: 'b' }, 'red";x', { trust: trusted }).value).toBe('red";x')
+  })
+  it('keeps what it must of an image given as data, and drops the rest', async () => {
+    const image = (value: unknown, overrides: Partial<SettingsEnv> = {}) => one({ type: 'image_picker', id: 'pic' }, value, overrides)
+    const ok = image({ src: '/a.png', width: 10, height: 5, id: 3, alt: 'A <b>b</b>', focal_point: { x: 10, y: '20' } }).value as any
+    expect([ok.src, ok.width, ok.height, ok.id, ok.alt, text(ok.presentation.focal_point)]).toEqual(['/a.png', 10, 5, 3, 'A <b>b</b>', '10% 20%'])
+    const odd = image({ src: 'https://c.example/a.png', width: '10" onload="x', height: NaN, id: '3', alt: 7, focal_point: { x: 'a', y: 1 }, extra: '<img>' }).value as any
+    expect([odd.src, odd.width, odd.height, odd.id, odd.alt, text(odd.presentation.focal_point)]).toEqual(['https://c.example/a.png', null, null, null, '', '50% 50%'])
+    for (const src of ['javascript:alert(1)', 'https://c.example/a.png" onerror="x', 'https://c.example/a b.png', '/a<b', '', 7, null]) {
+      expect(image({ src }).value).toBeNull()
+    }
+    expect(image({ src: 'https://c.example/a.png" onerror="x' }).unsupported).toEqual([{ feature: 'unsafe_url', detail: 'image_picker setting pic has an image whose src is not a safe URL and was dropped' }])
+    const kept = image({ src: 'x" y', width: '3', alt: '<b>' }, { trust: trusted }).value as any
+    expect([kept.src, kept.width, kept.alt]).toEqual(['x" y', '3', '<b>'])
+  })
+  it('drops colour-scheme ids and keys with unsafe characters, and says so', async () => {
+    const e = env()
+    const definition = { type: 'color_scheme_group', id: 'color_schemes', definition: [{ type: 'color', id: 'background', default: '#ffffff' }] }
+    const settings = new SettingsDrop([definition, { type: 'color_scheme', id: 'scheme', default: 'scheme-1' }], {
+      color_schemes: {
+        'scheme-1': { settings: { 'ok-key': 'fine', 'bad"key': 'x', '</script>': 'y' } },
+        'Background_2-b': {},
+        'x"><img src=x onerror=1>': {},
+        'a b': {},
+        'a</style>': {},
+        '': {}
+      },
+      scheme: 'x"><img src=x onerror=1>',
+      'bad key"': 'k',
+      nested: { 'fine': 1, '<b>': 2, deep: { '"': 3, ok: 4 } },
+      okay_key: 'v'
+    }, e)
+    const group = SettingsDrop.colorSchemes(settings) as HandleMap<ColorSchemeDrop>
+    expect(HandleMap.values(group).map(scheme => scheme.id)).toEqual(['scheme-1', 'Background_2-b'])
+    expect(Object.keys((HandleMap.get(group, 'scheme-1') as ColorSchemeDrop).settings)).toEqual(['background', 'ok-key'])
+    expect(await render('{{ s.scheme }}', { s: settings })).toBe('scheme-1')
+    expect(JSON.parse(await render('{{ s.nested | json }}|', { s: settings }).then(text => text.slice(0, -1)))).toEqual({ fine: 1, deep: { ok: 4 } })
+    expect(Object.keys(JSON.parse(await render('{{ s | json }}', { s: settings })))).toEqual(['color_schemes', 'scheme', 'nested', 'okay_key'])
+    const report = e.report.toReport([], 0).unsupported
+    expect(report).toEqual(expect.arrayContaining([
+      { feature: 'color_scheme', detail: 'color_scheme_group setting color_schemes has a color scheme whose id has characters other than letters, digits, - and _ and was dropped' },
+      { feature: 'unsafe_key', detail: 'a stored settings key with a quote, angle bracket, backtick or control character was dropped' }
+    ]))
+    expect(JSON.stringify(report)).not.toContain('onerror')
+    const trustedSettings = new SettingsDrop([definition], { color_schemes: { 'x"y': {} }, 'k"': 1 }, env({ trust: trusted }))
+    expect(HandleMap.values(SettingsDrop.colorSchemes(trustedSettings) as HandleMap<ColorSchemeDrop>).map(scheme => scheme.id)).toEqual(['x"y'])
+    expect(SettingsDrop.value(trustedSettings, 'k"')).toBe(1)
+  })
+  it('keeps out-of-form values for a theme trusted with html, as Shopify prints them', () => {
+    const t = { trust: trusted }
+    expect(one({ type: 'select', id: 'a', options, default: 'left' }, 'weird', t).value).toBe('weird')
+    expect(one({ type: 'select', id: 'a', options, default: 'left' }, undefined, t).value).toBe('left')
+    expect(one({ type: 'range', id: 'a', max: 5 }, '9" x', t).value).toBe('9" x')
+    expect(one({ type: 'checkbox', id: 'a' }, 'yes', t).value).toBe('yes')
+    expect(one({ type: 'url', id: 'a' }, 'javascript:alert(1)', t).value).toBe('javascript:alert(1)')
+    expect(one({ type: 'url', id: 'a' }, '/a b"c', t).value).toBe('/a b"c')
+    expect(one({ type: 'video_url', id: 'a' }, 'https://x.example/"y', t).unsupported).toEqual([])
+  })
+})
+
+describe('shopify/filters/json', () => {
+  const value = { path: 'https://a.example/b?c=1&d=2', tag: '</script><img src=x onerror=1>', sep: 'a\u2028b\u2029c', quote: 'say "hi"', slash: '\\/', n: 1.5, list: [true, null] }
+  it.each(['json', 'jsonify', 'inspect'])('escapes the characters that can leave a script block in %s, and reads back as the same JSON', async filter => {
+    const out = await render(`{{ v | ${filter} }}`, { v: value })
+    expect(out).not.toMatch(/[<>&\u2028\u2029]/)
+    expect(out).not.toContain('</')
+    expect(JSON.parse(out)).toEqual(value)
+    expect(out).toContain('"https:\\/\\/a.example\\/b?c=1\\u0026d=2"')
+    expect(out).toContain('\\u003c\\/script\\u003e\\u003cimg src=x onerror=1\\u003e')
+    expect(out).toContain('a\\u2028b\\u2029c')
+  })
+  it('passes the space argument and plain values through', async () => {
+    expect(await render('{{ v | json: 2 }}', { v: { a: '<' } })).toBe('{\n  "a": "\\u003c"\n}')
+    expect(await render('{{ 5 | json }}|{{ true | json }}|{{ "x" | json }}|{{ nothing | json }}', {})).toBe('5|true|"x"|')
+    expect(await render('{{ v | inspect }}', { v: { a: 1 } })).toBe('{"a":1}')
+  })
+  it('charges the longer, escaped output to the memory limit', async () => {
+    const source = '{{ v | json }}'
+    const v = '<'.repeat(1000)
+    await expect(renderLiquid(createShopifyLiquid({ memoryLimit: 3000 }), source, { v })).rejects.toThrow(/memory alloc limit exceeded/)
+    expect((await renderLiquid(createShopifyLiquid({ memoryLimit: 8000 }), source, { v })).html).toHaveLength(2 + 6 * 1000)
+  })
+  it('is an approximation of Shopify, and says so in the registry', () => {
+    for (const name of ['json', 'jsonify', 'inspect']) expect(filterStatus(name)).toBe('approx')
   })
 })
 

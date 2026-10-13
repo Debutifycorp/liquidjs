@@ -9,6 +9,8 @@ import { HandleMap } from './objects/handle-map'
 import { ImageDrop } from './objects/image'
 import type { ReportCollector } from './report'
 import type { ShopifyServices } from './services'
+import { STATE } from './state'
+import type { ImageData } from './types'
 import type { LiquidObject, StoreObjects } from './store/build'
 import type { Translator } from './translations'
 import { escapeHtml } from './util/html'
@@ -31,9 +33,16 @@ export interface SettingsEnv {
   translator: Translator
   report: ReportCollector
   /**
-   * Which setting values print as written. Both default to false, which is Debutify's safety choice for themes written by people or models it does not control, and it differs from Shopify, where a merchant's settings always print as entered (https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings).
+   * Which setting values print as written. Both default to false, which is Debutify's safety choice for themes whose settings are written by people or models it does not control, and it differs from Shopify, where a merchant's settings always print as entered (https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings). Shopify's editor only writes a value in its type's documented form, so the checks below cost fidelity only for out-of-form values that nothing in Shopify writes. Every value they reject is reported (`RenderReport.unsupported`) and replaced by the setting's default, or nil.
    *
-   * Without `liquidSettings`, `liquid` settings print as escaped text. Without `htmlSettings`: `html` settings are sanitised; a `url` or `video_url` setting whose scheme is not `http`, `https`, `mailto` or `tel`, or a relative or Shopify route (`/…`, `#…`, `shopify://…`), is dropped (prints empty) and reported as unsupported; and every other text-like value (`text`, `textarea`, `select`, a stored value no setting declares, a `default`) is passed through unchanged unless it contains `<`, when it goes through the sanitiser. Plain text therefore stays byte-identical to Shopify, so a theme's own `| escape` keeps working. `richtext` and `inline_richtext` are always sanitised, whatever this says.
+   * Without `liquidSettings`, `liquid` settings print as escaped text. Without `htmlSettings`:
+   * - `html` settings are sanitised, and `richtext` and `inline_richtext` always are;
+   * - `url` and `video_url` values are dropped (feature `unsafe_url`) when they contain a quote, an angle bracket, a backtick, whitespace or a control character, which a URL never carries unencoded, or have a scheme other than `http`, `https`, `mailto` and `tel` (relative paths, `/…`, `#…` and `shopify://…` pass);
+   * `select`, `radio` and `text_alignment` values must be one of the setting's options, `range` and `number` values finite numbers (a `range` is clamped to its `min` and `max`), `checkbox` values booleans, `color` values colours (`#rgb`, `#rrggbb`, `rgb()`, `hsl()` and their alpha forms), `color_background` values a colour or a gradient made of letters, digits and `#%.,()/+-` and spaces, and an `image_picker` given as data a URL-shaped `src` and numeric `width`, `height`, `id` and `focal_point`;
+   * every other text-like value (`text`, `textarea`, a stored value no setting declares, a `default`) is passed through unchanged unless it contains `<`, when it goes through the sanitiser, so plain text stays byte-identical to Shopify and a theme's own `| escape` keeps working;
+   * stored keys (undeclared setting ids and keys inside undeclared data) with a quote, an angle bracket, a backtick or a control character are dropped (feature `unsafe_key`), and so are colour-scheme ids with anything but letters, digits, `-` and `_` (feature `color_scheme`).
+   *
+   * `json` and `inspect` escape `<`, `>` and `&` whatever these say (see `jsonFilters`).
    */
   trust: { liquidSettings: boolean, htmlSettings: boolean }
   /**
@@ -89,38 +98,158 @@ function fromFileReference (value: unknown, prefix: string): string | undefined 
 
 const TRANSLATABLE = new Set(['text', 'textarea', 'richtext', 'inline_richtext', 'html', 'liquid'])
 
+/** What a URL never carries unencoded: whitespace, control characters, quotes, angle brackets and the backtick. One of them in a URL setting could end the attribute or the element the URL is printed in. */
+// eslint-disable-next-line no-control-regex
+const UNSAFE_URL_CHARACTER = /[\s\u0000-\u001f\u007f-\u009f"'<>`]/
+/** What a stored key or an option value must not carry, as it may be printed in text or in an attribute. */
+// eslint-disable-next-line no-control-regex
+const UNSAFE_KEY_CHARACTER = /["'<>`\u0000-\u001f\u007f-\u009f\u2028\u2029]/
+/** A colour-scheme id: Shopify's own are `scheme-1`, `background-2` and the like, and ids are printed in class names, `data-` attributes and CSS selectors. */
+const SCHEME_ID = /^[A-Za-z0-9_-]+$/
+/** A gradient as `color_background` stores it: function names, numbers, colours, units and separators, no quote, semicolon, brace, colon, backslash or angle bracket. */
+const GRADIENT = /^[A-Za-z0-9#%.,()/+\s-]{1,2000}$/
+const NUMERIC = /^\s*-?\d+(?:\.\d+)?\s*$/
+
+/** Reports a value that was rejected, without the value (the report may be shown as HTML), under `feature`. */
+function reject (env: SettingsEnv, feature: string, definition: SettingDefinition, reason: string): void {
+  env.report.unsupported(feature, `${[definition.type, 'setting', definition.id].filter(Boolean).join(' ')} ${reason}`)
+}
+
 /** A text-like value as it prints: unchanged, unless the theme is not trusted with html and the value contains `<`, when it goes through the sanitiser. See `SettingsEnv.trust`. */
 function safeText (value: string, env: SettingsEnv): string {
   return env.trust.htmlSettings || !value.includes('<') ? value : sanitizeHtml(value)
 }
 
-/** Stored data no setting declares (and nested data inside it), made safe the way `safeText` makes a string safe. */
+/** Stored data no setting declares (and nested data inside it), made safe the way `safeText` makes a string safe; keys with an unsafe character are dropped and reported. */
 function safeData (value: unknown, env: SettingsEnv, depth = 0): unknown {
   if (typeof value === 'string') return safeText(value, env)
   if (env.trust.htmlSettings || !value || typeof value !== 'object') return value
   if (depth > 8) return null
   if (Array.isArray(value)) return value.map(item => safeData(item, env, depth + 1))
-  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, safeData(item, env, depth + 1)]))
+  return Object.fromEntries(Object.entries(value).filter(([key]) => safeKey(key, env)).map(([key, item]) => [key, safeData(item, env, depth + 1)]))
 }
 
-/** A URL setting's value as it prints: unchanged for trusted themes; otherwise only relative and Shopify routes and the schemes `http`, `https`, `mailto` and `tel` pass, and anything else is dropped and reported. */
+/** Whether a stored key may be kept; a key with an unsafe character is reported (without the key) and dropped, unless the theme is trusted with html. */
+function safeKey (key: string, env: SettingsEnv): boolean {
+  if (env.trust.htmlSettings || !UNSAFE_KEY_CHARACTER.test(key)) return true
+  env.report.unsupported('unsafe_key', 'a stored settings key with a quote, angle bracket, backtick or control character was dropped')
+  return false
+}
+
+/** A URL setting's value as it prints: unchanged for trusted themes; otherwise it must have none of the characters a URL never carries unencoded and only a relative or Shopify route or the schemes `http`, `https`, `mailto` and `tel`, or it is dropped and reported (feature `unsafe_url`). */
 function safeUrl (definition: SettingDefinition, url: string | null, env: SettingsEnv): string | null {
-  if (url === null || env.trust.htmlSettings || url.startsWith('shopify://') || isSafeUrl(url)) return url
-  env.report.unsupported('unsafe_url', `${[definition.type, 'setting', definition.id].filter(Boolean).join(' ')} has a URL scheme other than http, https, mailto or tel and was dropped`)
+  if (url === null || env.trust.htmlSettings) return url
+  if (UNSAFE_URL_CHARACTER.test(url)) {
+    reject(env, 'unsafe_url', definition, 'has a URL with a quote, angle bracket, backtick, space or control character and was dropped')
+    return null
+  }
+  if (url.startsWith('shopify://') || isSafeUrl(url)) return url
+  reject(env, 'unsafe_url', definition, 'has a URL scheme other than http, https, mailto or tel and was dropped')
   return null
 }
 
+const optionValues = (definition: SettingDefinition): string[] => Array.isArray(definition.options) ? definition.options.map(option => isRecord(option) ? option.value : undefined).filter((value): value is string => typeof value === 'string' && !UNSAFE_KEY_CHARACTER.test(value)) : []
+
+/** A `select`, `radio` or `text_alignment` value: untrusted themes only get one of the setting's options, else its default if that is one, else nil. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings (`select` and `radio` "return a string", the chosen option's `value`; `text_alignment` accepts `left`, `right` and `center`). */
+function choice (definition: SettingDefinition, stored: unknown, env: SettingsEnv): unknown {
+  if (env.trust.htmlSettings) return stored === undefined ? definition.default ?? null : stored
+  const options = definition.type === 'text_alignment' ? ['left', 'center', 'right'] : optionValues(definition)
+  if (typeof stored === 'string' && options.includes(stored)) return stored
+  if (stored !== undefined) reject(env, 'invalid_setting', definition, 'has a value that is not one of its options and was replaced by its default')
+  return typeof definition.default === 'string' && options.includes(definition.default) ? definition.default : null
+}
+
+/** A finite number from a stored number or numeric string, else undefined. */
+function toNumber (value: unknown): number | undefined {
+  const number = typeof value === 'number' ? value : typeof value === 'string' && NUMERIC.test(value) ? Number(value) : NaN
+  return Number.isFinite(number) ? number : undefined
+}
+
+/** A `range` or `number` value: untrusted themes only get a finite number, clamped to a `range`'s `min` and `max`; else the default, else nil. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings (`range`, `number`: "data is returned as a number"). */
+function numeric (definition: SettingDefinition, stored: unknown, env: SettingsEnv): unknown {
+  if (env.trust.htmlSettings) return stored === undefined ? definition.default ?? null : stored
+  let number = toNumber(stored === undefined ? definition.default : stored)
+  if (number === undefined && stored !== undefined) {
+    reject(env, 'invalid_setting', definition, 'has a value that is not a number and was replaced by its default')
+    number = toNumber(definition.default)
+  }
+  if (number === undefined) return null
+  const { min, max } = definition
+  const clamped = definition.type === 'range' ? Math.min(typeof max === 'number' ? max : Infinity, Math.max(typeof min === 'number' ? min : -Infinity, number)) : number
+  if (clamped !== number) reject(env, 'invalid_setting', definition, 'has a value outside its min and max and was clamped')
+  return clamped
+}
+
+/** A `checkbox` value: untrusted themes only get a boolean, else the default if that is one, else false. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings (`checkbox`: "a boolean"). */
+function boolean (definition: SettingDefinition, stored: unknown, env: SettingsEnv): unknown {
+  if (env.trust.htmlSettings) return stored === undefined ? definition.default ?? null : stored
+  if (typeof stored === 'boolean') return stored
+  if (stored !== undefined) reject(env, 'invalid_setting', definition, 'has a value that is not a boolean and was replaced by its default')
+  return typeof definition.default === 'boolean' ? definition.default : stored === undefined ? null : false
+}
+
+/** A `color` value: untrusted themes only get a colour `ColorDrop.from` reads, else the default if that is one, else nil. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings (`color` returns a `color` object, blank when nothing is selected). */
+function colour (definition: SettingDefinition, stored: unknown, env: SettingsEnv): unknown {
+  const value = stored === undefined ? definition.default : stored
+  if (value === undefined || value === null || value === '') return value ?? null
+  const drop = typeof value === 'string' ? ColorDrop.from(value) : undefined
+  if (drop) return drop
+  if (env.trust.htmlSettings) return value
+  reject(env, 'invalid_setting', definition, 'has a value that is not a colour and was replaced by its default')
+  const fallback = stored !== undefined && typeof definition.default === 'string' ? ColorDrop.from(definition.default) : undefined
+  return fallback ?? null
+}
+
+/** A `color_background` value: a string, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings ("a string", an empty one when nothing is entered); untrusted themes only get a colour or a gradient of the characters `GRADIENT` allows, else the default if that is one, else nil. */
+function background (definition: SettingDefinition, stored: unknown, env: SettingsEnv): unknown {
+  const value = stored === undefined ? definition.default : stored
+  if (env.trust.htmlSettings || value === undefined || value === null) return value ?? null
+  const ok = (candidate: unknown): candidate is string => typeof candidate === 'string' && (candidate === '' || !!ColorDrop.from(candidate) || GRADIENT.test(candidate))
+  if (ok(value)) return value
+  reject(env, 'invalid_setting', definition, 'has a value that is not a colour or gradient and was replaced by its default')
+  return stored !== undefined && ok(definition.default) ? definition.default : null
+}
+
+/** An `image_picker` stored as data rather than as a file reference: untrusted themes get an image only when its `src` has the shape of a URL with a safe scheme, and its numbers are numbers, so no field can carry markup or an attribute. */
+function imageData (definition: SettingDefinition, value: Record<string, unknown>, env: SettingsEnv): ImageDrop | null {
+  const trusted = env.trust.htmlSettings
+  if (typeof value.src !== 'string' || !value.src) return null
+  if (!trusted && (UNSAFE_URL_CHARACTER.test(value.src) || !isSafeUrl(value.src))) {
+    reject(env, 'unsafe_url', definition, 'has an image whose src is not a safe URL and was dropped')
+    return null
+  }
+  if (trusted) return new ImageDrop(value as unknown as ImageData)
+  const focal = isRecord(value.focal_point) && toNumber(value.focal_point.x) !== undefined && toNumber(value.focal_point.y) !== undefined ? { x: toNumber(value.focal_point.x) as number, y: toNumber(value.focal_point.y) as number } : undefined
+  return new ImageDrop({
+    src: value.src,
+    ...(typeof value.width === 'number' && Number.isFinite(value.width) ? { width: value.width } : {}),
+    ...(typeof value.height === 'number' && Number.isFinite(value.height) ? { height: value.height } : {}),
+    ...(typeof value.id === 'number' && Number.isFinite(value.id) ? { id: value.id } : {}),
+    ...(typeof value.alt === 'string' ? { alt: safeText(value.alt, env) } : {}),
+    ...(focal ? { focal_point: focal } : {})
+  })
+}
+
 /**
- * Converts one stored value (or the definition's default) into what Liquid sees for that setting type, as https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings lists them: `color` a `color` object, `font_picker` a `font`, `image_picker` an `image` (nil when unset or missing), `video` a `video`, `video_url` the URL with `id` and `type`, `url` a string, `link_list` a `linklist`, `product`, `collection`, `page`, `blog` and `article` their objects, and the list types arrays of them (missing entries are dropped and reported). Text-like defaults written as `t:` keys read the schema locales. `liquid` settings stay escaped unless trusted and `html` settings are sanitised unless trusted; `richtext` and `inline_richtext` are always sanitised (see `SettingsEnv.trust`). Other types pass their value through.
+ * Converts one stored value (or the definition's default) into what Liquid sees for that setting type, as https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings lists them: `color` a `color` object, `font_picker` a `font`, `image_picker` an `image` (nil when unset or missing), `video` a `video`, `video_url` the URL with `id` and `type`, `url` a string, `link_list` a `linklist`, `product`, `collection`, `page`, `blog` and `article` their objects, and the list types arrays of them (missing entries are dropped and reported). Text-like defaults written as `t:` keys read the schema locales. Without `SettingsEnv.trust` every type is held to its documented form: `liquid` settings stay escaped, `html` settings are sanitised, and `url`, `select`, `radio`, `text_alignment`, `range`, `number`, `checkbox`, `color`, `color_background` and `image_picker` values that are not in their type's form are replaced and reported; `richtext` and `inline_richtext` are always sanitised. Other types pass their value through, made safe like text.
  */
 export function resolveSettingValue (definition: SettingDefinition, stored: unknown, env: SettingsEnv): unknown {
   let value = stored === undefined ? definition.default : stored
   if (TRANSLATABLE.has(definition.type) && typeof value === 'string' && value.startsWith('t:')) value = env.translator.schemaText(value)
   switch (definition.type) {
-    case 'color': {
-      if (typeof value !== 'string' || !value) return value ?? null
-      return ColorDrop.from(value) ?? safeText(value, env)
-    }
+    case 'color':
+      return colour(definition, stored, env)
+    case 'color_background':
+      return background(definition, stored, env)
+    case 'select':
+    case 'radio':
+    case 'text_alignment':
+      return choice(definition, stored, env)
+    case 'range':
+    case 'number':
+      return numeric(definition, stored, env)
+    case 'checkbox':
+      return boolean(definition, stored, env)
     case 'color_scheme_group':
       return buildColorSchemes(definition, stored, env)
     case 'color_scheme': {
@@ -141,8 +270,7 @@ export function resolveSettingValue (definition: SettingDefinition, stored: unkn
     case 'image_picker': {
       if (value && typeof value === 'object') {
         if (value instanceof ImageDrop) return value
-        const data = safeData(value, env) as { src?: unknown } | null
-        return data && typeof data.src === 'string' && (env.trust.htmlSettings || isSafeUrl(data.src)) ? new ImageDrop(data as never) : null
+        return isRecord(value) ? imageData(definition, value, env) : null
       }
       const name = fromFileReference(value, 'shopify://shop_images/')
       const found = name === undefined ? undefined : HandleMap.get(env.store.images, name)
@@ -196,13 +324,17 @@ function buildColorSchemes (definition: SettingDefinition, stored: unknown, env:
   const fields = Array.isArray(definition.definition) ? definition.definition.filter(isRecord) as SettingDefinition[] : []
   const schemes: Array<[string, ColorSchemeDrop]> = []
   for (const [id, entry] of isRecord(stored) ? Object.entries(stored) : []) {
+    if (!env.trust.htmlSettings && !SCHEME_ID.test(id)) {
+      reject(env, 'color_scheme', definition, 'has a color scheme whose id has characters other than letters, digits, - and _ and was dropped')
+      continue
+    }
     const saved = isRecord(entry) && isRecord(entry.settings) ? entry.settings : {}
     const settings: Array<[string, unknown]> = []
     for (const field of fields) {
       if (field.id) settings.push([field.id, resolveSettingValue(field, own(saved, field.id), env)])
     }
     for (const [key, value] of Object.entries(saved)) {
-      if (!fields.some(field => field.id === key)) settings.push([key, safeData(value, env)])
+      if (!fields.some(field => field.id === key) && safeKey(key, env)) settings.push([key, safeData(value, env)])
     }
     schemes.push([id, new ColorSchemeDrop(id, Object.fromEntries(settings))])
   }
@@ -221,10 +353,12 @@ const PARSED = new WeakMap<LiquidSetting, Template[]>()
 
 /** How many `liquid` settings may be rendering inside one another; a setting that prints `settings` again would otherwise recurse until a render limit stops it. */
 const MAX_LIQUID_SETTING_DEPTH = 5
-const DEPTH = new WeakMap<Context, number>()
+/** The render's Shopify state is shared by its partials (`render`, `include`, sections and blocks), where a `Context` is not, so the depth is counted per state. */
+const DEPTH = new WeakMap<object, number>()
+const depthKey = (ctx: Context): object => (ctx.globals as Record<symbol, object | undefined>)[STATE] ?? ctx
 
 /**
- * A `settings` object (global, section or block), https://shopify.dev/docs/api/liquid/objects/settings (global) and https://shopify.dev/docs/api/liquid/objects/section (`section.settings`, `block.settings`). Settings saved as `null` or left out, as a block's often are, read as empty and the schema defaults apply. Values are not own properties, so a setting id such as `size`, `values`, `first` or `last` never collides with a drop member; the drop's own members (`toJSON`, `liquidMethodMissing`) and the ones every JavaScript object has (`constructor`, `toString`, `valueOf`, `hasOwnProperty`, `__proto__`) still win over a setting of the same name, so a setting with such an id reads as empty or as `[object Object]` (on the Task 12 list; no theme names a setting that). Values stored without a definition (settings of a removed schema entry) are kept, and made safe like text. `liquid` settings are escaped text unless the theme is trusted (`SettingsEnv.trust.liquidSettings`, a Debutify safety choice that differs from Shopify), in which case they render where they are printed, with the scope of that place, to at most `MAX_LIQUID_SETTING_DEPTH` levels. `json` and `inspect` print the same strings `{{ settings.x }}` does, never a `liquid` setting's raw source.
+ * A `settings` object (global, section or block), https://shopify.dev/docs/api/liquid/objects/settings (global) and https://shopify.dev/docs/api/liquid/objects/section (`section.settings`, `block.settings`). Settings saved as `null` or left out, as a block's often are, read as empty and the schema defaults apply. Values are not own properties, so a setting id such as `size`, `values`, `first` or `last` never collides with a drop member; the drop's own members (`toJSON`, `liquidMethodMissing`) and the ones every JavaScript object has (`constructor`, `toString`, `valueOf`, `hasOwnProperty`, `__proto__`) still win over a setting of the same name, so a setting with such an id reads as empty, as `[object Object]`, as `false` or as a `Liquid error` (`{{ s.constructor }}` prints nothing, `{{ s.toString }}` prints `[object Object]`, `{{ s.hasOwnProperty }}` prints `false`, and `{{ s.toJSON }}` raises "Cannot convert object to primitive value"; on the Task 12 list, and no theme names a setting that). Values stored without a definition (settings of a removed schema entry) are kept, and made safe like text. `liquid` settings are escaped text unless the theme is trusted (`SettingsEnv.trust.liquidSettings`, a Debutify safety choice that differs from Shopify), in which case they render where they are printed, with the scope of that place, to at most `MAX_LIQUID_SETTING_DEPTH` levels. `json` and `inspect` print the same strings `{{ settings.x }}` does, never a `liquid` setting's raw source.
  */
 export class SettingsDrop extends Drop {
   private readonly [VALUES] = new Map<string, unknown>()
@@ -247,7 +381,7 @@ export class SettingsDrop extends Drop {
       this[VALUES].set(definition.id as string, resolveSettingValue(definition, own(values, definition.id as string), withSchemes))
     }
     for (const [id, value] of Object.entries(values)) {
-      if (!this[VALUES].has(id)) this[VALUES].set(id, safeData(value, env))
+      if (!this[VALUES].has(id) && safeKey(id, env)) this[VALUES].set(id, safeData(value, env))
     }
   }
 
@@ -275,7 +409,8 @@ export class SettingsDrop extends Drop {
 }
 
 function * renderLiquidSetting (setting: LiquidSetting, ctx: Context): Generator<unknown, string, unknown> {
-  const depth = DEPTH.get(ctx) ?? 0
+  const key = depthKey(ctx)
+  const depth = DEPTH.get(key) ?? 0
   if (depth >= MAX_LIQUID_SETTING_DEPTH) throw new Error(`liquid setting is nested more than ${MAX_LIQUID_SETTING_DEPTH} levels deep`)
   const liquid = ctx.liquid as Liquid
   let templates = PARSED.get(setting)
@@ -287,10 +422,10 @@ function * renderLiquidSetting (setting: LiquidSetting, ctx: Context): Generator
     }
     PARSED.set(setting, templates)
   }
-  DEPTH.set(ctx, depth + 1)
+  DEPTH.set(key, depth + 1)
   try {
     return (yield liquid.renderer.renderTemplates(templates, ctx)) as string
   } finally {
-    DEPTH.set(ctx, depth)
+    DEPTH.set(key, depth)
   }
 }

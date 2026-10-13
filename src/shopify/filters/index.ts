@@ -13,6 +13,7 @@ import { mediaFilters } from './media'
 import { assetFilters } from './assets'
 import { colorFilters } from './color'
 import { fontFilters } from './font'
+import { jsonFilters } from './json'
 
 /** The Shopify filter implementations, one set per module. */
 export const SHOPIFY_FILTER_SETS: ShopifyFilterSet[] = [
@@ -23,7 +24,8 @@ export const SHOPIFY_FILTER_SETS: ShopifyFilterSet[] = [
   mediaFilters,
   assetFilters,
   colorFilters,
-  fontFilters
+  fontFilters,
+  jsonFilters
 ]
 
 export function shopifyFilterImplementations (): ShopifyFilterSet {
