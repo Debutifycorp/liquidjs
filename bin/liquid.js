@@ -54,6 +54,7 @@ async function render () {
     .option('--trim-tag-left', 'trim whitespace from left of liquid tags')
     .option('--trim-tag-right', 'trim whitespace from right of liquid tags')
     .showHelpAfterError('Use -h or --help for additional information.')
+    .allowExcessArguments()
     .parse()
 
   const options = program.opts()
