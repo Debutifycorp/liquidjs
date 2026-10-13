@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // Parses every .liquid file of a local Shopify theme, renders every template with the package's public sample data, and prints parse errors, what the render reports found, and timings. For checking private themes on a developer's machine: the theme is read from the given directory and nothing is written anywhere.
+// WARNING: the output names private theme files (with line numbers), section types, template names, unknown tag and filter names and resource handles, and with --json the theme's path. It must not be committed, pasted into issues or pull requests, put in CI logs or placed in the public fork: only aggregate numbers (counts and timings) may leave the machine.
 // Usage: pnpm run build && node bin/shopify-smoke.mjs <theme directory> [--json]
 import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { join, relative, resolve, sep } from 'node:path'
@@ -10,17 +11,19 @@ import { performance } from 'node:perf_hooks'
 const require = createRequire(import.meta.url)
 const { compileTheme, renderPage, renderSection } = require('../dist/shopify.node.js')
 
-const repo = realpathSync(resolve(fileURLToPath(new URL('..', import.meta.url))))
+// realpathSync.native, not realpathSync: on a case-insensitive volume the plain one keeps the case it is given, so a case alias of a path inside the repository would slip past the refusal below.
+const repo = realpathSync.native(resolve(fileURLToPath(new URL('..', import.meta.url))))
 const args = process.argv.slice(2)
 const flags = args.filter(arg => arg.startsWith('--'))
 const dirArg = args.find(arg => !arg.startsWith('--'))
 if (!dirArg) {
   console.error('usage: node bin/shopify-smoke.mjs <theme directory> [--json]')
+  console.error('warning: the output names private theme files, section types, template names, resource handles and (with --json) the theme path. Never commit it, paste it into an issue or pull request, or put it in the public fork; only aggregate numbers (counts and timings) may leave this machine.')
   process.exit(2)
 }
 let dir
 try {
-  dir = realpathSync(resolve(dirArg))
+  dir = realpathSync.native(resolve(dirArg))
 } catch (err) {
   console.error(`cannot read ${resolve(dirArg)}: ${err.message}`)
   process.exit(2)
@@ -94,12 +97,30 @@ for (const templateName of templates) {
   warm.push(performance.now() - started)
 }
 const sectionTimes = []
+const sectionFailures = {}
+const failSection = (path, err) => {
+  const entry = sectionFailures[path] ??= { failed: 0, message: err.message }
+  entry.failed++
+}
 for (const templateName of templates) {
-  const json = theme.files[`templates/${templateName}.json`]
+  const path = `templates/${templateName}.json`
+  const json = theme.files[path]
   if (!json) continue
-  for (const key of Object.keys(JSON.parse(json.replace(/^\s*\/\*[\s\S]*?\*\//, '')).sections ?? {})) {
+  let keys
+  try {
+    keys = Object.keys(JSON.parse(json.replace(/^\s*\/\*[\s\S]*?\*\//, '')).sections ?? {})
+  } catch (err) {
+    failSection(path, err)
+    continue
+  }
+  for (const key of keys) {
     const started = performance.now()
-    await renderSection({ theme, templateName, section: key })
+    try {
+      await renderSection({ theme, templateName, section: key })
+    } catch (err) {
+      failSection(path, err)
+      continue
+    }
     sectionTimes.push(performance.now() - started)
   }
 }
@@ -113,6 +134,7 @@ const summary = {
   missing: [...totals.missing.keys()],
   unsupported: [...totals.unsupported.keys()],
   errors: Object.fromEntries(totals.errors),
+  sectionFailures,
   timing: {
     pageFirstP50: Math.round(percentile(cold, 50)),
     pageWarmP50: Math.round(percentile(warm, 50)),
@@ -126,7 +148,7 @@ if (flags.includes('--json')) {
 } else {
   console.log(`parsed: ${summary.parsed.files} .liquid files in ${summary.parsed.ms} ms, errors:`, JSON.stringify(parseErrors))
   for (const row of rows) console.log(row.threw ? `${row.template}: THREW ${row.threw}` : `${row.template}: ${row.sections} sections, ${row.bytes} bytes, ${row.ms} ms${row.notRendered.length ? ` (${row.notRendered.join(', ')})` : ''}`)
-  for (const key of ['unknownTags', 'unknownFilters', 'stubbedFilters', 'errors']) console.log(`${key}:`, JSON.stringify(summary[key]))
+  for (const key of ['unknownTags', 'unknownFilters', 'stubbedFilters', 'errors', 'sectionFailures']) console.log(`${key}:`, JSON.stringify(summary[key]))
   console.log('missing:', JSON.stringify(summary.missing))
   console.log('unsupported:', JSON.stringify(summary.unsupported))
   console.log('timing (ms):', JSON.stringify(summary.timing))
