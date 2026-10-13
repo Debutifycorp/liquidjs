@@ -28,6 +28,12 @@ describe('shopify/filters/assets', () => {
     const { html } = await renderLiquid(liquid, "{{ 'product-1' | placeholder_svg_tag: 'ph' }}|{{ 'visa' | payment_type_svg_tag: class: 'icon' }}")
     expect(html).toBe('<svg class="ph" data-name="product-1"></svg>|<svg class="icon" data-type="visa"></svg>')
   })
+  it('writes no attribute whose name is not valid, so an array cannot inject markup', async () => {
+    const pair = '{% assign pair = \'x" onerror="alert(1),v\' | split: \',\' %}'
+    expect(await render(`${pair}{{ 'base.css' | asset_url | stylesheet_tag: pair }}`, {})).toBe(`<link href="${assetUrl('base.css')}" rel="stylesheet" type="text/css" media="all" />`)
+    expect(await render(`${pair}{{ 'cart.js' | asset_url | script_tag: pair }}`, {})).toBe(`<script src="${assetUrl('cart.js')}" type="text/javascript"></script>`)
+    expect(await render(`${pair}{{ product | image_url: width: 200 | image_tag: pair }}`)).not.toContain('onerror')
+  })
   it('the default asset_url has no host', async () => {
     const { html } = await renderLiquid(createShopifyLiquid(), "{{ 'base.css' | asset_url }}")
     expect(html).toBe('/assets/base.css')

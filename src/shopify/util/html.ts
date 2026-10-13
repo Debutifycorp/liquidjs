@@ -18,9 +18,16 @@ export function escapeChar (ch: string): string {
   return ESCAPES[ch]
 }
 
-/** One HTML attribute with a leading space. `true` writes the boolean form Shopify uses (`defer="defer"`); `false`, `null` and `undefined` write nothing. The boolean form and the omission of `false` are https://shopify.dev/docs/api/liquid/filters/script_tag (its example prints `defer="defer"`). */
+/** What may be written as an attribute name: letters, digits, `-`, `_`, `:` and `.`, not starting with a digit, `-` or `.`. This is a safety rule of this package (an attribute name comes from a template's argument name, or from data when a template passes an array), not a shopify.dev one; shopify.dev has no page on attribute names. */
+const ATTRIBUTE_NAME = /^[A-Za-z_:][A-Za-z0-9_:.-]*$/
+
+export function isAttributeName (name: string): boolean {
+  return ATTRIBUTE_NAME.test(name)
+}
+
+/** One HTML attribute with a leading space. `true` writes the boolean form Shopify uses (`defer="defer"`); `false`, `null` and `undefined` write nothing, and neither does a name that is not a valid attribute name. The boolean form and the omission of `false` are https://shopify.dev/docs/api/liquid/filters/script_tag (its example prints `defer="defer"`). */
 export function attribute (name: string, value: unknown): string {
-  if (value === false || value === null || value === undefined) return ''
+  if (value === false || value === null || value === undefined || !isAttributeName(name)) return ''
   if (value === true) return ` ${name}="${name}"`
   return ` ${name}="${escapeHtml(value)}"`
 }
