@@ -1,0 +1,3 @@
+# pnpm reads its settings from this file (pnpm 11+ ignores pnpm settings in .npmrc). Its presence also keeps `pnpm -r` (which Dependabot runs) to the root package: without it, pnpm treats demo/*, docs and benchmark as workspace projects.
+# Dependencies whose install scripts may run. strictDepBuilds is on by default, so an install fails (ERR_PNPM_IGNORED_BUILDS) on any package with a build script that is not listed here.
+allowBuilds: {}
