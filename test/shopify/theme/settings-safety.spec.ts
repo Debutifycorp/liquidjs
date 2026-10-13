@@ -1,6 +1,10 @@
-import { JSDOM, VirtualConsole } from 'jsdom'
+/** @jest-environment ./test/support/jsdom-environment.cjs */
+import type { JSDOM as JSDOMType, VirtualConsole as VirtualConsoleType } from 'jsdom'
 import { renderPage } from '../../../src/shopify'
 import type { RenderPageOptions } from '../../../src/shopify'
+
+const JSDOM = (globalThis as any).JSDOM as typeof JSDOMType
+const VirtualConsole = (globalThis as any).VirtualConsole as typeof VirtualConsoleType
 
 /**
  * A theme shaped like shipped themes (select values in `class`, range values in `style`, URLs in `href`, colour-scheme ids in selectors and class names, `| json` in `<script type="application/json">`) rendered over settings written to break out of them. Without html trust no node of the parsed page may be able to run script, and every value that was held back is in the report.
