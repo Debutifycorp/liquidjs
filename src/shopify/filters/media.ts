@@ -18,7 +18,7 @@ const MIN_QUALITY = 10
 const MAX_QUALITY = 90
 
 /** `image_tag`'s default `srcset` widths. shopify.dev confirms 352 only ("a smart set of default widths up to the maximum defined in the image URL"); the rest must be pinned on the dev store. */
-export const DEFAULT_SRCSET_WIDTHS = [352, 832, 1200, 1920, 2560, 3840]
+export const DEFAULT_SRCSET_WIDTHS: readonly number[] = Object.freeze([352, 832, 1200, 1920, 2560, 3840])
 
 /** Sections after the third in their location get `loading="lazy"` from `image_tag` and `video_tag` unless told otherwise. https://shopify.dev/docs/api/liquid/objects/section (section.index) */
 const EAGER_SECTIONS = 3

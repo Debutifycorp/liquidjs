@@ -23,7 +23,7 @@ export interface RequestInput {
 }
 
 /** Shopify's storefront routes for the primary locale, https://shopify.dev/docs/api/liquid/objects/routes. The paths are the ones that page lists for the default locale; a market's locale prefix is not applied. */
-export const ROUTES: Record<string, string> = {
+export const ROUTES: Readonly<Record<string, string>> = Object.freeze({
   root_url: '/',
   account_url: '/account',
   account_login_url: '/account/login',
@@ -43,7 +43,7 @@ export const ROUTES: Record<string, string> = {
   cart_update_url: '/cart/update',
   product_recommendations_url: '/recommendations/products',
   storefront_login_url: '/account/login'
-}
+})
 
 const RESOURCE_TYPES: Record<string, keyof StoreObjects> = { product: 'products', collection: 'collections', page: 'pages', blog: 'blogs', article: 'articles' }
 

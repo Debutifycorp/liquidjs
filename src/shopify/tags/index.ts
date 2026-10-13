@@ -10,7 +10,7 @@ import { ContentForTag } from './content-for'
 import { ShopifyTablerowTag } from './tablerow'
 
 /** Shopify's platform tags, by name. */
-export const SHOPIFY_TAGS: Record<string, TagClass> = {
+export const SHOPIFY_TAGS: Readonly<Record<string, TagClass>> = Object.freeze({
   schema: SchemaTag,
   javascript: JavascriptTag,
   stylesheet: StylesheetTag,
@@ -23,7 +23,7 @@ export const SHOPIFY_TAGS: Record<string, TagClass> = {
   sections: SectionsTag,
   content_for: ContentForTag,
   tablerow: ShopifyTablerowTag
-}
+})
 
 export function registerShopifyTags (liquid: Liquid) {
   for (const [name, tag] of Object.entries(SHOPIFY_TAGS)) liquid.registerTag(name, tag)

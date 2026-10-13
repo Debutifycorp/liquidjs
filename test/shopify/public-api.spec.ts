@@ -17,4 +17,12 @@ describe('the /shopify entry', () => {
     expect(liquid.tags.tablerow).toBe(shopify.ShopifyTablerowTag)
     expect(liquid.tags.layout).toBe(shopify.ShopifyLayoutTag)
   })
+  it('freezes the defaults every render shares, and the sample store all the way down', () => {
+    expect(() => { (shopify.defaultServices as shopify.ShopifyServices).assetUrl = () => 'changed' }).toThrow(TypeError)
+    expect(() => { (shopify.SHOPIFY_DEFAULT_LIMITS as { renderLimit: number }).renderLimit = Infinity }).toThrow(TypeError)
+    const frozen = (value: unknown): boolean => !value || typeof value !== 'object' || (Object.isFrozen(value) && Object.values(value).every(frozen))
+    expect(frozen(shopify.sampleStoreData)).toBe(true)
+    shopify.shopifyFilterRegistry()[0].aliases.push('changed')
+    expect(shopify.shopifyFilterRegistry()[0].aliases).not.toContain('changed')
+  })
 })

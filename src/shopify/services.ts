@@ -72,8 +72,8 @@ export function cdnStyleImageUrl (image: ImageData, params: ImageUrlParams): str
   return keys.length ? `${base}?${keys.map(key => `${key}=${query.get(key)}`).join('&')}` : base
 }
 
-/** Deterministic stand-ins (Debutify's, not Shopify's output): relative URLs, neutral SVG boxes, Shopify-shaped image URLs and the system clock. Callers replace them with their own. */
-export const defaultServices: ShopifyServices = {
+/** Deterministic stand-ins (Debutify's, not Shopify's output): relative URLs, neutral SVG boxes, Shopify-shaped image URLs and the system clock. Callers replace them through the `services` option, one service at a time; the object itself is frozen, as every engine and render reads it. */
+export const defaultServices: Readonly<ShopifyServices> = Object.freeze<ShopifyServices>({
   assetUrl: path => `/assets/${path}`,
   shopifyAssetUrl: path => `/shopify-assets/${path}`,
   imageUrl: cdnStyleImageUrl,
@@ -82,7 +82,7 @@ export const defaultServices: ShopifyServices = {
   placeholderSvg: name => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 525 525" role="img" aria-label="${escapeHtml(name)}"><rect width="525" height="525" fill="#f1f1f1"/></svg>`,
   paymentTypeSvg: type => `<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 38 24" width="38" height="24" aria-labelledby="pi-${escapeHtml(type)}"><title id="pi-${escapeHtml(type)}">${escapeHtml(type)}</title><rect x=".5" y=".5" width="37" height="23" rx="2.5" fill="#fff" stroke="#000" stroke-opacity=".07"/></svg>`,
   currentTime: () => new Date()
-}
+})
 
 export function resolveServices (services: Partial<ShopifyServices> = {}): ShopifyServices {
   return { ...defaultServices, ...services }

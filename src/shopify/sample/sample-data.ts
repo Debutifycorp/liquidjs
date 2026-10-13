@@ -1,9 +1,20 @@
 import type { StoreData } from '../store/types'
 
+/** Freezes `value` and every object and array inside it. */
+function deepFreeze<T> (value: T): T {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value)
+    for (const item of Object.values(value)) deepFreeze(item)
+  }
+  return value
+}
+
 /**
  * A small public sample store for tests, demos and previews without data: a few products, collections, a page, a blog and two menus. It is hand-written sample data, taken from no real store or theme. Image paths are relative placeholders that the caller's `imageUrl` service maps to real files; nothing here names a host (`sample-store.example` is a reserved domain). Its fields follow https://shopify.dev/docs/api/liquid/objects.
+ *
+ * It is frozen all the way down, because every render without `data` reads this one object: to change it, copy it (`structuredClone(sampleStoreData)`) and pass the copy as `data`.
  */
-export const sampleStoreData: StoreData = {
+export const sampleStoreData: StoreData = deepFreeze<StoreData>({
   shop: { name: 'Sample Store', domain: 'sample-store.example', email: 'hello@sample-store.example', description: 'A sample store.', currency: 'USD', locale: 'en', enabled_payment_types: ['visa', 'master', 'american_express', 'paypal'] },
   products: [
     {
@@ -71,4 +82,4 @@ export const sampleStoreData: StoreData = {
   images: { 'hero.jpg': { src: '/sample/images/hero.jpg', width: 2400, height: 1200, alt: '' } },
   cart: { items: [{ product_handle: 'classic-tee', variant_id: 3001, quantity: 2 }] },
   customer: null
-}
+})

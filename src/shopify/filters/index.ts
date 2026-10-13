@@ -16,7 +16,7 @@ import { fontFilters } from './font'
 import { jsonFilters } from './json'
 
 /** The Shopify filter implementations, one set per module. */
-export const SHOPIFY_FILTER_SETS: ShopifyFilterSet[] = [
+export const SHOPIFY_FILTER_SETS: readonly ShopifyFilterSet[] = Object.freeze([
   paginationFilters,
   translateFilters,
   moneyFilters,
@@ -26,7 +26,7 @@ export const SHOPIFY_FILTER_SETS: ShopifyFilterSet[] = [
   colorFilters,
   fontFilters,
   jsonFilters
-]
+])
 
 export function shopifyFilterImplementations (): ShopifyFilterSet {
   return Object.assign({}, ...SHOPIFY_FILTER_SETS)
@@ -64,7 +64,7 @@ export function filterStatus (name: string): FilterStatus {
   return engineProvides(name) ? 'engine' : 'stub'
 }
 
-/** Every filter in Shopify's docs with its status in this package. */
+/** Every filter in Shopify's docs with its status in this package. Each call returns new entries, so a caller that changes one does not change the docs the preset registers its stubs from. */
 export function shopifyFilterRegistry (): ShopifyFilterEntry[] {
-  return SHOPIFY_FILTER_DOCS.map(doc => ({ ...doc, status: filterStatus(doc.name) }))
+  return SHOPIFY_FILTER_DOCS.map(doc => ({ ...doc, aliases: [...doc.aliases], status: filterStatus(doc.name) }))
 }

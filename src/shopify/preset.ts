@@ -19,14 +19,14 @@ import type { Translator } from './translations'
  *
  * `doc`: https://shopify.dev/docs/api/liquid/tags/doc says its Liquid is "parsed but not executed", yet the body is read raw here because Shopify Liquid ignores even malformed syntax in it (liquid-spec `specs/liquid_ruby/specs.yml`: `DocTagUnitTest#test_doc_tag_ignores_malformed_syntax`, `…ignores_unclosed_assign`); the wording and the behaviour differ, so the behaviour is not pinned by shopify.dev.
  */
-export const SHOPIFY_RAW_TAGS = ['raw', 'comment', 'schema', 'javascript', 'stylesheet', 'doc']
+export const SHOPIFY_RAW_TAGS: readonly string[] = Object.freeze(['raw', 'comment', 'schema', 'javascript', 'stylesheet', 'doc'])
 
-/** Safe defaults for untrusted themes; callers may lower (or deliberately raise) each. `parseLimit` counts characters per parsed file, `renderLimit` milliseconds per render call, `memoryLimit` LiquidJS's allocation units per render. These are Debutify's safety limits, not Shopify's: shopify.dev publishes no parse, render or memory limits for Liquid. */
-export const SHOPIFY_DEFAULT_LIMITS = {
+/** Safe defaults for untrusted themes; callers may lower (or deliberately raise) each through the options of `createShopifyLiquid`, `renderPage` and `renderSection`. `parseLimit` counts characters per parsed file, `renderLimit` milliseconds per render call, `memoryLimit` LiquidJS's allocation units per render. These are Debutify's safety limits, not Shopify's: shopify.dev publishes no parse, render or memory limits for Liquid. The object is frozen, so no caller can lift a limit for every later render in the process. */
+export const SHOPIFY_DEFAULT_LIMITS = Object.freeze({
   parseLimit: 10000000,
   renderLimit: 2000,
   memoryLimit: 100000000
-}
+})
 
 export interface ShopifyLiquidOptions {
   /** The theme's files by path (`snippets/price.liquid`). `render`, `include` and layouts read them; nothing is read from disk. https://shopify.dev/docs/api/liquid/tags/render and https://shopify.dev/docs/api/liquid/tags/include. */
