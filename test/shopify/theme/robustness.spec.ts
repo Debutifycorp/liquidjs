@@ -123,7 +123,7 @@ describe('shopify/theme/runtime malformed template and group JSON', () => {
     const files = { ...theme.files, 'sections/header-group.json': '[]' }
     const { html, report } = await renderPage({ theme: { files }, templateName: 'index' })
     expect(html).not.toContain('BEGIN sections')
-    expect(report.unsupported).toEqual([{ feature: 'section-group', detail: 'sections/header-group.json is not a JSON object' }])
+    expect(report.unsupported).toEqual([{ feature: 'section_group', detail: 'sections/header-group.json is not a JSON object' }])
     expect(report.missing).toEqual([{ kind: 'section', name: 'does-not-exist' }])
   })
   it('affects a contextual group file only when a context is requested, and skips a bad one', async () => {
@@ -134,8 +134,8 @@ describe('shopify/theme/runtime malformed template and group JSON', () => {
     const ca = await renderPage({ theme: { files }, templateName: 'index', request: { context: { market: 'ca' } } })
     expect(ca.html).toContain('<p class="announcement">From zz|header|1</p>')
     expect(ca.report.unsupported).toEqual([
-      { feature: 'section-group', detail: expect.stringMatching(/^sections\/header-group\.context\.ca\.json: /) },
-      { feature: 'section-group', detail: 'sections/header-group.context.yy.json is not a JSON object' }
+      { feature: 'section_group', detail: expect.stringMatching(/^sections\/header-group\.context\.ca\.json: /) },
+      { feature: 'section_group', detail: 'sections/header-group.context.yy.json is not a JSON object' }
     ])
     const us = await renderPage({ theme: { files }, templateName: 'index', request: { context: { market: 'us' } } })
     expect(us.html).toContain('<p class="announcement">Free shipping|header|1</p>')
@@ -153,7 +153,7 @@ describe('shopify/theme/runtime malformed template and group JSON', () => {
     expect(page.report.errors[0].message).toContain('sections/header-group.json: ')
     const one = await renderSection({ theme: { files }, templateName: 'index', section: 'sections--header-group__header' })
     expect(one.html).toMatch(/^Liquid error: sections\/header-group\.json: /)
-    expect(one.report.unsupported).toEqual([{ feature: 'section-group', detail: expect.stringMatching(/^sections\/header-group\.json: /) }])
+    expect(one.report.unsupported).toEqual([{ feature: 'section_group', detail: expect.stringMatching(/^sections\/header-group\.json: /) }])
     expect(one.report.missing).toEqual([])
   })
   it('finds a group section through another split when the first group file is not valid', async () => {
@@ -178,9 +178,9 @@ describe('shopify/theme/runtime malformed template and group JSON', () => {
     expect(html).toContain('<p class="announcement">From cd|header|1</p>')
     expect(html).toContain('<header-wrapper id="shopify-section-sections--header-group__header"')
     expect(report.unsupported).toEqual([
-      { feature: 'section-group', detail: 'sections/header-group.context.ca.json "sections" is not an object' },
-      { feature: 'section-group', detail: 'sections/header-group.context.cb.json "order" is not an array' },
-      { feature: 'section-group', detail: 'sections/header-group.context.cc.json "sections" is not an object' }
+      { feature: 'section_group', detail: 'sections/header-group.context.ca.json "sections" is not an object' },
+      { feature: 'section_group', detail: 'sections/header-group.context.cb.json "order" is not an array' },
+      { feature: 'section_group', detail: 'sections/header-group.context.cc.json "sections" is not an object' }
     ])
     const only = { ...theme.files, 'sections/header-group.context.ca.json': '{ "context": { "market": "ca" }, "sections": "x" }' }
     const base = await renderPage({ theme: { files: only }, templateName: 'index', request: { context: { market: 'ca' } } })
@@ -198,12 +198,12 @@ describe('shopify/theme/runtime malformed locale files', () => {
     const german = await renderPage({ theme: { files }, templateName: 'index', locale: 'de' })
     expect(german.html).toContain('<html lang="de">')
     expect(german.html).toContain('<p>Hello, Sample Store!</p>')
-    expect(german.report.unsupported).toEqual([{ feature: 'locale file', detail: expect.stringMatching(/^locales\/de\.json: /) }])
+    expect(german.report.unsupported).toEqual([{ feature: 'locale_file', detail: expect.stringMatching(/^locales\/de\.json: /) }])
     const gift = await renderPage({ theme: { files }, templateName: 'gift_card', locale: 'fr' })
     expect(gift.report.unsupported).toEqual([])
     const french = await renderPage({ theme: { files }, templateName: 'index', locale: 'fr' })
     expect(french.html).toContain('<p>Bonjour, Sample Store !</p><p>Fait avec soin</p><p>Schema subheading</p>')
-    expect(french.report.unsupported).toEqual([{ feature: 'locale file', detail: expect.stringMatching(/^locales\/fr\.schema\.json: /) }])
+    expect(french.report.unsupported).toEqual([{ feature: 'locale_file', detail: expect.stringMatching(/^locales\/fr\.schema\.json: /) }])
   })
 })
 

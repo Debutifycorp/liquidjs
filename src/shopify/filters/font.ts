@@ -3,10 +3,11 @@ import { stringify, toValue } from '../../util'
 import { FontDrop } from '../objects/font'
 import { has, splitArgs } from '../util/args'
 import { shopifyState, ShopifyState } from '../state'
+import type { UnsupportedFeature } from '../report'
 import type { ShopifyFilterSet } from './types'
 
 /** The font a filter input names: a `font` object, or a font handle the font library knows. A handle the library does not know renders empty and is reported under the filter's name; an empty input (an unset setting) is silent. shopify.dev does not say what Shopify does there. */
-function fontOf (state: ShopifyState, name: string, input: unknown): FontDrop | undefined {
+function fontOf (state: ShopifyState, name: UnsupportedFeature, input: unknown): FontDrop | undefined {
   if (input instanceof FontDrop) return input
   const handle = stringify(toValue(input))
   if (!handle) return undefined

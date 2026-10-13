@@ -6,7 +6,7 @@ import { LiquidError, RenderError } from '../../util/error'
 import { isLimitError } from '../../util/inline-error'
 import { getPerformance } from '../../util/performance'
 import { createShopifyLiquid } from '../preset'
-import { errorMessage, RenderReport } from '../report'
+import { errorMessage, RenderReport, UnsupportedFeature } from '../report'
 import { sampleStoreData } from '../sample/sample-data'
 import type { ShopifyServices } from '../services'
 import { SettingDefinition, SettingsDrop, SettingsEnv } from '../settings'
@@ -288,7 +288,7 @@ class PageRender implements ThemeHooks {
   public constructor (private readonly theme: CompiledTheme, private readonly options: RenderPageOptions) {
     const store = buildStore(options.data ?? sampleStoreData)
     const locale = options.locale ?? String(store.shop.locale)
-    const translator = theme.translator(locale, message => this.state.report.unsupported('locale file', message))
+    const translator = theme.translator(locale, message => this.state.report.unsupported('locale_file', message))
     this.trust = { liquidSettings: !!options.trustLiquidSettings, htmlSettings: !!options.trustHtmlSettings }
     this.state = createState({
       services: options.services,
@@ -367,12 +367,12 @@ class PageRender implements ThemeHooks {
   }
 
   /** Reports something the render ignored because its JSON has the wrong shape. */
-  private ignored (feature: string, where: string, expected: string) {
+  private ignored (feature: UnsupportedFeature, where: string, expected: string) {
     this.state.report.unsupported(feature, `${where} is not ${expected}`)
   }
 
   /** `value` as the object it should be; a value of another type is reported and read as empty. */
-  private objectOf (value: unknown, feature: string, where: string): Record<string, unknown> {
+  private objectOf (value: unknown, feature: UnsupportedFeature, where: string): Record<string, unknown> {
     if (value === undefined || value === null) return {}
     if (isObject(value)) return value
     this.ignored(feature, where, 'an object')
@@ -497,11 +497,11 @@ class PageRender implements ThemeHooks {
       if (!entry) return (yield this.renderStaticSection(key)) as string
     }
     if (!entry) {
-      this.state.report.missing('section', key)
+      this.state.report.missing('section', reportName(key))
       return ''
     }
     if (entry.disabled) {
-      this.state.report.unsupported('disabled section', `${entry.placement.id} is disabled: nothing rendered`)
+      this.state.report.unsupported('disabled_section', `${entry.placement.id} is disabled: nothing rendered`)
       return ''
     }
     return (yield this.renderSection(entry.data, entry.placement)) as string
@@ -525,11 +525,11 @@ class PageRender implements ThemeHooks {
       if (entry) return entry
     }
     if (error !== undefined) {
-      this.state.report.unsupported('section-group', error)
+      this.state.report.unsupported('section_group', error)
       return escapeHtml(`Liquid error: ${error}`)
     }
     if (found) return undefined
-    this.state.report.missing('section-group', splits[splits.length - 1][0])
+    this.state.report.missing('section_group', splits[splits.length - 1][0])
     return ''
   }
 
@@ -682,11 +682,11 @@ class PageRender implements ThemeHooks {
     const file = `sections/${name}.json`
     const found = this.theme.json(file)
     if (found === undefined) {
-      this.state.report.missing('section-group', name)
+      this.state.report.missing('section_group', name)
       return undefined
     }
     if (!isObject(found)) {
-      this.ignored('section-group', file, 'a JSON object')
+      this.ignored('section_group', file, 'a JSON object')
       return undefined
     }
     let group: GroupJson = found
@@ -697,18 +697,18 @@ class PageRender implements ThemeHooks {
       try {
         variant = this.theme.json(path)
       } catch (err) {
-        this.state.report.unsupported('section-group', (err as Error).message)
+        this.state.report.unsupported('section_group', (err as Error).message)
         continue
       }
       if (!isObject(variant)) {
-        this.ignored('section-group', path, 'a JSON object')
+        this.ignored('section_group', path, 'a JSON object')
         continue
       }
       if (matchesContext(variant.context as ContextFile['context'], requested)) {
         const sectionsOk = variant.sections === undefined || isObject(variant.sections)
         const orderOk = variant.order === undefined || Array.isArray(variant.order)
-        if (!sectionsOk) this.ignored('section-group', `${path} "sections"`, 'an object')
-        if (!orderOk) this.ignored('section-group', `${path} "order"`, 'an array')
+        if (!sectionsOk) this.ignored('section_group', `${path} "sections"`, 'an object')
+        if (!orderOk) this.ignored('section_group', `${path} "order"`, 'an array')
         if (!sectionsOk || !orderOk) continue
         group = deepMerge(group, { sections: variant.sections, order: variant.order })
         break
@@ -761,7 +761,7 @@ class PageRender implements ThemeHooks {
       const data = frame.container.blocks?.[id]
       if (!data || data.disabled || data.static || !this.keyAllowed(id, 'block') || !this.blockTypeAllowed(data.type)) continue
       if (isAppBlock(data.type)) {
-        this.state.report.unsupported('app block', `${frame.block ? `${frame.section.type} > ${frame.block.type} ${frame.block.id}` : frame.section.type}: ${typeof data.type === 'string' ? reportName(data.type) : String(data.type)}`)
+        this.state.report.unsupported('app_block', `${frame.block ? `${frame.section.type} block ${frame.block.type} ${frame.block.id}` : frame.section.type}: ${typeof data.type === 'string' ? reportName(data.type) : String(data.type)}`)
         continue
       }
       out += (yield this.renderThemeBlock(id, data, {}, frame)) as string
@@ -782,7 +782,7 @@ class PageRender implements ThemeHooks {
     }
     const found = frame.container.blocks ? own(frame.container.blocks, id) as BlockData | undefined : undefined
     const stored = found?.static ? found : undefined
-    if (found && !stored) this.state.report.unsupported('static block', `${frame.section.type}: block ${id} is not static, so its saved entry is not used by the static block of that id`)
+    if (found && !stored) this.state.report.unsupported('static_block', `${frame.section.type}: block ${id} is not static, so its saved entry is not used by the static block of that id`)
     if (stored?.disabled) return ''
     return (yield this.renderThemeBlock(id, { ...stored, type, static: true }, params, frame)) as string
   }

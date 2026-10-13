@@ -41,7 +41,7 @@ describe('t', () => {
   it('escapes the text for a missing key, which can come from data', async () => {
     const { html, report } = await renderWithState(liquid, '{{ title | t }}', { title: '<b>x</b>' }, { translator: translator('en') })
     expect(html).toBe('translation missing: en.&lt;b&gt;x&lt;/b&gt;')
-    expect(report.missing).toEqual([{ kind: 'translation', name: '<b>x</b>' }])
+    expect(report.missing).toEqual([{ kind: 'translation', name: 'bx/b' }])
   })
   it('prints a Ruby decimal as Ruby does', async () => {
     expect(await render("{{ 'layout.header.price' | t: p: 10.0 }}|{{ 'layout.header.price' | t: p: 10 }}|{{ 'layout.header.price_html' | t: p: 2.50 }}")).toBe('Cost 10.0|Cost 10|Cost <b>2.5</b>')
@@ -71,7 +71,7 @@ describe('money', () => {
   it('prints nothing for what has no to_i, and reports it', async () => {
     const { html, report } = await renderWithState(liquid, '[{{ flag | money }}][{{ list | money_with_currency }}][{{ shape | money }}]', { flag: true, list: [5], shape: { a: 1 } }, { translator: translator('en') })
     expect(html).toBe('[][][]')
-    expect(report.unsupported).toEqual([{ feature: 'money input', detail: 'true' }, { feature: 'money input', detail: 'array' }, { feature: 'money input', detail: 'object' }])
+    expect(report.unsupported).toEqual([{ feature: 'money_input', detail: 'true' }, { feature: 'money_input', detail: 'array' }, { feature: 'money_input', detail: 'object' }])
   })
   it('drops the decimal separator of comma formats with the zeros', async () => {
     const engine = createShopifyLiquid({ moneyFormat: '{{amount_with_comma_separator}} EUR' })
@@ -194,7 +194,7 @@ describe('date', () => {
       const { html, report } = await renderWithState(liquid, source, {}, { translator: translator('en') })
       expect(html).toBe(`Liquid error (line 1): ${message}`)
       expect(report.errors).toEqual([{ message: `Liquid error (line 1): ${message}`, file: undefined, line: 1 }])
-      expect(report.unsupported).toEqual([{ feature: 'date format', detail: 'no_such_format' }])
+      expect(report.unsupported).toEqual([{ feature: 'date_format', detail: 'no_such_format' }])
     }
   })
   it('spaces the built-in formats with a time once', async () => {

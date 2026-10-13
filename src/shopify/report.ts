@@ -6,7 +6,23 @@ export function errorMessage (err: unknown): string {
   return LiquidError.is(err) ? inlineErrorMessage(err) : `Liquid error: ${(err as Error).message}`
 }
 
-export type MissingKind = 'template' | 'layout' | 'section' | 'section-group' | 'block' | 'snippet' | 'translation' | 'resource'
+/** What a `MissingEntry` names: a theme file the theme does not have (`template`, `layout`, `section`, `section_group`, `block`, `snippet`), a `translation` key, or a store `resource` the data does not hold. */
+export type MissingKind = 'template' | 'layout' | 'section' | 'section_group' | 'block' | 'snippet' | 'translation' | 'resource'
+
+/**
+ * The `feature` of an `UnsupportedEntry`, in snake_case:
+ * - the theme runtime: `app_block` (rendered by its app, so skipped), `content_for`, `section` and `sections` (the tags used outside `renderPage`), `custom_css` (not applied), `disabled_section` (asked of `renderSection`), `locale_file` (not valid JSON), `order`, `schema`, `sections` and `section_group` (JSON of the wrong shape), `static_block`, `unsafe_key` (a key or type that is not a plain id, skipped) and `wrapper` (not applied);
+ * - settings: `invalid_setting`, `unsafe_url`, `color_scheme` and `font_picker` (a value that was rejected or not found);
+ * - filter input: `date_format` (an unknown named format) and `money_input` (a value `money` cannot read);
+ * - a filter's own name, for an input or argument it could not use: the colour filters, the font filters (`font_face`, `font_modify`, `font_url`), the tag filters whose attribute names were dropped (`image_tag`, `video_tag`, `external_video_tag`, `script_tag`, `stylesheet_tag`) and `media_tag`.
+ */
+export type UnsupportedFeature =
+  | 'app_block' | 'content_for' | 'custom_css' | 'disabled_section' | 'locale_file' | 'order' | 'schema' | 'section' | 'section_group' | 'sections' | 'static_block' | 'unsafe_key' | 'wrapper'
+  | 'color_scheme' | 'font_picker' | 'invalid_setting' | 'unsafe_url'
+  | 'date_format' | 'money_input'
+  | 'brightness_difference' | 'color_brightness' | 'color_contrast' | 'color_darken' | 'color_desaturate' | 'color_difference' | 'color_extract' | 'color_lighten' | 'color_mix' | 'color_modify' | 'color_saturate' | 'color_to_hex' | 'color_to_hsl' | 'color_to_oklch' | 'color_to_rgb' | 'hex_to_rgba'
+  | 'font_face' | 'font_modify' | 'font_url'
+  | 'external_video_tag' | 'image_tag' | 'media_tag' | 'script_tag' | 'stylesheet_tag' | 'video_tag'
 
 export interface CountEntry {
   name: string
@@ -28,7 +44,8 @@ export interface MissingEntry {
 }
 
 export interface UnsupportedEntry {
-  feature: string
+  feature: UnsupportedFeature
+  /** What was not rendered and why, as plain text: never a rejected setting value, and with `<` and `>` removed. */
   detail: string
 }
 
@@ -42,7 +59,7 @@ export interface SectionEntry {
   reason?: string
 }
 
-/** What a render could not do as Shopify would. Unknown and stubbed names render empty (or, for unknown filters, pass their input through as Shopify does) and are listed here. Debutify's own report: shopify.dev has no counterpart. */
+/** What a render could not do as Shopify would. Unknown and stubbed names render empty (or, for unknown filters, pass their input through as Shopify does) and are listed here. Debutify's own report: shopify.dev has no counterpart. Every string in it is plain text: escape it before showing it as HTML. */
 export interface RenderReport {
   unknownTags: CountEntry[]
   unknownFilters: CountEntry[]
@@ -54,7 +71,12 @@ export interface RenderReport {
   timing: { totalMs: number }
 }
 
-function bump (map: Map<string, CountEntry>, name: string, file?: string) {
+/** Names and details as the report keeps them: `<` and `>` removed, so text that came from a theme or its data cannot turn into markup where a report is shown without escaping. Callers should still escape report strings. */
+const plain = (text: string): string => text.replace(/[<>]/g, '')
+
+function bump (map: Map<string, CountEntry>, rawName: string, rawFile?: string) {
+  const name = plain(rawName)
+  const file = rawFile === undefined ? undefined : plain(rawFile)
   let entry = map.get(name)
   if (!entry) {
     entry = { name, count: 0, files: [] }
@@ -94,11 +116,13 @@ export class ReportCollector {
     bump(this.stubs, name, file)
   }
 
-  public missing (kind: MissingKind, name: string) {
+  public missing (kind: MissingKind, rawName: string) {
+    const name = plain(rawName)
     this.missingEntries.set(`${kind}:${name}`, { kind, name })
   }
 
-  public unsupported (feature: string, detail: string) {
+  public unsupported (feature: UnsupportedFeature, rawDetail: string) {
+    const detail = plain(rawDetail)
     if (!this.unsupportedEntries.some(entry => entry.feature === feature && entry.detail === detail)) this.unsupportedEntries.push({ feature, detail })
   }
 

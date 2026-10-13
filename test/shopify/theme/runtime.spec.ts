@@ -148,7 +148,7 @@ describe('shopify/theme/runtime', () => {
     }
     const a = await renderPage({ theme: { files }, templateName: 'a' })
     expect(a.html).toBe('<div id="shopify-section-template--a__x" class="shopify-section"><footer>Default copyright|template--a__x|1|template</footer>\n\n</div>')
-    expect(a.report.missing).toEqual([{ kind: 'section-group', name: 'nope' }])
+    expect(a.report.missing).toEqual([{ kind: 'section_group', name: 'nope' }])
     const b = await renderPage({ theme: { files }, templateName: 'b' })
     expect(b.html).toBe('<div id="shopify-section-template--b__x" class="shopify-section"><footer>Default copyright|template--b__x|1|template</footer>\n\n</div>')
     expect(b.report.missing).toEqual([{ kind: 'layout', name: 'absent' }])
@@ -216,7 +216,7 @@ describe('shopify/theme/runtime', () => {
       for (const section of ['off', 'template--index__off']) {
         const { html, report } = await renderSection({ theme: { files }, templateName: 'index', section })
         expect(html).toBe('')
-        expect(report.unsupported).toEqual([{ feature: 'disabled section', detail: 'template--index__off is disabled: nothing rendered' }])
+        expect(report.unsupported).toEqual([{ feature: 'disabled_section', detail: 'template--index__off is disabled: nothing rendered' }])
         expect(report.sections).toEqual([])
       }
     })
@@ -225,12 +225,12 @@ describe('shopify/theme/runtime', () => {
       const files = { ...theme.files, 'sections/header-group.json': JSON.stringify(group) }
       const off = await renderSection({ theme: { files }, templateName: 'index', section: 'sections--header-group__a' })
       expect(off.html).toBe('')
-      expect(off.report.unsupported).toEqual([{ feature: 'disabled section', detail: 'sections--header-group__a is disabled: nothing rendered' }])
+      expect(off.report.unsupported).toEqual([{ feature: 'disabled_section', detail: 'sections--header-group__a is disabled: nothing rendered' }])
       const on = await renderSection({ theme: { files }, templateName: 'index', section: 'sections--header-group__b' })
       expect(on.html).toBe('<div id="shopify-section-sections--header-group__b" class="shopify-section shopify-section-group-header-group"><footer>Default copyright|sections--header-group__b|1|header</footer>\n\n</div>')
     })
     it('reports a section the template or group does not have', async () => {
-      for (const [section, missing] of [['template--index__nope', { kind: 'section', name: 'template--index__nope' }], ['sections--header-group__nope', { kind: 'section', name: 'sections--header-group__nope' }], ['sections--nope__x', { kind: 'section-group', name: 'nope' }], ['nothing', { kind: 'section', name: 'nothing' }]] as const) {
+      for (const [section, missing] of [['template--index__nope', { kind: 'section', name: 'template--index__nope' }], ['sections--header-group__nope', { kind: 'section', name: 'sections--header-group__nope' }], ['sections--nope__x', { kind: 'section_group', name: 'nope' }], ['nothing', { kind: 'section', name: 'nothing' }]] as const) {
         const { html, report } = await renderSection({ theme, templateName: 'index', section })
         expect(html).toBe('')
         expect(report.missing).toEqual([missing])
@@ -322,7 +322,7 @@ describe('shopify/theme/runtime', () => {
     it('reports a missing group by its last split and a missing section of an existing group by its id', async () => {
       const none = await renderSection({ theme: { files }, templateName: 'g', section: 'sections--no__such__key' })
       expect(none.html).toBe('')
-      expect(none.report.missing).toEqual([{ kind: 'section-group', name: 'no__such' }])
+      expect(none.report.missing).toEqual([{ kind: 'section_group', name: 'no__such' }])
       const gone = await renderSection({ theme: { files }, templateName: 'g', section: 'sections--my__group__zzz' })
       expect(gone.html).toBe('')
       expect(gone.report.missing).toEqual([{ kind: 'section', name: 'sections--my__group__zzz' }])

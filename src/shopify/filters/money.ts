@@ -55,7 +55,7 @@ function cents (filter: FilterImpl, input: unknown): number | undefined {
   if (isNil(value)) return undefined
   if (typeof value === 'string') return rubyToI(value)
   if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value)
-  shopifyState(filter.context).report.unsupported('money input', typeof value === 'object' ? (Array.isArray(value) ? 'array' : 'object') : String(value))
+  shopifyState(filter.context).report.unsupported('money_input', typeof value === 'object' ? (Array.isArray(value) ? 'array' : 'object') : String(value))
   return undefined
 }
 

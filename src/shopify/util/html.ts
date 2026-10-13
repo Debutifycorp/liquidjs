@@ -1,5 +1,5 @@
 import { stringify } from '../../util/underscore'
-import type { ReportCollector } from '../report'
+import type { ReportCollector, UnsupportedFeature } from '../report'
 
 const ESCAPES: Record<string, string> = {
   '&': '&amp;',
@@ -34,7 +34,7 @@ export function attribute (name: string, value: unknown): string {
 }
 
 /** The attributes a template named in a filter call (`names`, in the order written, minus the `skip` ones the filter handles itself), written in order. A name that is not a valid attribute name is dropped and reported as unsupported, so data cannot inject markup through it. */
-export function namedAttributes (report: ReportCollector, filter: string, named: Record<string, unknown>, names: string[], skip: string[] = []): string {
+export function namedAttributes (report: ReportCollector, filter: UnsupportedFeature, named: Record<string, unknown>, names: string[], skip: string[] = []): string {
   let html = ''
   for (const name of names) {
     if (skip.includes(name)) continue

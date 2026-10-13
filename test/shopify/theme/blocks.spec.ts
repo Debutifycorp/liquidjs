@@ -15,7 +15,7 @@ describe('shopify/theme/blocks', () => {
       '<div id="shopify-section-template--page-slides__promo" class="shopify-section"><aside><span class="badge" style="color: blue">New|promo-badge|template--page-slides__promo</span></aside></div>'
     )
     expect(report.missing).toEqual([{ kind: 'block', name: 'no-such-block' }])
-    expect(report.unsupported).toEqual([{ feature: 'app block', detail: 'slideshow: @app' }])
+    expect(report.unsupported).toEqual([{ feature: 'app_block', detail: 'slideshow: @app' }])
     expect(report.errors).toEqual([])
   })
   it('reports content_for outside a theme render', async () => {
@@ -108,8 +108,8 @@ describe('shopify/theme/blocks', () => {
       })
       expect(html).toBe(SECTION('[' + WRAP('ok', 'text:ok:ok::template--x__main') + ']'))
       expect(report.unsupported).toEqual([
-        { feature: 'app block', detail: 'sec: @app' },
-        { feature: 'app block', detail: 'sec: shopify://apps/reviews/blocks/stars/0b1b2c3d-1111-2222-3333-444455556666' }
+        { feature: 'app_block', detail: 'sec: @app' },
+        { feature: 'app_block', detail: 'sec: shopify://apps/reviews/blocks/stars/0b1b2c3d-1111-2222-3333-444455556666' }
       ])
       expect(report.missing).toEqual([{ kind: 'block', name: '(no type)' }])
     })
@@ -123,8 +123,8 @@ describe('shopify/theme/blocks', () => {
       })
       expect(html).toBe(SECTION('[' + WRAP('g', '<g>' + WRAP('kept', 'text:kept:k::template--x__main') + '</g>') + ']'))
       expect(report.unsupported).toEqual([
-        { feature: 'app block', detail: 'sec: @app' },
-        { feature: 'app block', detail: 'sec > group g: @app' }
+        { feature: 'app_block', detail: 'sec: @app' },
+        { feature: 'app_block', detail: 'sec block group g: @app' }
       ])
     })
     it('reports content_for blocks and block in a template that is not a section', async () => {
@@ -233,7 +233,7 @@ describe('shopify/theme/blocks', () => {
       }
       const { html, report } = await page(files, { blocks: { a: { type: 'text', settings: { text: 'mine', width: 77 }, blocks: { in: { type: 'text' } } } } })
       expect(html).toBe(SECTION(WRAP('a', 'text:mine') + '|1/'))
-      expect(report.unsupported).toEqual([{ feature: 'static block', detail: 'sec: block a is not static, so its saved entry is not used by the static block of that id' }])
+      expect(report.unsupported).toEqual([{ feature: 'static_block', detail: 'sec: block a is not static, so its saved entry is not used by the static block of that id' }])
     })
     it('passes extra parameters only to the block it renders', async () => {
       const { html } = await page({

@@ -140,7 +140,7 @@ function namedFormat (filter: FilterImpl, name: string): string {
   if (typeof fromLocale === 'string') return fromLocale
   if (Object.prototype.hasOwnProperty.call(DATE_FORMATS, name)) return DATE_FORMATS[name]
   // https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files: "If a custom format is missing in the locale file of the active language, then a Liquid error is rendered." The page gives no message; this wording is Debutify's and not pinned.
-  state.report.unsupported('date format', name)
+  state.report.unsupported('date_format', name)
   throw new Error(`invalid date format '${name}': it is not a built-in format and the locale file has no date_formats.${name}`)
 }
 

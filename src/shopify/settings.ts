@@ -7,7 +7,7 @@ import { ColorSchemeDrop } from './objects/color-scheme'
 import { FontDrop } from './objects/font'
 import { HandleMap } from './objects/handle-map'
 import { ImageDrop } from './objects/image'
-import type { ReportCollector } from './report'
+import type { ReportCollector, UnsupportedFeature } from './report'
 import type { ShopifyServices } from './services'
 import { STATE } from './state'
 import type { ImageData } from './types'
@@ -117,7 +117,7 @@ const BACKGROUND_FUNCTIONS = /^(?:(?:repeating-)?(?:linear|radial|conic)-gradien
 const NUMERIC = /^\s*-?\d+(?:\.\d+)?\s*$/
 
 /** Reports a value that was rejected, without the value (the report may be shown as HTML), under `feature`. */
-function reject (env: SettingsEnv, feature: string, definition: SettingDefinition, reason: string): void {
+function reject (env: SettingsEnv, feature: UnsupportedFeature, definition: SettingDefinition, reason: string): void {
   env.report.unsupported(feature, `${[definition.type, 'setting', definition.id].filter(Boolean).join(' ')} ${reason}`)
 }
 

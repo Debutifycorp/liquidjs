@@ -22,7 +22,7 @@ abstract class ThemeHookTag extends Tag {
     const name = stringify(yield evalToken(this.value, ctx))
     const runtime: ThemeHooks | undefined = state.runtime
     if (!runtime) {
-      state.report.unsupported(this.name, `{% ${this.name} '${name}' %} outside renderPage`)
+      state.report.unsupported(this.hook === 'renderStaticSection' ? 'section' : 'sections', `{% ${this.name} '${name}' %} outside renderPage`)
       return ''
     }
     return (yield runtime[this.hook](name, ctx)) as string

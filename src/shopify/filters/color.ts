@@ -4,12 +4,13 @@ import { LiquidFloat } from '../../util/liquid-float'
 import { plainValue } from '../util/args'
 import { shopifyState } from '../state'
 import { alphaText, brightness, clamp, formatColor, hslToRgb, luminance, oklchText, parseColor, rgbToHsl, Rgba, toHex, toRgbaFunction, toRgbFunction } from '../util/color'
+import type { UnsupportedFeature } from '../report'
 import type { ShopifyFilterSet } from './types'
 
 /**
  * Shopify's colour filters (https://shopify.dev/docs/api/liquid/filters/color-filters). Every expected value in the tests comes from the filter's shopify.dev page. A value that is not a colour renders empty and is reported; shopify.dev does not say what Shopify does there, so that is Debutify's choice.
  */
-function read (filter: FilterImpl, name: string, input: unknown): Rgba | undefined {
+function read (filter: FilterImpl, name: UnsupportedFeature, input: unknown): Rgba | undefined {
   const text = stringify(toValue(input))
   const color = parseColor(text)
   if (!color && text) shopifyState(filter.context).report.unsupported(name, `not a colour: ${text}`)
@@ -17,7 +18,7 @@ function read (filter: FilterImpl, name: string, input: unknown): Rgba | undefin
 }
 
 /** A colour passed as an argument (`color_mix: '#00936F'`). A missing or unreadable one is reported, and the filter returns its input unchanged (see `badArgument`). */
-function readArgument (filter: FilterImpl, name: string, argument: unknown): Rgba | undefined {
+function readArgument (filter: FilterImpl, name: UnsupportedFeature, argument: unknown): Rgba | undefined {
   const text = stringify(toValue(argument))
   const color = parseColor(text)
   if (!color) shopifyState(filter.context).report.unsupported(name, text ? `not a colour: ${text}` : 'missing argument')
@@ -35,14 +36,14 @@ function num (value: unknown): number | undefined {
 /**
  * A missing or unusable argument (a number that is not one, an unknown component) returns the filter's input unchanged and is reported, so the page never carries `NaN` and the report names the filter. shopify.dev documents the arguments but not what Shopify does with a wrong one, so this error case is Debutify's choice.
  */
-function badArgument (filter: FilterImpl, name: string, input: unknown, argument: unknown, expected: string) {
+function badArgument (filter: FilterImpl, name: UnsupportedFeature, input: unknown, argument: unknown, expected: string) {
   const text = stringify(toValue(argument))
   shopifyState(filter.context).report.unsupported(name, text ? `not ${expected}: ${text}` : 'missing argument')
   return input
 }
 
 /** `color_lighten`, `color_darken`, `color_saturate` and `color_desaturate` move HSL lightness or saturation by the given points (https://shopify.dev/docs/api/liquid/filters/color_lighten and its siblings). The pages show hex input only, so the format returned for `rgb()` or `hsl()` input (hex when opaque, `rgba()` otherwise) is not pinned. */
-function adjust (name: string, key: 's' | 'l', sign: 1 | -1) {
+function adjust (name: UnsupportedFeature, key: 's' | 'l', sign: 1 | -1) {
   return function (this: FilterImpl, input: unknown, amount: unknown) {
     const color = read(this, name, input)
     if (!color) return ''

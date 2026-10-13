@@ -157,8 +157,8 @@ describe('the Shopify layer foundations', () => {
       report.missing('section', 'a')
       report.missing('section', 'a')
       report.missing('block', 'a')
-      report.unsupported('f', 'd')
-      report.unsupported('f', 'd')
+      report.unsupported('wrapper', 'd')
+      report.unsupported('wrapper', 'd')
       report.stubbedFilter('s', 'file.liquid')
       report.section({ id: 'i', type: 't', location: 'l', status: 'rendered', ms: 1 })
       expect(report.toReport([], 5)).toEqual({
@@ -166,11 +166,19 @@ describe('the Shopify layer foundations', () => {
         unknownFilters: [],
         stubbedFilters: [{ name: 's', count: 1, files: ['file.liquid'] }],
         missing: [{ kind: 'section', name: 'a' }, { kind: 'block', name: 'a' }],
-        unsupported: [{ feature: 'f', detail: 'd' }],
+        unsupported: [{ feature: 'wrapper', detail: 'd' }],
         errors: [],
         sections: [{ id: 'i', type: 't', location: 'l', status: 'rendered', ms: 1 }],
         timing: { totalMs: 5 }
       })
+    })
+    it('keeps angle brackets out of names, files and details', async () => {
+      const { report } = await renderLiquid(createShopifyLiquid(), '{{ c | color_darken: 10 }}', { c: '"><svg/onload=alert(2)>' })
+      expect(report.unsupported).toEqual([{ feature: 'color_darken', detail: 'not a colour: "svg/onload=alert(2)' }])
+      const collector = new ReportCollector()
+      collector.missing('resource', 'product <img src=x>')
+      collector.unknownFilter('<b>', '<f>.liquid')
+      expect(collector.toReport([], 0)).toMatchObject({ missing: [{ kind: 'resource', name: 'product img src=x' }], unknownFilters: [{ name: 'b', count: 1, files: ['f.liquid'] }] })
     })
   })
 })
