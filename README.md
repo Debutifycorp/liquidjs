@@ -1,6 +1,6 @@
 # @debutify/liquidjs
 
-Debutify's fork of [LiquidJS](https://github.com/harttle/liquidjs) for rendering Shopify themes outside Shopify. With default options it is LiquidJS (see `NOTICE.md`). Install with `npm install @debutify/liquidjs`.
+Debutify's fork of [LiquidJS](https://github.com/harttle/liquidjs) for rendering Shopify themes outside Shopify. With default options it is LiquidJS (see `NOTICE.md`). Install with `npm install @debutify/liquidjs`. It runs on Node.js 24 or newer; the browser bundles of the root entry are unchanged.
 
 ## Options added by this fork
 
