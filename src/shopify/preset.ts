@@ -1,7 +1,9 @@
+import { Context } from '../context'
 import { Liquid } from '../liquid'
-import type { LiquidOptions } from '../liquid-options'
+import type { LiquidOptions, RenderOptions } from '../liquid-options'
+import type { Template } from '../template'
 import type { ShopifyServices } from './services'
-import { createState, STATE, ThemeHooks } from './state'
+import { createState, engineState, ShopifyState, STATE, stateFromDefaults, ThemeHooks } from './state'
 import { ThemeCache, ThemeFS } from './theme-fs'
 import { installFallbacks } from './fallbacks'
 import { registerShopifyFilters } from './filters'
@@ -39,6 +41,29 @@ export interface ShopifyLiquidOptions {
   engine?: LiquidOptions
 }
 
+/** The preset's engine. Its state is the defaults, and every top-level render starts from a copy of them: partials a render spawns share that render's globals, so they see its state, and no other render does. */
+class ShopifyLiquid extends Liquid {
+  public _render (tpl: Template[], scope: Context | object | undefined, renderOptions: RenderOptions): IterableIterator<any> {
+    return super._render(tpl, scope, scope instanceof Context ? renderOptions : this.withFreshState(renderOptions))
+  }
+
+  public renderToNodeStream (tpl: Template[], scope?: object, renderOptions: RenderOptions = {}): NodeJS.ReadableStream {
+    return super.renderToNodeStream(tpl, scope, this.withFreshState(renderOptions))
+  }
+
+  public _evalValue (str: string, scope?: object | Context): IterableIterator<any> {
+    return super._evalValue(str, scope instanceof Context ? scope : new Context(scope, this.options, this.withFreshState({}), { liquid: this }))
+  }
+
+  /** Keeps a state the caller put in the render's `globals` (`renderLiquid` and `renderPage` do). Otherwise the render's `globals` (the engine's when it gives none) get a new state. */
+  private withFreshState (renderOptions: RenderOptions): RenderOptions {
+    const given = renderOptions.globals as Record<symbol, ShopifyState | undefined> | undefined
+    const defaults = engineState(this.options.globals)
+    if (given?.[STATE] && given[STATE] !== defaults) return renderOptions
+    return { ...renderOptions, globals: { ...(given ?? this.options.globals), [STATE]: stateFromDefaults(defaults) } }
+  }
+}
+
 /**
  * A `Liquid` engine configured as Shopify renders themes: Ruby number semantics, raw `schema`/`javascript`/`stylesheet`/`doc` bodies, nesting comments, inline errors, theme files from memory, safe limits, and every Shopify tag and filter registered.
  */
@@ -46,7 +71,7 @@ export function createShopifyLiquid (options: ShopifyLiquidOptions = {}): Liquid
   const files = options.files ?? {}
   const cache = new ThemeCache(files)
   const state = createState(options)
-  const liquid = new Liquid({
+  const liquid = new ShopifyLiquid({
     numberSemantics: 'ruby',
     rawTags: [...SHOPIFY_RAW_TAGS],
     inlineErrors: true,
@@ -64,8 +89,8 @@ export function createShopifyLiquid (options: ShopifyLiquidOptions = {}): Liquid
     parseLimit: options.parseLimit ?? SHOPIFY_DEFAULT_LIMITS.parseLimit,
     renderLimit: options.renderLimit ?? SHOPIFY_DEFAULT_LIMITS.renderLimit,
     memoryLimit: options.memoryLimit ?? SHOPIFY_DEFAULT_LIMITS.memoryLimit,
-    globals: { [STATE]: state },
-    ...options.engine
+    ...options.engine,
+    globals: { ...options.engine?.globals, [STATE]: state }
   })
   cache.attach(liquid)
   registerShopifyTags(liquid)

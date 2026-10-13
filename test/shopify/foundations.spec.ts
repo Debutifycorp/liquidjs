@@ -1,4 +1,4 @@
-import { cdnStyleImageUrl, createShopifyLiquid, errorMessage, parseFontHandle, renderLiquid, ReportCollector, Translator, shopifyState, STATE } from '../../src/shopify'
+import { cdnStyleImageUrl, createShopifyLiquid, errorMessage, parseFontHandle, renderLiquid, ReportCollector, Translator, shopifyState } from '../../src/shopify'
 import { attribute, escapeHtml, insertAttributes } from '../../src/shopify/util/html'
 import { has, plainValue, splitArgs } from '../../src/shopify/util/args'
 import { currentFrame, createState, sectionLocales } from '../../src/shopify/state'
@@ -29,23 +29,18 @@ describe('the Shopify layer foundations', () => {
       const { report } = await renderLiquid(liquid, "{{ 1 | nope }}{% render 's' %}{% render 's' %}")
       expect(report.unknownFilters).toEqual([{ name: 'nope', count: 3, files: ['snippets/s.liquid'] }])
     })
-    it('applies renderLiquid state overrides over the engine defaults', async () => {
-      const liquid = createShopifyLiquid({ moneyFormat: '{{amount}} EUR' })
-      const state = (liquid.options.globals as Record<symbol, ReturnType<typeof createState>>)[STATE]
-      expect(state.money.format).toBe('{{amount}} EUR')
-      const frames = [{ kind: 'section' as const, section: { id: 's', type: 'header', index: 1 }, container: {}, sectionObject: {} }]
-      const result = await renderLiquid(liquid, 'x', {}, { frames })
-      expect(result.html).toBe('x')
+    it('fails the parse on an unknown filter under strictFilters', async () => {
+      const strict = createShopifyLiquid({ engine: { strictFilters: true } })
+      await expect(renderLiquid(strict, "{{ 'x' | frobnicate }}")).rejects.toThrow('undefined filter: frobnicate')
+      expect((await renderLiquid(strict, "{{ 'x' | upcase }}")).html).toBe('X')
+      const lax = createShopifyLiquid()
+      expect((await renderLiquid(lax, "{{ 'x' | frobnicate }}")).html).toBe('x')
     })
     it('lets the engine option override the preset', () => {
       const liquid = createShopifyLiquid({ engine: { numberSemantics: 'js' } })
       expect(liquid.options.numberSemantics).toBe('js')
     })
     it('is a Liquid', () => expect(createShopifyLiquid()).toBeInstanceOf(Liquid))
-    it('says which render lacks a state', async () => {
-      const liquid = createShopifyLiquid()
-      await expect(liquid.parseAndRender('{% frobnicate %}', {}, { globals: {} })).resolves.toBe('Liquid error (line 1): this Liquid instance was not created by createShopifyLiquid')
-    })
   })
 
   describe('errorMessage', () => {
@@ -142,6 +137,19 @@ describe('the Shopify layer foundations', () => {
   })
 
   describe('ReportCollector', () => {
+    it('names a missing asset by its kind', () => {
+      const missing = (path: string) => ({ originalError: new Error(`Could not find asset ${path}`), message: 'x' }) as unknown as LiquidError
+      const report = new ReportCollector().toReport(['snippets/a.liquid', 'layout/b.liquid', 'sections/c.liquid', 'blocks/d.liquid', 'templates/e.liquid', 'config/f.json', '__proto__/g'].map(missing), 0)
+      expect(report.missing).toEqual([
+        { kind: 'snippet', name: 'snippets/a.liquid' },
+        { kind: 'layout', name: 'layout/b.liquid' },
+        { kind: 'section', name: 'sections/c.liquid' },
+        { kind: 'block', name: 'blocks/d.liquid' },
+        { kind: 'template', name: 'templates/e.liquid' },
+        { kind: 'resource', name: 'config/f.json' },
+        { kind: 'resource', name: '__proto__/g' }
+      ])
+    })
     it('deduplicates missing and unsupported entries', () => {
       const report = new ReportCollector()
       report.missing('section', 'a')

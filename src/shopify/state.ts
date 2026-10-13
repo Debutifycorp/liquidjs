@@ -76,8 +76,28 @@ export function createState (init: StateInit = {}): ShopifyState {
 /** The Shopify state of the render `ctx` belongs to. */
 export function shopifyState (ctx: Context): ShopifyState {
   const state = (ctx.globals as Record<symbol, ShopifyState | undefined>)[STATE]
-  if (!state) throw new Error('this Liquid instance was not created by createShopifyLiquid')
+  if (!state) throw new Error('this render has no Shopify state: render with an engine from createShopifyLiquid, renderLiquid or renderPage, or keep STATE in the globals of a Context you build yourself')
   return state
+}
+
+/** The state an engine made by `createShopifyLiquid` keeps in its `globals`: the defaults every render starts from, never a render's own state. */
+export function engineState (globals: object): ShopifyState | undefined {
+  return (globals as Record<symbol, ShopifyState | undefined>)[STATE]
+}
+
+/** A new state for one render: the engine's `defaults` with `init` over them, field by field. The report, frames and assets are always new, so no render sees another's. */
+export function stateFromDefaults (defaults: ShopifyState | undefined, init: StateInit = {}): ShopifyState {
+  return createState({
+    translator: init.translator ?? defaults?.translator,
+    moneyFormat: init.moneyFormat ?? defaults?.money.format,
+    moneyWithCurrencyFormat: init.moneyWithCurrencyFormat ?? defaults?.money.withCurrencyFormat,
+    trustLiquidSettings: init.trustLiquidSettings ?? defaults?.trust.liquidSettings,
+    trustHtmlSettings: init.trustHtmlSettings ?? defaults?.trust.htmlSettings,
+    runtime: init.runtime ?? defaults?.runtime,
+    request: init.request,
+    frames: init.frames,
+    services: { ...defaults?.services, ...init.services }
+  })
 }
 
 export function currentFrame (state: ShopifyState): Frame | undefined {

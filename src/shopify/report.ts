@@ -65,6 +65,14 @@ function bump (map: Map<string, CountEntry>, name: string, file?: string) {
 
 const MISSING_ASSET = /Could not find asset (\S+)/
 
+const ASSET_KINDS: Record<string, MissingKind> = { snippets: 'snippet', layout: 'layout', sections: 'section', blocks: 'block', templates: 'template' }
+
+/** The kind of a missing theme file, from the directory its path starts with. */
+function assetKind (path: string): MissingKind {
+  const dir = path.split('/')[0]
+  return Object.prototype.hasOwnProperty.call(ASSET_KINDS, dir) ? ASSET_KINDS[dir] : 'resource'
+}
+
 export class ReportCollector {
   private readonly tags = new Map<string, CountEntry>()
   private readonly filters = new Map<string, CountEntry>()
@@ -100,7 +108,7 @@ export class ReportCollector {
   public toReport (errors: LiquidError[], totalMs: number): RenderReport {
     const errorEntries = errors.map(err => {
       const asset = MISSING_ASSET.exec(String(err.originalError?.message ?? err.message))
-      if (asset) this.missing('snippet', asset[1])
+      if (asset) this.missing(assetKind(asset[1]), asset[1])
       return { message: errorMessage(err), file: err.token?.file, line: err.token ? err.token.getPosition()[0] : undefined }
     })
     return {

@@ -41,13 +41,13 @@ function unknownFilter (name: string): FilterHandler {
 }
 
 /**
- * Makes unknown filters and tags resolve to the fallbacks above. The engine looks names up in `liquid.filters` and `liquid.tags` at parse time, so both records are wrapped in a Proxy that answers for missing names; registered names are untouched.
+ * Makes unknown filters and tags resolve to the fallbacks above. The engine looks names up in `liquid.filters` and `liquid.tags` at parse time, so both records are wrapped in a Proxy that answers for missing names; registered names are untouched. With `strictFilters` set (through the preset's `engine` option) the filter Proxy stays silent, so an unknown filter is a parse error as in the core.
  */
 export function installFallbacks (liquid: Liquid, unknownTags: 'report' | 'error') {
   const filterCache = new Map<string, FilterHandler>()
   const filters = new Proxy(liquid.filters, {
     get (target, name) {
-      if (typeof name !== 'string' || name in target) return (target as Record<string | symbol, FilterImplOptions>)[name]
+      if (typeof name !== 'string' || name in target || liquid.options.strictFilters) return (target as Record<string | symbol, FilterImplOptions>)[name]
       let handler = filterCache.get(name)
       if (!handler) {
         handler = unknownFilter(name)
