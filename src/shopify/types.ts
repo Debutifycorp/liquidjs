@@ -22,7 +22,7 @@ export interface ImageUrlParams {
   crop_top?: number
   crop_width?: number
   crop_height?: number
-  /** The legacy size of `img_url` and of the `video_tag` poster (`small`, `480x`, `x480`, `480x480`, `large`), https://shopify.dev/docs/api/liquid/filters/img_url and https://shopify.dev/docs/api/liquid/filters/video_tag, whose examples put it in the file name (`..._480x.jpg?v=1683744744`, `..._small.jpg?v=1655255324`). `width` and `height` carry the same size in pixels, for services that do not know `size`; the default `cdnStyleImageUrl` renders the file-name suffix and nothing else. */
+  /** The legacy size of `img_url` and of the `video_tag` poster (`small`, `480x`, `x480`, `480x480`, `large`), https://shopify.dev/docs/api/liquid/filters/img_url and https://shopify.dev/docs/api/liquid/filters/video_tag, whose examples put it in the file name (`..._480x.jpg?v=1683744744`, `..._small.jpg?v=1655255324`). `width` and `height` carry the same size in pixels, for services that do not know `size`; the default `imageUrl` service renders the file-name suffix and nothing else. */
   size?: string
 }
 
@@ -44,7 +44,7 @@ export interface LocaleTree {
   [key: string]: string | LocaleTree
 }
 
-/** A block in a JSON template, section group or `settings_data.json`, https://shopify.dev/docs/storefronts/themes/architecture/templates/json-templates (`type`, `settings`, `blocks`, `block_order`, `disabled`) and https://shopify.dev/docs/storefronts/themes/architecture/section-groups. `name` and `static` are not part of a block's data on those pages, so shopify.dev does not pin them for this shape. */
+/** A block in a JSON template, section group or `settings_data.json`, https://shopify.dev/docs/storefronts/themes/architecture/templates/json-templates (`type`, `settings`, `blocks`, `block_order`, `disabled`) and https://shopify.dev/docs/storefronts/themes/architecture/section-groups. `static` marks a static block's saved entry: https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks/static-blocks ("Static theme blocks in data") shows it with `"static": true`, kept under `blocks` and left out of `block_order`. `name` is not part of a block's data on those pages, so shopify.dev does not pin it for this shape. */
 export interface BlockData {
   type: string
   name?: string

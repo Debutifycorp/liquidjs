@@ -75,7 +75,7 @@ export function createState (init: StateInit = {}): ShopifyState {
 /** The Shopify state of the render `ctx` belongs to. */
 export function shopifyState (ctx: Context): ShopifyState {
   const state = (ctx.globals as Record<symbol, ShopifyState | undefined>)[STATE]
-  if (!state) throw new Error('this render has no Shopify state: render with an engine from createShopifyLiquid, renderLiquid or renderPage, or keep STATE in the globals of a Context you build yourself')
+  if (!state) throw new Error('this render has no Shopify state: render with an engine from createShopifyLiquid, renderLiquid or renderPage, or pass liquid.options.globals as the globals of a Context you build yourself')
   return state
 }
 
