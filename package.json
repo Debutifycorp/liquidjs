@@ -65,8 +65,8 @@
     "dev:docs": "run-s prepare:docs serve:docs"
   },
   "bin": {
-    "liquidjs": "./bin/liquid.js",
-    "liquid": "./bin/liquid.js"
+    "liquidjs": "bin/liquid.js",
+    "liquid": "bin/liquid.js"
   },
   "repository": {
     "type": "git",
