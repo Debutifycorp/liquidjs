@@ -87,8 +87,21 @@ describe('shopify/filters/media', () => {
     expect(await render('{{ product | image_url: width: 9999 }}')).toBe(`${BEAKERS}&width=3000`)
     expect(await render('{{ product | image_url: height: 9999 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?height=2000&v=1683744744`)
     expect(await render("{{ 'https://cdn.test/a.jpg' | image_url: width: 9999 }}", {})).toBe('https://cdn.test/a.jpg?width=5760')
+    expect(await render("{{ 'https://cdn.test/a.jpg' | image_url: height: 9999 }}", {})).toBe('https://cdn.test/a.jpg?height=5760')
     expect(await render('{{ product | image_url: width: 450, quality: 5 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?quality=10&v=1683744744&width=450`)
     expect(await render('{{ product | image_url: width: 450, quality: 200 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?quality=90&v=1683744744&width=450`)
+  })
+  it('image_url scales a too large request proportionally, so a square stays a square', async () => {
+    const small = { title: 'Small', featured_image: { src: BEAKERS, width: 1000, height: 600, alt: 'Small' } }
+    const url = (query: string) => `${HOST}/files/science-beakers-blue-light-new.jpg?${query}`
+    expect(await render('{{ product | image_url: width: 800, height: 800 }}', { product: small })).toBe(url('height=600&v=1683744744&width=600'))
+    const tag = await render("{{ product | image_url: width: 1500, height: 1500, crop: 'center' | image_tag }}", { product: small })
+    expect(tag).toContain(`src="${url('crop=center&amp;height=600&amp;v=1683744744&amp;width=600')}"`)
+    expect(tag).toContain('width="600" height="600"')
+    expect(tag).toContain(`${url('crop=center&amp;height=352&amp;v=1683744744&amp;width=352')} 352w`)
+    expect(await render('{{ product | image_url: width: 6000, height: 1000 }}')).toBe(url('height=500&v=1683744744&width=3000'))
+    expect(await render('{{ product | image_url: width: 500, height: 800 }}', { product: small })).toBe(url('height=600&v=1683744744&width=375'))
+    expect(await render('{{ product | image_url: width: 700, height: 900 }}', { product: small })).toBe(url('height=600&v=1683744744&width=467'))
   })
   it('the image_url result is a string to filters that read strings', async () => {
     expect(await render('{{ product | image_url: width: 450 | size }}')).toBe(String(`${BEAKERS}&width=450`.length))

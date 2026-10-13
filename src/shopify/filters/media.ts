@@ -30,7 +30,7 @@ function lazyByDefault (state: ShopifyState): boolean {
 /**
  * Returns the image's CDN URL through the `imageUrl` service; `image_tag` reads the image and parameters from the result. https://shopify.dev/docs/api/liquid/filters/image_url
  *
- * The page's Caution says that without a `width` or `height` "an error is returned", so that is an error here too (its `crop: 'region'` examples, which print a URL with neither, are the one exception); the page does not give the error's text. The page's Note says an image "can never be resized to be larger than its original dimensions", so `width` and `height` stop at the image's own when it has them, and at the 5760 maximum the page gives. `quality` stays within the page's 10 to 90.
+ * The page's Caution says that without a `width` or `height` "an error is returned", so that is an error here too (its `crop: 'region'` examples, which print a URL with neither, are the one exception); the page does not give the error's text. The page's Note says an image "can never be resized to be larger than its original dimensions", so `width` and `height` stop at the image's own when it has them, and at the 5760 maximum the page gives. When both are given and one is over its limit, both are scaled by the same factor (`min(1, limit / requested)` over the two), so an 800 by 800 request for a 1000 by 600 image is 600 by 600 and keeps the square the template asked for. shopify.dev does not say how the ratio is handled when a request is too large, so this proportional clamp is not pinned. `quality` stays within the page's 10 to 90.
  */
 function imageUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const source = imageSource(input)
@@ -43,17 +43,18 @@ function imageUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
     if (NUMERIC_PARAMS.includes(key)) {
       const n = Math.round(Number(value))
       if (!Number.isFinite(n) || n <= 0) continue
-      let limited = n
-      if (key === 'width') limited = Math.min(n, MAX_DIMENSION, source.image.width || Infinity)
-      else if (key === 'height') limited = Math.min(n, MAX_DIMENSION, source.image.height || Infinity)
-      else if (key === 'quality') limited = Math.min(Math.max(n, MIN_QUALITY), MAX_QUALITY)
-      ;(params as Record<string, number>)[key] = limited
+      ;(params as Record<string, number>)[key] = key === 'quality' ? Math.min(Math.max(n, MIN_QUALITY), MAX_QUALITY) : n
     } else {
       (params as Record<string, string>)[key] = stringify(value)
     }
   }
   if (params.width === undefined && params.height === undefined && params.crop !== 'region') {
     throw new Error('image_url needs a width or height')
+  }
+  const factor = Math.min(1, params.width ? Math.min(MAX_DIMENSION, source.image.width || Infinity) / params.width : 1, params.height ? Math.min(MAX_DIMENSION, source.image.height || Infinity) / params.height : 1)
+  if (factor < 1) {
+    if (params.width) params.width = Math.max(1, Math.round(params.width * factor))
+    if (params.height) params.height = Math.max(1, Math.round(params.height * factor))
   }
   return new ImageUrlDrop(shopifyState(this.context).services.imageUrl(source.image, params), source.image, params, source.alt)
 }
