@@ -19,3 +19,5 @@ export type { BlockData, FontInfo, ImageData, ImageUrlParams, LocaleTree, Sectio
 export { registerShopifyFilters, shopifyFilterImplementations, SHOPIFY_FILTER_SETS } from './filters'
 export type { FilterStatus, ShopifyFilter, ShopifyFilterDoc, ShopifyFilterEntry, ShopifyFilterSet } from './filters/types'
 export { SHOPIFY_TAGS, registerShopifyTags } from './tags'
+export { shopifyFilterRegistry, filterStatus } from './filters'
+export { SHOPIFY_FILTER_DOCS, THEME_LIQUID_DOCS_REVISION } from './filters/registry.generated'
