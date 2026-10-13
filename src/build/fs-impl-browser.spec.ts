@@ -1,7 +1,10 @@
+/** @jest-environment ./test/support/jsdom-environment.cjs */
 import * as fs from './fs-impl-browser'
 import { fakeServer, fakeXhr } from 'nise'
 import type { FakeServer } from 'nise'
-import { JSDOM } from 'jsdom'
+import type { JSDOM as JSDOMType } from 'jsdom'
+
+const JSDOM = (globalThis as any).JSDOM as typeof JSDOMType
 
 describe('fs/browser', function () {
   if (+(process.version.match(/^v(\d+)/) as RegExpMatchArray)[1] < 8) {
