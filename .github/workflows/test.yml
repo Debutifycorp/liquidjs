@@ -4,6 +4,7 @@ jobs:
   test:
     name: Test
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest]
         timezone: [Etc/GMT, Asia/Shanghai, America/New_York]
