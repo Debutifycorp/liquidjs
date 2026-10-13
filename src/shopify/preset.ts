@@ -95,6 +95,8 @@ export function createShopifyLiquid (options: ShopifyLiquidOptions = {}): Liquid
     fs: new ThemeFS(files),
     cache,
     // 'UTC', not 0: with an offset `%Z` prints `+0000`, where Ruby and liquid-spec print `UTC` (specs/basics/date-filters.yml `date_format_Z_timezone_name`); https://shopify.dev/docs/api/liquid/filters/date defers to Ruby's strftime and does not name the zone Shopify renders in
+    // an undefined top-level `{{ size }}` is nil, as every unknown name is in Ruby Liquid (`Context#find_variable`), where the engine's default would print the number of keys in the render's globals; shopify.dev does not pin the case, and liquid-spec has no spec for it
+    topLevelSize: false,
     timezoneOffset: 'UTC',
     parseLimit: options.parseLimit ?? SHOPIFY_DEFAULT_LIMITS.parseLimit,
     renderLimit: options.renderLimit ?? SHOPIFY_DEFAULT_LIMITS.renderLimit,

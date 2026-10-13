@@ -201,6 +201,17 @@ Which errors are written follows Ruby Liquid:
 - An undefined filter is recorded and not written only when it is met while rendering, for example inside a grouped expression (`groupedExpressions`). Under `strictFilters` a misspelt filter in an ordinary tag is a parse error and still throws, as in upstream LiquidJS, and without `strictFilters` it is not an error at all.
 - A syntax error in the template you pass to `parse` still throws, and so does a limit error (`memoryLimit`, `renderLimit`, `parseLimit`). A limit hit while rendering arrives wrapped in a `RenderError`, so test what you catch with `isLimitError(err)`, which looks through `originalError`; `LimitError.is(err)` is false for the wrapper.
 
+## topLevelSize
+
+**topLevelSize** is added by the `@debutify/liquidjs` fork and does not exist in upstream LiquidJS. It sets what `{{ size }}` prints when no scope defines `size`. Upstream LiquidJS looks an unknown name up on the render's `globals`, so `{{ size }}` prints their number of keys. With `topLevelSize: false` it is undefined and prints nothing, as in Ruby Liquid, where every unknown name is nil. A `size` that a scope or the globals define, and the size of a value (`list.size`), are not affected, and under `strictVariables` the undefined `size` is an undefined-variable error like any other. It defaults to `true`; the Shopify preset (`createShopifyLiquid`) sets it to `false`.
+
+```javascript
+const { Liquid } = require('@debutify/liquidjs')
+const globals = { a: 1, b: 2 }
+new Liquid({ globals }).parseAndRender('[{{ size }}]').then(console.log)                         // [2]
+new Liquid({ globals, topLevelSize: false }).parseAndRender('[{{ size }}]').then(console.log)  // []
+```
+
 [liquid]: /api/classes/Liquid.html
 [caching]: ./caching.html
 [abstract-fs]: ./render-file.html#Abstract-File-System

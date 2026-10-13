@@ -88,6 +88,11 @@ export class Context {
   }
   public * _get (paths: (PropertyKey | Drop)[]): IterableIterator<unknown> {
     const scope = this.findScope(paths[0] as string) // first prop should always be a string
+    // no scope defines `size`, so `findScope` fell back to the globals, whose `size` would be their number of keys
+    if (paths[0] === 'size' && !this.opts.topLevelSize && !(paths[0] in scope)) {
+      if (this.strictVariables) throw new InternalUndefinedVariableError('size')
+      return undefined
+    }
     return yield this._getFromScope(scope, paths)
   }
   /**

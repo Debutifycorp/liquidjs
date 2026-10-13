@@ -37,6 +37,8 @@ export interface LiquidOptions {
   rawTags?: string[];
   /** Write a render error where it happened as `Liquid error (<file> line <n>): <message>` and keep rendering, as Shopify does, instead of throwing. Which errors are written follows Ruby Liquid: an error in a tag that prints nothing (`assign`, `capture`, a block with a blank body), an undefined variable under `strictVariables`, and an undefined filter met while rendering (under `strictFilters` an ordinary one is a parse error and still throws) are only recorded, and a limit (`memoryLimit`, `renderLimit`, `parseLimit`) still throws. Collect the errors with `RenderOptions.errors`. Defaults to `false`. */
   inlineErrors?: boolean;
+  /** What `{{ size }}` prints when no scope defines `size`. Upstream LiquidJS looks the name up on the render's globals, so it prints their number of keys. With `false` it is undefined, as in Ruby Liquid, where an unknown name is nil whatever it is called. A `size` that a scope or the globals define, and the `size` of a value (`list.size`), are not affected. Defaults to `true`. */
+  topLevelSize?: boolean;
   /** If set, treat the `filepath` parameter in `{%include filepath %}` and `{%layout filepath%}` as a variable, otherwise as a literal value. Defaults to `true`. */
   dynamicPartials?: boolean;
   /** Whether or not to assert filter existence. If set to `false`, undefined filters will be skipped. Otherwise, undefined filters will cause an exception. Defaults to `false`. */
@@ -155,6 +157,7 @@ export interface NormalizedFullOptions extends NormalizedOptions {
   numberSemantics: 'js' | 'ruby';
   rawTags: string[];
   inlineErrors: boolean;
+  topLevelSize: boolean;
   dynamicPartials: boolean;
   fs: FS;
   strictFilters: boolean;
@@ -198,6 +201,7 @@ export const defaultOptions: NormalizedFullOptions = {
   // frozen, and compared by identity in the tokenizer: a list given as an option is a different array, even when it reads ['raw']
   rawTags: Object.freeze(['raw']) as string[],
   inlineErrors: false,
+  topLevelSize: true,
   dateFormat: '%A, %B %-e, %Y at %-l:%M %P %z',
   locale: '',
   trimTagRight: false,

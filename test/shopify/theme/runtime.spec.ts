@@ -279,5 +279,13 @@ describe('shopify/theme/runtime', () => {
     const { html } = await renderPage({ theme, templateName: 'index', data: { shop: { name, domain: 'other.example', currency: 'USD' } } })
     expect(html).toContain(`<title>${name}</title>`)
     expect(html.match(/var Shopify = /g)).toHaveLength(1)
+  it('reads an undefined size in a section as nothing, not the number of keys in the page globals', async () => {
+    const files = {
+      'templates/x.json': JSON.stringify({ layout: false, sections: { main: { type: 'sec' } } }),
+      'sections/sec.liquid': "[{{ size }}][{{ size | default: 'M' }}][{% render 'sized' %}][{% render 'sized', size: 'L' %}]",
+      'snippets/sized.liquid': '{{ size }}'
+    }
+    const { html } = await renderPage({ theme: { files }, templateName: 'x' })
+    expect(html).toBe('<div id="shopify-section-template--x__main" class="shopify-section">[][M][][L]</div>')
   })
 })

@@ -1,7 +1,7 @@
 import { createShopifyLiquid, renderLiquid, SHOPIFY_DEFAULT_LIMITS } from '../../src/shopify'
 
 describe('createShopifyLiquid', () => {
-  const liquid = createShopifyLiquid({ files: { 'snippets/price.liquid': '[{{ amount }}]' } })
+  const liquid = createShopifyLiquid({ files: { 'snippets/price.liquid': '[{{ amount }}]', 'snippets/sized.liquid': '[{{ size }}]' } })
   const render = (source: string, scope: object = {}) => renderLiquid(liquid, source, scope)
 
   it('uses Ruby number semantics', async () => expect((await render('{{ 10 | divided_by: 4 }} {{ 2.0 }}')).html).toBe('2 2.0'))
@@ -47,6 +47,18 @@ describe('createShopifyLiquid', () => {
   it('lets a caller lower a limit', async () => {
     const small = createShopifyLiquid({ parseLimit: 10 })
     await expect(renderLiquid(small, '{{ "a long template" }}')).rejects.toThrow(/parse length limit exceeded/)
+  })
+  it('reads an undefined top-level size as nothing, not the number of keys in the globals', async () => {
+    expect((await render('[{{ size }}]')).html).toBe('[]')
+    expect((await render("{{ size | default: 'M' }}")).html).toBe('M')
+    expect((await render('{% if size %}set{% else %}unset{% endif %}')).html).toBe('unset')
+    expect((await render("{% render 'sized' %}", {})).html).toBe('[]')
+  })
+  it('still reads a size that is set, and the size of a value', async () => {
+    expect((await render('{{ size }}', { size: 'L' })).html).toBe('L')
+    expect((await render("{% assign size = 'S' %}{{ size }}")).html).toBe('S')
+    expect((await render("{% render 'sized', size: 'XL' %}")).html).toBe('[XL]')
+    expect((await render('{{ list.size }} {{ list | size }} {{ text.size }}', { list: [1, 2], text: 'abc' })).html).toBe('2 2 3')
   })
   it('hides own-property-less values', async () => expect((await render('{{ obj.constructor }}', { obj: {} })).html).toBe(''))
 })

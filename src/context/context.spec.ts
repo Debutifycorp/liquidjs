@@ -117,6 +117,36 @@ describe('Context', function () {
     })
   })
 
+  describe('topLevelSize', function () {
+    const globals = { one: 1, two: 2 }
+    it('should read an undefined top-level size as the number of keys in globals by default', function () {
+      expect(new Context({}, defaultOptions, { globals }).getSync(['size'])).toEqual(2)
+    })
+    it('should read an undefined top-level size as undefined when disabled', function () {
+      const ctx = new Context({}, normalize({ topLevelSize: false }), { globals })
+      expect(ctx.getSync(['size'])).toBeUndefined()
+      expect(ctx.getSync(['size', 'first'])).toBeUndefined()
+    })
+    it('should still read a size that a scope defines', function () {
+      const opts = normalize({ topLevelSize: false })
+      expect(new Context({ size: 'M' }, opts, { globals }).getSync(['size'])).toEqual('M')
+      expect(new Context({}, opts, { globals: { size: 'L' } }).getSync(['size'])).toEqual('L')
+      const ctx = new Context({}, opts, { globals })
+      ctx.push({ size: 'S' })
+      expect(ctx.getSync(['size'])).toEqual('S')
+    })
+    it('should still read the size of a value when disabled', function () {
+      const ctx = new Context({ list: [1, 2, 3], text: 'ab', map: { a: 1 } }, normalize({ topLevelSize: false }), { globals })
+      expect(ctx.getSync(['list', 'size'])).toEqual(3)
+      expect(ctx.getSync(['text', 'size'])).toEqual(2)
+      expect(ctx.getSync(['map', 'size'])).toEqual(1)
+    })
+    it('should throw for an undefined top-level size under strictVariables when disabled', function () {
+      const ctx = new Context({}, normalize({ topLevelSize: false, strictVariables: true }), { globals })
+      expect(() => ctx.getSync(['size'])).toThrow(/undefined variable: size/)
+    })
+  })
+
   describe('ownPropertyOnly', function () {
     let ctx: Context
     beforeEach(function () {
