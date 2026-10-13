@@ -31,7 +31,6 @@ Details that do not fit the table:
 - With `inlineErrors`, an undefined variable is recorded and not written, but it is an error only under `strictVariables`; by default nothing is recorded.
 - With `inlineErrors`, an undefined filter is recorded and not written only when it is met while rendering, for example inside a grouped expression (`groupedExpressions`). Under `strictFilters` a misspelt filter in an ordinary tag is a parse error and still throws, as in upstream LiquidJS, and without `strictFilters` it is not an error at all.
 - With `inlineErrors`, a syntax error met while rendering, such as in a partial parsed at render time, is written as `Liquid syntax error (<file> line <n>): <message>`. A syntax error in the template you pass to `parse` still throws, and so does a limit error (`memoryLimit`, `renderLimit`, `parseLimit`). A limit hit while rendering arrives wrapped in a `RenderError`, so test what you catch with `isLimitError(err)`, which looks through `originalError`; `LimitError.is(err)` is false for the wrapper.
-
 - With `topLevelSize: false`, `{{ size }}` prints nothing, `{% if size %}` is false and `{{ size | default: 'M' }}` prints `M` when nothing defines `size`. Under `strictVariables` an undefined `size` throws like any other undefined variable.
 
 All four defaults are upstream LiquidJS's behaviour, so none of this changes anything until you opt in.
@@ -42,7 +41,7 @@ The `/shopify` entry point renders Shopify Online Store 2.0 themes without a Sho
 
 With the Shopify layer, import `Drop`, `LiquidFloat` and any other engine class from `@debutify/liquidjs/shopify`; a Drop built on the root entry's class reads as empty under the preset.
 
-The `./shopify` entry of the package's `exports` map has `types`, `module` and `default` conditions, and no `import` or `require` condition. Bundlers that read `module` take the ES module build, `dist/shopify.node.mjs`; plain Node, whether the caller uses `import` or `require`, takes `default`, the CommonJS build `dist/shopify.node.js`.
+The `./shopify` entry of the package's `exports` map has `types`, `module` and `default` conditions, and no `import` or `require` condition. Bundlers that read `module` take the ES module build, `dist/shopify.node.mjs`; plain Node, whether the caller uses `import` or `require`, takes `default`, the CommonJS build `dist/shopify.node.js`. The `/shopify` entry is for Node: it imports Node's `stream`, `path`, `fs`, `module` and `crypto` and has no browser build, which the root entry keeps.
 
 What each tag, filter and object prints follows its page in shopify.dev's [Liquid reference](https://shopify.dev/docs/api/liquid); where shopify.dev does not pin an output, the package follows the closest documented behaviour or Shopify Liquid's own tests, and the case is listed under [Behaviours still to confirm on Shopify](#behaviours-still-to-confirm-on-shopify).
 
@@ -57,31 +56,29 @@ const theme = {
   files: {
     'layout/theme.liquid': '<!doctype html><html><head>{{ content_for_header }}</head><body>{{ content_for_layout }}</body></html>',
     'templates/product.json': '{ "sections": { "main": { "type": "main-product" } }, "order": ["main"] }',
-    'sections/main-product.liquid': '<h1>{{ product.title }}</h1>{{ product.price | money }}{% schema %}{ "name": "Product" }{% endschema %}'
+    'sections/main-product.liquid': '<h1>{{ product.title }}</h1>{{ product.price | money }}<link rel="stylesheet" href="{{ "product.css" | asset_url }}">{% schema %}{ "name": "Product" }{% endschema %}'
   }
 }
 
-const { html, report } = await renderPage({
-  theme,
-  templateName: 'product',
-  request: { resource: 'canvas-bag' },
-  services: { assetUrl: (path) => `https://cdn.example.com/assets/${path}` }
-})
-// html ends with <body><div id="shopify-section-template--product__main" class="shopify-section"><h1>Canvas Bag</h1>$45.00</div></body></html>
+const services = { assetUrl: (path) => `https://cdn.example.com/assets/${path}` }
 
-const { html: section } = await renderSection({ theme, templateName: 'product', section: 'main', request: { resource: 'canvas-bag' } })
-// section is <div id="shopify-section-template--product__main" class="shopify-section"><h1>Canvas Bag</h1>$45.00</div>
+const { html, report } = await renderPage({ theme, templateName: 'product', request: { resource: 'canvas-bag' }, services })
+// html ends with <body><div id="shopify-section-template--product__main" class="shopify-section"><h1>Canvas Bag</h1>$45.00<link rel="stylesheet" href="https://cdn.example.com/assets/product.css"></div></body></html>
+// report.errors is [] and report.sections[0].status is 'rendered'
+
+const { html: section } = await renderSection({ theme, templateName: 'product', section: 'main', request: { resource: 'canvas-bag' }, services })
+// section is <div id="shopify-section-template--product__main" class="shopify-section"><h1>Canvas Bag</h1>$45.00<link rel="stylesheet" href="https://cdn.example.com/assets/product.css"></div>
 ```
 
-From CommonJS, which has no top-level `await`, use `require` with `.then` (with the `theme` object from above):
+From CommonJS, which has no top-level `await`, use `require` with `.then` (with the `theme` and `services` objects from above):
 
 ```js
 const { renderPage } = require('@debutify/liquidjs/shopify')
 
-renderPage({ theme, templateName: 'product', request: { resource: 'canvas-bag' } }).then(({ html }) => console.log(html))
+renderPage({ theme, templateName: 'product', request: { resource: 'canvas-bag' }, services }).then(({ html }) => console.log(html))
 ```
 
-`theme.files` holds every file of the theme by path; the package never reads the file system. Keep the same `theme` object between renders: it is parsed once, and a file you edit in `theme.files` is re-parsed on the next render. Without `data`, pages render with the package's small public sample store (`sampleStoreData`). A template the theme does not have rejects.
+`theme.files` holds every file of the theme by path; the package never reads the file system. Keep the same `theme` object between renders: it is parsed once, and a file you edit in `theme.files` is re-parsed on the next render. Without `data`, pages render with the package's small public sample store (`sampleStoreData`): the products `classic-tee`, `canvas-bag` (Canvas Bag, $45.00) and `ceramic-mug`, the collections `frontpage` and `apparel`, the pages `about` and `contact` and the blog `news`, which is why `request: { resource: 'canvas-bag' }` finds a product in the example. To render your own store, pass `data`, a `StoreData` object (an exported type, with `sampleStoreData` as a model of one). `t` reads translations from `locales/<locale>.json`, `locales/<locale>.default.json` and the `.schema.json` variants in `theme.files`. A template the theme does not have rejects.
 
 The options of `renderPage` are `theme`, `templateName` (`index`, `product`, `page.contact`, `customers/login`), `data` (a `StoreData` object), `locale`, `request` (`path`, `host`, `origin`, `page`, `resource`, `context` for contextual section groups, `searchTerms`), `services`, `trustLiquidSettings`, `trustHtmlSettings`, `renderLimit` and `memoryLimit`. `renderSection` takes the same options plus `section`: the id `renderPage` reports for it (`template--product__main`), a key of the template's `sections` (`main`) or the name of a static section. It returns `html`, `report` and `assets`, the bodies of the `{% stylesheet %}` and `{% javascript %}` tags that ran while the section rendered. A section the page does not have renders nothing and is reported.
 
@@ -93,15 +90,15 @@ The templates follow shopify.dev's [JSON templates](https://shopify.dev/docs/sto
 import { createShopifyLiquid, renderLiquid } from '@debutify/liquidjs/shopify'
 
 const liquid = createShopifyLiquid({ files: { 'snippets/price.liquid': '{{ price | money }}' } })
-const { html, report } = await renderLiquid(liquid, "{{ 1999 | money }} {{ 10 | divided_by: 4 }} {{ 'Hello World' | handleize }}")
-// html is "$19.99 2 hello-world"
+const { html, report } = await renderLiquid(liquid, "{{ 1999 | money }} {{ 10 | divided_by: 4 }} {{ 'Hello World' | handleize }} {% render 'price', price: 500 %}")
+// html is "$19.99 2 hello-world $5.00" and report.errors is []
 ```
 
-`files` holds the snippets and layouts that `render`, `include` and `layout` read (`{% render 'price', price: 500 %}` reads `snippets/price.liquid`). `renderLiquid(liquid, source, scope)` starts every call from a fresh state, so two renders never share a report. Globals you pass at render time replace the engine's `globals` option, as in LiquidJS; the preset keeps its own Shopify state either way. `createShopifyLiquid` takes `files`, `services`, `translator`, `moneyFormat`, `moneyWithCurrencyFormat`, `unknownTags`, `trustLiquidSettings`, `trustHtmlSettings`, `parseLimit`, `renderLimit`, `memoryLimit` and `engine`, a LiquidJS options object applied last, over the preset.
+`files` holds the snippets and layouts that `render`, `include` and `layout` read (`{% render 'price', price: 500 %}` reads `snippets/price.liquid`). `renderLiquid(liquid, source, scope)` starts every call from a fresh state, so two renders never share a report, and its `scope` is the template's scope; it takes no render options. With `liquid.parseAndRender(source, scope, { globals })`, the globals you pass replace the engine's `globals` option, as in LiquidJS; the preset keeps its own Shopify state either way. `createShopifyLiquid` takes `files`, `services`, `translator`, `moneyFormat`, `moneyWithCurrencyFormat`, `unknownTags`, `trustLiquidSettings`, `trustHtmlSettings`, `parseLimit`, `renderLimit`, `memoryLimit` and `engine`, a LiquidJS options object applied last, over the preset.
 
 ### Services
 
-The package never fetches anything and names no host. URLs, artwork, fonts and the clock come from `services`, which both `renderPage` and `createShopifyLiquid` accept; every one has a host-free default, and the defaults are Debutify's stand-ins, not Shopify's output.
+The package never fetches anything and names no host of its own: the only literal hosts are the video players' embed URLs that `external_video_url` and `external_video_tag` write (`https://www.youtube.com/embed/` and `https://player.vimeo.com/video/`), and the SVG namespace in the default artwork is not a host. URLs, artwork, fonts and the clock come from `services`, which both `renderPage` and `createShopifyLiquid` accept; every one has a host-free default, and the defaults are Debutify's stand-ins, not Shopify's output.
 
 | Service | Used by | Default |
 | --- | --- | --- |
@@ -123,19 +120,19 @@ An unknown filter returns its input and an unknown tag renders nothing, so one g
 
 ### Filter status
 
-`shopifyFilterRegistry()` lists every filter in Shopify's [theme-liquid-docs](https://github.com/Shopify/theme-liquid-docs) with a status: `exact` (matches output recorded from Shopify), `approx` (implemented from shopify.dev, not yet matched against Shopify), `stub` (documented but not implemented: renders nothing and is reported) or `engine` (a standard Liquid filter provided by the engine). This release has 154 filters: 57 `engine`, 50 `approx`, 47 `stub`, none `exact` yet; a filter becomes `exact` only after it matches output recorded from a Shopify store. `shopifyFilterRegistry().filter((filter) => filter.status === 'stub')` lists the stubs, among them `md5`, `sha1`, `hmac_sha1`, `base64_url_safe_encode`, `base64_url_safe_decode`, `payment_terms`, `asset_img_url`, `file_url`, `payment_type_img_url` and `inline_asset_content`.
+`shopifyFilterRegistry()` lists every filter in Shopify's [theme-liquid-docs](https://github.com/Shopify/theme-liquid-docs) with a status: `exact` (matches output recorded from Shopify), `approx` (implemented from shopify.dev, not yet matched against Shopify), `stub` (documented but not implemented: renders nothing and is reported) or `engine` (a standard Liquid filter provided by the engine). This release has 154 filters: 56 `engine`, 51 `approx`, 47 `stub`, none `exact` yet; a filter becomes `exact` only after it matches output recorded from a Shopify store. `shopifyFilterRegistry().filter((filter) => filter.status === 'stub')` lists the stubs, among them `md5`, `sha1`, `hmac_sha1`, `base64_url_safe_encode`, `base64_url_safe_decode`, `payment_terms`, `asset_img_url`, `file_url`, `payment_type_img_url` and `inline_asset_content`.
 
 ### Safety
 
-Theme files come only from the `files` map: no file-system access and no `require`. The preset turns on `ownPropertyOnly` and sets `parseLimit` (10,000,000 characters per file), `renderLimit` (2,000 ms per render) and `memoryLimit` (100,000,000 of LiquidJS's allocation units per render); callers may lower them. These limits are cooperative, not isolation: render themes you did not write in a worker thread or child process with memory limits and a kill timeout, as LiquidJS's [security model](https://liquidjs.com/tutorials/security-model.html) advises.
+Theme files come only from the `files` map: no file-system access and no `require`. The preset turns on `ownPropertyOnly` and sets `parseLimit` (10,000,000 characters per file), `renderLimit` (2,000 ms per render) and `memoryLimit` (100,000,000 of LiquidJS's allocation units per render); callers may lower them. A render that runs past `renderLimit` or `memoryLimit` rejects instead of returning a page (`template render limit exceeded`, `memory alloc limit exceeded`); test what you catch with `isLimitError(err)`, as the options section above describes. These limits are cooperative, not isolation: render themes you did not write in a worker thread or child process with memory limits and a kill timeout, as LiquidJS's [security model](https://liquidjs.com/tutorials/security-model.html) advises.
 
 Setting values are treated as untrusted by default, which is different from Shopify. On shopify.dev's [input settings](https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings) page, a `liquid` setting accepts "HTML and limited Liquid markup" that Shopify renders, and an `html` setting has only `<html>`, `<head>` and `<body>` removed; the page says nothing about sanitising them, so Shopify in effect trusts the merchant who writes them. Debutify's preset is built for settings that an AI model or a user wrote, so it does the opposite until you opt in:
 
 - A `liquid` setting prints as escaped text, so `{{ shop.name }}` and markup in it show up literally.
 - An `html` setting passes an allowlist sanitiser that keeps formatting markup and links and drops scripts, styles, frames, forms, event handlers, inline styles and every URL scheme but `http`, `https`, `mailto` and `tel`. It is not a general-purpose sanitiser; it only makes setting values safe to print. Any other text setting (`text`, `textarea`) that contains `<` goes through the same sanitiser, and plain text prints byte for byte as stored.
 - `richtext` and `inline_richtext` settings are always sanitised, whichever mode you choose.
-- Every other setting type is held to the form shopify.dev documents for it, because Shopify's editor writes only those forms. A `url` or `video_url` with a quote, angle bracket, backtick, whitespace or control character, with a character reference to a quote or a number (`&#39;`, `&quot;`, `&apos;`), or with a scheme other than `http`, `https`, `mailto` and `tel`, is dropped (relative paths, `/…`, `#…` and `shopify://…` pass). A `select`, `radio` or `text_alignment` must hold one of its options. A `range` and a `number` must be finite numbers, and a `range` is clamped to its `min` and `max`. A `checkbox` must be a boolean, and one that is unset with no `default` reads `false`, as shopify.dev says. A `color` must be hex, `rgb()` or `hsl()` (alpha forms included), so a named colour such as `red` is rejected, and a `color_background` must be a colour or a plain gradient: `linear-gradient`, `radial-gradient`, `conic-gradient` and their `repeating-` forms around colours, so a value that calls any other function, such as `url()`, is rejected. An `image_picker` given as data needs a URL-shaped `src` (held to the same rules as a `url`) and numeric `width`, `height`, `id` and `focal_point`, and an `alt` without a quote, angle bracket, backtick or control character, which is dropped (the image stays) when it has one. A colour scheme's id may hold only letters, digits, `-` and `_`. A `metaobject` or `metaobject_list` setting holds no metaobject here, so a string stored in it follows the text rule above.
-- The JSON that places sections and blocks is held to the same rule, because themes print `section.id`, `block.id` and `block.type` in ids, class names, attributes and `<style>`. A section key, a block key and a block `type` may hold only letters, digits, `-` and `_` (Shopify's own are of that form), a block `type` may also be `@app` or the `shopify://apps/…/blocks/…/…` form of an app block, and a section group's `type` may also hold `.` (`custom.<name>`). Anything else is skipped, and a group `type` falls back to the group's name, and each is reported under the feature `unsafe_key` without the key. A template `wrapper` with an event-handler attribute (a name starting with `on`) or a `style` attribute is not applied and is reported under `wrapper`; `parseWrapper(spec, true)` accepts them.
+- Every other setting type is held to the form shopify.dev documents for it, because Shopify's editor writes only those forms. A `url` or `video_url` with a quote, angle bracket, backtick, whitespace or control character, with a character reference to a quote or a number (`&#39;`, `&quot;`, `&apos;`), or with a scheme other than `http`, `https`, `mailto` and `tel`, is dropped (relative paths, `/…`, `#…` and `shopify://…` pass). A `select`, `radio` or `text_alignment` must hold one of its options. A `range` and a `number` must be finite numbers, and a `range` is clamped to its `min` and `max`. A `checkbox` must be a boolean, and one that is unset with no `default` reads `false`, as shopify.dev says. A `color` must be hex, `rgb()` or `hsl()` (alpha forms included), so a named colour such as `red` is rejected, and a `color_background` must be a colour or a plain gradient: `linear-gradient`, `radial-gradient`, `conic-gradient` and their `repeating-` forms around colours, so a value that calls any other function, such as `url()`, is rejected. An `image_picker` given as data needs a URL-shaped `src` (held to the same rules as a `url`) and numeric `width`, `height`, `id` and `focal_point`, and an `alt` whose apostrophes become typographic ones (`Women's dress` reads `Women’s dress`, which cannot end a single-quoted attribute); an `alt` that still has a double quote, angle bracket, backtick or control character is dropped, and the image stays. A colour scheme's id may hold only letters, digits, `-` and `_`. A `metaobject` or `metaobject_list` setting holds no metaobject here, so a string stored in it follows the text rule above.
+- In untrusted mode the JSON that places sections and blocks is held to the same rule, because themes print `section.id`, `block.id` and `block.type` in ids, class names, attributes and `<style>`. A section key, a block key and a block `type` may hold only letters, digits, `-` and `_` (Shopify's own are of that form), a block `type` may also be `@app` or the `shopify://apps/…/blocks/…/…` form of an app block, and a section group's `type` may also hold `.` (`custom.<name>`). Anything else is skipped (a group `type` falls back to the group's name) and reported under the feature `unsafe_key` without the key. A template `wrapper` with an event-handler attribute (a name starting with `on`, in any case) or a `style` attribute is not applied, so the page renders without a wrapper, and is reported under the feature `wrapper`; `parseWrapper(spec, trusted)` takes `true` as its second argument to accept them, which is what trusted mode passes.
 - A rejected value falls back to the setting's default (or to what an unset setting of that type reads) and is listed in `report.unsupported` under the feature `invalid_setting`, `unsafe_url`, `unsafe_key` or `color_scheme`; the entry never contains the rejected value. Stored keys that are not declared and carry a quote, angle bracket, backtick or control character are dropped the same way (feature `unsafe_key`). A resource setting whose handle names nothing is listed in `report.missing` by its setting (`product of setting featured`), not by the handle, an unknown `font_picker` font is reported without its handle, and a missing section or block `type` shows as `(unsafe name)` unless it is made of letters, digits and `. _ - / : @`, because the report may be shown as HTML.
 - `json`, `jsonify` and `inspect` always write `/` as `\/` and `<`, `>`, `&`, U+2028 and U+2029 as `\uXXXX` escapes, whichever mode you choose, so a stored value or key cannot end a `<script type="application/json">` block; the escaped text parses to the same JSON. `\/` is what Shopify prints (it is recorded on liquid-spec's Dawn pages); shopify.dev says nothing about escaping and no recording holds the other characters, so those escapes are Debutify's choice.
 
@@ -143,7 +140,28 @@ To opt into trusted mode, pass `trustLiquidSettings: true` for `liquid` settings
 
 ### Conformance
 
-Shopify's liquid-spec runs in CI on the Shopify preset, including the recordings of Shopify's Dawn theme. The numbers, what the build gates on and the known gaps are under [Shopify compatibility](#shopify-compatibility).
+Shopify's liquid-spec runs in CI on the Shopify preset, including the recordings of Shopify's Dawn theme. The numbers, what the build gates on, the known gaps and the [behaviours still to confirm on Shopify](#behaviours-still-to-confirm-on-shopify) follow under [Shopify compatibility](#shopify-compatibility).
+
+## Shopify compatibility
+
+On the Shopify preset (`createShopifyLiquid`), 3990 of the 4585 specs in Shopify's [liquid-spec](https://github.com/Shopify/liquid-spec) (commit 84bf25e) pass (87.0%), and 13 of the 26 specs recorded from Shopify's Dawn theme pass (the other 13 need Dawn's snippets, see Known gaps). CI runs them on every push to `master` and on every pull request, and gates on the per-spec baseline in `spec/liquid-spec/baseline.json`: a spec that passed must keep passing, and the pass count may not drop.
+
+The figures count the specs the adapter runs, not every spec in the gem. `spec/liquid-spec/adapter.rb` skips the specs that need Ruby objects or bytes that JSON cannot carry (Ruby drops and types, drop class names, randomness, binary data, template factories, `self` shadowing the environment), the range resource limits and the strict2 blank-body errors, and five Shopify feature groups (`shopify_includes`, `shopify_blank`, `shopify_error_handling`, `shopify_error_format`, `shopify_string_access`) stay switched off because each has failing specs. Most of the other known failures are differences in the core engine inherited from LiquidJS: parser edge cases and error texts, `for` loop `limit` and `offset` permutations, and Ruby `inspect` text.
+
+### Known gaps
+
+Shopify features the package does not have yet, most of them seen as failing liquid-spec specs:
+
+- `base64_url_safe_encode` and `base64_url_safe_decode` are stubs (15 specs), as are `md5`, `sha1` and `hmac_sha1`.
+- `date` and `time_tag` lack some strftime directives: `%F %D %T %R %r %v` print the directive, `%V %G %g` (ISO week) are not expanded, and `%c %x %X` print locale text where Ruby prints `Mon Jun 15 14:30:45 2020`, `06/15/20` and `14:30:45`; a string's own offset (`-0400`) is dropped, so `%z` prints `+0000`, and an empty format does not print Ruby's default (`2020-06-15 14:30:45`).
+- `render … for items` without `as` loops but does not bind the partial's name (`render … for items as name` does), `include … for` does not loop over the collection, `include … with value as name` does not bind `name`, and an `include … with` followed by a named argument (`{% include 'font' with multiplier: 1.5 %}`) binds differently from Shopify's lax parser.
+- `string.first` and `string.last` print nothing (shopify.dev does not pin them; liquid-spec expects them to work).
+- Bracket access `a['size']` returns the length, where Shopify reads nil.
+- Ruby's comparison errors (`comparison of String with 1 failed`) are not reproduced.
+- `tablerow` differs from Shopify on a string collection (one cell, `limit` and `offset` ignored), on a `limit` that is not a number (Shopify raises `invalid integer`) and on `break` and `continue` inside it.
+- A recursive `render` or `include` runs to `renderLimit` (`template render limit exceeded`) instead of stopping at `Nesting too deep`.
+- `ifchanged` is not implemented and is reported as an unknown tag.
+- Dawn's snippet files are not vendored, because Dawn's licence limits use to building Shopify themes, so the 13 Dawn specs that render them cannot pass.
 
 ### Behaviours still to confirm on Shopify
 
@@ -214,11 +232,11 @@ shopify.dev does not pin these outputs, or pins only part of the filter, tag or 
 **Theme runtime**
 
 - Section and block ids: the [section object](https://shopify.dev/docs/api/liquid/objects/section) page says Shopify generates the ids of sections in JSON templates dynamically, and the [Section Rendering API](https://shopify.dev/docs/api/ajax/section-rendering) page gives only the examples `sections--1234__header` and `template--5678__image_banner`. Here they are `template--<template>__<key>` and `sections--<group>__<key>`, and blocks that come from a schema `default` get `block-1`, `block-2`…
-- The `shopify-section-group-<group>` class and the `<!-- BEGIN sections: <group> -->` comments around a [section group](https://shopify.dev/docs/storefronts/themes/architecture/section-groups), which the page describes only as having "no markup between the sections".
+- The `<!-- BEGIN sections: <group> -->` and `END` comments around a [section group](https://shopify.dev/docs/storefronts/themes/architecture/section-groups), which the page describes only as having "no markup between the sections"; the `shopify-section-group-<group>` class is shown by the [Section Rendering API](https://shopify.dev/docs/api/ajax/section-rendering) page's example response (which writes `className`, apparently a typo) and followed here.
 - The `wrapper` grammar of a JSON template beyond the page's one example, and schema `tag` values beyond the documented six (any lowercase element name is accepted, and the 50-character limit on a block's `tag` is not enforced).
 - A block's wrapper markup (`<div id="shopify-block-<id>" class="shopify-block">`), `class` when `tag` is `null` (not applied), and `block.shopify_attributes`, which is always empty because the package has no theme editor.
 - Where a static section's saved settings live (`current.sections[<name>]` in [`settings_data.json`](https://shopify.dev/docs/storefronts/themes/architecture/config/settings-data-json), whose page documents only `current`, `presets` and `platform_customizations`), and `current` given as a preset name.
-- Where a [static block](https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks/static-blocks)'s saved settings live (the entry with its `id` in the `blocks` of the section or block it renders in), a saved entry whose `type` differs from the tag's (the tag's type wins), and `content_for 'block'` with no saved settings (the block renders with its schema defaults).
+- A [static block](https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks/static-blocks)'s saved entry sits under the `blocks` of the section or block it renders in, with `"static": true` and no place in `block_order`, as the page's "Static theme blocks in data" shows; this package requires the flag, and an entry without it is not used and is reported as `unsupported`. Still open: a saved entry whose `type` differs from the tag's (the tag's type wins), and `content_for 'block'` with no saved entry (the block renders with its schema defaults).
 - Contextual section group files: how one merges with its parent (objects by key, arrays replaced), which one wins when several match, and `market` combined with `b2b`.
 - Which template wins when a JSON and a Liquid template share a name (the JSON one), which wins in `renderSection` when a bare template key and a static section share a name, and group ids whose key contains `__`.
 - The template renders before the layout, so a Liquid template's `assign` is not visible in its layout; the [layouts](https://shopify.dev/docs/storefronts/themes/architecture/layouts) page says Shopify can start sending the page when the layout reaches `content_for_header`, before the template's sections render.
@@ -229,27 +247,6 @@ shopify.dev does not pin these outputs, or pins only part of the filter, tag or 
 - The section schema's `blocks` list (`@theme`, `@app`, block types) does not restrict what renders from saved data, and `disabled` on a block (documented for sections only) skips it.
 - The text of a section's syntax error and of the `content_for` errors (unknown type, missing `type` or `id`), and where a failing block's error lands.
 - Block-level `t` lookups: a block resolves `sections.<section type>.<key>` through its section's schema `locales`.
-
-## Shopify compatibility
-
-On the Shopify preset (`createShopifyLiquid`), 3990 of the 4585 specs in Shopify's [liquid-spec](https://github.com/Shopify/liquid-spec) (commit 84bf25e) pass (87.0%), and 13 of the 26 specs recorded from Shopify's Dawn theme pass (the other 13 need Dawn's snippets, see Known gaps). CI runs them on every push to `master` and on every pull request, and gates on the per-spec baseline in `spec/liquid-spec/baseline.json`: a spec that passed must keep passing, and the pass count may not drop.
-
-liquid-spec skips the specs that need Ruby objects or bytes that JSON cannot carry (Ruby drops and types, randomness, binary data), and five Shopify feature groups (`shopify_includes`, `shopify_blank`, `shopify_error_handling`, `shopify_error_format`, `shopify_string_access`) stay switched off in the adapter because each has failing specs. Most of the other known failures are differences in the core engine inherited from LiquidJS: parser edge cases and error texts, `for` loop `limit` and `offset` permutations, and Ruby `inspect` text.
-
-### Known gaps
-
-Shopify features the package does not have yet, most of them seen as failing liquid-spec specs:
-
-- `base64_url_safe_encode` and `base64_url_safe_decode` are stubs (15 specs), as are `md5`, `sha1` and `hmac_sha1`.
-- `date` and `time_tag` lack some strftime directives: `%F %D %T %R %r %v` print the directive, `%V %G %g` (ISO week) are not expanded, and `%c %x %X` print locale text where Ruby prints `Mon Jun 15 14:30:45 2020`, `06/15/20` and `14:30:45`; a string's own offset (`-0400`) is dropped, so `%z` prints `+0000`, and an empty format does not print Ruby's default (`2020-06-15 14:30:45`).
-- `render … for items` without `as` does not bind the partial's name, and neither does `include … with` or `include … for`; `include` does not bind the variable named like the template.
-- `string.first` and `string.last` print nothing (shopify.dev does not pin them; liquid-spec expects them to work).
-- Bracket access `a['size']` returns the length, where Shopify reads nil.
-- Ruby's comparison errors (`comparison of String with 1 failed`) are not reproduced.
-- `tablerow` differs from Shopify on a string collection (one cell, `limit` and `offset` ignored), on a `limit` that is not a number (Shopify raises `invalid integer`) and on `break` and `continue` inside it.
-- A recursive `render` or `include` runs to `renderLimit` (`template render limit exceeded`) instead of stopping at `Nesting too deep`.
-- `ifchanged` is not implemented and is reported as an unknown tag.
-- Dawn's snippet files are not vendored, because Dawn's licence limits use to building Shopify themes, so the 13 Dawn specs that render them cannot pass.
 
 The upstream README follows.
 
