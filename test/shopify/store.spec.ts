@@ -452,8 +452,11 @@ describe('shopify/settings forms', () => {
       expect(image({ src }).value).toBeNull()
     }
     expect(image({ src: 'https://c.example/a.png" onerror="x' }).unsupported).toEqual([{ feature: 'unsafe_url', detail: 'image_picker setting pic has an image whose src is not a safe URL and was dropped' }])
-    // an alt is printed in an attribute: one with a quote, angle bracket, backtick or control character is dropped (the image stays) and reported without the alt
-    for (const alt of ['a" onerror="alert(12)', "a' onerror='x", 'a<b>b</b>', 'a>b', 'a`b', 'a\u0001b', 'a\u2028b', 'a\u007fb']) {
+    // an alt is printed in an attribute: one with a double quote, angle bracket, backtick or control character is dropped (the image stays) and reported without the alt
+    // an apostrophe becomes a typographic one, so a single-quoted attribute cannot end early and the text reads the same
+    expect((image({ src: '/a.png', alt: "Women's dress" }).value as any).alt).toBe('Women\u2019s dress')
+    expect((image({ src: '/a.png', alt: "a' onerror='x" }).value as any).alt).toBe('a\u2019 onerror=\u2019x')
+    for (const alt of ['a" onerror="alert(12)', 'a<b>b</b>', 'a>b', 'a`b', 'a\u0001b', 'a\u2028b', 'a\u007fb']) {
       const result = image({ src: '/a.png', alt })
       expect([alt, (result.value as any).src, (result.value as any).alt]).toEqual([alt, '/a.png', ''])
       expect(result.unsupported).toEqual([{ feature: 'invalid_setting', detail: 'image_picker setting pic has an image alt with a quote, angle bracket, backtick or control character and the alt was dropped' }])

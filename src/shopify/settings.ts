@@ -38,7 +38,7 @@ export interface SettingsEnv {
    * Without `liquidSettings`, `liquid` settings print as escaped text. Without `htmlSettings`:
    * - `html` settings are sanitised, and `richtext` and `inline_richtext` always are;
    * - `url` and `video_url` values are dropped (feature `unsafe_url`) when they contain a quote, an angle bracket, a backtick, whitespace or a control character, which a URL never carries unencoded, or a character reference to a quote or a number (`&#`, `&quot`, `&apos`), or have a scheme other than `http`, `https`, `mailto` and `tel` (relative paths, `/…`, `#…` and `shopify://…` pass);
-   * `select`, `radio` and `text_alignment` values must be one of the setting's options, `range` and `number` values finite numbers (a `range` is clamped to its `min` and `max`), `checkbox` values booleans, `color` values colours (`#rgb`, `#rrggbb`, `rgb()`, `hsl()` and their alpha forms), `color_background` values a colour or a gradient made of letters, digits and `#%.,()/+-` and spaces that calls only gradient and colour functions (not `url()`), and an `image_picker` given as data a URL-shaped `src` and numeric `width`, `height`, `id` and `focal_point`, and an `alt` free of quotes, angle brackets, backticks and control characters (dropped, with the image kept, when it is not);
+   * `select`, `radio` and `text_alignment` values must be one of the setting's options, `range` and `number` values finite numbers (a `range` is clamped to its `min` and `max`), `checkbox` values booleans, `color` values colours (`#rgb`, `#rrggbb`, `rgb()`, `hsl()` and their alpha forms), `color_background` values a colour or a gradient made of letters, digits and `#%.,()/+-` and spaces that calls only gradient and colour functions (not `url()`), and an `image_picker` given as data a URL-shaped `src` and numeric `width`, `height`, `id` and `focal_point`, and an `alt` whose apostrophes become typographic ones and that is free of double quotes, angle brackets, backticks and control characters (dropped, with the image kept, when it is not);
    * every other text-like value (`text`, `textarea`, a stored value no setting declares, a `default`) is passed through unchanged unless it contains `<`, when it goes through the sanitiser, so plain text stays byte-identical to Shopify and a theme's own `| escape` keeps working;
    * stored keys (undeclared setting ids and keys inside undeclared data) with a quote, an angle bracket, a backtick or a control character are dropped (feature `unsafe_key`), and so are colour-scheme ids with anything but letters, digits, `-` and `_` (feature `color_scheme`).
    *
@@ -225,9 +225,10 @@ function background (definition: SettingDefinition, stored: unknown, env: Settin
   return stored !== undefined && ok(definition.default) ? definition.default : null
 }
 
-/** The `alt` of an `image_picker` stored as data, for a theme that is not trusted with html (`imageData` has returned the image as it is for one that is). It must be free of quotes, angle brackets, backticks and control characters, as themes print it in an `alt` attribute (Dawn escapes it, others do not); one that is not is dropped, and the image stays, and the alt is reported (feature `invalid_setting`) without its text. */
+/** The `alt` of an `image_picker` stored as data, for a theme that is not trusted with html (`imageData` has returned the image as it is for one that is). Themes print it in an `alt` attribute (Dawn escapes it, others do not), so an apostrophe becomes a typographic one (U+2019, as in `Women’s`), which reads the same and cannot end a single-quoted attribute; an alt that still holds a double quote, angle bracket, backtick or control character is dropped, and the image stays, and the alt is reported (feature `invalid_setting`) without its text. */
 function safeAlt (definition: SettingDefinition, alt: string, env: SettingsEnv): { alt?: string } {
-  if (!UNSAFE_KEY_CHARACTER.test(alt)) return { alt }
+  const typographic = alt.replace(/'/g, '\u2019')
+  if (!UNSAFE_KEY_CHARACTER.test(typographic)) return { alt: typographic }
   reject(env, 'invalid_setting', definition, 'has an image alt with a quote, angle bracket, backtick or control character and the alt was dropped')
   return {}
 }
