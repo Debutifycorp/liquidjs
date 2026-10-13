@@ -7,7 +7,7 @@ const upstreamNotes = {
 }
 
 module.exports = {
-  branch: 'master',
+  branches: ['master'],
   tagFormat: 'debutify-v${version}',
   plugins: [
     '@semantic-release/commit-analyzer',
