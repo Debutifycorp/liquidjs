@@ -1,19 +1,43 @@
 #!/usr/bin/env node
 // Writes src/shopify/filters/registry.generated.ts from Shopify's theme-liquid-docs (data/filters.json).
-// Usage: node bin/shopify-filter-registry.js <path to a theme-liquid-docs checkout>
-// Check out the revision recorded in the generated file's header (or a newer one, on purpose) before running it.
+// Usage: pnpm run build:shopify-registry <path to a theme-liquid-docs checkout> [--update-revision] (pnpm 12 passes arguments through as they are, so give the path without `--`; node bin/shopify-filter-registry.js <path> works the same).
+// The checkout must be clean and at the revision the generated file pins (THEME_LIQUID_DOCS_REVISION), so the file can be rebuilt byte for byte from that revision alone. To move the pin on purpose, check out the newer revision and add --update-revision.
 
 const fs = require('fs')
 const path = require('path')
 const { execFileSync } = require('child_process')
 
-const docsDir = process.argv[2]
-if (!docsDir) {
-  console.error('usage: node bin/shopify-filter-registry.js <theme-liquid-docs checkout>')
+const target = path.resolve(__dirname, '..', 'src', 'shopify', 'filters', 'registry.generated.ts')
+const shownTarget = path.relative(process.cwd(), target)
+const args = process.argv.slice(2).filter(arg => arg !== '--')
+const updateRevision = args.includes('--update-revision')
+const docsDir = args.find(arg => !arg.startsWith('--'))
+
+function fail (message) {
+  console.error(`shopify-filter-registry: ${message}`)
   process.exit(1)
 }
-const revision = execFileSync('git', ['-C', docsDir, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
-const docs = JSON.parse(fs.readFileSync(path.join(docsDir, 'data', 'filters.json'), 'utf8'))
+
+function git (...gitArgs) {
+  try {
+    return execFileSync('git', ['-C', docsDir, ...gitArgs], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
+  } catch (err) {
+    return fail(`git ${gitArgs.join(' ')} failed in ${docsDir} (${String(err.stderr || err.message).trim()}); the first argument must be a checkout of Shopify/theme-liquid-docs.`)
+  }
+}
+
+if (!docsDir) fail('usage: pnpm run build:shopify-registry <path to a theme-liquid-docs checkout> [--update-revision]')
+const revision = git('rev-parse', 'HEAD')
+const changes = git('status', '--porcelain')
+if (changes) fail(`${docsDir} is not clean, so data/filters.json may not be what ${revision} holds. Discard or stash these changes and run again:\n${changes}`)
+const pinned = fs.existsSync(target) ? /THEME_LIQUID_DOCS_REVISION = '([0-9a-f]{40})'/.exec(fs.readFileSync(target, 'utf8')) : null
+if (!updateRevision) {
+  if (!pinned) fail(`${shownTarget} pins no revision to check ${docsDir} against; add --update-revision to write it from ${revision}.`)
+  if (pinned[1] !== revision) fail(`${docsDir} is at ${revision}, but ${shownTarget} pins ${pinned[1]}. Run \`git -C ${docsDir} checkout ${pinned[1]}\` and run this again, or add --update-revision to move the pin to ${revision} on purpose.`)
+}
+const filtersFile = path.join(docsDir, 'data', 'filters.json')
+if (!fs.existsSync(filtersFile)) fail(`${docsDir} has no data/filters.json; it is not a checkout of Shopify/theme-liquid-docs.`)
+const docs = JSON.parse(fs.readFileSync(filtersFile, 'utf8'))
 
 const quote = (text) => `'${String(text).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, ' ')}'`
 const ALIAS = /has an alias of `([a-z_]+)`/g
@@ -43,6 +67,5 @@ export const SHOPIFY_FILTER_DOCS: ShopifyFilterDoc[] = [
 ${lines.join(',\n')}
 ]
 `
-const target = path.resolve(__dirname, '..', 'src', 'shopify', 'filters', 'registry.generated.ts')
 fs.writeFileSync(target, out)
-console.log(`wrote ${byName.size} filters from theme-liquid-docs ${revision} to ${path.relative(process.cwd(), target)}`)
+console.log(`wrote ${byName.size} filters from theme-liquid-docs ${revision} to ${shownTarget}`)
