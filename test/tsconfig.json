@@ -9,8 +9,9 @@
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "downlevelIteration": true,
-    "strict": true
+    "strict": true,
+    "types": ["node", "jest"],
+    "rootDir": ".."
   },
   "all": true
 }
