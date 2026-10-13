@@ -10,7 +10,7 @@ export interface ImageData {
   id?: number
 }
 
-/** The parameters `image_url` passes to the `imageUrl` service, named as https://shopify.dev/docs/api/liquid/filters/image_url names them (`crop`, `format`, `height`, `pad_color`, `quality`, `width`). The four `crop_*` parameters are not on that page: shopify.dev does not pin them, they are CDN parameters kept for services that understand them. */
+/** The parameters `image_url` passes to the `imageUrl` service, named as https://shopify.dev/docs/api/liquid/filters/image_url names them (`crop`, `format`, `height`, `pad_color`, `quality`, `width`). The four `crop_*` parameters (`crop_left`, `crop_top`, `crop_width`, `crop_height`) are the same page's `crop: 'region'` mode. */
 export interface ImageUrlParams {
   width?: number
   height?: number
@@ -24,7 +24,7 @@ export interface ImageUrlParams {
   crop_height?: number
 }
 
-/** A font from Shopify's font library, as a `font_picker` setting refers to it (`assistant_n4`), https://shopify.dev/docs/storefronts/themes/architecture/settings/fonts. Liquid sees it as Shopify's `font` object, https://shopify.dev/docs/api/liquid/objects/font (`baseline_ratio`, `fallback_families`, `family`, `style`, `variants`, `weight`); `handle` and `system` are Debutify's, and `variants` here holds handles. */
+/** A font from Shopify's font library, as a `font_picker` setting refers to it (`assistant_n4`), https://shopify.dev/docs/storefronts/themes/architecture/settings/fonts. Liquid sees it as Shopify's `font` object, https://shopify.dev/docs/api/liquid/objects/font (`baseline_ratio`, `fallback_families`, `family`, `style`, `variants`, `weight`); `system` is the `font` object's own `system?`; `handle` is Debutify's, and `variants` here holds handles. */
 export interface FontInfo {
   handle: string
   family: string
