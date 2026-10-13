@@ -222,7 +222,7 @@ describe('shopify/theme/runtime limits and recursion', () => {
     expect(html.match(/id="shopify-section-loop"/g)).toHaveLength(99)
     expect(html).toContain('<i>Liquid error (sections/loop line 1): Nesting too deep</i>')
     expect(report.errors).toHaveLength(1)
-    expect(report.sections.at(-1)).toMatchObject({ id: 'footer', status: 'rendered' })
+    expect(report.sections[report.sections.length - 1]).toMatchObject({ id: 'footer', status: 'rendered' })
   })
   it('stops a section group that renders itself', async () => {
     const files = {
