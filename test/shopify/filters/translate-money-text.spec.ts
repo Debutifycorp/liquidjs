@@ -2,7 +2,7 @@ import { createShopifyLiquid, renderLiquid, Translator, createState, STATE } fro
 import type { LocaleTree } from '../../../src/shopify'
 
 const en: LocaleTree = {
-  layout: { header: { hello_user: 'Hello {{ name }}!', announcement_html: 'Spend $50 and get <strong>{{ what }}</strong>', rock: 'Rock & Roll' } },
+  layout: { header: { hello_user: 'Hello {{ name }}!', announcement_html: 'Spend $50 and get <strong>{{ what }}</strong>', rock: 'Rock & Roll', price: 'Cost {{ p }}', price_html: 'Cost <b>{{ p }}</b>' } },
   customers: { orders: { order_count: { one: "You've made {{ count }} order with us", other: "You've made {{ count }} orders with us" } } },
   cart: { items: { zero: 'Your cart is empty', one: '{{ count }} item', other: '{{ count }} items' } },
   date_formats: { month_day_year: '%B %d, %Y' }
@@ -36,6 +36,17 @@ describe('t', () => {
     const html = await liquid.parseAndRender("{{ 'sections.slideshow.title' | t }}", {}, { globals: { [STATE]: state } })
     expect(html).toBe('Diaporama')
   })
+  it('escapes the text for a missing key, which can come from data', async () => {
+    const { html, report } = await renderLiquid(liquid, '{{ title | t }}', { title: '<b>x</b>' }, { translator: translator('en') })
+    expect(html).toBe('translation missing: en.&lt;b&gt;x&lt;/b&gt;')
+    expect(report.missing).toEqual([{ kind: 'translation', name: '<b>x</b>' }])
+  })
+  it('prints a Ruby decimal as Ruby does', async () => {
+    expect(await render("{{ 'layout.header.price' | t: p: 10.0 }}|{{ 'layout.header.price' | t: p: 10 }}|{{ 'layout.header.price_html' | t: p: 2.50 }}")).toBe('Cost 10.0|Cost 10|Cost <b>2.5</b>')
+  })
+  it('pluralises with a Ruby decimal count', async () => {
+    expect(await render("{{ 'cart.items' | t: count: 1.0 }}|{{ 'cart.items' | t: count: 2.0 }}|{{ 'cart.items' | t: count: 0.0 }}")).toBe('1.0 item|2.0 items|Your cart is empty')
+  })
   it('resolves t: schema strings', () => expect(translator('en').schemaText('t:sections.header.name')).toBe('Header'))
 })
 
@@ -46,6 +57,24 @@ describe('money', () => {
   it('drops the currency symbol', async () => expect(await render('{{ 1000 | money_without_currency }}')).toBe('10.00'))
   it('drops trailing zeros', async () => expect(await render('{{ 1000 | money_without_trailing_zeros }}|{{ 1050 | money_without_trailing_zeros }}')).toBe('$10|$10.50'))
   it('renders nothing for nil', async () => expect(await render('[{{ nothing | money }}]')).toBe('[]'))
+  // where shopify.dev is silent: liquid-spec's reference money filter (`cents.to_i / 100.0`)
+  it('drops a fraction of a cent and prints no sign for zero', async () => {
+    expect(await render('{{ 1999.9 | money }}|{{ -0.4 | money }}|{{ -0.4 | money_without_trailing_zeros }}|{{ -40 | money_without_trailing_zeros }}|{{ 0 | money }}')).toBe('$19.99|$0.00|$0|$-0.40|$0.00')
+    expect(await render('{{ -150 | money }}|{{ -1000 | money_without_trailing_zeros }}')).toBe('$-1.50|$-10')
+  })
+  it('reads Ruby decimals', async () => {
+    expect(await render('{{ 1000.0 | money }}|{{ 1999 | times: 0.9 | money }}|{{ 1000 | divided_by: 3.0 | money }}|{{ 1999.9 | money_without_trailing_zeros }}')).toBe('$10.00|$17.99|$3.33|$19.99')
+  })
+  it('reads a string as Ruby to_i does', async () => expect(await render("{{ '1000' | money }}|{{ ' 1050abc' | money }}|{{ 'abc' | money }}|{{ '' | money }}|{{ '12.9' | money }}")).toBe('$10.00|$10.50|$0.00|$0.00|$0.12'))
+  it('prints nothing for what has no to_i, and reports it', async () => {
+    const { html, report } = await renderLiquid(liquid, '[{{ flag | money }}][{{ list | money_with_currency }}][{{ shape | money }}]', { flag: true, list: [5], shape: { a: 1 } }, { translator: translator('en') })
+    expect(html).toBe('[][][]')
+    expect(report.unsupported).toEqual([{ feature: 'money input', detail: 'true' }, { feature: 'money input', detail: 'array' }, { feature: 'money input', detail: 'object' }])
+  })
+  it('drops the decimal separator of comma formats with the zeros', async () => {
+    const engine = createShopifyLiquid({ moneyFormat: '{{amount_with_comma_separator}} EUR' })
+    expect((await renderLiquid(engine, '{{ 100000 | money_without_trailing_zeros }}|{{ 100010 | money_without_trailing_zeros }}|{{ 100010 | money }}')).html).toBe('1.000 EUR|1.000,10 EUR|1.000,10 EUR')
+  })
   // https://help.shopify.com/manual/international/pricing/currency-formatting
   it.each([
     ['{{amount}}', '1,134.65'],
@@ -73,6 +102,20 @@ describe('text filters', () => {
   it('links', async () => {
     expect(await render("{{ 'Shopify' | link_to: 'https://www.shopify.com' }}")).toBe('<a href="https://www.shopify.com" title="" rel="nofollow">Shopify</a>')
     expect(await render("{{ 'Shopify' | link_to: 'https://www.shopify.com', class: 'link-class' }}")).toBe('<a class="link-class" href="https://www.shopify.com" rel="nofollow">Shopify</a>')
+  })
+  it('escapes once the page input with a bare ampersand', async () => expect(await render(`{{ "&lt;p&gt;Text to be escaped.&lt;/p&gt; & some additional text" | escape_once }}`)).toBe('&lt;p&gt;Text to be escaped.&lt;/p&gt; &amp; some additional text'))
+  it('links with a title and with a Ruby decimal attribute', async () => {
+    expect(await render("{{ 'Shopify' | link_to: 'https://www.shopify.com', 'My title' }}")).toBe('<a href="https://www.shopify.com" title="My title" rel="nofollow">Shopify</a>')
+    expect(await render("{{ 'Shopify' | link_to: 'https://www.shopify.com', width: 10.0, height: 10 }}")).toBe('<a width="10.0" height="10" href="https://www.shopify.com" rel="nofollow">Shopify</a>')
+  })
+  it('pluralizes by the count as an integer', async () => expect(await render("{{ 1.0 | pluralize: 'item', 'items' }} {{ 2.0 | pluralize: 'item', 'items' }} {{ 0 | pluralize: 'item', 'items' }} {{ 1999 | divided_by: 1999.0 | pluralize: 'item', 'items' }}")).toBe('item items items item'))
+  it('reads a fractional count as Ruby to_i does', async () => expect(await render("{{ 1.5 | pluralize: 'item', 'items' }} {{ 2.5 | pluralize: 'item', 'items' }} {{ -1 | pluralize: 'item', 'items' }}")).toBe('item items items'))
+  it('groups a code that is not a multiple of four', async () => expect(await render("{{ 'abcdef' | format_code }}|{{ 'ab' | format_code }}|{{ 'abcd' | format_code }}")).toBe('abcd ef|ab|abcd'))
+  // https://shopify.dev/docs/api/liquid/objects/address: name is a combination of the first and last names
+  it('formats an address by its name, or by first and last name', async () => {
+    expect(await render('{{ a | format_address }}', { a: { name: 'Jane Doe', address1: '1 Main', city: 'Ottawa', country: 'Canada' } })).toBe('<p>Jane Doe<br>1 Main<br>Ottawa<br>Canada</p>')
+    expect(await render('{{ a | format_address }}', { a: { first_name: 'Jane', last_name: 'Doe', address1: '1 Main' } })).toBe('<p>Jane Doe<br>1 Main</p>')
+    expect(await render('{{ a | format_address }}', { a: { name: 'Jane Doe', first_name: 'J', last_name: 'D' } })).toBe('<p>Jane Doe</p>')
   })
   // https://shopify.dev/docs/api/liquid/filters/within
   it('puts a product url within a collection', async () => expect(await render('{{ product.url | within: collection }}', { product: { url: '/products/draught-of-immortality' }, collection: { url: '/collections/sale-potions' } })).toBe('/collections/sale-potions/products/draught-of-immortality'))
@@ -142,10 +185,38 @@ describe('date', () => {
     expect(await render("{{ article.created_at | date: format: 'month_day_year' }}", scope)).toBe('April 14, 2022')
     expect(await render("{{ article.created_at | date: '%B %d, %Y' }}", scope)).toBe('April 14, 2022')
   })
-  it('reports a format name it does not know', async () => {
-    const { html, report } = await renderLiquid(liquid, "{{ '2022-04-14 16:56:02 -0400' | date: format: 'no_such_format' }}", {}, { translator: translator('en') })
-    expect(html).toBe('April 14, 2022')
-    expect(report.unsupported).toEqual([{ feature: 'date format', detail: 'no_such_format' }])
+  // https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files: a custom format missing from the locale file renders a Liquid error
+  it('renders a Liquid error for a format name it does not know, and reports it', async () => {
+    const message = "invalid date format 'no_such_format': it is not a built-in format and the locale file has no date_formats.no_such_format"
+    for (const source of ["{{ '2022-04-14 16:56:02 -0400' | date: format: 'no_such_format' }}", "{{ '2022-04-14 16:56:02 -0400' | time_tag: format: 'no_such_format' }}"]) {
+      const { html, report } = await renderLiquid(liquid, source, {}, { translator: translator('en') })
+      expect(html).toBe(`Liquid error (line 1): ${message}`)
+      expect(report.errors).toEqual([{ message: `Liquid error (line 1): ${message}`, file: undefined, line: 1 }])
+      expect(report.unsupported).toEqual([{ feature: 'date format', detail: 'no_such_format' }])
+    }
+  })
+  it('spaces the built-in formats with a time once', async () => {
+    const scope = { article: { created_at: '2022-04-14 16:56:02 -0400' } }
+    expect(await render("{{ article.created_at | date: format: 'date_at_time' }}", scope)).toBe('April 14, 2022 at 8:56 pm')
+    expect(await render("{{ article.created_at | date: format: 'default' }}", scope)).toBe('Thu, Apr 14, 2022, 8:56 pm +0000')
+    expect(await render("{{ '2022-04-14 03:04:05 -0000' | date: format: 'date_at_time' }}", scope)).toBe('April 14, 2022 at 3:04 am')
+  })
+  // zone-less strings in a configured zone with daylight saving time: the instant is the one the wall-clock time names in that zone, whatever the machine's zone. Only the instant (`%s`) is asserted: the wall-clock time the engine prints for a named zone comes from LiquidDate, which reads the zone through the machine's zone and so is itself off by an hour near a transition when the machine is in a daylight saving zone
+  describe('a configured zone with daylight saving time', () => {
+    const newYork = createShopifyLiquid({ engine: { timezoneOffset: 'America/New_York' } })
+    it.each([
+      ['just before spring forward', '2024-03-10 01:30:00', '2024-03-10T06:30:00Z'],
+      ['inside the skipped hour, read after the gap', '2024-03-10 02:30:00', '2024-03-10T07:30:00Z'],
+      ['just after spring forward', '2024-03-10 03:30:00', '2024-03-10T07:30:00Z'],
+      ['hours after spring forward', '2024-03-10 06:30:00', '2024-03-10T10:30:00Z'],
+      ['in the repeated hour, read as the first', '2024-11-03 01:30:00', '2024-11-03T05:30:00Z'],
+      ['hours after fall back', '2024-11-03 05:30:00', '2024-11-03T10:30:00Z'],
+      ['in winter', '2024-01-02T03:04:00', '2024-01-02T08:04:00Z'],
+      ['in summer', 'Jul 2 2024 03:04:00', '2024-07-02T07:04:00Z']
+    ])('reads a time %s', async (_name, input, utc) => expect((await renderLiquid(newYork, `{{ '${input}' | date: '%s' }}`)).html).toBe(String(Date.parse(utc) / 1000)))
+    it('reads a time with an offset or a timestamp as it is', async () => {
+      expect((await renderLiquid(newYork, "{{ '2024-03-10 06:30:00 -0400' | date: '%s' }}|{{ 1710066600 | date: '%s' }}")).html).toBe('1710066600|1710066600')
+    })
   })
   it('reads a zone-less time_tag in UTC', async () => expect(await render("{{ '2024-01-02 03:04:05' | time_tag: '%H:%M' }}")).toBe('<time datetime="2024-01-02T03:04:05Z">03:04</time>'))
 })
