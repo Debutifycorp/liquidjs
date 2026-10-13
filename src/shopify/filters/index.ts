@@ -5,6 +5,9 @@ import { shopifyState } from '../state'
 import { SHOPIFY_FILTER_DOCS } from './registry.generated'
 import type { FilterStatus, ShopifyFilterEntry, ShopifyFilterSet } from './types'
 import { paginationFilters } from './pagination'
+import { translateFilters } from './translate'
+import { moneyFilters } from './money'
+import { textFilters } from './text'
 import { mediaFilters } from './media'
 import { assetFilters } from './assets'
 import { colorFilters } from './color'
@@ -13,6 +16,9 @@ import { fontFilters } from './font'
 /** The Shopify filter implementations, one set per module. */
 export const SHOPIFY_FILTER_SETS: ShopifyFilterSet[] = [
   paginationFilters,
+  translateFilters,
+  moneyFilters,
+  textFilters,
   mediaFilters,
   assetFilters,
   colorFilters,

@@ -13,6 +13,11 @@ export function escapeHtml (value: unknown): string {
   return stringify(value).replace(/[&<>"']/g, ch => ESCAPES[ch])
 }
 
+/** The entity for one of `& < > " '`, as `escapeHtml` writes it. */
+export function escapeChar (ch: string): string {
+  return ESCAPES[ch]
+}
+
 /** One HTML attribute with a leading space. `true` writes the boolean form Shopify uses (`defer="defer"`); `false`, `null` and `undefined` write nothing. The boolean form and the omission of `false` are https://shopify.dev/docs/api/liquid/filters/script_tag (its example prints `defer="defer"`). */
 export function attribute (name: string, value: unknown): string {
   if (value === false || value === null || value === undefined) return ''
