@@ -36,6 +36,7 @@ export interface SectionEntry {
   id: string
   type: string
   location: string
+  /** `missing`: the section's file does not exist. `failed`: the file does not parse, its schema or data has a field of the wrong type, or an error its render raised was printed in it (`reason` says which). An error the engine records without printing (an undefined variable, a failed `assign`) leaves the section `rendered` and is listed in `errors` only. */
   status: 'rendered' | 'missing' | 'failed'
   ms: number
   reason?: string

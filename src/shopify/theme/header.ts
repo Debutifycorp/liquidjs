@@ -1,7 +1,15 @@
 import type { ShopifyState } from '../state'
 
-/** Where `content_for_header` goes while the layout renders; replaced once the whole page has rendered, so it can include every section's `{% stylesheet %}` and `{% javascript %}`. */
+/** Where `content_for_header` goes while the layout renders; replaced once the whole page has rendered, so it can include every section's `{% stylesheet %}` and `{% javascript %}`. A render swaps in `newHeaderMarker()`, not this constant. */
 export const HEADER_MARKER = '\u0000content_for_header\u0000'
+
+let counter = 0
+
+/** `HEADER_MARKER` with a nonce, made once per render: store data that happens to hold the plain `HEADER_MARKER` (`escape` leaves `\u0000` alone) is then printed as data and not swapped for the header. The nonce keeps a render's marker from being guessed by data written before it, which is all it has to do; it is not a secret. */
+export function newHeaderMarker (): string {
+  counter = (counter + 1) % Number.MAX_SAFE_INTEGER
+  return `${HEADER_MARKER.slice(0, -1)}:${counter.toString(36)}${Math.random().toString(36).slice(2)}\u0000`
+}
 
 /** JSON safe inside `<script>`; a missing value is `null`. */
 function scriptJson (value: unknown): string {

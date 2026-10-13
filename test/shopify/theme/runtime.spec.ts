@@ -184,4 +184,100 @@ describe('shopify/theme/runtime', () => {
     expect(html).toContain('<main id="MainContent"></main>')
     expect(report.sections.map(s => s.status)).toEqual(['missing', 'missing', 'rendered', 'rendered', 'rendered'])
   })
+  describe('renderSection ids', () => {
+    for (const [label, request] of [['without a context', undefined], ['with the ca market', { context: { market: 'ca' } }]] as const) {
+      it(`renders every section a page reports by its id, ${label}`, async () => {
+        const options = { theme, templateName: 'index', request }
+        const page = await renderPage(options)
+        const rendered = page.report.sections.filter(entry => entry.status === 'rendered')
+        expect(rendered.map(entry => entry.id)).toEqual(['template--index__hero', 'template--index__featured', 'sections--header-group__announcement', 'sections--header-group__header', 'footer'])
+        for (const entry of rendered) {
+          const one = await renderSection({ ...options, section: entry.id })
+          expect(one.html).toContain(`<${entry.id === 'sections--header-group__header' ? 'header-wrapper' : 'div'} id="shopify-section-${entry.id}"`)
+          expect(page.html).toContain(one.html)
+          expect(one.report.sections.map(section => `${section.id}:${section.status}`)).toEqual([`${entry.id}:rendered`])
+        }
+        const announcement = await renderSection({ ...options, section: 'sections--header-group__announcement' })
+        expect(announcement.html).toContain(request ? 'Free shipping for Canada|header|1' : 'Free shipping|header|1')
+      })
+    }
+    it('still takes a bare key of the template and gives the same section as its id', async () => {
+      const byKey = await renderSection({ theme, templateName: 'index', section: 'featured' })
+      const byId = await renderSection({ theme, templateName: 'index', section: 'template--index__featured' })
+      expect(byKey.html).toBe(byId.html)
+      expect(byKey.html).toContain('<i>2/1</i>')
+    })
+    it('renders a static section by its name for a Liquid template too', async () => {
+      const { html } = await renderSection({ theme, templateName: 'gift_card', section: 'footer' })
+      expect(html).toBe('<div id="shopify-section-footer" class="shopify-section"><footer>© Fixture|footer||static</footer>\n\n</div>')
+    })
+    it('renders nothing for a disabled section and never a static section of the same name', async () => {
+      const files = { ...theme.files, 'sections/off.liquid': '<i>static</i>' }
+      for (const section of ['off', 'template--index__off']) {
+        const { html, report } = await renderSection({ theme: { files }, templateName: 'index', section })
+        expect(html).toBe('')
+        expect(report.unsupported).toEqual([{ feature: 'disabled section', detail: 'template--index__off is disabled: nothing rendered' }])
+        expect(report.sections).toEqual([])
+      }
+    })
+    it('renders nothing for a disabled section of a group', async () => {
+      const group = { type: 'header', sections: { a: { type: 'footer', disabled: true }, b: { type: 'footer' } }, order: ['a', 'b'] }
+      const files = { ...theme.files, 'sections/header-group.json': JSON.stringify(group) }
+      const off = await renderSection({ theme: { files }, templateName: 'index', section: 'sections--header-group__a' })
+      expect(off.html).toBe('')
+      expect(off.report.unsupported).toEqual([{ feature: 'disabled section', detail: 'sections--header-group__a is disabled: nothing rendered' }])
+      const on = await renderSection({ theme: { files }, templateName: 'index', section: 'sections--header-group__b' })
+      expect(on.html).toBe('<div id="shopify-section-sections--header-group__b" class="shopify-section shopify-section-group-header-group"><footer>Default copyright|sections--header-group__b|1|header</footer>\n\n</div>')
+    })
+    it('reports a section the template or group does not have', async () => {
+      for (const [section, missing] of [['template--index__nope', { kind: 'section', name: 'template--index__nope' }], ['sections--header-group__nope', { kind: 'section', name: 'sections--header-group__nope' }], ['sections--nope__x', { kind: 'section-group', name: 'nope' }], ['nothing', { kind: 'section', name: 'nothing' }]] as const) {
+        const { html, report } = await renderSection({ theme, templateName: 'index', section })
+        expect(html).toBe('')
+        expect(report.missing).toEqual([missing])
+      }
+    })
+    it('rejects for a template that does not exist, as renderPage does', async () => {
+      await expect(renderSection({ theme, templateName: 'nope', section: 'footer' })).rejects.toThrow('template not found: templates/nope.json or templates/nope.liquid')
+    })
+  })
+  it('returns the stylesheet and javascript bodies a section rendered, and keeps them out of its html', async () => {
+    const hero = await renderSection({ theme, templateName: 'index', section: 'hero' })
+    expect(hero.assets).toEqual({ stylesheets: ['.hero { color: red; }'], javascripts: ["console.log('hero')</script>"] })
+    expect(hero.html).not.toContain('color: red')
+    const header = await renderSection({ theme, templateName: 'index', section: 'sections--header-group__header' })
+    expect(header.assets).toEqual({ stylesheets: ['header { display: flex; }'], javascripts: [] })
+    const footer = await renderSection({ theme, templateName: 'index', section: 'footer' })
+    expect(footer.assets).toEqual({ stylesheets: [], javascripts: [] })
+  })
+  it('takes the schema default of a static section with no saved entry', async () => {
+    const trio = '<b>{{ section.settings.title }}</b>{% for block in section.blocks %}[{{ block.type }}:{{ block.id }}:{{ block.settings.label }}]{% endfor %}' +
+      '{% schema %}{ "name": "Trio", "settings": [{ "type": "text", "id": "title", "default": "Schema default" }], "blocks": [{ "type": "item", "name": "Item", "settings": [{ "type": "text", "id": "label", "default": "Plain" }] }], "default": { "settings": { "title": "Preset title" }, "blocks": [{ "type": "item", "settings": { "label": "A" } }, { "type": "item" }] } }{% endschema %}'
+    const files = { ...theme.files, 'sections/trio.liquid': trio }
+    const unsaved = await renderSection({ theme: { files }, templateName: 'index', section: 'trio' })
+    expect(unsaved.html).toBe('<div id="shopify-section-trio" class="shopify-section"><b>Preset title</b>[item:block-1:A][item:block-2:Plain]</div>')
+    const data = '{ "current": { "sections": { "trio": { "type": "trio", "settings": { "title": "Saved" } } } } }'
+    const saved = await renderSection({ theme: { files: { ...files, 'config/settings_data.json': data } }, templateName: 'index', section: 'trio' })
+    expect(saved.html).toBe('<div id="shopify-section-trio" class="shopify-section"><b>Saved</b></div>')
+    const layout = await renderPage({ theme: { files: { ...files, 'layout/bare.liquid': "{% section 'trio' %}", 'templates/bare.json': '{ "layout": "bare", "sections": {}, "order": [] }' } }, templateName: 'bare' })
+    expect(layout.html).toBe(unsaved.html)
+  })
+  it('does not mark a section failed for an error the engine records without printing', async () => {
+    const files = { ...theme.files, 'sections/quiet.liquid': '<p>ok</p>{% assign x = 1 | divided_by: 0 %}', 'templates/quiet.json': '{ "sections": { "q": { "type": "quiet" } }, "order": ["q"] }' }
+    const { html, report } = await renderPage({ theme: { files }, templateName: 'quiet' })
+    expect(html).toContain('<div id="shopify-section-template--quiet__q" class="shopify-section"><p>ok</p></div>')
+    expect(report.sections[0]).toMatchObject({ id: 'template--quiet__q', status: 'rendered' })
+    expect(report.errors).toHaveLength(1)
+  })
+  it('leaves the section frame once the section is done', async () => {
+    const files = { ...theme.files, 'layout/probe.liquid': "{{ content_for_layout }}[{{ 'sections.hero.tagline' | t }}]", 'templates/probe.json': '{ "layout": "probe", "sections": { "h": { "type": "hero" } }, "order": ["h"] }' }
+    const { html } = await renderPage({ theme: { files }, templateName: 'probe' })
+    expect(html).toContain('<p>Made with care</p>')
+    expect(html.endsWith('[translation missing: en.sections.hero.tagline]')).toBe(true)
+  })
+  it('prints store data that holds the plain header marker as data', async () => {
+    const name = 'A\u0000content_for_header\u0000B'
+    const { html } = await renderPage({ theme, templateName: 'index', data: { shop: { name, domain: 'other.example', currency: 'USD' } } })
+    expect(html).toContain(`<title>${name}</title>`)
+    expect(html.match(/var Shopify = /g)).toHaveLength(1)
+  })
 })

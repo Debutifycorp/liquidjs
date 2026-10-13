@@ -1,4 +1,4 @@
-import { contentForHeader, createShopifyLiquid, createState, deepMerge, parseThemeJson, parseWrapper, renderLiquid } from '../../../src/shopify'
+import { contentForHeader, createShopifyLiquid, createState, deepMerge, HEADER_MARKER, newHeaderMarker, parseThemeJson, parseWrapper, renderLiquid } from '../../../src/shopify'
 
 describe('shopify/theme/json', () => {
   it('parses a theme JSON file with or without the editor notice', () => {
@@ -15,6 +15,14 @@ describe('shopify/theme/json', () => {
     expect(base.sections.a.settings.text).toBe('x')
     expect(deepMerge({ order: ['a', 'b'] }, { order: ['b'] })).toEqual({ order: ['b'] })
     expect(deepMerge({ a: 1 }, null)).toBeNull()
+  })
+  it('keeps a __proto__ key out of the result\'s prototype', () => {
+    const merged = deepMerge({ a: 1 }, JSON.parse('{ "__proto__": { "evil": true }, "b": { "__proto__": { "worse": true } } }')) as Record<string, any>
+    expect(merged.evil).toBeUndefined()
+    expect(merged.b.worse).toBeUndefined()
+    expect(Object.getPrototypeOf(merged)).toBe(Object.prototype)
+    expect(Object.keys(merged)).toEqual(['a', '__proto__', 'b'])
+    expect(({} as Record<string, any>).evil).toBeUndefined()
   })
 })
 
@@ -51,6 +59,16 @@ describe('shopify/theme/header', () => {
   it('writes no style or deferred script when the page has none', () => {
     const header = contentForHeader(createState(), { shop: { permanent_domain: 'a.example', currency: 'USD' }, localization: {}, request: {} })
     expect(header).toBe('<script>var Shopify = Shopify || {};Shopify.shop = "a.example";Shopify.locale = null;Shopify.currency = {"active":"USD","rate":"1.0"};Shopify.country = null;Shopify.designMode = false;Shopify.routes = Shopify.routes || {};Shopify.routes.root = "/";</script>')
+  })
+})
+
+describe('shopify/theme/header marker', () => {
+  it('is new for each render and made from the plain marker', () => {
+    const first = newHeaderMarker()
+    expect(first).not.toBe(newHeaderMarker())
+    expect(first).not.toBe(HEADER_MARKER)
+    expect(first.startsWith('\u0000content_for_header:')).toBe(true)
+    expect(first.endsWith('\u0000')).toBe(true)
   })
 })
 

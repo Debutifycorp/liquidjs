@@ -12,11 +12,14 @@ export function parseThemeJson (source: string, file: string): unknown {
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 
-/** Merges `override` into `base` as contextual section group files do: objects merge key by key, everything else (arrays included) is replaced. Neither input is changed. https://shopify.dev/docs/storefronts/themes/architecture/section-groups#contextual-section-groups says a contextual file "includes the overrides that you make to the section group for a context" and does not say how its values combine with the parent's, so this rule is Debutify's and goes on the "confirm on a development store" list. */
+/** Merges `override` into `base` as contextual section group files do: objects merge key by key, everything else (arrays included) is replaced. Neither input is changed, and a `__proto__` key in the override becomes an own key of the result, as `JSON.parse` makes it, never the result's prototype. https://shopify.dev/docs/storefronts/themes/architecture/section-groups#contextual-section-groups says a contextual file "includes the overrides that you make to the section group for a context" and does not say how its values combine with the parent's, so this rule is Debutify's and goes on the "confirm on a development store" list. */
 export function deepMerge<T> (base: T, override: unknown): T {
   if (!isPlainObject(base) || !isPlainObject(override)) return (override === undefined ? base : override) as T
   const out: Record<string, unknown> = { ...base }
-  for (const [key, value] of Object.entries(override)) out[key] = deepMerge(out[key], value)
+  for (const [key, value] of Object.entries(override)) {
+    const merged = deepMerge(Object.prototype.hasOwnProperty.call(out, key) ? out[key] : undefined, value)
+    Object.defineProperty(out, key, { value: merged, enumerable: true, writable: true, configurable: true })
+  }
   return out as T
 }
 
