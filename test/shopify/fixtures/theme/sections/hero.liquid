@@ -1,0 +1,15 @@
+<h1>{{ section.settings.heading }}</h1><p>{{ 'general.greeting' | t: name: shop.name }}</p><p>{{ 'sections.hero.tagline' | t }}</p><p>{{ section.settings.subheading }}</p>
+{% render 'icon', name: 'star' %}
+{% stylesheet %}.hero { color: red; }{% endstylesheet %}
+{% javascript %}console.log('hero')</script>{% endjavascript %}
+{% schema %}
+{
+  "name": "Hero",
+  "class": "hero-section",
+  "settings": [
+    { "type": "text", "id": "heading", "default": "Default heading" },
+    { "type": "text", "id": "subheading", "default": "t:sections.hero.settings.subheading.default" }
+  ],
+  "locales": { "en": { "tagline": "Made with care" }, "fr": { "tagline": "Fait avec soin" } }
+}
+{% endschema %}

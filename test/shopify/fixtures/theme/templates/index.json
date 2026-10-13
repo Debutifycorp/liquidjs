@@ -1,0 +1,14 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "hero": { "type": "hero", "settings": { "heading": "Hello {{ shop.name }}" } },
+    "featured": { "type": "featured-collection", "settings": { "collection": "frontpage" } },
+    "off": { "type": "hero", "disabled": true },
+    "gone": { "type": "does-not-exist" }
+  },
+  "order": ["hero", "featured", "off", "gone"]
+}

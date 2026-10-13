@@ -1,0 +1,7 @@
+{
+  "wrapper": "div#product-wrapper.page-width[data-template=product]",
+  "sections": {
+    "main": { "type": "main-product" }
+  },
+  "order": ["main"]
+}

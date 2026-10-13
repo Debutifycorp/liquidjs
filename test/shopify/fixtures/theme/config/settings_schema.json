@@ -1,0 +1,11 @@
+[
+  { "name": "theme_info", "theme_name": "Fixture", "theme_version": "1.0.0" },
+  {
+    "name": "Colors",
+    "settings": [
+      { "type": "color", "id": "accent", "label": "Accent", "default": "#000000" },
+      { "type": "font_picker", "id": "type_body_font", "label": "Body", "default": "assistant_n4" },
+      { "type": "checkbox", "id": "show_badge", "label": "Badge", "default": true }
+    ]
+  }
+]

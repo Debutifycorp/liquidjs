@@ -1,0 +1,7 @@
+{
+  "parent": "header-group.json",
+  "context": { "market": "ca" },
+  "sections": {
+    "announcement": { "settings": { "text": "Free shipping for Canada" } }
+  }
+}

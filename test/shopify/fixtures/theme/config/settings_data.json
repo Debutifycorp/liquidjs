@@ -1,0 +1,13 @@
+/*
+ * IMPORTANT: The contents of this file are auto-generated.
+ */
+{
+  "current": {
+    "accent": "#334fb4",
+    "sections": {
+      "footer": { "type": "footer", "settings": { "copyright": "© Fixture" } }
+    },
+    "content_for_index": []
+  },
+  "presets": { "Default": {} }
+}

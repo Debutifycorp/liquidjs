@@ -1,0 +1,5 @@
+<header>{% for link in linklists['main-menu'].links %}<a href="{{ link.url }}"{% if link.current %} aria-current="page"{% endif %}>{{ link.title }}</a>{% endfor %}<span class="cart-count">{{ cart.item_count }}</span></header>
+{% stylesheet %}header { display: flex; }{% endstylesheet %}
+{% schema %}
+{ "name": "Header", "tag": "header-wrapper" }
+{% endschema %}

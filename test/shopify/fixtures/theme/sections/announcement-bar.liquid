@@ -1,0 +1,9 @@
+<p class="announcement">{{ section.settings.text }}|{{ section.location }}|{{ section.index }}</p>{% for block in section.blocks %}<span>{{ block.settings.message }}</span>{% endfor %}
+{% schema %}
+{
+  "name": "Announcement",
+  "class": "announcement-bar-section",
+  "settings": [{ "type": "text", "id": "text", "default": "Welcome" }],
+  "blocks": [{ "type": "message", "name": "Message", "settings": [{ "type": "text", "id": "message", "default": "Hi" }] }]
+}
+{% endschema %}

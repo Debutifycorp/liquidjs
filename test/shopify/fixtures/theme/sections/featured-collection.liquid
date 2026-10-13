@@ -1,0 +1,5 @@
+{%- assign collection = section.settings.collection -%}
+<h2>{{ collection.title }}</h2>{% for product in collection.products limit: 2 %}<a href="{{ product.url }}">{{ product.title }} {{ product.price | money }}</a>{% endfor %}<i>{{ section.index }}/{{ section.index0 }}</i>
+{% schema %}
+{ "name": "Featured collection", "settings": [{ "type": "collection", "id": "collection" }] }
+{% endschema %}

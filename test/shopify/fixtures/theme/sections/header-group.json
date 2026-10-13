@@ -1,0 +1,18 @@
+{
+  "type": "header",
+  "name": "Header group",
+  "sections": {
+    "announcement": {
+      "type": "announcement-bar",
+      "settings": { "text": "Free shipping" },
+      "blocks": {
+        "m1": { "type": "message", "settings": { "message": "Hello" } },
+        "m2": { "type": "message" },
+        "m3": { "type": "message", "disabled": true }
+      },
+      "block_order": ["m1", "m2", "m3"]
+    },
+    "header": { "type": "header" }
+  },
+  "order": ["announcement", "header"]
+}
