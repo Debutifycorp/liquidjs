@@ -110,8 +110,8 @@ const LOCALE_FILE = /^locales\/([\w-]+?)(\.default)?(\.schema)?\.json$/
 const TAG_NAME = /^[a-z][a-z0-9-]*$/
 const GROUP_SECTION_ID = /^sections--(.+)__(.+)$/
 
-/** How many sections may be open inside one another. Ruby Liquid stops a render nested deeper than `Liquid::Block::MAX_DEPTH`, 100, with `Nesting too deep` (`Liquid::Context#check_overflow` and `#overflow?` in Shopify/liquid, `lib/liquid/context.rb` and `lib/liquid/block.rb`). shopify.dev does not document a section nesting limit, so applying that depth to `{% section %}` and `{% sections %}` is Debutify's choice. */
-const MAX_SECTION_DEPTH = 100
+/** How many sections and theme blocks may be open inside one another. Ruby Liquid stops a render nested deeper than `Liquid::Block::MAX_DEPTH`, 100, with `Nesting too deep` (`Liquid::Context#check_overflow` and `#overflow?` in Shopify/liquid, `lib/liquid/context.rb` and `lib/liquid/block.rb`). shopify.dev does not document a section nesting limit, so applying that depth to `{% section %}`, `{% sections %}` and `{% content_for %}` is Debutify's choice. */
+const MAX_NESTING_DEPTH = 100
 
 const isObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 
@@ -463,7 +463,7 @@ class PageRender implements ThemeHooks {
     return (yield this.renderSection(entry.data, entry.placement)) as string
   }
 
-  /** A file's `{% schema %}` JSON, `{}` when it has none or its JSON is invalid (the invalid case is reported). Valid JSON of the wrong shape (`settings` or `blocks` that are not arrays of objects, `locales` or `default` that are not objects) throws: the section or block that reads it fails. https://shopify.dev/docs/storefronts/themes/architecture/sections/section-schema */
+  /** A file's `{% schema %}` JSON, `{}` when it has none or its JSON is invalid (the invalid case is reported). Valid JSON of the wrong shape (`settings` or `blocks` that are not arrays of objects, `locales` or `default` that are not objects) throws: the section or block that reads it fails. A `class` that is not a string is ignored and reported, as the wrapper cannot print it. https://shopify.dev/docs/storefronts/themes/architecture/sections/section-schema */
   private schema<T> (templates: Template[], file: string): T {
     const tag = templates.find((template): template is SchemaTag => template instanceof SchemaTag)
     if (!tag) return {} as T
@@ -479,6 +479,10 @@ class PageRender implements ThemeHooks {
     objectList(json.blocks, `${file}: schema "blocks"`)
     optionalObject(json.locales, `${file}: schema "locales"`)
     if (json.default !== undefined) presetShape(json.default, `${file}: schema "default"`)
+    if (json.class !== undefined && typeof json.class !== 'string') {
+      this.ignored('schema', `${file}: schema "class"`, 'a string; it is ignored')
+      return { ...json, class: undefined } as T
+    }
     return json as T
   }
 
@@ -582,9 +586,9 @@ class PageRender implements ThemeHooks {
     return `<${tag} id="shopify-section-${escapeHtml(placement.id)}" class="${escapeHtml(classes)}">${html}</${tag}>`
   }
 
-  /** Stops `{% section %}` and `{% sections %}` that open one another without end; the tag that goes too deep prints `Nesting too deep` in the section that holds it. See `MAX_SECTION_DEPTH`. */
+  /** Stops `{% section %}`, `{% sections %}` and `{% content_for %}` that open one another without end; the tag that goes too deep prints `Nesting too deep` in the section or block that holds it. See `MAX_NESTING_DEPTH`. */
   private checkDepth (): void {
-    if (this.state.frames.length >= MAX_SECTION_DEPTH) throw new Error('Nesting too deep')
+    if (this.state.frames.length >= MAX_NESTING_DEPTH) throw new Error('Nesting too deep')
   }
 
   /**
@@ -677,7 +681,7 @@ class PageRender implements ThemeHooks {
       const data = frame.container.blocks?.[id]
       if (!data || data.disabled || data.static) continue
       if (isAppBlock(data.type)) {
-        this.state.report.unsupported('app block', `${frame.section.type}: ${data.type}`)
+        this.state.report.unsupported('app block', `${frame.block ? `${frame.section.type} > ${frame.block.type} ${frame.block.id}` : frame.section.type}: ${data.type}`)
         continue
       }
       out += (yield this.renderThemeBlock(id, data, {}, frame)) as string
@@ -688,7 +692,7 @@ class PageRender implements ThemeHooks {
   /**
    * `{% content_for 'block', type: 'slide', id: 'slide-1', color: '#111' %}`: one static block. https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks/static-blocks says the `id` is required and only has to be unique among its siblings, that Shopify never generates it, and that extra parameters are passed to the block as variables. Its saved settings are the entry of the same `id` in the `blocks` of the section or block it is rendered in, which is also where that page's JSON puts a static block (with `"static": true`); a block with no saved entry uses the schema's default settings ("will always get added … using the default settings values").
    *
-   * A saved entry of another `type` keeps its settings under the tag's type, and a saved entry marked `disabled` renders nothing, like a dynamic block. shopify.dev pins neither, so both go on the "confirm on a development store" list.
+   * A saved entry of another `type` keeps its settings under the tag's type, and a saved entry marked `disabled` renders nothing, like a dynamic block. shopify.dev pins neither, so both go on the "confirm on a development store" list. Only an entry with `"static": true` is a static block's: a non-static sibling with the same id (shopify.dev says ids are unique among siblings, so this is invalid input) keeps its settings and its blocks to itself, and the collision is reported.
    */
   public * renderStaticBlock (type: string, id: string, params: Record<string, unknown>): Generator<unknown, string, unknown> {
     const frame = currentFrame(this.state)
@@ -696,7 +700,9 @@ class PageRender implements ThemeHooks {
       this.state.report.unsupported('content_for', "'block' outside a section")
       return ''
     }
-    const stored = frame.container.blocks?.[id]
+    const found = frame.container.blocks ? own(frame.container.blocks, id) as BlockData | undefined : undefined
+    const stored = found?.static ? found : undefined
+    if (found && !stored) this.state.report.unsupported('static block', `${frame.section.type}: block ${id} is not static, so its saved entry is not used by the static block of that id`)
     if (stored?.disabled) return ''
     return (yield this.renderThemeBlock(id, { ...stored, type, static: true }, params, frame)) as string
   }
@@ -709,6 +715,7 @@ class PageRender implements ThemeHooks {
    * A block file that does not exist renders nothing and is reported as `missing`. One that does not parse prints its error inside the default wrapper, as a section does, and one whose render raises an error prints it inline in its content; either error fails the section that holds the block (the report lists it as `failed`). A `renderLimit` or `memoryLimit` hit is not caught: it rejects the page, as in a section. Not pinned by shopify.dev: those cases, the wrapper of a block that does not parse (the default one is used), any `tag` other than a lowercase element name (`div` is used; the schema page allows "any string up to a limit of 50 characters", and what Shopify renders for a longer or invalid one is not stated), and whether `class` applies when `tag` is `null` (it does not here).
    */
   private * renderThemeBlock (id: string, data: BlockData, params: Record<string, unknown>, frame: Frame): Generator<unknown, string, unknown> {
+    this.checkDepth()
     const type = typeof data.type === 'string' ? data.type : '(no type)'
     const file = `blocks/${type}.liquid`
     if (typeof data.type !== 'string' || !this.theme.has(file)) {
@@ -723,7 +730,7 @@ class PageRender implements ThemeHooks {
     }
     const schema = this.schema<BlockSchema>(templates, file)
     const block = { id, type, settings: new SettingsDrop(schema.settings, data.settings, this.env), shopify_attributes: '' }
-    this.state.frames.push({ kind: 'block', section: frame.section, container: data, sectionObject: frame.sectionObject })
+    this.state.frames.push({ kind: 'block', block: { id, type }, section: frame.section, container: data, sectionObject: frame.sectionObject })
     let html: string
     try {
       html = (yield this.theme.liquid.renderer.renderTemplates(templates, this.child({ section: frame.sectionObject, block }, { ...params }))) as string

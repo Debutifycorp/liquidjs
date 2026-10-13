@@ -10,6 +10,8 @@ export const STATE = Symbol.for('@debutify/liquidjs/shopify:state')
 /** The section or theme block being rendered, https://shopify.dev/docs/api/liquid/objects/section and https://shopify.dev/docs/api/liquid/objects/block. The theme runtime pushes one per section and block; `t`, `image_tag` and `content_for` read the innermost. The stack is Debutify's device for those filters; shopify.dev does not describe how Shopify scopes them. */
 export interface Frame {
   kind: 'section' | 'block'
+  /** For a block frame, the id and type of the theme block being rendered (reports name the container with them). */
+  block?: { id: string, type: string }
   /** The section's id, type, 1-based index in its location (null when static) and schema `locales`. */
   section: { id: string, type: string, index: number | null, locales?: Record<string, LocaleTree> }
   /** The JSON data whose `blocks` and `block_order` `{% content_for 'blocks' %}` renders. */

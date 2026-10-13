@@ -113,6 +113,20 @@ describe('shopify/theme/blocks', () => {
       ])
       expect(report.missing).toEqual([{ kind: 'block', name: '(no type)' }])
     })
+    it('names the block that holds a skipped app block, or the section when it is at the top', async () => {
+      const { html, report } = await page(files, {
+        blocks: {
+          top: { type: '@app' },
+          g: { type: 'group', blocks: { inner: { type: '@app' }, kept: { type: 'text', settings: { text: 'k' } } }, block_order: ['inner', 'kept'] }
+        },
+        block_order: ['top', 'g']
+      })
+      expect(html).toBe(SECTION('[' + WRAP('g', '<g>' + WRAP('kept', 'text:kept:k::template--x__main') + '</g>') + ']'))
+      expect(report.unsupported).toEqual([
+        { feature: 'app block', detail: 'sec: @app' },
+        { feature: 'app block', detail: 'sec > group g: @app' }
+      ])
+    })
     it('reports content_for blocks and block in a template that is not a section', async () => {
       const files = {
         'templates/y.liquid': "[{% content_for 'blocks' %}{% content_for 'block', type: 'text', id: 'a' %}]",
@@ -152,6 +166,23 @@ describe('shopify/theme/blocks', () => {
         '<div id="shopify-block-x&quot;y" class="shopify-block">.</div>'
       ))
     })
+    it('ignores a class that is not a string, and reports it', async () => {
+      const files = {
+        'sections/sec.liquid': "{% content_for 'blocks' %}{% schema %}{ \"class\": [\"s\", \"t\"] }{% endschema %}",
+        'blocks/list.liquid': '.{% schema %}{ "class": ["a", "b"] }{% endschema %}',
+        'blocks/object.liquid': '.{% schema %}{ "class": { "x": 1 }, "tag": "p" }{% endschema %}',
+        'blocks/number.liquid': '.{% schema %}{ "class": 5, "settings": [] }{% endschema %}'
+      }
+      const { html, report } = await page(files, { blocks: { l: { type: 'list' }, o: { type: 'object' }, n: { type: 'number' } } })
+      expect(html).toBe('<div id="shopify-section-template--x__main" class="shopify-section">' +
+        '<div id="shopify-block-l" class="shopify-block">.</div><p id="shopify-block-o" class="shopify-block">.</p><div id="shopify-block-n" class="shopify-block">.</div></div>')
+      expect(report.unsupported).toEqual([
+        { feature: 'schema', detail: 'sections/sec.liquid: schema "class" is not a string; it is ignored' },
+        { feature: 'schema', detail: 'blocks/list.liquid: schema "class" is not a string; it is ignored' },
+        { feature: 'schema', detail: 'blocks/object.liquid: schema "class" is not a string; it is ignored' },
+        { feature: 'schema', detail: 'blocks/number.liquid: schema "class" is not a string; it is ignored' }
+      ])
+    })
     it('treats a block whose schema is not valid JSON as one with no schema, and reports it', async () => {
       const { html, report } = await page({ 'sections/sec.liquid': "{% content_for 'blocks' %}", 'blocks/odd.liquid': 'o{% schema %}{ nope }{% endschema %}' }, { blocks: { k: { type: 'odd' } } })
       expect(html).toBe(SECTION(WRAP('k', 'o')))
@@ -167,6 +198,28 @@ describe('shopify/theme/blocks', () => {
     it('finds saved settings by id, in a for loop, and uses the defaults for the rest', async () => {
       const { html } = await page(files, { blocks: { 2: { type: 'cell', static: true, settings: { width: 20 } } } })
       expect(html).toBe(SECTION('1=1/1;2=20/2;3=1/3;'))
+    })
+    it('takes an id of 0, as a for loop gives it, and only nil or an empty id as missing', async () => {
+      const cell = { 'blocks/cell.liquid': '{{ block.id }}={{ block.settings.width }};{% schema %}{ "tag": null, "settings": [{ "type": "number", "id": "width", "default": 1 }] }{% endschema %}' }
+      const saved = { blocks: { 0: { type: 'cell', static: true, settings: { width: 7 } } } }
+      const byRange = await page({ 'sections/sec.liquid': "{% for n in (0..1) %}{% content_for 'block', type: 'cell', id: n %}{% endfor %}", ...cell }, saved)
+      expect(byRange.html).toBe(SECTION('0=7;1=1;'))
+      const byIndex = await page({ 'sections/sec.liquid': "{% for n in (5..6) %}{% content_for 'block', type: 'cell', id: forloop.index0 %}{% endfor %}", ...cell }, saved)
+      expect(byIndex.html).toBe(SECTION('0=7;1=1;'))
+      const missing = await page({ 'sections/sec.liquid': "[{% content_for 'block', type: 'cell', id: nope %}][{% content_for 'block', type: 'cell', id: '' %}][{% content_for 'block', type: nope, id: 'a' %}][{% content_for 'block', type: 0, id: 'a' %}]", ...cell })
+      const error = "Liquid error (sections/sec line 1): content_for 'block' needs type and id"
+      expect(missing.html).toBe(SECTION(`[${error}][${error}][${error}][]`))
+      expect(missing.report.missing).toEqual([{ kind: 'block', name: '0' }])
+    })
+    it('keeps a saved block that is not static out of the static block of the same id', async () => {
+      const files = {
+        'sections/sec.liquid': "{% content_for 'blocks' %}|{% content_for 'block', type: 'cell', id: 'a' %}",
+        'blocks/text.liquid': 'text:{{ block.settings.text }}',
+        'blocks/cell.liquid': '{{ block.settings.width }}/{% content_for "blocks" %}{% schema %}{ "tag": null, "settings": [{ "type": "number", "id": "width", "default": 1 }] }{% endschema %}'
+      }
+      const { html, report } = await page(files, { blocks: { a: { type: 'text', settings: { text: 'mine', width: 77 }, blocks: { in: { type: 'text' } } } } })
+      expect(html).toBe(SECTION(WRAP('a', 'text:mine') + '|1/'))
+      expect(report.unsupported).toEqual([{ feature: 'static block', detail: 'sec: block a is not static, so its saved entry is not used by the static block of that id' }])
     })
     it('passes extra parameters only to the block it renders', async () => {
       const { html } = await page({
@@ -224,9 +277,31 @@ describe('shopify/theme/blocks', () => {
       expect(html).toBe(SECTION(WRAP('k', 'aLiquid error (blocks/div0 line 1): divided by 0b') + '<hr>'))
       expect(report.sections).toEqual([expect.objectContaining({ status: 'failed' })])
     })
-    it('rejects the page when a block runs past the render limit, as a section does', async () => {
+    it('stops a block that renders itself and prints the error where the tag stands', async () => {
       const files = { 'sections/sec.liquid': "{% content_for 'block', type: 'loop', id: 'x' %}", 'blocks/loop.liquid': "{% content_for 'block', type: 'loop', id: 'x' %}" }
-      await expect(page(files, {}, { renderLimit: 100 })).rejects.toThrow(/render limit exceeded/)
+      const { html, report } = await page(files)
+      expect(html.match(/id="shopify-block-x"/g)).toHaveLength(99)
+      expect(html).toContain('Liquid error (blocks/loop line 1): Nesting too deep')
+      expect(report.errors).toHaveLength(1)
+      expect(report.sections[0]).toMatchObject({ status: 'failed' })
+    })
+    it('stops blocks that nest each other through content_for blocks', async () => {
+      const files = { 'sections/sec.liquid': "{% content_for 'blocks' %}", 'blocks/deep.liquid': "{% content_for 'blocks' %}" }
+      const nested: Record<string, unknown> = { type: 'deep' }
+      let level = nested
+      for (let i = 0; i < 120; i++) {
+        const child: Record<string, unknown> = { type: 'deep' }
+        level.blocks = { c: child }
+        level = child
+      }
+      const { html, report } = await page(files, { blocks: { top: nested } })
+      expect(html.match(/id="shopify-block-(top|c)"/g)).toHaveLength(99)
+      expect(html).toContain('Liquid error (blocks/deep line 1): Nesting too deep')
+      expect(report.errors).toHaveLength(1)
+    })
+    it('rejects the page when a block runs past the render limit, as a section does', async () => {
+      const files = { 'sections/sec.liquid': "{% content_for 'blocks' %}", 'blocks/slow.liquid': '{% for i in (1..100) %}{% for j in (1..100000) %}{% endfor %}{% endfor %}' }
+      await expect(page(files, { blocks: { k: { type: 'slow' } } }, { renderLimit: 50 })).rejects.toThrow(/render limit exceeded/)
     })
   })
 
