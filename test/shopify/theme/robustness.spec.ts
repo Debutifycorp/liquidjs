@@ -62,11 +62,33 @@ describe('shopify/theme/runtime malformed section schema and data', () => {
       'footer:failed'
     ])
   })
-  it('keeps a block with a bad schema inside the section that holds it', async () => {
-    const files = { ...theme.files, 'blocks/bad.liquid': BAD_SECTION('{ "settings": {} }'), 'sections/holder.liquid': "{% content_for 'blocks' %}<hr>" }
-    const { html, report } = await pageWith(files, { type: 'holder', blocks: { k: { type: 'bad' } } })
-    expect(html).toContain('<hr></div>' + FOOTER)
-    expect(html).toContain('blocks/bad.liquid: schema "settings" must be an array of objects<hr>')
+  it('keeps a block with a bad schema inside its own wrapper and leaves its siblings', async () => {
+    const files = {
+      ...theme.files,
+      'blocks/bad.liquid': BAD_SECTION('{ "settings": {} }'),
+      'blocks/ok.liquid': 'ok:{{ block.id }}',
+      'sections/holder.liquid': "{% content_for 'blocks' %}<hr>"
+    }
+    const section = { type: 'holder', blocks: { a: { type: 'ok' }, k: { type: 'bad' }, c: { type: 'ok' } }, block_order: ['a', 'k', 'c'] }
+    const { html, report } = await pageWith(files, section)
+    expect(html).toContain('<div id="shopify-section-template--t__b" class="shopify-section">' +
+      '<div id="shopify-block-a" class="shopify-block">ok:a</div>' +
+      '<div id="shopify-block-k" class="shopify-block">Liquid error (blocks/bad line 1): blocks/bad.liquid: schema &quot;settings&quot; must be an array of objects</div>' +
+      '<div id="shopify-block-c" class="shopify-block">ok:c</div><hr></div>' + FOOTER)
+    expect(report.sections.slice(0, 2)).toMatchObject([{ status: 'failed' }, { status: 'rendered' }])
+    expect(report.errors.map(error => error.file)).toEqual(['blocks/bad.liquid'])
+  })
+  it('keeps a block whose saved JSON is malformed inside its own wrapper, nested blocks included', async () => {
+    const files = {
+      ...theme.files,
+      'blocks/ok.liquid': "ok:{{ block.id }}{% content_for 'blocks' %}",
+      'sections/holder.liquid': "{% content_for 'blocks' %}<hr>"
+    }
+    const section = { type: 'holder', blocks: { a: { type: 'ok' }, k: { type: 'ok', block_order: 5 }, n: { type: 'ok', blocks: { x: 'y' } } }, block_order: ['a', 'k', 'n'] }
+    const { html, report } = await pageWith(files, section)
+    expect(html).toContain('<div id="shopify-block-a" class="shopify-block">ok:a</div>' +
+      '<div id="shopify-block-k" class="shopify-block">Liquid error (blocks/ok line 1): block k: &quot;block_order&quot; must be an array</div>' +
+      '<div id="shopify-block-n" class="shopify-block">Liquid error (blocks/ok line 1): block n: block x must be an object</div><hr></div>' + FOOTER)
     expect(report.sections.slice(0, 2)).toMatchObject([{ status: 'failed' }, { status: 'rendered' }])
   })
 })
@@ -123,7 +145,47 @@ describe('shopify/theme/runtime malformed template and group JSON', () => {
     await expect(renderPage({ theme: { files: { ...theme.files, 'templates/index.json': '[]' } }, templateName: 'index' })).rejects.toThrow('templates/index.json: must be a JSON object')
     await expect(renderPage({ theme: { files: { ...theme.files, 'config/settings_data.json': '[]' } }, templateName: 'index' })).rejects.toThrow('config/settings_data.json: must be a JSON object')
     await expect(renderPage({ theme: { files: { ...theme.files, 'config/settings_schema.json': '{}' } }, templateName: 'index' })).rejects.toThrow('config/settings_schema.json: must be a JSON array')
-    await expect(renderSection({ theme: { files: { ...theme.files, 'sections/header-group.json': '{ nope' } }, templateName: 'index', section: 'sections--header-group__header' })).rejects.toThrow(/^sections\/header-group\.json: /)
+  })
+  it('reports a group whose JSON is not valid, for renderSection too, without rejecting', async () => {
+    const files = { ...theme.files, 'sections/header-group.json': '{ nope' }
+    const page = await renderPage({ theme: { files }, templateName: 'index' })
+    expect(page.html).toContain('Liquid error (layout/theme line 9): sections/header-group.json: ')
+    expect(page.report.errors[0].message).toContain('sections/header-group.json: ')
+    const one = await renderSection({ theme: { files }, templateName: 'index', section: 'sections--header-group__header' })
+    expect(one.html).toMatch(/^Liquid error: sections\/header-group\.json: /)
+    expect(one.report.unsupported).toEqual([{ feature: 'section-group', detail: expect.stringMatching(/^sections\/header-group\.json: /) }])
+    expect(one.report.missing).toEqual([])
+  })
+  it('finds a group section through another split when the first group file is not valid', async () => {
+    const files = {
+      ...theme.files,
+      'sections/hg.json': '{ nope',
+      'sections/hg__top.json': '{ "type": "header", "sections": { "bar": { "type": "footer" } }, "order": ["bar"] }'
+    }
+    const one = await renderSection({ theme: { files }, templateName: 'index', section: 'sections--hg__top__bar' })
+    expect(one.html).toBe('<div id="shopify-section-sections--hg__top__bar" class="shopify-section shopify-section-group-hg__top"><footer>Default copyright|sections--hg__top__bar|1|header</footer>\n\n</div>')
+    expect(one.report.unsupported).toEqual([])
+  })
+  it('skips a contextual file whose sections or order has the wrong type and names it', async () => {
+    const files = {
+      ...theme.files,
+      'sections/header-group.context.ca.json': '{ "context": { "market": "ca" }, "sections": "x" }',
+      'sections/header-group.context.cb.json': '{ "context": { "market": "ca" }, "order": 5, "sections": { "announcement": { "settings": { "text": "From cb" } } } }',
+      'sections/header-group.context.cc.json': '{ "context": { "market": "ca" }, "sections": null }',
+      'sections/header-group.context.cd.json': '{ "context": { "market": "ca" }, "sections": { "announcement": { "settings": { "text": "From cd" } } } }'
+    }
+    const { html, report } = await renderPage({ theme: { files }, templateName: 'index', request: { context: { market: 'ca' } } })
+    expect(html).toContain('<p class="announcement">From cd|header|1</p>')
+    expect(html).toContain('<header-wrapper id="shopify-section-sections--header-group__header"')
+    expect(report.unsupported).toEqual([
+      { feature: 'section-group', detail: 'sections/header-group.context.ca.json "sections" is not an object' },
+      { feature: 'section-group', detail: 'sections/header-group.context.cb.json "order" is not an array' },
+      { feature: 'section-group', detail: 'sections/header-group.context.cc.json "sections" is not an object' }
+    ])
+    const only = { ...theme.files, 'sections/header-group.context.ca.json': '{ "context": { "market": "ca" }, "sections": "x" }' }
+    const base = await renderPage({ theme: { files: only }, templateName: 'index', request: { context: { market: 'ca' } } })
+    expect(base.html).toContain('<p class="announcement">Free shipping|header|1</p>')
+    expect(base.html).toContain('<header-wrapper id="shopify-section-sections--header-group__header"')
   })
 })
 
@@ -146,6 +208,10 @@ describe('shopify/theme/runtime malformed locale files', () => {
 })
 
 describe('shopify/theme/runtime limits and recursion', () => {
+  it('rejects for a block file past the parse limit that only the section data lists', async () => {
+    const files = { ...theme.files, 'blocks/big.liquid': ' '.repeat(10000001), 'sections/holder.liquid': '<i>no content_for</i>' }
+    await expect(pageWith(files, { type: 'holder', blocks: { k: { type: 'big' } } })).rejects.toThrow('parse length limit exceeded')
+  })
   it('rejects for a section file past the parse limit instead of printing it in the section', async () => {
     const files = { ...theme.files, 'sections/huge.liquid': ' '.repeat(10000001), 'templates/t.json': '{ "sections": { "h": { "type": "huge" }, "f": { "type": "footer" } }, "order": ["h", "f"] }' }
     await expect(renderPage({ theme: { files }, templateName: 't' })).rejects.toThrow('parse length limit exceeded')

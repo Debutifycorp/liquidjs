@@ -289,4 +289,57 @@ describe('shopify/theme/runtime', () => {
     const { html } = await renderPage({ theme: { files }, templateName: 'x' })
     expect(html).toBe('<div id="shopify-section-template--x__main" class="shopify-section">[][M][][L]</div>')
   })
+  describe('renderSection ids of unusual keys', () => {
+    const footer = (type = 'footer') => ({ type })
+    const hg = { type: 'header', sections: { top__bar: footer(), _lead: footer(), __proto__x: footer(), trail_: footer(), constructor: footer(), plain: footer() }, order: ['top__bar', '_lead', '__proto__x', 'trail_', 'constructor', 'plain'] }
+    const mine = { type: 'footer', sections: { a: footer(), b__c: footer() }, order: ['a', 'b__c'] }
+    const files = {
+      ...theme.files,
+      'sections/hg.json': JSON.stringify(hg),
+      'sections/hg.context.ca.json': '{ "context": { "market": "ca" }, "sections": { "__proto__": { "type": "footer" }, "plain": { "type": "footer", "settings": { "copyright": "Canada" } } }, "order": ["top__bar", "_lead", "__proto__x", "trail_", "constructor", "plain", "__proto__"] }',
+      'sections/my__group.json': JSON.stringify(mine),
+      'layout/groups.liquid': "{% sections 'hg' %}{% sections 'my__group' %}{{ content_for_layout }}",
+      'templates/g.json': '{ "layout": "groups", "sections": { "m__n": { "type": "footer" }, "_u": { "type": "footer" } }, "order": ["m__n", "_u"] }'
+    }
+    for (const [label, request] of [['without a context', undefined], ['with the ca market', { context: { market: 'ca' } }]] as const) {
+      it(`renders every section whose key holds __ or starts with _ by its reported id, ${label}`, async () => {
+        const options = { theme: { files }, templateName: 'g', request }
+        const page = await renderPage(options)
+        const ids = page.report.sections.map(entry => entry.id)
+        expect(ids).toEqual(expect.arrayContaining(['sections--hg__top__bar', 'sections--hg___lead', 'sections--hg____proto__x', 'sections--my__group__a', 'sections--my__group__b__c', 'template--g__m__n', 'template--g___u']))
+        if (request) expect(ids).toContain('sections--hg____proto__')
+        expect(page.report.sections.filter(entry => entry.status !== 'rendered')).toEqual([])
+        for (const id of ids) {
+          const one = await renderSection({ ...options, section: id })
+          expect(one.html).toContain(`id="shopify-section-${id}"`)
+          expect(page.html).toContain(one.html)
+          expect(one.report.sections.map(entry => `${entry.id}:${entry.status}`)).toEqual([`${id}:rendered`])
+          expect(one.report.missing).toEqual([])
+        }
+        if (request) expect((await renderSection({ ...options, section: 'sections--hg__plain' })).html).toContain('Canada')
+      })
+    }
+    it('reports a missing group by its last split and a missing section of an existing group by its id', async () => {
+      const none = await renderSection({ theme: { files }, templateName: 'g', section: 'sections--no__such__key' })
+      expect(none.html).toBe('')
+      expect(none.report.missing).toEqual([{ kind: 'section-group', name: 'no__such' }])
+      const gone = await renderSection({ theme: { files }, templateName: 'g', section: 'sections--my__group__zzz' })
+      expect(gone.html).toBe('')
+      expect(gone.report.missing).toEqual([{ kind: 'section', name: 'sections--my__group__zzz' }])
+    })
+  })
+  it('reaches a template key before a static section of the same name', async () => {
+    const files = { ...theme.files, 'templates/s.json': '{ "sections": { "footer": { "type": "hero" } }, "order": ["footer"] }' }
+    const { html } = await renderSection({ theme: { files }, templateName: 's', section: 'footer' })
+    expect(html).toContain('id="shopify-section-template--s__footer"')
+    expect(html).toContain('<h1>Default heading</h1>')
+  })
+  it('keeps the static blocks of a static section\'s schema default static', async () => {
+    const section = "{% content_for 'blocks' %}|{% content_for 'block', type: 'cell', id: 'hero-cell' %}|{{ section.blocks.size }}" +
+      '{% schema %}{ "name": "S", "default": { "blocks": [{ "type": "cell", "settings": { "width": 3 } }, { "type": "cell", "id": "hero-cell", "static": true, "settings": { "width": 9 } }, { "type": "cell", "static": true }] } }{% endschema %}'
+    const cell = '{{ block.id }}={{ block.settings.width }};{% schema %}{ "tag": null, "settings": [{ "type": "number", "id": "width", "default": 1 }] }{% endschema %}'
+    const files = { ...theme.files, 'sections/dflt.liquid': section, 'blocks/cell.liquid': cell }
+    const { html } = await renderSection({ theme: { files }, templateName: 'index', section: 'dflt' })
+    expect(html).toBe('<div id="shopify-section-dflt" class="shopify-section">block-1=3;block-3=1;|hero-cell=9;|2</div>')
+  })
 })

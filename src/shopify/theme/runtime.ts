@@ -2,7 +2,7 @@ import { Context } from '../../context'
 import type { Liquid } from '../../liquid'
 import type { Template } from '../../template'
 import { toPromise } from '../../util/async'
-import { LiquidError } from '../../util/error'
+import { LiquidError, RenderError } from '../../util/error'
 import { isLimitError } from '../../util/inline-error'
 import { getPerformance } from '../../util/performance'
 import { createShopifyLiquid } from '../preset'
@@ -108,10 +108,19 @@ interface Entry {
 const now = () => getPerformance().now()
 const LOCALE_FILE = /^locales\/([\w-]+?)(\.default)?(\.schema)?\.json$/
 const TAG_NAME = /^[a-z][a-z0-9-]*$/
-const GROUP_SECTION_ID = /^sections--(.+)__(.+)$/
+const GROUP_ID_PREFIX = 'sections--'
 
 /** How many sections and theme blocks may be open inside one another. Ruby Liquid stops a render nested deeper than `Liquid::Block::MAX_DEPTH`, 100, with `Nesting too deep` (`Liquid::Context#check_overflow` and `#overflow?` in Shopify/liquid, `lib/liquid/context.rb` and `lib/liquid/block.rb`). shopify.dev does not document a section nesting limit, so applying that depth to `{% section %}`, `{% sections %}` and `{% content_for %}` is Debutify's choice. */
 const MAX_NESTING_DEPTH = 100
+
+/** The ways `rest` (what follows `sections--` in a group section's id) splits at a `__` into a group name and the section's key, shortest group name first. A key may hold `__` or start with `_`, and a group name may hold `__`, so the id alone does not say where the name ends. */
+function groupSplits (rest: string): Array<[string, string]> {
+  const splits: Array<[string, string]> = []
+  for (let at = rest.indexOf('__', 1); at !== -1; at = rest.indexOf('__', at + 1)) {
+    if (at + 2 < rest.length) splits.push([rest.slice(0, at), rest.slice(at + 2)])
+  }
+  return splits
+}
 
 const isObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 
@@ -143,7 +152,7 @@ function presetShape (preset: unknown, where: string): void {
   }
 }
 
-/** A schema `default` as the JSON data of a section: its `blocks` array becomes `blocks` and `block_order`, with ids `block-1`, `block-2`… among siblings. shopify.dev does not say what ids Shopify gives them. */
+/** A schema `default` as the JSON data of a section: its `blocks` array becomes `blocks` and `block_order`, with ids `block-1`, `block-2`… among siblings (shopify.dev does not say what ids Shopify gives them). An entry that carries a string `id` and `"static": true` is a static block, https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks/static-blocks: it keeps its `id` as its key and `static`, and stays out of `block_order`, so `{% content_for 'block' %}` finds it and `{% content_for 'blocks' %}` does not render it. A `static` entry without a string `id` cannot be named by `content_for 'block'`, so it stays a dynamic block. */
 function presetData (preset: Record<string, unknown>): { settings?: Record<string, unknown>, blocks?: Record<string, BlockData>, block_order?: string[] } {
   const out: ReturnType<typeof presetData> = {}
   if (isObject(preset.settings)) out.settings = preset.settings
@@ -151,9 +160,10 @@ function presetData (preset: Record<string, unknown>): { settings?: Record<strin
     out.blocks = {}
     out.block_order = []
     preset.blocks.forEach((block: Record<string, unknown>, i) => {
-      const id = `block-${i + 1}`
-      out.blocks![id] = { ...presetData(block), type: String(block.type) }
-      out.block_order!.push(id)
+      const isStatic = block.static === true && typeof block.id === 'string' && block.id !== ''
+      const id = isStatic ? block.id as string : `block-${i + 1}`
+      out.blocks![id] = { ...presetData(block), type: String(block.type), ...(isStatic ? { static: true } : {}) }
+      if (!isStatic) out.block_order!.push(id)
     })
   }
   return out
@@ -433,24 +443,26 @@ class PageRender implements ThemeHooks {
    * One section of the page, found by the id `renderPage` reports for it. The Section Rendering API addresses a section the same way, by a static file name (`social`), `sections--<id>__<name>` for a section of a group and `template--<id>__<name>` for one of a template: https://shopify.dev/docs/api/ajax/section-rendering. In order:
    *
    * 1. `template--<template>__<key>`: the section `<key>` of the template.
-   * 2. `sections--<group>__<key>`: the section `<key>` of the group (split at the last `__`), with the request's contextual file applied.
+   * 2. `sections--<group>__<key>`: the section `<key>` of the group, with the request's contextual file applied. A key may hold `__` or start with `_`, and so may a group name, so every `__` in the id is tried as the split, shortest group name first, and the first group file that exists and holds the key is the one. When no group file exists at all, the last split names the missing group in the report.
    * 3. A bare key of the template's `sections` (`featured`), so a caller need not build the id.
    * 4. A static section's name.
    *
-   * A key the template or group does not have renders nothing and is reported as a missing section; a `disabled` section renders nothing and is reported, and is never rendered as a static section of the same name. The template must exist, as for `renderPage`.
+   * A key the template or group does not have renders nothing and is reported as a missing section; a `disabled` section renders nothing and is reported, and is never rendered as a static section of the same name. The template must exist, as for `renderPage`, or the promise rejects.
+   *
+   * A bare template key comes before a static name, so a static section whose name is also a key of the template (`{% section 'hero' %}` in the layout and a template section keyed `hero`) can be reached only as `renderPage` reports the other one, not by its name. A group whose JSON is not valid does not reject, as `renderPage` does not: the error is reported (`section-group`) and printed, escaped, as the section's html.
    */
   private * renderOneSection (key: string): Generator<unknown, string, unknown> {
     const template = this.requireTemplate()
     const templateEntries = template ? this.templateEntries(template) : []
     const templatePrefix = `template--${this.templateId}__`
-    const group = key.startsWith(templatePrefix) ? null : GROUP_SECTION_ID.exec(key)
+    const splits = key.startsWith(GROUP_ID_PREFIX) ? groupSplits(key.slice(GROUP_ID_PREFIX.length)) : []
     let entry: Entry | undefined
     if (key.startsWith(templatePrefix)) {
       entry = templateEntries.find(candidate => candidate.key === key.slice(templatePrefix.length))
-    } else if (group) {
-      const found = this.resolveGroup(group[1])
-      if (found) entry = this.groupEntries(group[1], found).find(candidate => candidate.key === group[2])
-      else return ''
+    } else if (splits.length) {
+      const found = this.findGroupEntry(splits)
+      if (typeof found === 'string') return found
+      entry = found
     } else {
       entry = templateEntries.find(candidate => candidate.key === key)
       if (!entry) return (yield this.renderStaticSection(key)) as string
@@ -464,6 +476,32 @@ class PageRender implements ThemeHooks {
       return ''
     }
     return (yield this.renderSection(entry.data, entry.placement)) as string
+  }
+
+  /** The section a group section's id names, trying each split (see `renderOneSection`); undefined when a group exists but has no such section; a string (the html to return) when no group file exists or the only candidate's JSON is not valid. */
+  private findGroupEntry (splits: Array<[string, string]>): Entry | string | undefined {
+    let error: string | undefined
+    let found = false
+    for (const [name, key] of splits) {
+      if (!this.theme.has(`sections/${name}.json`)) continue
+      found = true
+      let group: GroupJson | undefined
+      try {
+        group = this.resolveGroup(name)
+      } catch (err) {
+        error = error ?? (err as Error).message
+        continue
+      }
+      const entry = group && this.groupEntries(name, group).find(candidate => candidate.key === key)
+      if (entry) return entry
+    }
+    if (error !== undefined) {
+      this.state.report.unsupported('section-group', error)
+      return escapeHtml(`Liquid error: ${error}`)
+    }
+    if (found) return undefined
+    this.state.report.missing('section-group', splits[splits.length - 1][0])
+    return ''
   }
 
   /** A file's `{% schema %}` JSON, `{}` when it has none or its JSON is invalid (the invalid case is reported). Valid JSON of the wrong shape (`settings` or `blocks` that are not arrays of objects, `locales` or `default` that are not objects) throws: the section or block that reads it fails. A `class` that is not a string is ignored and reported, as the wrapper cannot print it. https://shopify.dev/docs/storefronts/themes/architecture/sections/section-schema */
@@ -496,14 +534,14 @@ class PageRender implements ThemeHooks {
     if (!this.theme.has(file)) return []
     try {
       return this.schema<BlockSchema>(this.theme.templates(file), file).settings ?? []
-    } catch {
+    } catch (err) {
+      if (isLimitError(err)) throw err
       return []
     }
   }
 
-  /** Throws when a section's JSON has a field of the wrong type: `settings` and `blocks` objects, `block_order` an array, every block an object with `settings` an object. */
-  private checkSectionData (data: SectionData, id: string): void {
-    const where = `section ${id}`
+  /** Throws when the JSON of a section or block (`where` names it) has a field of the wrong type: `settings` and `blocks` objects, `block_order` an array, every block in `blocks` an object with `settings` an object. */
+  private checkContainer (data: { settings?: unknown, blocks?: unknown, block_order?: unknown }, where: string): void {
     optionalObject(data.settings, `${where}: "settings"`)
     optionalObject(data.blocks, `${where}: "blocks"`)
     if (data.block_order !== undefined && data.block_order !== null && !Array.isArray(data.block_order)) throw new Error(`${where}: "block_order" must be an array`)
@@ -555,7 +593,7 @@ class PageRender implements ThemeHooks {
     try {
       schema = this.schema<SectionSchema>(templates, file)
       const saved = placement.useSchemaDefault && schema.default ? { ...presetData(schema.default), ...data } : data
-      this.checkSectionData(saved, placement.id)
+      this.checkContainer(saved, `section ${placement.id}`)
       const section = {
         id: placement.id,
         settings: new SettingsDrop(schema.settings, saved.settings ?? undefined, this.env),
@@ -608,7 +646,7 @@ class PageRender implements ThemeHooks {
   }
 
   /**
-   * The group `sections/<name>.json` with the request's contextual file applied, or undefined (and reported) when the file does not exist. A group that is not an object is reported and read as undefined too. A contextual file `<name>.context.<context>.json` whose `context` (`market`, `b2b`) matches the request's overrides the group; the first match in file order wins, and several matching is not pinned. A request with no `context` reads none of them, and one that is not valid JSON or not an object is reported and skipped, so it affects only a request that has a context. https://shopify.dev/docs/storefronts/themes/architecture/section-groups#contextual-section-groups
+   * The group `sections/<name>.json` with the request's contextual file applied, or undefined (and reported) when the file does not exist. A group that is not an object is reported and read as undefined too. A contextual file `<name>.context.<context>.json` whose `context` (`market`, `b2b`) matches the request's overrides the group; the first match in file order wins, and several matching is not pinned. A request with no `context` reads none of them, and one that is not valid JSON, not an object, or whose `sections` is not an object or `order` not an array (when its `context` matches) is reported under its own path and skipped, so the group the base file describes still renders and it affects only a request that has a context. https://shopify.dev/docs/storefronts/themes/architecture/section-groups#contextual-section-groups
    */
   private resolveGroup (name: string): GroupJson | undefined {
     const file = `sections/${name}.json`
@@ -637,6 +675,11 @@ class PageRender implements ThemeHooks {
         continue
       }
       if (matchesContext(variant.context as ContextFile['context'], requested)) {
+        const sectionsOk = variant.sections === undefined || isObject(variant.sections)
+        const orderOk = variant.order === undefined || Array.isArray(variant.order)
+        if (!sectionsOk) this.ignored('section-group', `${path} "sections"`, 'an object')
+        if (!orderOk) this.ignored('section-group', `${path} "order"`, 'an array')
+        if (!sectionsOk || !orderOk) continue
         group = deepMerge(group, { sections: variant.sections, order: variant.order })
         break
       }
@@ -715,7 +758,7 @@ class PageRender implements ThemeHooks {
    *
    * The block renders in a context of its own: the page's globals, the `section` object of the section that holds it, `block` (`id`, `type`, `settings` over the schema's defaults, and an empty `shopify_attributes`) and the static block's extra parameters. https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks says a block can read global objects and the `section` object but "can't see variables from outside the block", and https://shopify.dev/docs/api/liquid/objects/block says `shopify_attributes` returns no value outside the theme editor, which this package never is. The block is pushed on the frame stack, so its own `content_for 'blocks'` and static blocks use its `blocks`.
    *
-   * A block file that does not exist renders nothing and is reported as `missing`. One that does not parse prints its error inside the default wrapper, as a section does, and one whose render raises an error prints it inline in its content; either error fails the section that holds the block (the report lists it as `failed`). A `renderLimit` or `memoryLimit` hit is not caught: it rejects the page, as in a section. Not pinned by shopify.dev: those cases, the wrapper of a block that does not parse (the default one is used), any `tag` other than a lowercase element name (`div` is used; the schema page allows "any string up to a limit of 50 characters", and what Shopify renders for a longer or invalid one is not stated), and whether `class` applies when `tag` is `null` (it does not here).
+   * A block file that does not exist renders nothing and is reported as `missing`. One that does not parse, whose schema has a field of the wrong type, or whose saved JSON has one (`settings` or `blocks` not objects, `block_order` not an array) prints its error inside the default wrapper, as a section does, and one whose render raises an error prints it inline in its content; either error fails the section that holds the block (the report lists it as `failed`) and leaves the block's siblings alone. A `renderLimit` or `memoryLimit` hit is not caught: it rejects the page, as in a section. Not pinned by shopify.dev: those cases, the wrapper of a block that does not parse (the default one is used), any `tag` other than a lowercase element name (`div` is used; the schema page allows "any string up to a limit of 50 characters", and what Shopify renders for a longer or invalid one is not stated), and whether `class` applies when `tag` is `null` (it does not here).
    */
   private * renderThemeBlock (id: string, data: BlockData, params: Record<string, unknown>, frame: Frame): Generator<unknown, string, unknown> {
     this.checkDepth()
@@ -725,14 +768,18 @@ class PageRender implements ThemeHooks {
       this.state.report.missing('block', type)
       return ''
     }
-    let templates: Template[]
+    let templates: Template[] = []
+    let schema: BlockSchema
+    let block: LiquidObject
     try {
       templates = this.theme.templates(file)
+      schema = this.schema<BlockSchema>(templates, file)
+      this.checkContainer(data, `block ${id}`)
+      block = { id, type, settings: new SettingsDrop(schema.settings, data.settings ?? undefined, this.env), shopify_attributes: '' }
     } catch (err) {
-      return this.wrapBlock(id, {}, escapeHtml(this.fail(err)))
+      const wrapped = LiquidError.is(err) || isLimitError(err) || !templates.length ? err : new RenderError(err as Error, templates[0])
+      return this.wrapBlock(id, {}, escapeHtml(this.fail(wrapped)))
     }
-    const schema = this.schema<BlockSchema>(templates, file)
-    const block = { id, type, settings: new SettingsDrop(schema.settings, data.settings, this.env), shopify_attributes: '' }
     this.state.frames.push({ kind: 'block', block: { id, type }, section: frame.section, container: data, sectionObject: frame.sectionObject })
     let html: string
     try {
