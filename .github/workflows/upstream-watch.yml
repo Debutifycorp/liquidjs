@@ -26,6 +26,6 @@ jobs:
           if [ "$base" != "$latest" ]; then
             title="Upstream liquidjs $latest is out (fork is on $base)"
             if ! gh issue list --state open --search "$title in:title" --json number --jq '.[0].number' | grep -q .; then
-              gh issue create --title "$title" --body "Merge upstream \`v$latest\` into \`master\` (\`git merge v$latest\`): drop upstream's \`package-lock.json\` changes (\`git rm package-lock.json\`), regenerate \`pnpm-lock.yaml\` with \`pnpm install\`, run \`pnpm test\` and the liquid-spec workflow, then release. Published advisories on liquidjs: ${advisories:-none}."
+              gh issue create --title "$title" --body "Merge upstream \`v$latest\` into \`master\`: run \`git fetch upstream --tags\`, then \`git merge v$latest\`. On conflicts keep ours for the top of \`CHANGELOG.md\` and for \`version\` in \`package.json\`. Set \`upstreamLiquidjs\` in \`package.json\` to \`$latest\`, or \`perf:diff\` keeps benchmarking against the old release and this watch reopens the issue every week. Drop upstream's \`package-lock.json\` changes (\`git rm package-lock.json\`), regenerate \`pnpm-lock.yaml\` with \`pnpm install\`, run \`pnpm test\` and the liquid-spec workflow, then release. Published advisories on liquidjs: ${advisories:-none}."
             fi
           fi

@@ -163,7 +163,7 @@ Decimal values that reach API callers (`evalValue`, `evalValueSync`, values writ
 
 ## rawTags
 
-**rawTags** is added by the `@debutify/liquidjs` fork and does not exist in upstream LiquidJS. It lists the tags whose body is read as raw text up to `end<name>` and never parsed, so Liquid syntax inside them is kept as text. It defaults to `['raw']`. Register a `RawBodyTag` subclass for each name you add, and list `comment` to make `comment` nest as it does in Shopify Liquid.
+**rawTags** is added by the `@debutify/liquidjs` fork and does not exist in upstream LiquidJS. It lists the tags whose body is read as raw text up to `end<name>` and never parsed, so Liquid syntax inside them is kept as text. It defaults to `['raw']`. Register a `RawBodyTag` subclass for each name you add, and list `comment` to make `comment` nest as it does in Shopify Liquid. The list replaces the default instead of adding to it, so it must include `raw` to keep `{% raw %}` raw: with `rawTags: ['comment']`, the body of `{% raw %}` is parsed as Liquid and `{% raw %}{{ x {% endraw %}` is a tokenization error.
 
 ```javascript
 const { Liquid, RawBodyTag } = require('@debutify/liquidjs')
@@ -199,7 +199,7 @@ Which errors are written follows Ruby Liquid:
 - An error in a tag that prints nothing (`assign`, `capture`, a block with a blank body) is recorded in `errors` and not written.
 - An undefined variable is recorded and not written, but it is an error only under `strictVariables`; by default nothing is recorded.
 - An undefined filter is recorded and not written only when it is met while rendering, for example inside a grouped expression (`groupedExpressions`). Under `strictFilters` a misspelt filter in an ordinary tag is a parse error and still throws, as in upstream LiquidJS, and without `strictFilters` it is not an error at all.
-- A syntax error in the template you pass to `parse` still throws, and so does a limit error (`memoryLimit`, `renderLimit`, `parseLimit`).
+- A syntax error in the template you pass to `parse` still throws, and so does a limit error (`memoryLimit`, `renderLimit`, `parseLimit`). A limit hit while rendering arrives wrapped in a `RenderError`, so test what you catch with `isLimitError(err)`, which looks through `originalError`; `LimitError.is(err)` is false for the wrapper.
 
 [liquid]: /api/classes/Liquid.html
 [caching]: ./caching.html

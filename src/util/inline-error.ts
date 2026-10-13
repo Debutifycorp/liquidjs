@@ -27,8 +27,8 @@ export function inlineErrorMessage (err: LiquidError): string {
   return `${kind} (${file}line ${line}): ${liquidErrorText(err)}`
 }
 
-/** Whether `err` is one of the engine's limits (`memoryLimit`, `renderLimit`, `parseLimit`). `inlineErrors` never handles these: Ruby Liquid re-raises its `MemoryError` rather than print it. */
-export function isLimitError (err: Error): boolean {
+/** Whether `err`, or the error it wraps in `originalError`, is one of the engine's limits (`memoryLimit`, `renderLimit`, `parseLimit`). Use it on what `render` or `parse` throws: a limit hit while rendering arrives wrapped in a `RenderError`, which `LimitError.is()` does not match. `inlineErrors` never handles these: Ruby Liquid re-raises its `MemoryError` rather than print it. */
+export function isLimitError (err: unknown): boolean {
   for (let e: unknown = err; e; e = LiquidError.is(e) ? e.originalError : undefined) {
     if (LimitError.is(e)) return true
   }

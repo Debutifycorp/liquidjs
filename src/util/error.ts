@@ -104,7 +104,7 @@ export class AssertionError extends Error {
   }
 }
 
-/** Thrown when `memoryLimit`, `renderLimit` or `parseLimit` is exceeded. Named and worded as the `AssertionError` it extends, so callers that matched that keep matching. Test for it with `LimitError.is()`, never `instanceof`, which fails in the ES5 bundles. */
+/** Thrown when `memoryLimit`, `renderLimit` or `parseLimit` is exceeded. Named and worded as the `AssertionError` it extends, so callers that matched that keep matching. A limit hit while rendering reaches the caller wrapped in a `RenderError` whose `originalError` is the `LimitError`, so test what you catch with `isLimitError(err)`, which looks through `originalError`. `LimitError.is(err)` is true only for the limit error itself, not for the `RenderError` around it. Never use `instanceof`, which fails in the ES5 bundles. */
 export class LimitError extends AssertionError {
   public constructor (message: string) {
     super(message)
