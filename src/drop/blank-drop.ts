@@ -8,7 +8,7 @@ export class BlankDrop extends EmptyDrop {
     if (isString(value)) return /^\s*$/.test(value)
     return yield super.equals(value)
   }
-  static is (value: unknown) {
+  static is (value: unknown): boolean {
     return value instanceof BlankDrop
   }
 }

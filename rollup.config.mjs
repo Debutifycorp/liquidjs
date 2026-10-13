@@ -15,16 +15,18 @@ const treeshake = {
   propertyReadSideEffects: false
 }
 const tsconfig = (target) => ({
-  check: true,
+  check: target !== 'es5',
   tsconfigOverride: {
     include: ['src'],
     exclude: ['test', 'benchmark', 'src/**/*.spec.ts'],
     compilerOptions: {
       target,
       module: 'ES2015',
-      moduleResolution: 'node',
+      moduleResolution: 'node10',
       rootDir: 'src',
-      downlevelIteration: true
+      downlevelIteration: true,
+      // target es5, downlevelIteration and node10 resolution are deprecated in TypeScript 6 and gone in 7; the ES5 browser bundles need the first two
+      ignoreDeprecations: '6.0'
     }
   }
 })

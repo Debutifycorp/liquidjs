@@ -1,3 +1,4 @@
+/// <reference types="node" preserve="true" />
 import { stringify } from '../util'
 import { Emitter } from './emitter'
 import { PassThrough } from 'stream'

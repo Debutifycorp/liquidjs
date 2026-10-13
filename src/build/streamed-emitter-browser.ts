@@ -1,3 +1,4 @@
+/// <reference types="node" preserve="true" />
 import { Emitter } from '../emitters'
 
 export class StreamedEmitter implements Emitter {

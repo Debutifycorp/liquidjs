@@ -1,3 +1,4 @@
+/// <reference types="node" preserve="true" />
 import { Context } from './context'
 import { toPromise, toValueSync, isFunction, forOwn, isString, strictUniq } from './util'
 import { TagClass, createTagClass, TagImplOptions, FilterImplOptions, Template, Value, StaticAnalysisOptions, StaticAnalysis, analyze, analyzeSync, SegmentArray } from './template'

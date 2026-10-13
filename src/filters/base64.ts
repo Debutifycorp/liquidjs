@@ -4,6 +4,7 @@
  * Implements base64_encode and base64_decode filters for Shopify compatibility
  */
 
+/// <reference types="node" preserve="true" />
 import { FilterImpl } from '../template'
 import { stringify } from '../util'
 import { base64Encode, base64Decode } from './base64-impl'
