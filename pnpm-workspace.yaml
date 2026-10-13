@@ -5,3 +5,10 @@ allowBuilds:
   '@parcel/watcher': false
   # jest 30 (jest-resolve): the postinstall (napi-postinstall) only fetches the native binding when the prebuilt @unrs/resolver-binding-<platform> optional package is missing
   unrs-resolver: false
+auditConfig:
+  # Advisories with no fixed release (checked 2026-10-13: braces 3.0.3 and sprintf-js 1.1.3 are the latest versions, both inside the vulnerable range). Both sit in development and release tooling and are fed only the repo's own globs and Jest's own format strings. Re-check each time the lockfile is refreshed and delete the entry as soon as a patched release exists.
+  ignoreGhsas:
+    # braces <= 3.0.3, stack exhaustion on deeply nested patterns (through micromatch in semantic-release and shx)
+    - GHSA-vfj7-8cjw-p6xm
+    # sprintf-js <= 1.1.3, unbounded precision specifiers (through Jest's babel-plugin-istanbul, js-yaml 3, argparse 1)
+    - GHSA-hp3w-g68c-fv3c

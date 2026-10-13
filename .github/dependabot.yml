@@ -1,0 +1,47 @@
+# Weekly dependency updates for the fork (owner, 2026-10-13: the fork is long-term, so its dependencies stay on their latest releases).
+# Only the root package is covered: demo/*, docs and benchmark are upstream's own npm projects, outside the published package.
+# There is no auto-merge: the owner reviews and merges these pull requests once CI is green.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Etc/UTC
+    # pnpm refuses lockfile entries published less than a day ago (minimumReleaseAge, 1440 minutes by default since pnpm 11), and Dependabot resolves with that check turned off, so a fresher version would fail `pnpm install --frozen-lockfile` in CI.
+    cooldown:
+      default-days: 3
+    # A runtime dependency bump releases a patch (semantic-release reads `fix`); tooling bumps release nothing (`build`).
+    commit-message:
+      prefix: fix
+      prefix-development: build
+      include: scope
+    groups:
+      tooling:
+        dependency-type: development
+        update-types: [minor, patch]
+      runtime:
+        dependency-type: production
+        update-types: [minor, patch]
+    ignore:
+      # TypeScript 7 has no compiler API (rollup-plugin-typescript2, ts-jest, typescript-eslint and typedoc all need it) and cannot emit the ES5 browser bundles.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      # @types/node follows the oldest supported Node line (24).
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Etc/UTC
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      actions:
+        patterns: ['*']
