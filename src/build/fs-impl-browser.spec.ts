@@ -1,5 +1,6 @@
 import * as fs from './fs-impl-browser'
-import * as sinon from 'sinon'
+import { fakeServer, fakeXhr } from 'nise'
+import type { FakeServer } from 'nise'
 import { JSDOM } from 'jsdom'
 
 describe('fs/browser', function () {
@@ -69,13 +70,13 @@ describe('fs/browser', function () {
   })
 
   describe('#readFile()', () => {
-    let server: sinon.SinonFakeServer
+    let server: FakeServer
     beforeEach(() => {
-      server = sinon.fakeServer.create()
+      server = fakeServer.create()
       server.autoRespond = true
       server.respondWith('GET', 'https://example.com/views/hello.html',
         [200, { 'Content-Type': 'text/plain' }, 'hello {{name}}']);
-      (global as any).XMLHttpRequest = sinon.useFakeXMLHttpRequest()
+      (global as any).XMLHttpRequest = fakeXhr.useFakeXMLHttpRequest()
     })
     afterEach(() => {
       server.restore()
@@ -98,15 +99,15 @@ describe('fs/browser', function () {
   })
 
   describe('#readFileSync()', () => {
-    let server: sinon.SinonFakeServer
+    let server: FakeServer
     beforeEach(() => {
-      server = sinon.fakeServer.create()
+      server = fakeServer.create()
       server.autoRespond = true
       server.respondWith(
         'GET', 'https://example.com/views/hello.html',
         [200, { 'Content-Type': 'text/plain' }, 'hello {{name}}']
       );
-      (global as any).XMLHttpRequest = sinon.useFakeXMLHttpRequest()
+      (global as any).XMLHttpRequest = fakeXhr.useFakeXMLHttpRequest()
     })
     afterEach(() => {
       server.restore()

@@ -1,4 +1,5 @@
-import * as sinon from 'sinon'
+import { fakeServer, fakeXhr } from 'nise'
+import type { FakeServer, FakeXMLHttpRequest } from 'nise'
 import { JSDOM } from 'jsdom'
 import type { Liquid } from '../../src/liquid'
 const LiquidUMD = require('../../dist/liquid.browser.umd.js').Liquid
@@ -8,9 +9,9 @@ describe('xhr', () => {
     console.info('jsdom not supported, skipping xhr...')
     return
   }
-  let server: sinon.SinonFakeServer, engine: Liquid
+  let server: FakeServer, engine: Liquid
   beforeEach(() => {
-    server = sinon.fakeServer.create()
+    server = fakeServer.create()
     server.autoRespond = true
     server.respondWith('GET', 'https://example.com/views/hello.html',
       [200, { 'Content-Type': 'text/plain' }, 'hello {{name}}'])
@@ -19,7 +20,7 @@ describe('xhr', () => {
       contentType: 'text/html',
       includeNodeLocations: true
     });
-    (global as any).XMLHttpRequest = sinon.FakeXMLHttpRequest;
+    (global as any).XMLHttpRequest = fakeXhr.FakeXMLHttpRequest;
     (global as any).document = dom.window.document
     engine = new LiquidUMD({
       root: 'https://example.com/views/',
@@ -65,7 +66,7 @@ describe('xhr', () => {
     it('should throw error', function () {
       const result = expect(engine.renderFile('hello.html'))
         .rejects.toThrow('An error occurred whilst receiving the response.');
-      (global as any).XMLHttpRequest.onCreate = function (request: sinon.SinonFakeXMLHttpRequest) {
+      (global as any).XMLHttpRequest.onCreate = function (request: FakeXMLHttpRequest) {
         setTimeout(() => request.error())
       }
       return result

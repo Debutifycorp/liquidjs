@@ -1,3 +1,7 @@
 # pnpm reads its settings from this file (pnpm 11+ ignores pnpm settings in .npmrc). Its presence also keeps `pnpm -r` (which Dependabot runs) to the root package: without it, pnpm treats demo/*, docs and benchmark as workspace projects.
 # Dependencies whose install scripts may run. strictDepBuilds is on by default, so an install fails (ERR_PNPM_IGNORED_BUILDS) on any package with a build script that is not listed here.
-allowBuilds: {}
+allowBuilds:
+  # jest 30 (jest-haste-map): the install script only runs node-gyp when npm_config_build_from_source=true; the prebuilt @parcel/watcher-<platform> package is used otherwise
+  '@parcel/watcher': false
+  # jest 30 (jest-resolve): the postinstall (napi-postinstall) only fetches the native binding when the prebuilt @unrs/resolver-binding-<platform> optional package is missing
+  unrs-resolver: false
