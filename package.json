@@ -13,6 +13,29 @@
     "./dist/liquid.node.mjs": "./dist/liquid.browser.mjs"
   },
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "browser": {
+        "import": "./dist/liquid.browser.mjs",
+        "require": "./dist/liquid.browser.umd.js"
+      },
+      "import": "./dist/liquid.node.mjs",
+      "require": "./dist/liquid.node.js"
+    },
+    "./shopify": {
+      "types": "./dist/shopify/index.d.ts",
+      "import": "./dist/shopify.node.mjs",
+      "require": "./dist/shopify.node.js"
+    },
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "shopify": ["dist/shopify/index.d.ts"]
+    }
+  },
   "engines": {
     "node": ">=16"
   },

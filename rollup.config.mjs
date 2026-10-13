@@ -155,12 +155,43 @@ const browserMin = {
   input
 }
 
+// The Shopify layer, `@debutify/liquidjs/shopify`: Node only, re-exporting the engine so one copy of each class is loaded.
+const shopifyInput = './src/shopify/index.ts'
+
+const shopifyCjs = {
+  output: [{
+    file: 'dist/shopify.node.js',
+    format: 'cjs',
+    banner
+  }],
+  external: ['path', 'fs', 'stream', 'crypto'],
+  plugins: [versionInjection, typescript(tsconfig('ES2020'))],
+  treeshake,
+  input: shopifyInput
+}
+
+const shopifyEsm = {
+  output: [{
+    file: 'dist/shopify.node.mjs',
+    format: 'esm',
+    banner
+  }],
+  external: ['path', 'fs', 'stream', 'crypto'],
+  plugins: [
+    versionInjection,
+    replace(esmRequire),
+    typescript(tsconfig('es6'))
+  ],
+  treeshake,
+  input: shopifyInput
+}
+
 const bundles = []
 const env = process.env.BUNDLES || ''
-if (env.includes('cjs')) bundles.push(nodeCjs)
-if (env.includes('esm')) bundles.push(nodeEsm, browserEsm)
+if (env.includes('cjs')) bundles.push(nodeCjs, shopifyCjs)
+if (env.includes('esm')) bundles.push(nodeEsm, browserEsm, shopifyEsm)
 if (env.includes('umd')) bundles.push(browserUmd)
 if (env.includes('min')) bundles.push(browserMin)
-if (bundles.length === 0) bundles.push(nodeCjs, nodeEsm, browserEsm, browserUmd, browserMin)
+if (bundles.length === 0) bundles.push(nodeCjs, nodeEsm, browserEsm, browserUmd, browserMin, shopifyCjs, shopifyEsm)
 
 export default bundles
