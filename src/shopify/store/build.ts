@@ -199,7 +199,7 @@ function buildArticle (data: ArticleData, blogHandle: string): LiquidObject {
   }
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/blog. */
+/** https://shopify.dev/docs/api/liquid/objects/blog. Comments are not modelled: `comments_enabled?` and `moderated?` are false. */
 function buildBlog (data: BlogData): LiquidObject {
   const articles = data.articles.map(article => buildArticle(article, data.handle))
   return {
@@ -212,6 +212,7 @@ function buildBlog (data: BlogData): LiquidObject {
     all_tags: unique(data.articles.flatMap(article => article.tags ?? [])).sort(),
     tags: [],
     'comments_enabled?': false,
+    'moderated?': false,
     metafields: {}
   }
 }
