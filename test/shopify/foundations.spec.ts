@@ -1,6 +1,7 @@
 import { createShopifyLiquid, renderLiquid, Translator } from '../../src/shopify'
 import { attribute, escapeHtml, insertAttributes } from '../../src/shopify/util/html'
-import { has, plainValue, splitArgs } from '../../src/shopify/util/args'
+import { plainValue, splitArgs } from '../../src/shopify/util/args'
+import { hasOwn } from '../../src/shopify/util/own'
 import { currentFrame, createState, sectionLocales, shopifyState } from '../../src/shopify/state'
 import { Liquid, LiquidError, LiquidFloat } from '../../src'
 import { errorMessage, ReportCollector } from '../../src/shopify/report'
@@ -82,8 +83,8 @@ describe('the Shopify layer foundations', () => {
     it('turns Ruby decimals into numbers', () => expect(plainValue(new LiquidFloat(2))).toBe(2))
     it('checks own names', () => {
       const { named } = splitArgs([['width', 1]])
-      expect(has(named, 'width')).toBe(true)
-      expect(has(named, 'toString')).toBe(false)
+      expect(hasOwn(named, 'width')).toBe(true)
+      expect(hasOwn(named, 'toString')).toBe(false)
     })
   })
 

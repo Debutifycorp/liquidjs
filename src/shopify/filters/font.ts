@@ -1,7 +1,8 @@
 import type { FilterImpl } from '../../template/filter-impl-options'
 import { stringify, toValue } from '../../util'
 import { FontDrop } from '../objects/font'
-import { has, splitArgs } from '../util/args'
+import { splitArgs } from '../util/args'
+import { hasOwn } from '../util/own'
 import { shopifyState, ShopifyState } from '../state'
 import type { UnsupportedFeature } from '../report'
 import type { ShopifyFilterSet } from './types'
@@ -78,7 +79,7 @@ function fontModify (this: FilterImpl, input: unknown, property: unknown, value:
   }
   let weight: number
   const step = /^[+-](\d+)$/.exec(text)
-  if (has(WEIGHT_KEYWORDS, text)) weight = WEIGHT_KEYWORDS[text]
+  if (hasOwn(WEIGHT_KEYWORDS, text)) weight = WEIGHT_KEYWORDS[text]
   else if (text === 'lighter' || text === 'bolder') weight = relativeWeight(font.info.weight, text)
   else if (step && isHundred(Number(step[1]))) weight = font.info.weight + Number(text)
   else if (/^\d+$/.test(text) && isHundred(Number(text))) weight = Number(text)

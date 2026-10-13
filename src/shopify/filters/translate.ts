@@ -1,7 +1,8 @@
 import type { FilterImpl } from '../../template/filter-impl-options'
 import { stringify } from '../../util'
 import { escapeHtml } from '../util/html'
-import { has, namedForDisplay, splitArgs } from '../util/args'
+import { namedForDisplay, splitArgs } from '../util/args'
+import { hasOwn } from '../util/own'
 import { sectionLocales, shopifyState } from '../state'
 import type { LocaleTree } from '../types'
 import type { ShopifyFilterSet } from './types'
@@ -33,13 +34,13 @@ function translate (this: FilterImpl, key: unknown, ...args: unknown[]): string 
   const path = stringify(key)
   const html = /_html$/.test(path)
   let value = state.translator.lookup(path, sectionLocales(state))
-  if (value && typeof value === 'object' && has(named, 'count')) value = pluralForm(value, named.count, state.translator.locale)
+  if (value && typeof value === 'object' && hasOwn(named, 'count')) value = pluralForm(value, named.count, state.translator.locale)
   if (typeof value !== 'string') {
     state.report.missing('translation', path)
     return escapeHtml(`translation missing: ${state.translator.locale}.${path}`)
   }
   const text = value.replace(PLACEHOLDER, (whole: string, name: string) => {
-    if (!has(named, name)) return whole
+    if (!hasOwn(named, name)) return whole
     return html ? escapeHtml(display[name]) : stringify(display[name])
   })
   return html ? text : escapeHtml(text)

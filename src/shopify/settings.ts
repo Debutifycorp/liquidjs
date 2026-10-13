@@ -14,7 +14,7 @@ import type { ImageData } from './types'
 import type { LiquidObject, StoreObjects } from './store/build'
 import type { Translator } from './translations'
 import { escapeHtml } from './util/html'
-import { own } from './util/own'
+import { isRecord, own, PLAIN_ID } from './util/own'
 import { isSafeUrl, removeDocumentTags, sanitizeHtml } from './util/sanitize'
 
 /** One entry of a `settings` array in a section, block or `settings_schema.json`. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings */
@@ -78,8 +78,6 @@ export class VideoUrlDrop extends Drop {
   }
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
-
 const VALUES = Symbol('values')
 const TRUSTED = Symbol('trusted')
 const SCHEMES = Symbol('colorSchemes')
@@ -108,8 +106,6 @@ const CHARACTER_REFERENCE = /&(?:#|quot|apos)/i
 /** What a stored key or an option value must not carry, as it may be printed in text or in an attribute. */
 // eslint-disable-next-line no-control-regex
 const UNSAFE_KEY_CHARACTER = /["'<>`\u0000-\u001f\u007f-\u009f\u2028\u2029]/
-/** A colour-scheme id: Shopify's own are `scheme-1`, `background-2` and the like, and ids are printed in class names, `data-` attributes and CSS selectors. */
-const SCHEME_ID = /^[A-Za-z0-9_-]+$/
 /** A gradient as `color_background` stores it: function names, numbers, colours, units and separators, no quote, semicolon, brace, colon, backslash or angle bracket. */
 const GRADIENT = /^[A-Za-z0-9#%.,()/+\s-]{1,2000}$/
 /** The only CSS functions a `color_background` value may call when the theme is not trusted with html: the gradients and the colour notations (a function such as `url(` or `image-set(` would make the page fetch from a host the value names). */
@@ -350,7 +346,7 @@ function buildColorSchemes (definition: SettingDefinition, stored: unknown, env:
   const fields = Array.isArray(definition.definition) ? definition.definition.filter(isRecord) as SettingDefinition[] : []
   const schemes: Array<[string, ColorSchemeDrop]> = []
   for (const [id, entry] of isRecord(stored) ? Object.entries(stored) : []) {
-    if (!env.trust.htmlSettings && !SCHEME_ID.test(id)) {
+    if (!env.trust.htmlSettings && !PLAIN_ID.test(id)) {
       reject(env, 'color_scheme', definition, 'has a color scheme whose id has characters other than letters, digits, - and _ and was dropped')
       continue
     }

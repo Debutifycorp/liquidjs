@@ -1,5 +1,6 @@
 import { LiquidError } from '../util/error'
 import { inlineErrorMessage } from '../util/inline-error'
+import { own } from './util/own'
 
 /** The text Shopify prints for an error: `Liquid syntax error (sections/x line 1): …` for a template that does not parse, `Liquid error (…): …` for a failure while rendering. shopify.dev does not document these texts; they follow liquid-spec `specs/basics/error-handling.yml` (`render_error_line_5_structured`) and the recordings in `specs/shopify_production_recordings/recorded_specs.yml` (`Liquid error (foo line 1): …` for an error inside a snippet), and stay on the "confirm on a development store" list. */
 export function errorMessage (err: unknown): string {
@@ -93,7 +94,7 @@ const ASSET_KINDS: Record<string, MissingKind> = { snippets: 'snippet', layout: 
 /** The kind of a missing theme file, from the directory its path starts with. */
 function assetKind (path: string): MissingKind {
   const dir = path.split('/')[0]
-  return Object.prototype.hasOwnProperty.call(ASSET_KINDS, dir) ? ASSET_KINDS[dir] : 'resource'
+  return own(ASSET_KINDS, dir) ?? 'resource'
 }
 
 export class ReportCollector {

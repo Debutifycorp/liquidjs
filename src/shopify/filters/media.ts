@@ -3,7 +3,8 @@ import type { FilterImpl } from '../../template/filter-impl-options'
 import { Drop } from '../../drop'
 import { stringify, toValue } from '../../util'
 import { attribute, escapeHtml, namedAttributes } from '../util/html'
-import { has, splitArgs } from '../util/args'
+import { splitArgs } from '../util/args'
+import { hasOwn } from '../util/own'
 import { currentFrame, shopifyState, ShopifyState } from '../state'
 import { ImageDrop, ImageUrlDrop, imageSource } from '../objects/image'
 import type { ImageData, ImageUrlParams } from '../types'
@@ -77,19 +78,19 @@ function imageTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
 
   let width: unknown = urlWidth
   let height: unknown = urlHeight
-  if (has(named, 'width') || has(named, 'height')) {
-    width = has(named, 'width') ? named.width : undefined
-    height = has(named, 'height') ? named.height : undefined
+  if (hasOwn(named, 'width') || hasOwn(named, 'height')) {
+    width = hasOwn(named, 'width') ? named.width : undefined
+    height = hasOwn(named, 'height') ? named.height : undefined
   }
 
   let srcset: string | undefined
-  if (has(named, 'srcset')) {
+  if (hasOwn(named, 'srcset')) {
     srcset = named.srcset === null || named.srcset === undefined ? undefined : stringify(named.srcset)
   } else if (url && urlWidth) {
     const max = Math.min(urlWidth, image.width ?? Infinity)
-    let widths = has(named, 'widths') ? widthsFrom(named.widths) : DEFAULT_SRCSET_WIDTHS.filter(w => w <= max)
+    let widths = hasOwn(named, 'widths') ? widthsFrom(named.widths) : DEFAULT_SRCSET_WIDTHS.filter(w => w <= max)
     const asked = Number(width)
-    if (!has(named, 'widths') && has(named, 'width') && Number.isFinite(asked) && asked > 0 && asked <= max) widths.push(asked)
+    if (!hasOwn(named, 'widths') && hasOwn(named, 'width') && Number.isFinite(asked) && asked > 0 && asked <= max) widths.push(asked)
     if (!widths.length) widths = [max]
     widths = [...new Set(widths)].sort((a, b) => a - b)
     srcset = widths.map(w => {
@@ -101,12 +102,12 @@ function imageTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
     }).join(', ')
   }
 
-  let html = `<img src="${escapeHtml(src)}"${attribute('alt', has(named, 'alt') ? named.alt ?? '' : url?.alt ?? '')}`
+  let html = `<img src="${escapeHtml(src)}"${attribute('alt', hasOwn(named, 'alt') ? named.alt ?? '' : url?.alt ?? '')}`
   if (srcset) html += attribute('srcset', srcset)
   html += attribute('width', width) + attribute('height', height)
-  if (has(named, 'sizes')) html += attribute('sizes', named.sizes)
-  if (image.focal_point && !has(named, 'style')) html += attribute('style', `object-position:${Number(image.focal_point.x.toFixed(4))}% ${Number(image.focal_point.y.toFixed(4))}%;`)
-  const loading = has(named, 'loading') ? named.loading : (named.preload !== true && lazyByDefault(state) ? 'lazy' : undefined)
+  if (hasOwn(named, 'sizes')) html += attribute('sizes', named.sizes)
+  if (image.focal_point && !hasOwn(named, 'style')) html += attribute('style', `object-position:${Number(image.focal_point.x.toFixed(4))}% ${Number(image.focal_point.y.toFixed(4))}%;`)
+  const loading = hasOwn(named, 'loading') ? named.loading : (named.preload !== true && lazyByDefault(state) ? 'lazy' : undefined)
   html += attribute('loading', loading)
   html += namedAttributes(state.report, 'image_tag', named, order, ['alt', 'width', 'height', 'sizes', 'widths', 'srcset', 'preload', 'loading'])
   return html + '>'
@@ -120,7 +121,7 @@ const NAMED_SIZES: Record<string, number> = { pico: 16, icon: 32, thumb: 50, sma
  */
 export function legacySize (size: unknown): ImageUrlParams {
   const text = stringify(size || 'small')
-  if (Object.prototype.hasOwnProperty.call(NAMED_SIZES, text)) {
+  if (hasOwn(NAMED_SIZES, text)) {
     const n = NAMED_SIZES[text]
     return { size: text, width: n, height: n }
   }
@@ -180,7 +181,7 @@ function videoTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   html += namedAttributes(state.report, 'video_tag', named, order, ['image_size', 'loading'])
   html += ' preload="metadata"' + attribute('aria-label', altOrProductTitle(this.context, media.alt))
   if (poster) html += attribute('poster', poster)
-  const loading = has(named, 'loading') ? named.loading : (lazyByDefault(state) ? 'lazy' : undefined)
+  const loading = hasOwn(named, 'loading') ? named.loading : (lazyByDefault(state) ? 'lazy' : undefined)
   html += attribute('loading', loading) + '>'
   const sources = (Array.isArray(media.sources) ? media.sources : []) as VideoSource[]
   for (const source of sources) {
@@ -224,7 +225,7 @@ function externalVideoUrl (this: FilterImpl, input: unknown, ...args: unknown[])
   const media = toValue(input) as Record<string, unknown> | undefined
   if (!media || typeof media !== 'object') return ''
   const host = stringify(media.host)
-  if (!Object.prototype.hasOwnProperty.call(EMBEDS, host)) return ''
+  if (!hasOwn(EMBEDS, host)) return ''
   const embed = EMBEDS[host]
   const { named } = splitArgs(args)
   const query: Record<string, string> = embed.defaults(shopifyState(this.context).request.origin)
@@ -260,7 +261,7 @@ function mediaTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const type = stringify(media.media_type)
   if (type === 'video') {
     const controls = splitArgs(args).named
-    return videoTag.call(this, media, ...(has(controls, 'controls') ? [] : [['controls', true]]), ...args)
+    return videoTag.call(this, media, ...(hasOwn(controls, 'controls') ? [] : [['controls', true]]), ...args)
   }
   if (type === 'external_video') return externalVideoTag.call(this, media, ...args)
   if (type === 'model') {

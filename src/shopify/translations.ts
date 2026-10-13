@@ -1,4 +1,5 @@
 import type { LocaleTree } from './types'
+import { hasOwn } from './util/own'
 
 export interface TranslationsInput {
   /** The locale being rendered (`fr`). */
@@ -20,7 +21,7 @@ export interface SectionLocales {
 function dig (tree: LocaleTree | undefined, path: string[]): string | LocaleTree | undefined {
   let node: string | LocaleTree | undefined = tree
   for (const part of path) {
-    if (!node || typeof node !== 'object' || !Object.prototype.hasOwnProperty.call(node, part)) return undefined
+    if (!node || typeof node !== 'object' || !hasOwn(node, part)) return undefined
     node = node[part]
   }
   return node
@@ -28,9 +29,9 @@ function dig (tree: LocaleTree | undefined, path: string[]): string | LocaleTree
 
 function forLocale<T> (map: Record<string, T> | undefined, locale: string): T | undefined {
   if (!map) return undefined
-  if (Object.prototype.hasOwnProperty.call(map, locale)) return map[locale]
+  if (hasOwn(map, locale)) return map[locale]
   const language = locale.split('-')[0]
-  return Object.prototype.hasOwnProperty.call(map, language) ? map[language] : undefined
+  return hasOwn(map, language) ? map[language] : undefined
 }
 
 /**

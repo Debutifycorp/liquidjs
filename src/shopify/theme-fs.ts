@@ -2,8 +2,7 @@ import type { FS } from '../fs/fs'
 import type { LiquidCache } from '../cache'
 import type { Template } from '../template'
 import type { Liquid } from '../liquid'
-
-const has = (files: Record<string, string>, path: string) => Object.prototype.hasOwnProperty.call(files, path)
+import { hasOwn } from './util/own'
 
 /**
  * The theme's files, from memory only: `{% render 'price' %}` reads `snippets/price.liquid` from the map and nothing ever touches the disk (https://shopify.dev/docs/api/liquid/tags/render and https://shopify.dev/docs/api/liquid/tags/include look a snippet up by name; the directory layout is https://shopify.dev/docs/storefronts/themes/architecture).
@@ -29,7 +28,7 @@ export class ThemeFS implements FS {
   }
 
   public readFileSync (filepath: string) {
-    if (!has(this.files, filepath)) throw new Error(`Could not find asset ${filepath}`)
+    if (!hasOwn(this.files, filepath)) throw new Error(`Could not find asset ${filepath}`)
     return this.files[filepath]
   }
 
@@ -80,6 +79,6 @@ export class ThemeCache implements LiquidCache {
     const type = key.slice(0, sep) as 'partials' | 'layouts' | 'root'
     const { fs, extname } = this.liquid.options
     const path = fs.resolve(this.liquid.options[type][0] ?? '.', key.slice(sep + 1), extname)
-    return has(this.files, path) ? this.files[path] : undefined
+    return hasOwn(this.files, path) ? this.files[path] : undefined
   }
 }

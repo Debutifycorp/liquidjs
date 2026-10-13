@@ -4,6 +4,7 @@ import { isNil, LiquidDate, strftime, stringify, toEnumerable, toValue } from '.
 import { getDateTimeFormat } from '../../util/intl'
 import { attribute, escapeChar, escapeHtml } from '../util/html'
 import { namedForDisplay, plainValue, splitArgs } from '../util/args'
+import { hasOwn } from '../util/own'
 import { shopifyState } from '../state'
 import type { ShopifyFilterSet } from './types'
 
@@ -138,7 +139,7 @@ function namedFormat (filter: FilterImpl, name: string): string {
   const state = shopifyState(filter.context)
   const fromLocale = state.translator.lookup(`date_formats.${name}`)
   if (typeof fromLocale === 'string') return fromLocale
-  if (Object.prototype.hasOwnProperty.call(DATE_FORMATS, name)) return DATE_FORMATS[name]
+  if (hasOwn(DATE_FORMATS, name)) return DATE_FORMATS[name]
   // https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files: "If a custom format is missing in the locale file of the active language, then a Liquid error is rendered." The page gives no message; this wording is Debutify's and not pinned.
   state.report.unsupported('date_format', name)
   throw new Error(`invalid date format '${name}': it is not a built-in format and the locale file has no date_formats.${name}`)

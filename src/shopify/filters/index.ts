@@ -2,7 +2,7 @@ import { filters as engineFilters } from '../../filters'
 import type { FilterHandler } from '../../template/filter-impl-options'
 import type { Liquid } from '../../liquid'
 import { shopifyState } from '../state'
-import { own } from '../util/own'
+import { hasOwn, own } from '../util/own'
 import { SHOPIFY_FILTER_DOCS } from './registry.generated'
 import type { FilterStatus, ShopifyFilterEntry, ShopifyFilterSet } from './types'
 import { paginationFilters } from './pagination'
@@ -42,7 +42,7 @@ function stub (name: string): FilterHandler {
 
 /** Whether the plain engine provides `name`. An own-property check: `engineFilters` is a plain object, so `name in engineFilters` would also find `constructor` and `toString`. */
 function engineProvides (name: string): boolean {
-  return Object.prototype.hasOwnProperty.call(engineFilters, name)
+  return hasOwn(engineFilters, name)
 }
 
 /** Registers every implemented Shopify filter, and a stub for every other filter in Shopify's docs that the engine does not provide. */

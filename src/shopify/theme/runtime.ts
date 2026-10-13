@@ -18,6 +18,7 @@ import { SchemaTag } from '../tags/raw'
 import { Translator } from '../translations'
 import type { BlockData, LocaleTree, SectionData } from '../types'
 import { escapeHtml } from '../util/html'
+import { hasOwn, isRecord, own, PLAIN_ID } from '../util/own'
 import { deepMerge, parseThemeJson, parseWrapper } from './json'
 import { contentForHeader, newHeaderMarker } from './header'
 
@@ -134,13 +135,6 @@ function groupSplits (rest: string): Array<[string, string]> {
   return splits
 }
 
-const isObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
-
-/** A key's own value: a JSON key such as `constructor` is not looked up on the prototype. */
-const own = (object: Record<string, unknown>, key: string): unknown => Object.prototype.hasOwnProperty.call(object, key) ? object[key] : undefined
-
-/** What a section or block key may hold when the theme is not trusted with html: Shopify's own keys are letters, digits, `-` and `_` (`main`, `image_banner`, `heading_aBc123`), and a key is printed in ids, class names and CSS selectors by themes such as Dawn. */
-const SAFE_KEY = /^[A-Za-z0-9_-]+$/
 /** A block `type` when the theme is not trusted with html: a key, or an app block's `@app` or `shopify://apps/<app>/blocks/<block>/<id>` (https://shopify.dev/docs/apps/build/online-store/theme-app-extensions/configuration). */
 const SAFE_BLOCK_TYPE = /^(?:[A-Za-z0-9_-]+|@app|shopify:\/\/apps\/[A-Za-z0-9_-]+\/blocks\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+)$/
 /** A section group's `type` when the theme is not trusted with html: `header`, `footer`, `aside` or `custom.<name>` (https://shopify.dev/docs/storefronts/themes/architecture/section-groups). */
@@ -156,17 +150,17 @@ function isAppBlock (type: unknown): boolean {
 
 /** Throws when `value` is not undefined or an array of objects (`schema.settings`, `schema.blocks`). */
 function objectList (value: unknown, where: string): void {
-  if (value !== undefined && !(Array.isArray(value) && value.every(isObject))) throw new Error(`${where} must be an array of objects`)
+  if (value !== undefined && !(Array.isArray(value) && value.every(isRecord))) throw new Error(`${where} must be an array of objects`)
 }
 
 /** Throws when `value` is not undefined or an object. */
 function optionalObject (value: unknown, where: string): void {
-  if (value !== undefined && value !== null && !isObject(value)) throw new Error(`${where} must be an object`)
+  if (value !== undefined && value !== null && !isRecord(value)) throw new Error(`${where} must be an object`)
 }
 
 /** A schema `default` or preset: `settings` and a `blocks` array whose entries are presets in turn. https://shopify.dev/docs/storefronts/themes/architecture/sections/section-schema ("the same attributes as the preset object") */
 function presetShape (preset: unknown, where: string): void {
-  if (!isObject(preset)) throw new Error(`${where} must be an object`)
+  if (!isRecord(preset)) throw new Error(`${where} must be an object`)
   optionalObject(preset.settings, `${where} "settings"`)
   if (preset.blocks !== undefined) {
     if (!Array.isArray(preset.blocks)) throw new Error(`${where} "blocks" must be an array`)
@@ -177,7 +171,7 @@ function presetShape (preset: unknown, where: string): void {
 /** A schema `default` as the JSON data of a section: its `blocks` array becomes `blocks` and `block_order`, with ids `block-1`, `block-2`… among siblings (shopify.dev does not say what ids Shopify gives them). An entry that carries a string `id` and `"static": true` is a static block, https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks/static-blocks: it keeps its `id` as its key and `static`, and stays out of `block_order`, so `{% content_for 'block' %}` finds it and `{% content_for 'blocks' %}` does not render it. A `static` entry without a string `id` cannot be named by `content_for 'block'`, so it stays a dynamic block. */
 function presetData (preset: Record<string, unknown>): { settings?: Record<string, unknown>, blocks?: Record<string, BlockData>, block_order?: string[] } {
   const out: ReturnType<typeof presetData> = {}
-  if (isObject(preset.settings)) out.settings = preset.settings
+  if (isRecord(preset.settings)) out.settings = preset.settings
   if (Array.isArray(preset.blocks)) {
     out.blocks = {}
     out.block_order = []
@@ -201,7 +195,7 @@ export class CompiledTheme {
   }
 
   public has (path: string): boolean {
-    return Object.prototype.hasOwnProperty.call(this.files, path)
+    return hasOwn(this.files, path)
   }
 
   /** Paths starting with `prefix`, in key order. */
@@ -239,7 +233,7 @@ export class CompiledTheme {
       if (failed.has(path)) return undefined
       try {
         const tree = this.json(path)
-        if (isObject(tree)) return tree as LocaleTree
+        if (isRecord(tree)) return tree as LocaleTree
         throw new Error(`${path}: must be a JSON object`)
       } catch (err) {
         failed.add(path)
@@ -283,7 +277,7 @@ export function compileTheme (theme: ThemeInput, options: Pick<RenderPageOptions
 
 /** A contextual section group file applies when every key it names matches the request's context. https://shopify.dev/docs/storefronts/themes/architecture/section-groups#contextual-section-groups says its `context` holds `"market": "market-handle"` or `"b2b": true`; combining both keys is not pinned. */
 function matchesContext (wanted: ContextFile['context'], request: RequestInput['context']): boolean {
-  if (!isObject(wanted) || !request || !Object.keys(wanted).length) return false
+  if (!isRecord(wanted) || !request || !Object.keys(wanted).length) return false
   if (wanted.market !== undefined && wanted.market !== request.market) return false
   if (wanted.b2b !== undefined && String(wanted.b2b) !== String(!!request.b2b)) return false
   return true
@@ -321,15 +315,15 @@ class PageRender implements ThemeHooks {
     this.state.request = page.request
     const env: SettingsEnv = { store, linklists: page.linklists, services: this.state.services, translator, report: this.state.report, trust: this.trust }
     const settingsData = theme.json('config/settings_data.json') ?? {}
-    if (!isObject(settingsData)) throw new Error('config/settings_data.json: must be a JSON object')
+    if (!isRecord(settingsData)) throw new Error('config/settings_data.json: must be a JSON object')
     // `current` is an object on https://shopify.dev/docs/storefronts/themes/architecture/config/settings-data-json; a preset name there is the older shape, not pinned by shopify.dev
-    const presets = isObject(settingsData.presets) ? settingsData.presets : {}
+    const presets = isRecord(settingsData.presets) ? settingsData.presets : {}
     const current = typeof settingsData.current === 'string' ? own(presets, settingsData.current) : settingsData.current
-    this.current = isObject(current) ? current : {}
+    this.current = isRecord(current) ? current : {}
     const values = Object.fromEntries(Object.entries(this.current).filter(([key]) => !['sections', 'content_for_index', 'blocks'].includes(key)))
     const schema = theme.json('config/settings_schema.json') ?? []
     if (!Array.isArray(schema)) throw new Error('config/settings_schema.json: must be a JSON array')
-    const definitions = schema.flatMap(group => isObject(group) && Array.isArray(group.settings) ? group.settings.filter(isObject) : []) as SettingDefinition[]
+    const definitions = schema.flatMap(group => isRecord(group) && Array.isArray(group.settings) ? group.settings.filter(isRecord) : []) as SettingDefinition[]
     const settings = new SettingsDrop(definitions, values, env)
     // Sections and blocks choose their `color_scheme` settings from the schemes the global `color_scheme_group` holds (https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings#color_scheme: "Shopify returns the selected `color_scheme` object from `color_scheme_group`", and nil "If the theme doesn't have `color_scheme_group` data in `settings_data.json`"), so their settings are built over the global settings' group.
     this.env = { ...env, colorSchemes: SettingsDrop.colorSchemes(settings) }
@@ -398,7 +392,7 @@ class PageRender implements ThemeHooks {
   /** `value` as the object it should be; a value of another type is reported and read as empty. */
   private objectOf (value: unknown, feature: UnsupportedFeature, where: string): Record<string, unknown> {
     if (value === undefined || value === null) return {}
-    if (isObject(value)) return value
+    if (isRecord(value)) return value
     this.ignored(feature, where, 'an object')
     return {}
   }
@@ -407,7 +401,7 @@ class PageRender implements ThemeHooks {
    * Whether a section or block key of the saved JSON may be used. Unless the theme is trusted with html (`trustHtmlSettings`) only keys of letters, digits, `-` and `_` are, because the key becomes `section.id` or `block.id` and themes print those in ids, class names, attributes and `<style>`; any other key is skipped and reported (feature `unsafe_key`) without the key, as the report may be shown as HTML.
    */
   private keyAllowed (key: string, what: 'section' | 'block'): boolean {
-    if (this.trust.htmlSettings || SAFE_KEY.test(key)) return true
+    if (this.trust.htmlSettings || PLAIN_ID.test(key)) return true
     this.state.report.unsupported('unsafe_key', `a ${what} key with characters other than letters, digits, - and _ was skipped`)
     return false
   }
@@ -450,7 +444,7 @@ class PageRender implements ThemeHooks {
     const path = `templates/${this.options.templateName}.json`
     if (!this.theme.has(path)) return undefined
     const template = this.theme.json(path)
-    if (!isObject(template)) throw new Error(`${path}: must be a JSON object`)
+    if (!isRecord(template)) throw new Error(`${path}: must be a JSON object`)
     return template
   }
 
@@ -568,7 +562,7 @@ class PageRender implements ThemeHooks {
       this.state.report.unsupported('schema', `${file}: ${(err as Error).message}`)
       return {} as T
     }
-    if (!isObject(json)) return {} as T
+    if (!isRecord(json)) return {} as T
     objectList(json.settings, `${file}: schema "settings"`)
     objectList(json.blocks, `${file}: schema "blocks"`)
     optionalObject(json.locales, `${file}: schema "locales"`)
@@ -606,12 +600,12 @@ class PageRender implements ThemeHooks {
     for (const id of data.block_order ?? Object.keys(data.blocks ?? {})) {
       const block: unknown = data.blocks ? own(data.blocks, id) : undefined
       if (block === undefined || block === null) continue
-      if (!isObject(block)) {
+      if (!isRecord(block)) {
         if (this.keyAllowed(id, 'block')) this.ignored('blocks', `${where}: block ${id}`, 'an object')
         continue
       }
       if (block.disabled || block.static || !this.keyAllowed(id, 'block') || !this.blockTypeAllowed(block.type)) continue
-      const settings = block.settings === undefined || block.settings === null || isObject(block.settings) ? block.settings : undefined
+      const settings = block.settings === undefined || block.settings === null || isRecord(block.settings) ? block.settings : undefined
       if (settings !== block.settings) this.ignored('blocks', `${where}: block ${id} "settings"`, 'an object')
       blocks.push({ id, type: block.type, settings: new SettingsDrop(this.blockDefinitions(block.type as string, schema), settings ?? undefined, this.env), shopify_attributes: '' })
     }
@@ -698,8 +692,8 @@ class PageRender implements ThemeHooks {
   public * renderStaticSection (name: string): Generator<unknown, string, unknown> {
     this.checkDepth()
     const sections = this.current.sections
-    const stored = isObject(sections) ? own(sections, name) : undefined
-    const saved = isObject(stored)
+    const stored = isRecord(sections) ? own(sections, name) : undefined
+    const saved = isRecord(stored)
     return (yield this.renderSection({ ...(saved ? stored : {}), type: name } as SectionData, { id: name, location: 'static', index: null, useSchemaDefault: !saved })) as string
   }
 
@@ -713,7 +707,7 @@ class PageRender implements ThemeHooks {
       this.state.report.missing('section_group', name)
       return undefined
     }
-    if (!isObject(found)) {
+    if (!isRecord(found)) {
       this.ignored('section_group', file, 'a JSON object')
       return undefined
     }
@@ -728,12 +722,12 @@ class PageRender implements ThemeHooks {
         this.state.report.unsupported('section_group', (err as Error).message)
         continue
       }
-      if (!isObject(variant)) {
+      if (!isRecord(variant)) {
         this.ignored('section_group', path, 'a JSON object')
         continue
       }
       if (matchesContext(variant.context as ContextFile['context'], requested)) {
-        const sectionsOk = variant.sections === undefined || isObject(variant.sections)
+        const sectionsOk = variant.sections === undefined || isRecord(variant.sections)
         const orderOk = variant.order === undefined || Array.isArray(variant.order)
         if (!sectionsOk) this.ignored('section_group', `${path} "sections"`, 'an object')
         if (!orderOk) this.ignored('section_group', `${path} "order"`, 'an array')
@@ -824,7 +818,7 @@ class PageRender implements ThemeHooks {
    */
   private * renderThemeBlock (id: string, data: BlockData, params: Record<string, unknown>, frame: Frame): Generator<unknown, string, unknown> {
     this.checkDepth()
-    if (!isObject(data)) return this.wrapBlock(id, {}, escapeHtml(this.fail(new Error(`block ${id} must be an object`))))
+    if (!isRecord(data)) return this.wrapBlock(id, {}, escapeHtml(this.fail(new Error(`block ${id} must be an object`))))
     const type = typeof data.type === 'string' ? data.type : '(no type)'
     const file = `blocks/${type}.liquid`
     if (typeof data.type !== 'string' || !this.theme.has(file)) {

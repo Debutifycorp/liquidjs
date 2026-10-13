@@ -32,10 +32,6 @@ export function splitArgs (args: unknown[]): FilterArgs {
   return { positional, named, order }
 }
 
-export function has (named: Record<string, unknown>, name: string): boolean {
-  return Object.prototype.hasOwnProperty.call(named, name)
-}
-
 /** The named arguments for printing: as `splitArgs(args).named`, except that a Ruby decimal stays a `LiquidFloat`, which prints `10.0` where the plain number prints `10`. */
 export function namedForDisplay (args: unknown[]): Record<string, unknown> {
   const display: Record<string, unknown> = Object.create(null)

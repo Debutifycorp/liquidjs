@@ -52,6 +52,7 @@ export function isSafeUrl (value: string): boolean {
   return !scheme || SAFE_SCHEMES.has(scheme[1].toLowerCase())
 }
 
+/** An attribute value the sanitiser read from markup, written back between double quotes. Unlike `escapeHtml` it leaves `&` alone: the value is source text, so its character references (`&amp;`) must stay as written and not be escaped a second time. */
 function escapeAttribute (value: string): string {
   return value.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
