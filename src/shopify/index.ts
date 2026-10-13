@@ -21,3 +21,7 @@ export type { FilterStatus, ShopifyFilter, ShopifyFilterDoc, ShopifyFilterEntry,
 export { SHOPIFY_TAGS, registerShopifyTags } from './tags'
 export { shopifyFilterRegistry, filterStatus } from './filters'
 export { SHOPIFY_FILTER_DOCS, THEME_LIQUID_DOCS_REVISION } from './filters/registry.generated'
+export { ColorDrop } from './objects/color'
+export { FontDrop, cssFamily, fontSlug } from './objects/font'
+export { parseColor } from './util/color'
+export type { Rgba } from './util/color'
