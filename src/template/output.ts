@@ -26,7 +26,8 @@ export class Output extends TemplateImpl<OutputToken> implements Template {
   public * render (ctx: Context, emitter: Emitter): IterableIterator<unknown> {
     // `render` is typed `IterableIterator<unknown>`, so TypeScript types a `yield` result as `undefined`; the cast avoids TS2358 on `instanceof`
     const raw = (yield this.value.value(ctx, false)) as unknown
-    const val = raw instanceof LiquidFloat ? raw : yield toValue(raw)
+    // only an object can be a Drop or a decimal; a string or a number is written as it is
+    const val = typeof raw !== 'object' || raw instanceof LiquidFloat ? raw : yield toValue(raw)
     emitter.write(val)
   }
 

@@ -43,8 +43,7 @@ export class Context {
   public ownPropertyOnly: boolean;
   public memoryLimit: Limiter;
   public renderLimit: Limiter;
-  /** Errors handled inline during this render (`inlineErrors`); shared with spawned contexts. */
-  public errors: LiquidError[];
+  private _errors?: LiquidError[]
   public constructor (env: object = {}, opts: NormalizedFullOptions = defaultOptions, renderOptions: RenderOptions = {}, { memoryLimit, renderLimit, liquid, errors }: { memoryLimit?: Limiter, renderLimit?: Limiter, liquid?: any, errors?: LiquidError[] } = {}) {
     this.sync = !!renderOptions.sync
     this.opts = opts
@@ -55,7 +54,12 @@ export class Context {
     this.memoryLimit = memoryLimit ?? new Limiter('memory alloc', renderOptions.memoryLimit ?? opts.memoryLimit)
     this.renderLimit = renderLimit ?? new Limiter('template render', getPerformance().now() + (renderOptions.renderLimit ?? opts.renderLimit))
     this.liquid = liquid
-    this.errors = errors ?? renderOptions.errors ?? []
+    // only `inlineErrors` fills the array, so a default render does not allocate one
+    this._errors = errors ?? renderOptions.errors ?? (opts.inlineErrors ? [] : undefined)
+  }
+  /** Errors handled inline during this render (`inlineErrors`); shared with spawned contexts. */
+  public get errors (): LiquidError[] {
+    return this._errors ?? (this._errors = [])
   }
   public getRegister<T> (key: string, defaultValue: T = undefined as T): T {
     return (this.registers[key] = this.registers[key] || defaultValue)
@@ -121,7 +125,7 @@ export class Context {
       renderLimit: this.renderLimit,
       memoryLimit: this.memoryLimit,
       liquid: this.liquid,
-      errors: this.errors
+      errors: this._errors
     })
   }
   private findScope (key: string | number) {

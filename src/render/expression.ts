@@ -44,8 +44,10 @@ export class Expression {
  */
 export function * evalToken (token: Token | undefined, ctx: Context, lenient = false): IterableIterator<unknown> {
   if (!token) return
-  if (ctx.opts.numberSemantics === 'ruby' && isNumberToken(token) && token.isFloat) return new LiquidFloat(token.content)
-  if ('content' in token) return token.content
+  if ('content' in token) {
+    if (ctx.opts.numberSemantics === 'ruby' && isNumberToken(token) && token.isFloat) return new LiquidFloat(token.content)
+    return token.content
+  }
   if (isPropertyAccessToken(token)) return yield evalPropertyAccessToken(token, ctx, lenient)
   if (isRangeToken(token)) return yield evalRangeToken(token, ctx)
   if (isFilteredValueToken(token)) return yield evalFilteredValueToken(token, ctx, lenient)

@@ -36,6 +36,7 @@ export function promisify (fn: any) {
 }
 
 export function stringify (value: any): string {
+  if (isString(value)) return value
   if (value instanceof LiquidFloat) return value.toString()
   value = toValue(value)
   if (isString(value)) return value
@@ -60,6 +61,7 @@ export function toEnumerable<T = unknown> (val: any): T[] {
 }
 
 export function toArray (val: any) {
+  if (isArray(val)) return val
   // a decimal under `numberSemantics: 'ruby'` stays wrapped so it still prints with its point
   if (val instanceof LiquidFloat) return [val]
   val = toValue(val)

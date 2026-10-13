@@ -72,6 +72,20 @@ describe('drop/drop', function () {
     const html = await liquid.parseAndRender(tpl, { drop: new CustomDrop() })
     expect(html).toBe('foobar: foo;bar;')
   })
+  it('should unwrap a Drop returned by valueOf when writing output', async () => {
+    class Inner extends Drop {
+      valueOf () { return [3, 2, 1] }
+    }
+    class Text extends Drop {
+      valueOf () { return 'x' }
+    }
+    class Outer extends Drop {
+      constructor (private readonly inner: Drop) { super() }
+      valueOf () { return this.inner }
+    }
+    // LiquidJS 10.30.0 writes these as 321 and x
+    expect(await liquid.parseAndRender('{{ a }}|{{ t }}', { a: new Outer(new Inner()), t: new Outer(new Text()) })).toBe('321|x')
+  })
   it('should support promise returned by valueOf', async () => {
     class AsyncValueOfDrop extends Drop {
       id = '42'

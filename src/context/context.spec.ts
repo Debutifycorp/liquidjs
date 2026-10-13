@@ -1,5 +1,7 @@
 import { Context } from './context'
 import { Scope } from './scope'
+import { defaultOptions, normalize } from '../liquid-options'
+import type { LiquidError } from '../util/error'
 
 describe('Context', function () {
   let ctx: any, scope: Scope
@@ -229,6 +231,20 @@ describe('Context', function () {
       })
       ctx.pop()
       expect(ctx.getSync(['foo'])).toEqual('zoo')
+    })
+  })
+  describe('.errors', function () {
+    it('should be an empty array that stays the same one', function () {
+      expect(ctx.errors).toEqual([])
+      expect(ctx.errors).toBe(ctx.errors)
+    })
+    it('should be the array passed in the render options', function () {
+      const errors: LiquidError[] = []
+      expect(new Context({}, defaultOptions, { errors }).errors).toBe(errors)
+    })
+    it('should be shared with a spawned context under inlineErrors', function () {
+      const inline = new Context({}, normalize({ inlineErrors: true }))
+      expect(inline.spawn().errors).toBe(inline.errors)
     })
   })
 })

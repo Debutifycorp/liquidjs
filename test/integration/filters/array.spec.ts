@@ -1,5 +1,21 @@
 import { test, render } from '../../stub/render'
 import { Liquid } from '../../../src/liquid'
+import { Drop } from '../../../src/drop'
+
+// a lazy or proxy Drop: `valueOf` hands back another Drop, so the filters must unwrap it twice as LiquidJS 10.30.0 does
+class ArrayDrop extends Drop {
+  valueOf () { return [3, 2, 1] }
+}
+class LazyArrayDrop extends Drop {
+  valueOf () { return new ArrayDrop() }
+}
+class SeparatorDrop extends Drop {
+  valueOf () { return '|' }
+}
+class LazySeparatorDrop extends Drop {
+  valueOf () { return new SeparatorDrop() }
+}
+const lazy = { d: new LazyArrayDrop(), a: [1, 2], s: new LazySeparatorDrop() }
 
 describe('filters/array', function () {
   const engine = new Liquid()
@@ -25,6 +41,12 @@ describe('filters/array', function () {
       const src = '{% assign beatles = "John, Paul, George, Ringo" | split: ", " %}' +
         '{{ beatles | join " and " }}'
       return expect(render(src)).rejects.toThrow('expected ":" after filter name, line:1, col:83')
+    })
+    // expected values are LiquidJS 10.30.0's output for the same templates
+    it.each([undefined, 'js', 'ruby'] as const)('should unwrap a Drop that returns a Drop like upstream (numberSemantics %s)', async (numberSemantics) => {
+      const opts = numberSemantics ? { numberSemantics } : {}
+      await test('{{ d | join: "," }}', lazy, '3,2,1', opts)
+      await test('{{ a | join: s }}', lazy, '1|2', opts)
     })
   })
   describe('split', () => {
@@ -206,6 +228,11 @@ describe('filters/array', function () {
       '{{ "Ground control to Major Tom." | split: "" | reverse | join: "" }}',
       '.moT rojaM ot lortnoc dnuorG'
     ))
+    it.each([undefined, 'js', 'ruby'] as const)('should unwrap a Drop that returns a Drop like upstream (numberSemantics %s)', async (numberSemantics) => {
+      const opts = numberSemantics ? { numberSemantics } : {}
+      await test('{{ d | reverse }}', lazy, '123', opts)
+      await test('{{ d | reverse | join: "," }}', lazy, '1,2,3', opts)
+    })
     it('should be pure', async () => {
       const scope = { arr: ['a', 'b', 'c'] }
       await render('{{ arr | reverse | join: "" }}', scope)

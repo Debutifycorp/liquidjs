@@ -6,10 +6,11 @@ import type { Scope } from '../context'
 import { EmptyDrop } from '../drop'
 import { LiquidFloat } from '../util/liquid-float'
 
-// `join` and `reverse` unwrap their input through `toArray`, not `argumentsToValue`, so a lone decimal under `numberSemantics: 'ruby'` keeps its point
+// `join` and `reverse` unwrap their input as `argumentsToValue` does (once here, again in `toArray` and `stringify`), except for a decimal under `numberSemantics: 'ruby'`, which stays wrapped so it keeps its point
 export function join (this: FilterImpl, v: any[], arg: string) {
-  const array = toArray(v)
-  const sep = isNil(toValue(arg)) ? ' ' : stringify(arg)
+  const array = toArray(v instanceof LiquidFloat ? v : toValue(v))
+  const sepValue = toValue(arg)
+  const sep = isNil(sepValue) ? ' ' : stringify((arg as unknown) instanceof LiquidFloat ? arg : sepValue)
   let outputSize = sep.length * Math.max(array.length - 1, 0)
   for (let i = 0; i < array.length; i++) outputSize += String(array[i]).length
   this.context.memoryLimit.use(outputSize)
@@ -22,7 +23,7 @@ export const first = argumentsToValue(function (this: FilterImpl, v: any) {
   return isArrayLike(v) ? readArrayElement(v, 0, this.context.ownPropertyOnly) : ''
 })
 export function reverse (this: FilterImpl, v: any[]) {
-  const array = toArray(v)
+  const array = toArray(v instanceof LiquidFloat ? v : toValue(v))
   this.context.memoryLimit.use(array.length)
   return [...array].reverse()
 }
