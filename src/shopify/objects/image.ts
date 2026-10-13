@@ -5,6 +5,22 @@ import type { ImageData, ImageUrlParams } from '../types'
 
 const AS_MEDIA = Symbol('asMedia')
 
+/** The `focal_point` object: `x` and `y` in percent (50 when none is set) that prints as `X% Y%`, each rounded to four decimals (`1.9231% 9.7917%`). https://shopify.dev/docs/api/liquid/objects/focal_point and https://shopify.dev/docs/api/liquid/objects/image_presentation */
+export class FocalPointDrop extends Drop {
+  public readonly x: number
+  public readonly y: number
+
+  public constructor (point?: { x: number, y: number } | null) {
+    super()
+    this.x = point?.x ?? 50
+    this.y = point?.y ?? 50
+  }
+
+  public valueOf () {
+    return `${Number(this.x.toFixed(4))}% ${Number(this.y.toFixed(4))}%`
+  }
+}
+
 /** Shopify's `image` object over `ImageData`. Printed on its own it is its `src`. https://shopify.dev/docs/api/liquid/objects/image */
 export class ImageDrop extends Drop {
   public readonly src: string
@@ -14,12 +30,12 @@ export class ImageDrop extends Drop {
   public readonly aspect_ratio: LiquidFloat | null
   public readonly alt: string
   public readonly id: number | null
-  public readonly media_type = 'image'
-  public readonly focal_point: string | null
-  public readonly presentation: { focal_point: string | null }
+  /** `image` for product media, nil for images from anywhere else. https://shopify.dev/docs/api/liquid/objects/image#image-media_type */
+  public readonly media_type: 'image' | null
+  public readonly presentation: { focal_point: FocalPointDrop }
   private readonly [AS_MEDIA]: boolean
 
-  /** `asMedia` marks an image reached as product media (`product.media`, `featured_media`), the only images whose `preview_image` is set. */
+  /** `asMedia` marks an image reached as product media (`product.media`, `featured_media`), the only images whose `preview_image` and `media_type` are set. */
   public constructor (public readonly data: ImageData, asMedia = false) {
     super()
     this[AS_MEDIA] = asMedia
@@ -29,8 +45,8 @@ export class ImageDrop extends Drop {
     this.aspect_ratio = data.width && data.height ? new LiquidFloat(data.width / data.height) : null
     this.alt = data.alt ?? ''
     this.id = data.id ?? null
-    this.focal_point = data.focal_point ? `${data.focal_point.x}% ${data.focal_point.y}%` : null
-    this.presentation = { focal_point: this.focal_point }
+    this.media_type = asMedia ? 'image' : null
+    this.presentation = { focal_point: new FocalPointDrop(data.focal_point) }
   }
 
   /** The image itself for product media, nil for images from anywhere else. https://shopify.dev/docs/api/liquid/objects/image#image-preview_image */
@@ -64,13 +80,25 @@ export function imageSource (input: unknown, title = ''): ImageSource | undefine
   return undefined
 }
 
-/** What `image_url` returns: the URL, printed as itself, carrying the image and parameters `image_tag` needs. */
+/** What `image_url` returns: the URL, printed as itself, carrying the image and parameters `image_tag` needs. Filters that read a string (`size`, `json`) see the URL. */
 export class ImageUrlDrop extends Drop {
   public constructor (public readonly url: string, public readonly image: ImageData, public readonly params: ImageUrlParams, public readonly alt: string) {
     super()
   }
 
+  public get length () {
+    return this.url.length
+  }
+
   public valueOf () {
+    return this.url
+  }
+
+  public toString () {
+    return this.url
+  }
+
+  public toJSON () {
     return this.url
   }
 }

@@ -42,10 +42,17 @@ export function parseFontHandle (handle: string): FontInfo | undefined {
   return { handle, family, style, weight: Number(weightCode) * 100, fallback_families: 'sans-serif', baseline_ratio: 0, system: false, variants }
 }
 
-/** Merges `params` into the query of `src` and sorts the keys, which is the shape of Shopify's CDN URLs (`?crop=bottom&height=400&v=1&width=400`). https://shopify.dev/docs/api/liquid/filters/image_url shows `?v=1683744744&width=450`; it does not state that keys are sorted, so the order is not pinned and the URL stays `approx`. */
+/** Inserts `_<size>` before the extension of the last path segment (`a/b.jpg` becomes `a/b_480x.jpg`), the legacy file name https://shopify.dev/docs/api/liquid/filters/img_url prints (`..._480x.jpg?v=1683744744`); a path without an extension gets the suffix at its end. */
+function withSizeSuffix (path: string, size: string): string {
+  const suffix = `_${encodeURIComponent(size)}`
+  const match = /\.[^./]+$/.exec(path)
+  return match ? path.slice(0, match.index) + suffix + match[0] : path + suffix
+}
+
+/** Merges `params` into the query of `src` and sorts the keys, which is the shape of Shopify's CDN URLs (`?crop=bottom&height=400&v=1&width=400`). https://shopify.dev/docs/api/liquid/filters/image_url shows `?v=1683744744&width=450`; it does not state that keys are sorted, so the order is not pinned and the URL stays `approx`. A legacy `size` (`img_url`, the `video_tag` poster) writes only the `_<size>` file name and keeps the image's own query, as the examples on https://shopify.dev/docs/api/liquid/filters/img_url do, whose `crop`, `format` and `scale` examples print the same `_small` URL as the plain one. */
 export function cdnStyleImageUrl (image: ImageData, params: ImageUrlParams): string {
   const at = image.src.indexOf('?')
-  const base = at === -1 ? image.src : image.src.slice(0, at)
+  let base = at === -1 ? image.src : image.src.slice(0, at)
   const query = new Map<string, string>()
   if (at !== -1) {
     for (const part of image.src.slice(at + 1).split('&')) {
@@ -54,8 +61,12 @@ export function cdnStyleImageUrl (image: ImageData, params: ImageUrlParams): str
       query.set(eq === -1 ? part : part.slice(0, eq), eq === -1 ? '' : part.slice(eq + 1))
     }
   }
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== null && value !== '') query.set(key, encodeURIComponent(String(value)))
+  if (params.size) {
+    base = withSizeSuffix(base, params.size)
+  } else {
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null && value !== '') query.set(key, encodeURIComponent(String(value)))
+    }
   }
   const keys = [...query.keys()].sort()
   return keys.length ? `${base}?${keys.map(key => `${key}=${query.get(key)}`).join('&')}` : base

@@ -22,6 +22,8 @@ export interface ImageUrlParams {
   crop_top?: number
   crop_width?: number
   crop_height?: number
+  /** The legacy size of `img_url` and of the `video_tag` poster (`small`, `480x`, `x480`, `480x480`, `large`), https://shopify.dev/docs/api/liquid/filters/img_url and https://shopify.dev/docs/api/liquid/filters/video_tag, whose examples put it in the file name (`..._480x.jpg?v=1683744744`, `..._small.jpg?v=1655255324`). `width` and `height` carry the same size in pixels, for services that do not know `size`; the default `cdnStyleImageUrl` renders the file-name suffix and nothing else. */
+  size?: string
 }
 
 /** A font from Shopify's font library, as a `font_picker` setting refers to it (`assistant_n4`), https://shopify.dev/docs/storefronts/themes/architecture/settings/fonts. Liquid sees it as Shopify's `font` object, https://shopify.dev/docs/api/liquid/objects/font (`baseline_ratio`, `fallback_families`, `family`, `style`, `variants`, `weight`); `system` is the `font` object's own `system?`; `handle` is Debutify's, and `variants` here holds handles. */

@@ -1,4 +1,5 @@
 import { stringify } from '../../util/underscore'
+import type { ReportCollector } from '../report'
 
 const ESCAPES: Record<string, string> = {
   '&': '&amp;',
@@ -30,6 +31,17 @@ export function attribute (name: string, value: unknown): string {
   if (value === false || value === null || value === undefined || !isAttributeName(name)) return ''
   if (value === true) return ` ${name}="${name}"`
   return ` ${name}="${escapeHtml(value)}"`
+}
+
+/** The attributes a template named in a filter call (`names`, in the order written, minus the `skip` ones the filter handles itself), written in order. A name that is not a valid attribute name is dropped and reported as unsupported, so data cannot inject markup through it. */
+export function namedAttributes (report: ReportCollector, filter: string, named: Record<string, unknown>, names: string[], skip: string[] = []): string {
+  let html = ''
+  for (const name of names) {
+    if (skip.includes(name)) continue
+    if (isAttributeName(name)) html += attribute(name, named[name])
+    else report.unsupported(filter, `attribute name ${JSON.stringify(name.slice(0, 40))} is not valid and was dropped`)
+  }
+  return html
 }
 
 /** Inserts attributes right after the element name of the first tag in `markup` (`<svg` becomes `<svg class="x"`), as Shopify's SVG filters do, https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag (the `class` argument lands on the `<svg>` element; where among its attributes is not pinned). */

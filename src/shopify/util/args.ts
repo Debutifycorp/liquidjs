@@ -16,7 +16,7 @@ export function plainValue (value: unknown): unknown {
   return value
 }
 
-/** LiquidJS passes keyword arguments (`image_tag: width: 300`) as `[name, value]` pairs after the positional ones. */
+/** LiquidJS passes keyword arguments (`image_tag: width: 300`) as `[name, value]` pairs after the positional ones, so a positional array of two items that starts with a string looks the same as one (a limit of the engine's filter protocol). Filters that write argument names as HTML attributes check them with `namedAttributes`, which drops names that are not valid attribute names. */
 export function splitArgs (args: unknown[]): FilterArgs {
   const positional: unknown[] = []
   const named: Record<string, unknown> = Object.create(null)

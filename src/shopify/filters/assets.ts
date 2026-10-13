@@ -1,6 +1,6 @@
 import type { FilterImpl } from '../../template/filter-impl-options'
 import { stringify } from '../../util'
-import { attribute, escapeHtml, insertAttributes } from '../util/html'
+import { attribute, escapeHtml, insertAttributes, namedAttributes } from '../util/html'
 import { splitArgs } from '../util/args'
 import { shopifyState } from '../state'
 import type { ShopifyFilterSet } from './types'
@@ -16,18 +16,18 @@ function shopifyAssetUrl (this: FilterImpl, input: unknown) {
 }
 
 /** `<link href rel type media />`, `media` and `type` overridable in place, other attributes after them; `preload` only adds a Link header on Shopify. https://shopify.dev/docs/api/liquid/filters/stylesheet_tag */
-function stylesheetTag (url: unknown, ...args: unknown[]) {
+function stylesheetTag (this: FilterImpl, url: unknown, ...args: unknown[]) {
   const { named, order } = splitArgs(args)
   const type = named.type ?? 'text/css'
   const media = named.media ?? 'all'
-  const extra = order.filter(name => !['href', 'rel', 'type', 'media', 'preload'].includes(name)).map(name => attribute(name, named[name])).join('')
+  const extra = namedAttributes(shopifyState(this.context).report, 'stylesheet_tag', named, order, ['href', 'rel', 'type', 'media', 'preload'])
   return `<link href="${escapeHtml(url)}" rel="stylesheet"${attribute('type', type)}${attribute('media', media)}${extra} />`
 }
 
 /** `<script src type></script>`, booleans as `defer="defer"`. https://shopify.dev/docs/api/liquid/filters/script_tag */
-function scriptTag (url: unknown, ...args: unknown[]) {
+function scriptTag (this: FilterImpl, url: unknown, ...args: unknown[]) {
   const { named, order } = splitArgs(args)
-  const extra = order.filter(name => name !== 'src' && name !== 'type').map(name => attribute(name, named[name])).join('')
+  const extra = namedAttributes(shopifyState(this.context).report, 'script_tag', named, order, ['src', 'type'])
   return `<script src="${escapeHtml(url)}"${attribute('type', named.type ?? 'text/javascript')}${extra}></script>`
 }
 
@@ -47,7 +47,7 @@ function paymentTypeSvgTag (this: FilterImpl, type: unknown, ...args: unknown[])
   return className ? insertAttributes(svg, attribute('class', className)) : svg
 }
 
-/** The container Shopify fills with accelerated checkout buttons, holding the unbranded "Buy it now" fallback button themes style. https://shopify.dev/docs/api/liquid/filters/payment_button */
+/** The container Shopify fills with accelerated checkout buttons, `<div data-shopify="payment-button" class="shopify-payment-button">` as https://shopify.dev/docs/api/liquid/filters/payment_button prints it. The page's inside is a `<shopify-accelerated-checkout>` element carrying the shop's access token, shop id and variant data, which this package cannot know; the disabled unbranded "Buy it now" button here is Debutify's stand-in, not Shopify's markup. */
 function paymentButton () {
   return '<div data-shopify="payment-button" class="shopify-payment-button"><button type="button" class="shopify-payment-button__button shopify-payment-button__button--unbranded" disabled="disabled">Buy it now</button></div>'
 }

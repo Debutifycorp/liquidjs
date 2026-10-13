@@ -1,16 +1,20 @@
+import type { Context } from '../../context'
 import type { FilterImpl } from '../../template/filter-impl-options'
 import { Drop } from '../../drop'
 import { stringify, toValue } from '../../util'
-import { attribute, escapeHtml } from '../util/html'
+import { attribute, escapeHtml, namedAttributes } from '../util/html'
 import { has, splitArgs } from '../util/args'
 import { currentFrame, shopifyState, ShopifyState } from '../state'
-import { ImageUrlDrop, imageSource } from '../objects/image'
+import { ImageDrop, ImageUrlDrop, imageSource } from '../objects/image'
 import type { ImageData, ImageUrlParams } from '../types'
 import type { ShopifyFilterSet } from './types'
 
 const MAX_DIMENSION = 5760
 const URL_PARAMS: Array<keyof ImageUrlParams> = ['width', 'height', 'crop', 'format', 'pad_color', 'quality', 'crop_left', 'crop_top', 'crop_width', 'crop_height']
 const NUMERIC_PARAMS = ['width', 'height', 'quality', 'crop_left', 'crop_top', 'crop_width', 'crop_height']
+/** The `quality` range https://shopify.dev/docs/api/liquid/filters/image_url gives ("an integer from `10` to `90`"). The page does not say what a value outside it does; this package clamps it. */
+const MIN_QUALITY = 10
+const MAX_QUALITY = 90
 
 /** `image_tag`'s default `srcset` widths. shopify.dev confirms 352 only ("a smart set of default widths up to the maximum defined in the image URL"); the rest must be pinned on the dev store. */
 export const DEFAULT_SRCSET_WIDTHS = [352, 832, 1200, 1920, 2560, 3840]
@@ -23,7 +27,11 @@ function lazyByDefault (state: ShopifyState): boolean {
   return typeof index === 'number' && index > EAGER_SECTIONS
 }
 
-/** Returns the image's CDN URL through the `imageUrl` service; `image_tag` reads the image and parameters from the result. https://shopify.dev/docs/api/liquid/filters/image_url */
+/**
+ * Returns the image's CDN URL through the `imageUrl` service; `image_tag` reads the image and parameters from the result. https://shopify.dev/docs/api/liquid/filters/image_url
+ *
+ * The page's Caution says that without a `width` or `height` "an error is returned", so that is an error here too (its `crop: 'region'` examples, which print a URL with neither, are the one exception); the page does not give the error's text. The page's Note says an image "can never be resized to be larger than its original dimensions", so `width` and `height` stop at the image's own when it has them, and at the 5760 maximum the page gives. `quality` stays within the page's 10 to 90.
+ */
 function imageUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const source = imageSource(input)
   if (!source) return ''
@@ -34,10 +42,18 @@ function imageUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
     if (value === undefined || value === null || value === '') continue
     if (NUMERIC_PARAMS.includes(key)) {
       const n = Math.round(Number(value))
-      if (Number.isFinite(n) && n > 0) (params as Record<string, number>)[key] = key === 'width' || key === 'height' ? Math.min(n, MAX_DIMENSION) : n
+      if (!Number.isFinite(n) || n <= 0) continue
+      let limited = n
+      if (key === 'width') limited = Math.min(n, MAX_DIMENSION, source.image.width || Infinity)
+      else if (key === 'height') limited = Math.min(n, MAX_DIMENSION, source.image.height || Infinity)
+      else if (key === 'quality') limited = Math.min(Math.max(n, MIN_QUALITY), MAX_QUALITY)
+      ;(params as Record<string, number>)[key] = limited
     } else {
       (params as Record<string, string>)[key] = stringify(value)
     }
+  }
+  if (params.width === undefined && params.height === undefined && params.crop !== 'region') {
+    throw new Error('image_url needs a width or height')
   }
   return new ImageUrlDrop(shopifyState(this.context).services.imageUrl(source.image, params), source.image, params, source.alt)
 }
@@ -80,7 +96,9 @@ function imageTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
     widths = [...new Set(widths)].sort((a, b) => a - b)
     srcset = widths.map(w => {
       const scaled: ImageUrlParams = { ...params, width: w }
+      // both sizes keep their ratio at every width; a height alone is dropped, so the CDN works it out from the width as the image_url page says
       if (params.height && params.width) scaled.height = Math.round(w * params.height / params.width)
+      else delete scaled.height
       return `${state.services.imageUrl(image, scaled)} ${w}w`
     }).join(', ')
   }
@@ -92,31 +110,33 @@ function imageTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   if (image.focal_point && !has(named, 'style')) html += attribute('style', `object-position:${Number(image.focal_point.x.toFixed(4))}% ${Number(image.focal_point.y.toFixed(4))}%;`)
   const loading = has(named, 'loading') ? named.loading : (named.preload !== true && lazyByDefault(state) ? 'lazy' : undefined)
   html += attribute('loading', loading)
-  for (const name of order) {
-    if (!['alt', 'width', 'height', 'sizes', 'widths', 'srcset', 'preload', 'loading'].includes(name)) html += attribute(name, named[name])
-  }
+  html += namedAttributes(state.report, 'image_tag', named, order, ['alt', 'width', 'height', 'sizes', 'widths', 'srcset', 'preload', 'loading'])
   return html + '>'
 }
 
 /** The named `img_url` sizes and their square dimensions in pixels, `original` and `master` included (1024 by 1024). https://shopify.dev/docs/api/liquid/filters/img_url */
 const NAMED_SIZES: Record<string, number> = { pico: 16, icon: 32, thumb: 50, small: 100, compact: 160, medium: 240, large: 480, grande: 600, original: 1024, master: 1024 }
 
-/** Parses an `img_url` size (`480x`, `x480`, `480x480`, `large`) into CDN parameters, up to the 5760 by 5760 the page allows. A missing size is `small`: the page names no default, its no-argument example just prints a `_small` file. https://shopify.dev/docs/api/liquid/filters/img_url */
+/**
+ * Parses an `img_url` size (`480x`, `x480`, `480x480`, `large`) into `size`, the legacy name that goes into the file name, and the `width` and `height` it stands for, up to the 5760 by 5760 the page allows. A missing, unknown or empty size (`0x0`) is `small`: the page names no default, its no-argument example just prints a `_small` file, and it does not say what an unknown size does. https://shopify.dev/docs/api/liquid/filters/img_url, and https://shopify.dev/docs/api/liquid/filters/video_tag for the poster's `image_size`.
+ */
 export function legacySize (size: unknown): ImageUrlParams {
   const text = stringify(size || 'small')
   if (Object.prototype.hasOwnProperty.call(NAMED_SIZES, text)) {
     const n = NAMED_SIZES[text]
-    return { width: n, height: n }
+    return { size: text, width: n, height: n }
   }
   const match = /^(\d*)x(\d*)$/.exec(text)
-  if (!match) return { width: 100, height: 100 }
-  const params: ImageUrlParams = {}
-  if (match[1]) params.width = Math.min(Number(match[1]), MAX_DIMENSION)
-  if (match[2]) params.height = Math.min(Number(match[2]), MAX_DIMENSION)
+  const width = match ? Math.min(Number(match[1]), MAX_DIMENSION) : 0
+  const height = match ? Math.min(Number(match[2]), MAX_DIMENSION) : 0
+  if (!width && !height) return { size: 'small', width: NAMED_SIZES.small, height: NAMED_SIZES.small }
+  const params: ImageUrlParams = { size: `${width || ''}x${height || ''}` }
+  if (width) params.width = width
+  if (height) params.height = height
   return params
 }
 
-/** Deprecated `img_url`: the same image through the `imageUrl` service, sized as its size argument says (`small` by default). https://shopify.dev/docs/api/liquid/filters/img_url */
+/** Deprecated `img_url`: the same image through the `imageUrl` service, with the legacy `size` that names the file (`small` by default), so the default service prints `..._480x.jpg?v=...` as the page does. `scale` multiplies the pixel `width` and `height` handed to services; the page's `scale`, `crop` and `format` examples print the same URL as the plain one, so the default service ignores all three. https://shopify.dev/docs/api/liquid/filters/img_url */
 function imgUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const source = imageSource(input)
   if (!source) return ''
@@ -132,13 +152,25 @@ function imgUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
   return shopifyState(this.context).services.imageUrl(source.image, params)
 }
 
+/** The alt text of a media, else the title of the product in scope: https://shopify.dev/docs/api/liquid/filters/external_video_tag says that "if no alt text is set, then the `title` attribute is set to the product title". A media object has no product of its own here, so the `product` variable in scope stands in for it; `video_tag` uses the same fallback for its `aria-label`, which its page does not state. */
+function altOrProductTitle (context: Context, alt: unknown): string {
+  const own = alt === undefined || alt === null ? '' : stringify(alt)
+  if (own) return own
+  try {
+    const title = context.getSync(['product', 'title'])
+    return typeof title === 'string' ? title : ''
+  } catch {
+    return ''
+  }
+}
+
 interface VideoSource {
   url: string
   mime_type?: string
   format?: string
 }
 
-/** `<video>` for a video media, in the attribute order of https://shopify.dev/docs/api/liquid/filters/video_tag. */
+/** `<video>` for a video media, in the attribute order of https://shopify.dev/docs/api/liquid/filters/video_tag. The poster and the `<img>` fallback are the preview image with the legacy `image_size` (`small` by default, `400x` in the page's example) in the file name. */
 function videoTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const state = shopifyState(this.context)
   const media = toValue(input) as Record<string, unknown> | undefined
@@ -147,10 +179,8 @@ function videoTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const preview = imageSource(media.preview_image)
   const poster = preview ? state.services.imageUrl(preview.image, legacySize(named.image_size)) : ''
   let html = '<video playsinline="playsinline"'
-  for (const name of order) {
-    if (name !== 'image_size' && name !== 'loading') html += attribute(name, named[name])
-  }
-  html += ' preload="metadata"' + attribute('aria-label', media.alt ?? '')
+  html += namedAttributes(state.report, 'video_tag', named, order, ['image_size', 'loading'])
+  html += ' preload="metadata"' + attribute('aria-label', altOrProductTitle(this.context, media.alt))
   if (poster) html += attribute('poster', poster)
   const loading = has(named, 'loading') ? named.loading : (lazyByDefault(state) ? 'lazy' : undefined)
   html += attribute('loading', loading) + '>'
@@ -174,7 +204,19 @@ export class ExternalVideoUrlDrop extends Drop {
     super()
   }
 
+  public get length () {
+    return this.url.length
+  }
+
   public valueOf () {
+    return this.url
+  }
+
+  public toString () {
+    return this.url
+  }
+
+  public toJSON () {
     return this.url
   }
 }
@@ -183,8 +225,9 @@ export class ExternalVideoUrlDrop extends Drop {
 function externalVideoUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const media = toValue(input) as Record<string, unknown> | undefined
   if (!media || typeof media !== 'object') return ''
-  const embed = EMBEDS[stringify(media.host)]
-  if (!embed) return ''
+  const host = stringify(media.host)
+  if (!Object.prototype.hasOwnProperty.call(EMBEDS, host)) return ''
+  const embed = EMBEDS[host]
   const { named } = splitArgs(args)
   const query: Record<string, string> = embed.defaults(shopifyState(this.context).request.origin)
   for (const [key, value] of Object.entries(named)) query[key] = stringify(value)
@@ -198,25 +241,35 @@ function externalVideoTag (this: FilterImpl, input: unknown, ...args: unknown[])
   const target = input instanceof ExternalVideoUrlDrop ? input : externalVideoUrl.call(this, input)
   if (!(target instanceof ExternalVideoUrlDrop)) return ''
   const { named, order } = splitArgs(args)
-  const extra = order.map(name => attribute(name, named[name])).join('')
-  return `<iframe frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="allowfullscreen"${extra} src="${escapeHtml(target.url)}"${attribute('title', target.media.alt ?? '')}></iframe>`
+  const extra = namedAttributes(shopifyState(this.context).report, 'external_video_tag', named, order)
+  return `<iframe frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="allowfullscreen"${extra} src="${escapeHtml(target.url)}"${attribute('title', altOrProductTitle(this.context, target.media.alt))}></iframe>`
 }
 
-/** The tag for any media: `image_tag`, `video_tag` (with controls), `external_video_tag`; 3D models are not rendered. https://shopify.dev/docs/api/liquid/filters/media_tag */
+/**
+ * The tag for any media: `image_tag` (an `ImageDrop` from `product.media` or an image record), `video_tag` (with controls), `external_video_tag`; 3D models are not rendered. https://shopify.dev/docs/api/liquid/filters/media_tag
+ *
+ * The page has no image example, so the image branch is not pinned: it renders `image_tag` at the image's own width (1100 when it has none).
+ */
 function mediaTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
+  const imageTagFor = (image: unknown) => {
+    const source = imageSource(image)
+    if (!source) return ''
+    return imageTag.call(this, imageUrl.call(this, image, ['width', source.image.width ?? 1100]), ...args)
+  }
+  if (input instanceof ImageDrop) return imageTagFor(input)
   const media = toValue(input) as Record<string, unknown> | undefined
   if (!media || typeof media !== 'object') return ''
   const type = stringify(media.media_type)
-  if (type === 'video') return videoTag.call(this, media, ['controls', true], ...args)
+  if (type === 'video') {
+    const controls = splitArgs(args).named
+    return videoTag.call(this, media, ...(has(controls, 'controls') ? [] : [['controls', true]]), ...args)
+  }
   if (type === 'external_video') return externalVideoTag.call(this, media, ...args)
   if (type === 'model') {
     shopifyState(this.context).report.unsupported('media_tag', '3D model media renders nothing')
     return ''
   }
-  const source = imageSource(media)
-  if (!source) return ''
-  const url = imageUrl.call(this, media, ['width', source.image.width ?? 1100])
-  return imageTag.call(this, url, ...args)
+  return imageTagFor(media)
 }
 
 export const mediaFilters: ShopifyFilterSet = {

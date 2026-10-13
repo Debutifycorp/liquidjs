@@ -1,4 +1,5 @@
-import { createShopifyLiquid, ImageDrop, renderLiquid } from '../../../src/shopify'
+import { attribute, createShopifyLiquid, ImageDrop, renderLiquid } from '../../../src/shopify'
+import type { ShopifyServices } from '../../../src/shopify'
 
 // Every expected string below is copied from the shopify.dev page cited above its test, with the shop's CDN host as the image `src` the test passes in.
 const HOST = '//polinas-potent-potions.myshopify.com/cdn/shop'
@@ -6,11 +7,16 @@ const BEAKERS = `${HOST}/files/science-beakers-blue-light-new.jpg?v=1683744744`
 const product = { title: 'Health potion', featured_image: { src: BEAKERS, width: 3000, height: 2000, alt: 'Health potion' } }
 const assetUrl = (path: string) => `${HOST}/t/4/assets/${path}?v=1`
 
-async function render (source: string, scope: Record<string, unknown> = { product }, init = {}) {
-  const liquid = createShopifyLiquid({ services: { assetUrl } })
-  const { html } = await renderLiquid(liquid, source, scope, init)
-  return html
+async function renderWithReport (source: string, scope: Record<string, unknown> = { product }, init = {}, services: Partial<ShopifyServices> = {}) {
+  const liquid = createShopifyLiquid({ services: { assetUrl, ...services } })
+  return renderLiquid(liquid, source, scope, init)
 }
+
+async function render (source: string, scope: Record<string, unknown> = { product }, init = {}, services: Partial<ShopifyServices> = {}) {
+  return (await renderWithReport(source, scope, init, services)).html
+}
+
+const sectionAt = (index: number) => ({ frames: [{ kind: 'section' as const, section: { id: 's', type: 's', index }, container: {}, sectionObject: null }] })
 
 describe('shopify/filters/assets', () => {
   // https://shopify.dev/docs/api/liquid/filters/stylesheet_tag
@@ -28,11 +34,25 @@ describe('shopify/filters/assets', () => {
     const { html } = await renderLiquid(liquid, "{{ 'product-1' | placeholder_svg_tag: 'ph' }}|{{ 'visa' | payment_type_svg_tag: class: 'icon' }}")
     expect(html).toBe('<svg class="ph" data-name="product-1"></svg>|<svg class="icon" data-type="visa"></svg>')
   })
-  it('writes no attribute whose name is not valid, so an array cannot inject markup', async () => {
+  it('shopify_asset_url uses its own service, not asset_url', async () => {
+    expect(await render("{{ 'option_selection.js' | shopify_asset_url }}|{{ 'a.js' | asset_url }}", {}, {}, { shopifyAssetUrl: path => `//shopify.test/${path}` })).toBe(`//shopify.test/option_selection.js|${assetUrl('a.js')}`)
+  })
+  // https://shopify.dev/docs/api/liquid/filters/payment_button
+  it('payment_button writes the container the page names', async () => {
+    expect(await render('{{ form | payment_button }}', {})).toBe('<div data-shopify="payment-button" class="shopify-payment-button"><button type="button" class="shopify-payment-button__button shopify-payment-button__button--unbranded" disabled="disabled">Buy it now</button></div>')
+  })
+  it('attribute() writes only valid attribute names', () => {
+    expect(attribute('data-x.y_z:w', 'v')).toBe(' data-x.y_z:w="v"')
+    expect(attribute('x" onerror="y', 'v')).toBe('')
+    expect(attribute('1x', 'v')).toBe('')
+    expect(attribute('', 'v')).toBe('')
+  })
+  it('drops attribute names that are not valid and reports them, so an array cannot inject markup', async () => {
     const pair = '{% assign pair = \'x" onerror="alert(1),v\' | split: \',\' %}'
-    expect(await render(`${pair}{{ 'base.css' | asset_url | stylesheet_tag: pair }}`, {})).toBe(`<link href="${assetUrl('base.css')}" rel="stylesheet" type="text/css" media="all" />`)
-    expect(await render(`${pair}{{ 'cart.js' | asset_url | script_tag: pair }}`, {})).toBe(`<script src="${assetUrl('cart.js')}" type="text/javascript"></script>`)
-    expect(await render(`${pair}{{ product | image_url: width: 200 | image_tag: pair }}`)).not.toContain('onerror')
+    const css = await renderWithReport(`${pair}{{ 'base.css' | asset_url | stylesheet_tag: pair }}`, {})
+    expect(css.html).toBe(`<link href="${assetUrl('base.css')}" rel="stylesheet" type="text/css" media="all" />`)
+    expect(css.report.unsupported).toEqual([{ feature: 'stylesheet_tag', detail: 'attribute name "x\\" onerror=\\"alert(1)" is not valid and was dropped' }])
+    expect((await render(`${pair}{{ 'cart.js' | asset_url | script_tag: pair }}`, {}))).toBe(`<script src="${assetUrl('cart.js')}" type="text/javascript"></script>`)
   })
   it('the default asset_url has no host', async () => {
     const { html } = await renderLiquid(createShopifyLiquid(), "{{ 'base.css' | asset_url }}")
@@ -50,9 +70,29 @@ describe('shopify/filters/media', () => {
     expect(await render("{{ product | image_url: width: 400, height: 400, pad_color: '000' }}")).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?height=400&pad_color=000&v=1683744744&width=400`)
     expect(await render('{{ product | image_url: width: 450, quality: 80 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?quality=80&v=1683744744&width=450`)
   })
-  it('image_url without a size still renders a URL', async () => {
-    expect(await render('{{ product | image_url }}')).toBe(BEAKERS)
+  it('image_url on nothing renders nothing', async () => {
     expect(await render('{{ nothing | image_url }}', {})).toBe('')
+  })
+  it('image_url needs a width or height, as its Caution says, and the error is reported', async () => {
+    const { html, report } = await renderWithReport('{{ product | image_url }}')
+    expect(html).toBe('Liquid error (line 1): image_url needs a width or height')
+    expect(report.errors).toHaveLength(1)
+    expect((await render("{{ product | image_url: crop: 'center' }}"))).toMatch(/^Liquid error/)
+  })
+  it('image_url crop region', async () => {
+    expect(await render("{{ product | image_url: crop: 'region', crop_left: 32, crop_top: 32, crop_width: 512, crop_height: 512 }}")).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?crop=region&crop_height=512&crop_left=32&crop_top=32&crop_width=512&v=1683744744`)
+    expect(await render("{{ product | image_url: crop: 'region', width: 100, height: 100, crop_left: 32, crop_top: 32, crop_width: 512, crop_height: 512 }}")).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?crop=region&crop_height=512&crop_left=32&crop_top=32&crop_width=512&height=100&v=1683744744&width=100`)
+  })
+  it('image_url never resizes past the original or 5760, and keeps quality within 10 to 90', async () => {
+    expect(await render('{{ product | image_url: width: 9999 }}')).toBe(`${BEAKERS}&width=3000`)
+    expect(await render('{{ product | image_url: height: 9999 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?height=2000&v=1683744744`)
+    expect(await render("{{ 'https://cdn.test/a.jpg' | image_url: width: 9999 }}", {})).toBe('https://cdn.test/a.jpg?width=5760')
+    expect(await render('{{ product | image_url: width: 450, quality: 5 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?quality=10&v=1683744744&width=450`)
+    expect(await render('{{ product | image_url: width: 450, quality: 200 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?quality=90&v=1683744744&width=450`)
+  })
+  it('the image_url result is a string to filters that read strings', async () => {
+    expect(await render('{{ product | image_url: width: 450 | size }}')).toBe(String(`${BEAKERS}&width=450`.length))
+    expect(await render('{{ product | image_url: width: 450 | json }}')).toBe(JSON.stringify(`${BEAKERS}&width=450`))
   })
   // https://shopify.dev/docs/api/liquid/filters/image_tag
   it('image_tag', async () => {
@@ -71,18 +111,42 @@ describe('shopify/filters/media', () => {
     expect(await render('{{ header | image_url: width: 300 | image_tag }}', { header })).toBe(`<img src="${HOST}/files/potions-header.png?v=1650325393&amp;width=300" alt="" srcset="${HOST}/files/potions-header.png?v=1650325393&amp;width=300 300w" width="300" height="173" style="object-position:1.9231% 9.7917%;">`)
   })
   it('image_tag lazy-loads below the third section unless told otherwise', async () => {
-    const liquid = createShopifyLiquid()
-    const { html } = await renderLiquid(liquid, '{{ product | image_url: width: 200 | image_tag }}', { product }, { frames: [{ kind: 'section', section: { id: 's', type: 's', index: 4 }, container: {}, sectionObject: null }] })
-    expect(html).toContain('height="133" loading="lazy">')
+    const tag = '{{ product | image_url: width: 200 | image_tag }}'
+    expect(await render(tag, { product }, sectionAt(4))).toContain('height="133" loading="lazy">')
+    expect(await render(tag, { product }, sectionAt(3))).toContain('height="133">')
+    expect(await render('{{ product | image_url: width: 200 | image_tag: preload: true }}', { product }, sectionAt(4))).toContain('height="133">')
+    expect(await render("{{ product | image_url: width: 200 | image_tag: loading: 'eager' }}", { product }, sectionAt(4))).toContain('height="133" loading="eager">')
+  })
+  it('image_tag rescales the srcset heights with the widths', async () => {
+    expect(await render('{{ product | image_url: height: 450 | image_tag }}')).toBe(`<img src="${HOST}/files/science-beakers-blue-light-new.jpg?height=450&amp;v=1683744744" alt="Health potion" srcset="${BEAKERS}&amp;width=352 352w" width="675" height="450">`)
+    expect(await render('{{ product | image_url: width: 400, height: 200 | image_tag }}')).toBe(`<img src="${HOST}/files/science-beakers-blue-light-new.jpg?height=200&amp;v=1683744744&amp;width=400" alt="Health potion" srcset="${HOST}/files/science-beakers-blue-light-new.jpg?height=176&amp;v=1683744744&amp;width=352 352w" width="400" height="200">`)
+  })
+  it('image_tag drops invalid attribute names and reports them', async () => {
+    const { html, report } = await renderWithReport('{% assign pair = \'x" onerror="alert(1),v\' | split: \',\' %}{{ product | image_url: width: 200 | image_tag: pair, class: \'ok\' }}')
+    expect(html).toBe(`<img src="${BEAKERS}&amp;width=200" alt="Health potion" srcset="${BEAKERS}&amp;width=200 200w" width="200" height="133" class="ok">`)
+    expect(report.unsupported).toHaveLength(1)
   })
   // https://shopify.dev/docs/api/liquid/filters/img_url
-  it('img_url sizes through the imageUrl service', async () => {
-    expect(await render('{{ product | img_url }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?height=100&v=1683744744&width=100`)
-    expect(await render("{{ product | img_url: '480x' }}")).toBe(`${BEAKERS}&width=480`)
-    expect(await render("{{ product | img_url: '200x', scale: 2 }}")).toBe(`${BEAKERS}&width=400`)
-    expect(await render("{{ product | img_url: 'large' }}")).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?height=480&v=1683744744&width=480`)
-    expect(await render("{{ product | img_url: 'master' }}")).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?height=1024&v=1683744744&width=1024`)
-    expect(await render("{{ product | img_url: 'x480' }}")).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?height=480&v=1683744744`)
+  it('img_url writes the legacy size into the file name', async () => {
+    const file = (size: string) => `${HOST}/files/science-beakers-blue-light-new_${size}.jpg?v=1683744744`
+    expect(await render('{{ product | img_url }}')).toBe(file('small'))
+    expect(await render("{{ product | img_url: '480x' }}")).toBe(file('480x'))
+    expect(await render("{{ product | img_url: 'x480' }}")).toBe(file('x480'))
+    expect(await render("{{ product | img_url: '480x480' }}")).toBe(file('480x480'))
+    expect(await render("{{ product | img_url: 'large' }}")).toBe(file('large'))
+    expect(await render("{{ product | img_url: 'master' }}")).toBe(file('master'))
+    // the crop, format and scale examples on the page print the same URL as the plain one
+    expect(await render("{{ product | img_url: crop: 'bottom' }}")).toBe(file('small'))
+    expect(await render("{{ product | img_url: format: 'pjpg' }}")).toBe(file('small'))
+    expect(await render('{{ product | img_url: scale: 2 }}')).toBe(file('small'))
+    expect(await render("{{ product | img_url: '9999x' }}")).toBe(file('5760x'))
+    expect(await render("{{ product | img_url: '0x0' }}")).toBe(file('small'))
+    expect(await render("{{ product | img_url: 'nonsense' }}")).toBe(file('small'))
+  })
+  it('img_url hands services the size name and its pixels', async () => {
+    const seen: unknown[] = []
+    await render("{{ product | img_url: '200x', scale: 2, crop: 'top' }}|{{ product | img_url: 'master' }}", { product }, {}, { imageUrl: (image, params) => { seen.push(params); return image.src } })
+    expect(seen).toEqual([{ size: '200x', width: 400, crop: 'top' }, { size: 'master', width: 1024, height: 1024 }])
   })
   const poster = `${HOST}/products/thumb.jpg?v=1655255324`
   const video = { media_type: 'video', alt: 'Potion beats', preview_image: { src: poster, width: 1920, height: 1080 }, sources: [{ url: `${HOST}/videos/beats.mp4?v=0`, mime_type: 'video/mp4', format: 'mp4' }, { url: `${HOST}/videos/beats.m3u8?v=0`, mime_type: 'application/x-mpegURL', format: 'm3u8' }] }
@@ -90,10 +154,27 @@ describe('shopify/filters/media', () => {
   const origin = { request: { origin: 'https://polinas-potent-potions.myshopify.com' } }
   // https://shopify.dev/docs/api/liquid/filters/video_tag
   it('video_tag', async () => {
-    const small = `${HOST}/products/thumb.jpg?height=100&amp;v=1655255324&amp;width=100`
+    const small = `${HOST}/products/thumb_small.jpg?v=1655255324`
     const sources = `<source src="${HOST}/videos/beats.mp4?v=0" type="video/mp4"><source src="${HOST}/videos/beats.m3u8?v=0" type="application/x-mpegURL">`
     expect(await render('{{ video | video_tag }}', { video })).toBe(`<video playsinline="playsinline" preload="metadata" aria-label="Potion beats" poster="${small}">${sources}<img src="${small}"></video>`)
+    expect(await render("{{ video | video_tag: image_size: '400x' }}", { video })).toContain(`poster="${HOST}/products/thumb_400x.jpg?v=1655255324"><source`)
     expect(await render('{{ video | video_tag: autoplay: true, loop: true, muted: true, controls: true }}', { video })).toBe(`<video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" controls="controls" preload="metadata" aria-label="Potion beats" poster="${small}"><source src="${HOST}/videos/beats.mp4?v=0" type="video/mp4"><img src="${small}"></video>`)
+  })
+  it('video_tag escapes the source URLs and lazy-loads like image_tag', async () => {
+    const tricky = { ...video, sources: [{ url: `${HOST}/v.mp4?a=1&b="2"`, mime_type: 'video/mp4' }] }
+    expect(await render('{{ video | video_tag }}', { video: tricky })).toContain(`<source src="${HOST}/v.mp4?a=1&amp;b=&quot;2&quot;" type="video/mp4">`)
+    expect(await render('{{ video | video_tag }}', { video }, sectionAt(4))).toContain('poster="')
+    expect(await render('{{ video | video_tag }}', { video }, sectionAt(4))).toMatch(/loading="lazy">/)
+    expect(await render('{{ video | video_tag }}', { video }, sectionAt(3))).not.toContain('loading=')
+  })
+  it('video_tag and external_video_tag fall back to the product title without alt text', async () => {
+    const { alt, ...unnamed } = video
+    expect(alt).toBe('Potion beats')
+    expect(await render('{{ video | video_tag }}', { video: unnamed, product })).toContain('aria-label="Health potion"')
+    expect(await render('{{ video | video_tag }}', { video: unnamed })).toContain('aria-label=""')
+    const { alt: externalAlt, ...unnamedExternal } = external
+    expect(externalAlt).toBe('Potion beats')
+    expect(await render('{{ media | external_video_tag }}', { media: unnamedExternal, product })).toContain('title="Health potion"></iframe>')
   })
   // https://shopify.dev/docs/api/liquid/filters/external_video_url and https://shopify.dev/docs/api/liquid/filters/external_video_tag
   it('external_video_url and external_video_tag', async () => {
@@ -101,6 +182,16 @@ describe('shopify/filters/media', () => {
     expect(await render("{{ media | external_video_url: color: 'white' | external_video_tag }}", { media: external }, origin)).toBe(`<iframe frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="allowfullscreen" src="${src}" title="Potion beats"></iframe>`)
     expect(await render("{{ media | external_video_url: color: 'white' | external_video_tag: class: 'youtube-video' }}", { media: external }, origin)).toBe(`<iframe frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="allowfullscreen" class="youtube-video" src="${src}" title="Potion beats"></iframe>`)
     expect(await render('{{ media | external_video_url: autoplay: 1 }}', { media: { ...external, host: 'vimeo', external_id: '1234' } })).toBe('https://player.vimeo.com/video/1234?autoplay=1')
+    expect(await render('{{ media | external_video_url: autoplay: 1 | external_video_tag }}', { media: { ...external, host: 'vimeo', external_id: '1234' } })).toBe('<iframe frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="allowfullscreen" src="https://player.vimeo.com/video/1234?autoplay=1" title="Potion beats"></iframe>')
+  })
+  it('the external_video_url result is a string to filters that read strings', async () => {
+    const url = 'https://player.vimeo.com/video/1234?autoplay=1'
+    const media = { ...external, host: 'vimeo', external_id: '1234' }
+    expect(await render('{{ media | external_video_url: autoplay: 1 | size }}', { media })).toBe(String(url.length))
+    expect(await render('{{ media | external_video_url: autoplay: 1 | json }}', { media })).toBe(JSON.stringify(url))
+  })
+  it('external_video_url ignores hosts it does not embed, prototype names included', async () => {
+    for (const host of ['dailymotion', 'constructor', '__proto__', 'toString']) expect(await render('[{{ media | external_video_url }}]', { media: { ...external, host } })).toBe('[]')
   })
   // https://shopify.dev/docs/api/liquid/filters/media_tag
   it('media_tag', async () => {
@@ -108,6 +199,16 @@ describe('shopify/filters/media', () => {
     expect(await render("{{ media | media_tag: image_size: '400x' }}", { media: external }, origin)).toBe(iframe)
     expect(await render('{{ media | media_tag }}', { media: video })).toMatch(/^<video playsinline="playsinline" controls="controls" preload="metadata" aria-label="Potion beats" poster="/)
     expect(await render('{{ media | media_tag }}', { media: { media_type: 'image', alt: 'Bottle', src: BEAKERS, width: 800, height: 400 } })).toBe(`<img src="${BEAKERS}&amp;width=800" alt="Bottle" srcset="${BEAKERS}&amp;width=352 352w" width="800" height="400">`)
+  })
+  it('media_tag renders an ImageDrop from product.media, which is how Task 7 builds image media', async () => {
+    const media = [new ImageDrop({ src: BEAKERS, width: 800, height: 400, alt: 'Bottle' }, true), video, external]
+    expect(await render('{% for m in media %}{{ m | media_tag }}|{% endfor %}', { media }, origin)).toMatch(/^<img src="[^"]+&amp;width=800" alt="Bottle" srcset="[^"]+&amp;width=352 352w" width="800" height="400">\|<video [^|]*<\/video>\|<iframe [^|]*<\/iframe>\|$/)
+    expect(await render('{{ m | media_tag: class: "hero" }}', { m: new ImageDrop({ src: BEAKERS, width: 800, height: 400, alt: 'Bottle' }) })).toContain('height="400" class="hero">')
+  })
+  it('media_tag writes controls once, whether or not the template names them', async () => {
+    expect(await render('{{ media | media_tag: controls: true }}', { media: video })).toMatch(/^<video playsinline="playsinline" controls="controls" preload=/)
+    expect(await render('{{ media | media_tag: autoplay: true }}', { media: video })).toMatch(/^<video playsinline="playsinline" controls="controls" autoplay="autoplay" preload=/)
+    expect(await render('{{ media | media_tag: controls: false }}', { media: video })).toMatch(/^<video playsinline="playsinline" preload=/)
   })
 })
 
@@ -118,9 +219,22 @@ describe('shopify/objects/image', () => {
   it('ImageDrop prints as its src and exposes the image properties', async () => {
     const scope = { image: new ImageDrop(data) }
     expect(await run('{{ image }}', scope)).toBe(BEAKERS)
-    expect(await run('{{ image.width }}x{{ image.height }} {{ image.alt }} {{ image.aspect_ratio }} {{ image.media_type }}', scope)).toBe('3000x2000 Health potion 1.5 image')
+    expect(await run('{{ image.width }}x{{ image.height }} {{ image.alt }} {{ image.aspect_ratio }}', scope)).toBe('3000x2000 Health potion 1.5')
     expect(await run('{{ 3 | divided_by: image.aspect_ratio }}', scope)).toBe('2.0')
-    expect(await run('{{ image.focal_point }}', scope)).toBe('50% 25%')
+  })
+  // https://shopify.dev/docs/api/liquid/objects/image_presentation and https://shopify.dev/docs/api/liquid/objects/focal_point
+  it('ImageDrop presentation.focal_point is an object with x and y that prints as X% Y%', async () => {
+    const header = new ImageDrop({ src: BEAKERS, focal_point: { x: 1.923076923, y: 9.791666667 } })
+    expect(await run('{{ i.presentation.focal_point }}', { i: header })).toBe('1.9231% 9.7917%')
+    expect(await run('{{ i.presentation.focal_point.x }} {{ i.presentation.focal_point.y }}', { i: header })).toBe('1.923076923 9.791666667')
+    expect(await run('{{ i.presentation.focal_point }}|{{ i.presentation.focal_point.x }}', { i: new ImageDrop({ src: BEAKERS }) })).toBe('50% 50%|50')
+    expect(await run('{{ image.presentation.focal_point }}', { image: new ImageDrop(data) })).toBe('50% 25%')
+  })
+  // https://shopify.dev/docs/api/liquid/objects/image#image-media_type
+  it('ImageDrop media_type is image for product media and nil elsewhere', async () => {
+    expect(await run('[{{ i.media_type }}]', { i: new ImageDrop(data) })).toBe('[]')
+    expect(await run('[{{ i.media_type }}]', { i: new ImageDrop(data, true) })).toBe('[image]')
+    expect(await run("{{ list | where: 'media_type', 'image' | size }}", { list: [new ImageDrop(data), new ImageDrop(data, true)] })).toBe('1')
   })
   it('ImageDrop gives preview_image only for product media', async () => {
     expect(await run('[{{ image.preview_image }}]', { image: new ImageDrop(data) })).toBe('[]')
