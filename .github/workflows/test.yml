@@ -9,6 +9,9 @@ jobs:
         timezone: [Etc/GMT, Asia/Shanghai, America/New_York]
         node-version: [24]
         include:
+          - os: ubuntu-latest
+            timezone: Etc/GMT
+            node-version: 26
           - os: macos-latest
             timezone: America/New_York
             node-version: 24
