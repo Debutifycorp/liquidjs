@@ -145,3 +145,38 @@ describe('paginate', () => {
   it('exposes the paginate object', async () => expect(await render('{% paginate items by 2 %}{{ paginate.pages }}/{{ paginate.items }}/{{ paginate.current_offset }}{% endpaginate %}', { items: [1, 2, 3] }, { page: 2 })).toBe('2/3/2'))
   it('leaves the array whole outside the block', async () => expect(await render('{% paginate items by 2 %}{{ items | size }}{% endpaginate %}{{ items | size }}', { items: [1, 2, 3] })).toBe('23'))
 })
+
+describe('tablerow', () => {
+  const potions = { potions: ['Draught', 'Glacier ice', 'Health potion'] }
+  it('opens the first row with a line break and closes every row, as shopify.dev prints it', async () => {
+    expect(await render('<table>{% tablerow p in potions %}{{ p }}{% endtablerow %}</table>', potions))
+      .toBe('<table><tr class="row1">\n<td class="col1">Draught</td><td class="col2">Glacier ice</td><td class="col3">Health potion</td></tr>\n</table>')
+  })
+  it('breaks the line after a closed row but not after an opened one', async () => {
+    expect(await render('{% tablerow p in potions cols: 2 %}{{ p }}{% endtablerow %}', potions))
+      .toBe('<tr class="row1">\n<td class="col1">Draught</td><td class="col2">Glacier ice</td></tr>\n<tr class="row2"><td class="col1">Health potion</td></tr>\n')
+  })
+  it('does not open an extra row when the last row is full', async () => {
+    expect(await render('{% tablerow p in (1..4) cols: 2 %}{{ p }}{% endtablerow %}')).toBe('<tr class="row1">\n<td class="col1">1</td><td class="col2">2</td></tr>\n<tr class="row2"><td class="col1">3</td><td class="col2">4</td></tr>\n')
+  })
+  it('prints an empty row for an empty collection', async () => expect(await render('{% tablerow p in empty %}{{ p }}{% endtablerow %}', { empty: [] })).toBe('<tr class="row1">\n</tr>\n'))
+  it('prints nothing for a value that is no collection, and keeps the loop around it', async () => {
+    expect(await render('[{% tablerow p in nothing %}{{ p }}{% endtablerow %}]')).toBe('[]')
+    expect(await render('[{% tablerow p in off %}{{ p }}{% endtablerow %}]', { off: false })).toBe('[]')
+    expect(await render('{% for i in (0..1) %}{% tablerow p in nothing %}{{ p }}{% endtablerow %}{{ i }}{% endfor %}')).toBe('01')
+  })
+  it('never wraps the row for a cols that is not a positive number', async () => {
+    const cells = '<tr class="row1">\n<td class="col1">1</td><td class="col2">2</td><td class="col3">3</td></tr>\n'
+    expect(await render('{% tablerow p in (1..3) cols: nothing %}{{ p }}{% endtablerow %}')).toBe(cells)
+    expect(await render("{% tablerow p in (1..3) cols: 'abc' %}{{ p }}{% endtablerow %}")).toBe(cells)
+    expect(await render('{% tablerow p in (1..3) cols: 0 %}{{ p }}{% endtablerow %}')).toBe(cells)
+  })
+  it('applies limit and offset', async () => {
+    expect(await render('{% tablerow p in potions offset: 1 limit: 1 %}{{ p }}{% endtablerow %}', potions)).toBe('<tr class="row1">\n<td class="col1">Glacier ice</td></tr>\n')
+  })
+  it('keeps tablerowloop', async () => expect(await render('{% tablerow p in (1..3) cols: 2 %}{{ tablerowloop.row }}.{{ tablerowloop.col }}{% endtablerow %}')).toBe('<tr class="row1">\n<td class="col1">1.1</td><td class="col2">1.2</td></tr>\n<tr class="row2"><td class="col1">2.1</td></tr>\n'))
+  it('leaves the root entry as it is', async () => {
+    const { Liquid } = await import('../../../src')
+    expect(await new Liquid().parseAndRender('{% tablerow p in (1..2) %}{{ p }}{% endtablerow %}')).toBe('<tr class="row1"><td class="col1">1</td><td class="col2">2</td></tr>')
+  })
+})
