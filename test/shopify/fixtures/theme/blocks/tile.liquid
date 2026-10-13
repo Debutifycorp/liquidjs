@@ -1,0 +1,4 @@
+<span class="tile" style="color: {{ block.settings.color_scheme.settings.text }}">{{ block.settings.color_scheme.id }}:{{ block.settings.color_scheme.settings.background }}</span>
+{%- schema -%}
+{ "name": "Tile", "settings": [{ "type": "color_scheme", "id": "color_scheme", "label": "Color scheme", "default": "scheme-2" }] }
+{%- endschema -%}

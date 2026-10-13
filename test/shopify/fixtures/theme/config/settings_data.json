@@ -4,6 +4,10 @@
 {
   "current": {
     "accent": "#334fb4",
+    "color_schemes": {
+      "scheme-1": { "settings": { "background": "#ffffff", "text": "#121212" } },
+      "scheme-2": { "settings": { "background": "#336699", "text": "#f4f4f4" } }
+    },
     "sections": {
       "footer": { "type": "footer", "settings": { "copyright": "© Fixture" } }
     },

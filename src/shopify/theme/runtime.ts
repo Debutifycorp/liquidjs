@@ -276,7 +276,7 @@ class PageRender implements ThemeHooks {
     })
     const page = buildGlobals({ store, templateName: options.templateName, request: options.request ?? {}, locale, report: this.state.report })
     this.state.request = page.request
-    this.env = { store, linklists: page.linklists, services: this.state.services, translator, report: this.state.report, trust: this.state.trust }
+    const env: SettingsEnv = { store, linklists: page.linklists, services: this.state.services, translator, report: this.state.report, trust: this.state.trust }
     const settingsData = theme.json('config/settings_data.json') ?? {}
     if (!isObject(settingsData)) throw new Error('config/settings_data.json: must be a JSON object')
     // `current` is an object on https://shopify.dev/docs/storefronts/themes/architecture/config/settings-data-json; a preset name there is the older shape, not pinned by shopify.dev
@@ -287,7 +287,10 @@ class PageRender implements ThemeHooks {
     const schema = theme.json('config/settings_schema.json') ?? []
     if (!Array.isArray(schema)) throw new Error('config/settings_schema.json: must be a JSON array')
     const definitions = schema.flatMap(group => isObject(group) && Array.isArray(group.settings) ? group.settings.filter(isObject) : []) as SettingDefinition[]
-    this.globals = { ...page.globals, settings: new SettingsDrop(definitions, values, this.env), [STATE]: this.state }
+    const settings = new SettingsDrop(definitions, values, env)
+    // Sections and blocks choose their `color_scheme` settings from the schemes the global `color_scheme_group` holds (https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings#color_scheme: "Shopify returns the selected `color_scheme` object from `color_scheme_group`", and nil "If the theme doesn't have `color_scheme_group` data in `settings_data.json`"), so their settings are built over the global settings' group.
+    this.env = { ...env, colorSchemes: SettingsDrop.colorSchemes(settings) }
+    this.globals = { ...page.globals, settings, [STATE]: this.state }
     this.templateId = options.templateName.replace(/[^\w-]/g, '-')
     this.root = new Context({}, theme.liquid.options, { sync: false, globals: this.globals, renderLimit: options.renderLimit, memoryLimit: options.memoryLimit }, { liquid: theme.liquid, errors: this.errors })
   }

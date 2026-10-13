@@ -1,0 +1,8 @@
+<div class="banner" style="background: {{ section.settings.color_scheme.settings.background }}; color: {{ section.settings.color_scheme.settings.text }}">{{ section.settings.color_scheme }}|{{ section.settings.color_scheme.id }}|{{ settings.color_schemes['scheme-1'].settings.text }}|{{ section.blocks[0].settings.color_scheme.settings.background }}</div>{% content_for 'blocks' %}
+{%- schema -%}
+{
+  "name": "Banner",
+  "settings": [{ "type": "color_scheme", "id": "color_scheme", "label": "Color scheme", "default": "scheme-1" }],
+  "blocks": [{ "type": "@theme" }]
+}
+{%- endschema -%}

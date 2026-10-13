@@ -5,7 +5,16 @@
     "settings": [
       { "type": "color", "id": "accent", "label": "Accent", "default": "#000000" },
       { "type": "font_picker", "id": "type_body_font", "label": "Body", "default": "assistant_n4" },
-      { "type": "checkbox", "id": "show_badge", "label": "Badge", "default": true }
+      { "type": "checkbox", "id": "show_badge", "label": "Badge", "default": true },
+      {
+        "type": "color_scheme_group",
+        "id": "color_schemes",
+        "definition": [
+          { "type": "color", "id": "background", "label": "Background", "default": "#ffffff" },
+          { "type": "color", "id": "text", "label": "Text", "default": "#121212" }
+        ],
+        "role": { "text": "text", "background": { "solid": "background" } }
+      }
     ]
   }
 ]

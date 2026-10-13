@@ -1,0 +1,16 @@
+{
+  "layout": false,
+  "sections": {
+    "banner": {
+      "type": "banner",
+      "settings": { "color_scheme": "scheme-2" },
+      "blocks": {
+        "t1": { "type": "tile", "settings": { "color_scheme": "scheme-1" } },
+        "t2": { "type": "tile", "settings": { "color_scheme": "scheme-9" } },
+        "t3": { "type": "tile" }
+      },
+      "block_order": ["t1", "t2", "t3"]
+    }
+  },
+  "order": ["banner"]
+}
