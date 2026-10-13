@@ -11,13 +11,13 @@ export type MissingKind = 'template' | 'layout' | 'section' | 'section_group' | 
 
 /**
  * The `feature` of an `UnsupportedEntry`, in snake_case:
- * - the theme runtime: `app_block` (rendered by its app, so skipped), `content_for`, `section` and `sections` (the tags used outside `renderPage`), `custom_css` (not applied), `disabled_section` (asked of `renderSection`), `locale_file` (not valid JSON), `order`, `schema`, `sections` and `section_group` (JSON of the wrong shape), `static_block`, `unsafe_key` (a key or type that is not a plain id, skipped) and `wrapper` (not applied);
+ * - the theme runtime: `app_block` (rendered by its app, so skipped), `content_for`, `section` and `sections` (the tags used outside `renderPage`), `custom_css` (not applied), `disabled_section` (asked of `renderSection`), `locale_file` (not valid JSON), `blocks`, `order`, `schema`, `sections` and `section_group` (JSON of the wrong shape), `static_block`, `unsafe_key` (a key or type that is not a plain id, skipped) and `wrapper` (not applied);
  * - settings: `invalid_setting`, `unsafe_url`, `color_scheme` and `font_picker` (a value that was rejected or not found);
  * - filter input: `date_format` (an unknown named format) and `money_input` (a value `money` cannot read);
  * - a filter's own name, for an input or argument it could not use: the colour filters, the font filters (`font_face`, `font_modify`, `font_url`), the tag filters whose attribute names were dropped (`image_tag`, `video_tag`, `external_video_tag`, `script_tag`, `stylesheet_tag`) and `media_tag`.
  */
 export type UnsupportedFeature =
-  | 'app_block' | 'content_for' | 'custom_css' | 'disabled_section' | 'locale_file' | 'order' | 'schema' | 'section' | 'section_group' | 'sections' | 'static_block' | 'unsafe_key' | 'wrapper'
+  | 'app_block' | 'blocks' | 'content_for' | 'custom_css' | 'disabled_section' | 'locale_file' | 'order' | 'schema' | 'section' | 'section_group' | 'sections' | 'static_block' | 'unsafe_key' | 'wrapper'
   | 'color_scheme' | 'font_picker' | 'invalid_setting' | 'unsafe_url'
   | 'date_format' | 'money_input'
   | 'brightness_difference' | 'color_brightness' | 'color_contrast' | 'color_darken' | 'color_desaturate' | 'color_difference' | 'color_extract' | 'color_lighten' | 'color_mix' | 'color_modify' | 'color_saturate' | 'color_to_hex' | 'color_to_hsl' | 'color_to_oklch' | 'color_to_rgb' | 'hex_to_rgba'
@@ -53,7 +53,7 @@ export interface SectionEntry {
   id: string
   type: string
   location: string
-  /** `missing`: the section's file does not exist. `failed`: the file does not parse, its schema or data has a field of the wrong type, or an error its render raised was printed in it (`reason` says which). An error the engine records without printing (an undefined variable, a failed `assign`) leaves the section `rendered` and is listed in `errors` only. */
+  /** `missing`: the section's file does not exist. `failed`: the file does not parse, its schema or saved JSON has a field of the wrong type, or an error was printed in it, by its render or by a block whose file, schema or saved JSON is broken (`reason` says which). An error the engine records without printing (an undefined variable, a failed `assign`) leaves the section `rendered` and is listed in `errors` only. */
   status: 'rendered' | 'missing' | 'failed'
   ms: number
   reason?: string

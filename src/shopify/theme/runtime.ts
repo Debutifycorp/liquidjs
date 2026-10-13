@@ -2,7 +2,7 @@ import { Context } from '../../context'
 import type { Liquid } from '../../liquid'
 import type { Template } from '../../template'
 import { toPromise } from '../../util/async'
-import { LiquidError, RenderError } from '../../util/error'
+import { LiquidError } from '../../util/error'
 import { isLimitError } from '../../util/inline-error'
 import { getPerformance } from '../../util/performance'
 import { createShopifyLiquid, SHOPIFY_DEFAULT_LIMITS } from '../preset'
@@ -296,6 +296,8 @@ class PageRender implements ThemeHooks {
   private readonly trust: SettingsEnv['trust']
   private readonly started = now()
   private readonly errors: LiquidError[] = []
+  /** The messages `fail` printed for errors that have no file and line (a schema or saved JSON of the wrong shape), in the order printed. */
+  private readonly failures: string[] = []
   private readonly env: SettingsEnv
   private readonly globals: Record<string | symbol, unknown>
   private readonly root: Context
@@ -377,11 +379,15 @@ class PageRender implements ThemeHooks {
     return html.split(this.headerMarker).join(contentForHeader(this.state, this.globals))
   }
 
-  /** Records an error that stopped a whole file and returns the message Shopify would print in its place. A `renderLimit`, `memoryLimit` or `parseLimit` hit is Debutify's safety limit, not an error of the file, so it is not turned into a message: it rejects the render. */
+  /**
+   * Records an error that stopped a whole file, section or block and returns the message printed in its place. This is the one place that decides where such an error is listed. A Liquid error (a file that does not parse) goes to `report.errors` with its file and line. Any other error is a schema or saved JSON of the wrong shape, which has no line, so it stays out of `report.errors`; `renderSection` reports the section it was printed in as `failed`, with the message as its `reason`. A `renderLimit`, `memoryLimit` or `parseLimit` hit is Debutify's safety limit, not an error of the file, so it is not turned into a message: it rejects the render.
+   */
   private fail (err: unknown): string {
     if (isLimitError(err)) throw err
+    const message = errorMessage(err)
     if (LiquidError.is(err)) this.errors.push(err)
-    return errorMessage(err)
+    else this.failures.push(message)
+    return message
   }
 
   /** Reports something the render ignored because its JSON has the wrong shape. */
@@ -587,24 +593,27 @@ class PageRender implements ThemeHooks {
     }
   }
 
-  /** Throws when the JSON of a section or block (`where` names it) has a field of the wrong type: `settings` and `blocks` objects, `block_order` an array, every block in `blocks` an object with `settings` an object. */
+  /** Throws when the saved JSON of a section or block (`where` names it) has one of its own fields of the wrong type: `settings` and `blocks` objects, `block_order` an array. The entries of `blocks` are not looked at here: each block is checked where it is used (`sectionBlocks`, `renderThemeBlock`), so a malformed block fails alone and leaves its section and siblings be. */
   private checkContainer (data: { settings?: unknown, blocks?: unknown, block_order?: unknown }, where: string): void {
     optionalObject(data.settings, `${where}: "settings"`)
     optionalObject(data.blocks, `${where}: "blocks"`)
     if (data.block_order !== undefined && data.block_order !== null && !Array.isArray(data.block_order)) throw new Error(`${where}: "block_order" must be an array`)
-    for (const [blockId, block] of Object.entries(data.blocks ?? {})) {
-      if (!isObject(block)) throw new Error(`${where}: block ${blockId} must be an object`)
-      optionalObject(block.settings, `${where}: block ${blockId} "settings"`)
-    }
   }
 
-  /** `section.blocks`: the section's non-static blocks in `block_order`, each with settings over its definition's defaults. A `disabled` block is skipped (https://shopify.dev/docs/storefronts/themes/architecture/templates/json-templates lists `disabled` on sections; for blocks it is not pinned). https://shopify.dev/docs/api/liquid/objects/block */
-  private sectionBlocks (data: SectionData, schema: SectionSchema): LiquidObject[] {
+  /** `section.blocks`: the section's non-static blocks in `block_order`, each with settings over its definition's defaults. A `disabled` block is skipped (https://shopify.dev/docs/storefronts/themes/architecture/templates/json-templates lists `disabled` on sections; for blocks it is not pinned). A saved block that is not an object is left out, and `settings` that are not an object read as empty; both are reported (feature `blocks`), as the list has nowhere to print an error. https://shopify.dev/docs/api/liquid/objects/block */
+  private sectionBlocks (data: SectionData, schema: SectionSchema, where: string): LiquidObject[] {
     const blocks: LiquidObject[] = []
     for (const id of data.block_order ?? Object.keys(data.blocks ?? {})) {
-      const block = data.blocks ? own(data.blocks, id) as BlockData | undefined : undefined
-      if (!block || block.disabled || block.static || !this.keyAllowed(id, 'block') || !this.blockTypeAllowed(block.type)) continue
-      blocks.push({ id, type: block.type, settings: new SettingsDrop(this.blockDefinitions(block.type, schema), block.settings ?? undefined, this.env), shopify_attributes: '' })
+      const block: unknown = data.blocks ? own(data.blocks, id) : undefined
+      if (block === undefined || block === null) continue
+      if (!isObject(block)) {
+        if (this.keyAllowed(id, 'block')) this.ignored('blocks', `${where}: block ${id}`, 'an object')
+        continue
+      }
+      if (block.disabled || block.static || !this.keyAllowed(id, 'block') || !this.blockTypeAllowed(block.type)) continue
+      const settings = block.settings === undefined || block.settings === null || isObject(block.settings) ? block.settings : undefined
+      if (settings !== block.settings) this.ignored('blocks', `${where}: block ${id} "settings"`, 'an object')
+      blocks.push({ id, type: block.type, settings: new SettingsDrop(this.blockDefinitions(block.type as string, schema), settings ?? undefined, this.env), shopify_attributes: '' })
     }
     return blocks
   }
@@ -612,7 +621,7 @@ class PageRender implements ThemeHooks {
   /**
    * One section in Shopify's wrapper, `<div id="shopify-section-<id>" class="shopify-section [group class] [schema class]">`, with the `section` object (`id`, `settings` over the schema's defaults, `blocks`, `index`, `index0`, `location`) and the schema's `locales` in scope. https://shopify.dev/docs/storefronts/themes/architecture/sections/section-schema#tag and https://shopify.dev/docs/api/liquid/objects/section
    *
-   * A section that does not parse, whose schema or data has a field of the wrong type, or whose render raised an error that was printed, keeps its wrapper and prints the error inside it, and the report records it as `failed` with the error as its `reason`; a section file that does not exist renders nothing and is reported as `missing`. An error the engine records without printing (an undefined variable, a failed `assign`) is listed in `report.errors` and does not make the section `failed`. shopify.dev documents none of this (the Section Rendering API page, https://shopify.dev/docs/api/ajax/section-rendering, says only that a section that fails comes back as `null`). A `renderLimit`, `memoryLimit` or `parseLimit` hit is Debutify's safety limit, not an error of the section, so it is not caught here and rejects the whole render.
+   * A section that does not parse, whose schema or own saved JSON has a field of the wrong type, or in which an error was printed (by its render, or by a block of the wrong shape, see `fail`), keeps its wrapper and prints the error inside it, and the report records it as `failed` with the error as its `reason`; a section file that does not exist renders nothing and is reported as `missing`. An error the engine records without printing (an undefined variable, a failed `assign`) is listed in `report.errors` and does not make the section `failed`. shopify.dev documents none of this (the Section Rendering API page, https://shopify.dev/docs/api/ajax/section-rendering, says only that a section that fails comes back as `null`). A `renderLimit`, `memoryLimit` or `parseLimit` hit is Debutify's safety limit, not an error of the section, so it is not caught here and rejects the whole render.
    *
    * Not pinned by shopify.dev: the group's `shopify-section-group-<name>` class, accepting a schema `tag` outside the documented `article`, `aside`, `div`, `footer`, `header` and `section` (any element name is used, as themes do with custom elements), and ignoring `custom_css`, which is reported.
    */
@@ -637,6 +646,7 @@ class PageRender implements ThemeHooks {
     }
     let schema: SectionSchema = {}
     const errorsBefore = this.errors.length
+    const failuresBefore = this.failures.length
     let html: string
     try {
       schema = this.schema<SectionSchema>(templates, file)
@@ -645,7 +655,7 @@ class PageRender implements ThemeHooks {
       const section = {
         id: placement.id,
         settings: new SettingsDrop(schema.settings, saved.settings ?? undefined, this.env),
-        blocks: this.sectionBlocks(saved, schema),
+        blocks: this.sectionBlocks(saved, schema, `section ${placement.id}`),
         index: placement.index,
         index0: placement.index === null ? null : placement.index - 1,
         location: placement.location
@@ -658,8 +668,8 @@ class PageRender implements ThemeHooks {
       } finally {
         this.state.frames.pop()
       }
-      const printed = this.errors.slice(errorsBefore).find(err => html.includes(errorMessage(err)) || html.includes(escapeHtml(errorMessage(err))))
-      if (printed) report('failed', errorMessage(printed))
+      const printed = [...this.errors.slice(errorsBefore).map(errorMessage), ...this.failures.slice(failuresBefore)].find(message => html.includes(message) || html.includes(escapeHtml(message)))
+      if (printed) report('failed', printed)
       else report('rendered')
     } catch (err) {
       const message = this.fail(err)
@@ -776,7 +786,7 @@ class PageRender implements ThemeHooks {
     }
     let out = ''
     for (const id of frame.container.block_order ?? Object.keys(frame.container.blocks ?? {})) {
-      const data = frame.container.blocks?.[id]
+      const data = frame.container.blocks ? own(frame.container.blocks, id) as BlockData | undefined : undefined
       if (!data || data.disabled || data.static || !this.keyAllowed(id, 'block') || !this.blockTypeAllowed(data.type)) continue
       if (isAppBlock(data.type)) {
         this.state.report.unsupported('app_block', `${frame.block ? `${frame.section.type} block ${frame.block.type} ${frame.block.id}` : frame.section.type}: ${typeof data.type === 'string' ? reportName(data.type) : String(data.type)}`)
@@ -810,17 +820,18 @@ class PageRender implements ThemeHooks {
    *
    * The block renders in a context of its own: the page's globals, the `section` object of the section that holds it, `block` (`id`, `type`, `settings` over the schema's defaults, and an empty `shopify_attributes`) and the static block's extra parameters. https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks says a block can read global objects and the `section` object but "can't see variables from outside the block", and https://shopify.dev/docs/api/liquid/objects/block says `shopify_attributes` returns no value outside the theme editor, which this package never is. The block is pushed on the frame stack, so its own `content_for 'blocks'` and static blocks use its `blocks`.
    *
-   * A block file that does not exist renders nothing and is reported as `missing`. One that does not parse, whose schema has a field of the wrong type, or whose saved JSON has one (`settings` or `blocks` not objects, `block_order` not an array) prints its error inside the default wrapper, as a section does, and one whose render raises an error prints it inline in its content; either error fails the section that holds the block (the report lists it as `failed`) and leaves the block's siblings alone. A `renderLimit` or `memoryLimit` hit is not caught: it rejects the page, as in a section. Not pinned by shopify.dev: those cases, the wrapper of a block that does not parse (the default one is used), any `tag` other than a lowercase element name (`div` is used; the schema page allows "any string up to a limit of 50 characters", and what Shopify renders for a longer or invalid one is not stated), and whether `class` applies when `tag` is `null` (it does not here).
+   * A block file that does not exist renders nothing and is reported as `missing`. One that does not parse, whose schema has a field of the wrong type, or whose saved JSON is not an object or has a field of the wrong type (`settings` or `blocks` not objects, `block_order` not an array) prints its error inside the default wrapper, as a section does, and one whose render raises an error prints it inline in its content; either error fails the section that holds the block (the report lists it as `failed`) and leaves the block's siblings alone. A parse error is listed in `report.errors` with its line; a schema or saved JSON of the wrong shape has no line and is not (see `fail`). A `renderLimit` or `memoryLimit` hit is not caught: it rejects the page, as in a section. Not pinned by shopify.dev: those cases, the wrapper of a block that does not parse (the default one is used), any `tag` other than a lowercase element name (`div` is used; the schema page allows "any string up to a limit of 50 characters", and what Shopify renders for a longer or invalid one is not stated), and whether `class` applies when `tag` is `null` (it does not here).
    */
   private * renderThemeBlock (id: string, data: BlockData, params: Record<string, unknown>, frame: Frame): Generator<unknown, string, unknown> {
     this.checkDepth()
+    if (!isObject(data)) return this.wrapBlock(id, {}, escapeHtml(this.fail(new Error(`block ${id} must be an object`))))
     const type = typeof data.type === 'string' ? data.type : '(no type)'
     const file = `blocks/${type}.liquid`
     if (typeof data.type !== 'string' || !this.theme.has(file)) {
       this.state.report.missing('block', typeof data.type === 'string' ? reportName(type) : type)
       return ''
     }
-    let templates: Template[] = []
+    let templates: Template[]
     let schema: BlockSchema
     let block: LiquidObject
     try {
@@ -829,8 +840,7 @@ class PageRender implements ThemeHooks {
       this.checkContainer(data, `block ${id}`)
       block = { id, type, settings: new SettingsDrop(schema.settings, data.settings ?? undefined, this.env), shopify_attributes: '' }
     } catch (err) {
-      const wrapped = LiquidError.is(err) || isLimitError(err) || !templates.length ? err : new RenderError(err as Error, templates[0])
-      return this.wrapBlock(id, {}, escapeHtml(this.fail(wrapped)))
+      return this.wrapBlock(id, {}, escapeHtml(this.fail(err)))
     }
     this.state.frames.push({ kind: 'block', block: { id, type }, section: frame.section, container: data, sectionObject: frame.sectionObject })
     let html: string

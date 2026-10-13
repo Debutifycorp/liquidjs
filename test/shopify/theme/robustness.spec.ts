@@ -26,9 +26,7 @@ describe('shopify/theme/runtime malformed section schema and data', () => {
     ['a schema whose default has blocks that are not an array', { 'sections/bad.liquid': BAD_SECTION('{ "default": { "blocks": {} } }') }, { type: 'bad' }, 'sections/bad.liquid: schema "default" "blocks" must be an array'],
     ['data whose block_order is an object', { 'sections/bad.liquid': BAD_SECTION('{}') }, { type: 'bad', block_order: {} }, 'section template--t__b: "block_order" must be an array'],
     ['data whose settings is a string', { 'sections/bad.liquid': BAD_SECTION('{}') }, { type: 'bad', settings: 'x' }, 'section template--t__b: "settings" must be an object'],
-    ['data whose blocks is an array', { 'sections/bad.liquid': BAD_SECTION('{}') }, { type: 'bad', blocks: [] }, 'section template--t__b: "blocks" must be an object'],
-    ['data with a block that is not an object', { 'sections/bad.liquid': BAD_SECTION('{}') }, { type: 'bad', blocks: { a: 'x' } }, 'section template--t__b: block a must be an object'],
-    ['data with a block whose settings is a number', { 'sections/bad.liquid': BAD_SECTION('{}') }, { type: 'bad', blocks: { a: { type: 'x', settings: 3 } } }, 'section template--t__b: block a "settings" must be an object']
+    ['data whose blocks is an array', { 'sections/bad.liquid': BAD_SECTION('{}') }, { type: 'bad', blocks: [] }, 'section template--t__b: "blocks" must be an object']
   ]
   for (const [label, files, section, reason] of cases) {
     it(`keeps ${label} inside its section`, async () => {
@@ -73,10 +71,10 @@ describe('shopify/theme/runtime malformed section schema and data', () => {
     const { html, report } = await pageWith(files, section)
     expect(html).toContain('<div id="shopify-section-template--t__b" class="shopify-section">' +
       '<div id="shopify-block-a" class="shopify-block">ok:a</div>' +
-      '<div id="shopify-block-k" class="shopify-block">Liquid error (blocks/bad line 1): blocks/bad.liquid: schema &quot;settings&quot; must be an array of objects</div>' +
+      '<div id="shopify-block-k" class="shopify-block">Liquid error: blocks/bad.liquid: schema &quot;settings&quot; must be an array of objects</div>' +
       '<div id="shopify-block-c" class="shopify-block">ok:c</div><hr></div>' + FOOTER)
-    expect(report.sections.slice(0, 2)).toMatchObject([{ status: 'failed' }, { status: 'rendered' }])
-    expect(report.errors.map(error => error.file)).toEqual(['blocks/bad.liquid'])
+    expect(report.sections.slice(0, 2)).toMatchObject([{ status: 'failed', reason: 'Liquid error: blocks/bad.liquid: schema "settings" must be an array of objects' }, { status: 'rendered' }])
+    expect(report.errors).toEqual([])
   })
   it('keeps a block whose saved JSON is malformed inside its own wrapper, nested blocks included', async () => {
     const files = {
@@ -84,12 +82,33 @@ describe('shopify/theme/runtime malformed section schema and data', () => {
       'blocks/ok.liquid': "ok:{{ block.id }}{% content_for 'blocks' %}",
       'sections/holder.liquid': "{% content_for 'blocks' %}<hr>"
     }
-    const section = { type: 'holder', blocks: { a: { type: 'ok' }, k: { type: 'ok', block_order: 5 }, n: { type: 'ok', blocks: { x: 'y' } } }, block_order: ['a', 'k', 'n'] }
+    const section = { type: 'holder', blocks: { a: { type: 'ok' }, k: { type: 'ok', block_order: 5 }, s: { type: 'ok', settings: 5 }, n: { type: 'ok', blocks: { x: 'y' } }, z: { type: 'ok' } }, block_order: ['a', 'k', 's', 'n', 'z'] }
     const { html, report } = await pageWith(files, section)
     expect(html).toContain('<div id="shopify-block-a" class="shopify-block">ok:a</div>' +
-      '<div id="shopify-block-k" class="shopify-block">Liquid error (blocks/ok line 1): block k: &quot;block_order&quot; must be an array</div>' +
-      '<div id="shopify-block-n" class="shopify-block">Liquid error (blocks/ok line 1): block n: block x must be an object</div><hr></div>' + FOOTER)
-    expect(report.sections.slice(0, 2)).toMatchObject([{ status: 'failed' }, { status: 'rendered' }])
+      '<div id="shopify-block-k" class="shopify-block">Liquid error: block k: &quot;block_order&quot; must be an array</div>' +
+      '<div id="shopify-block-s" class="shopify-block">Liquid error: block s: &quot;settings&quot; must be an object</div>' +
+      '<div id="shopify-block-n" class="shopify-block">ok:n<div id="shopify-block-x" class="shopify-block">Liquid error: block x must be an object</div></div>' +
+      '<div id="shopify-block-z" class="shopify-block">ok:z</div><hr></div>' + FOOTER)
+    expect(report.sections.slice(0, 2)).toMatchObject([{ status: 'failed', reason: 'Liquid error: block k: "block_order" must be an array' }, { status: 'rendered' }])
+    expect(report.errors).toEqual([])
+  })
+  it('leaves a malformed block out of section.blocks and reports it, without failing its section', async () => {
+    const files = { 'sections/bad.liquid': '{% for block in section.blocks %}[{{ block.id }}:{{ block.settings.t }}]{% endfor %}{% schema %}{ "blocks": [{ "type": "x", "settings": [{ "type": "text", "id": "t", "default": "d" }] }] }{% endschema %}' }
+    const section = { type: 'bad', blocks: { a: 'x', b: { type: 'x', settings: 3 }, c: { type: 'x', settings: { t: 'saved' } } }, block_order: ['a', 'b', 'c'] }
+    const { html, report } = await pageWith(files, section)
+    expect(html).toContain('<div id="shopify-section-template--t__b" class="shopify-section">[b:d][c:saved]</div>' + FOOTER)
+    expect(report.sections.slice(0, 2)).toMatchObject([{ status: 'rendered' }, { status: 'rendered' }])
+    expect(report.unsupported).toEqual([
+      { feature: 'blocks', detail: 'section template--t__b: block a is not an object' },
+      { feature: 'blocks', detail: 'section template--t__b: block b "settings" is not an object' }
+    ])
+  })
+  it('does not take a block_order entry that names an Object.prototype member for a block', async () => {
+    const files = { ...theme.files, 'blocks/ok.liquid': 'ok:{{ block.id }}', 'sections/holder.liquid': "{% content_for 'blocks' %}<hr>" }
+    const { html, report } = await pageWith(files, { type: 'holder', blocks: { a: { type: 'ok' } }, block_order: ['a', 'constructor', '__proto__', 'toString', 'hasOwnProperty'] })
+    expect(html).toContain('<div id="shopify-section-template--t__b" class="shopify-section"><div id="shopify-block-a" class="shopify-block">ok:a</div><hr></div>' + FOOTER)
+    expect(report.missing).toEqual([])
+    expect(report.sections.slice(0, 2)).toMatchObject([{ status: 'rendered' }, { status: 'rendered' }])
   })
 })
 
