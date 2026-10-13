@@ -24,6 +24,7 @@ jobs:
           bundler-cache: true
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
+      - run: node spec/liquid-spec/server-check.mjs
       - run: bundle exec liquid-spec run spec/liquid-spec/adapter.rb --no-max-failures --json > liquid-spec.json || true
       - run: node spec/liquid-spec/compare.mjs liquid-spec.json spec/liquid-spec/baseline.json
       - uses: actions/upload-artifact@v7

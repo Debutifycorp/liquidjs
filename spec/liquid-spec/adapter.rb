@@ -195,7 +195,6 @@ LiquidSpec.configure do |config|
     :self_environment_shadowing,
     :binary_data,
     :template_factory,
-    :shopify_filters,
     :shopify_includes,
     :shopify_blank,
     :shopify_error_handling,
