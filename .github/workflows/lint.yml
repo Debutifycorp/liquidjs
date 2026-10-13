@@ -20,8 +20,22 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm run lint
-      - name: Commit message
-        run: pnpm exec commitlint --last --verbose
+      - name: Commit messages
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # a pull request: its own commits; a push: the pushed commits (the all-zero or unknown `before` of a new or force-pushed branch falls back to the last commit); otherwise the last commit
+          if [ "$EVENT" = pull_request ]; then
+            pnpm exec commitlint --from "$BASE" --to "$HEAD" --verbose
+          elif [ "$EVENT" = push ] && ! echo "$BEFORE" | grep -qE '^0+$' && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            pnpm exec commitlint --from "$BEFORE" --to "$AFTER" --verbose
+          else
+            pnpm exec commitlint --last --verbose
+          fi
       - name: Archive npm failure logs
         uses: actions/upload-artifact@v7
         if: failure()
