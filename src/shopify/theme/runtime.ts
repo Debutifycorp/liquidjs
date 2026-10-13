@@ -5,7 +5,7 @@ import { toPromise } from '../../util/async'
 import { LiquidError, RenderError } from '../../util/error'
 import { isLimitError } from '../../util/inline-error'
 import { getPerformance } from '../../util/performance'
-import { createShopifyLiquid } from '../preset'
+import { createShopifyLiquid, SHOPIFY_DEFAULT_LIMITS } from '../preset'
 import { errorMessage, RenderReport, UnsupportedFeature } from '../report'
 import { sampleStoreData } from '../sample/sample-data'
 import type { ShopifyServices } from '../services'
@@ -40,9 +40,19 @@ export interface RenderPageOptions {
   trustLiquidSettings?: boolean
   /** Lift every other rule for untrusted settings: `html` settings print unsanitised (less `<html>`, `<head>` and `<body>`, which shopify.dev says Shopify removes, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings), the other setting types are not held to their documented forms, stored keys are not checked, and section keys, block keys and types, group types and the template `wrapper` are not held to the plain-id rule. Off by default, which is Debutify's safety choice and differs from Shopify. `richtext` settings and the escapes of `json` stay on either way. */
   trustHtmlSettings?: boolean
-  /** Milliseconds for the whole page (default: the preset's `renderLimit`). A page that runs past it, or past `memoryLimit` or the engine's `parseLimit` (10,000,000 characters per file), rejects. */
+  /** Milliseconds for the whole page (default: the preset's `renderLimit`). A page that runs past it, or past `memoryLimit` or `parseLimit`, rejects. */
   renderLimit?: number
+  /** LiquidJS's allocation units for the whole page (default: the preset's `memoryLimit`). */
   memoryLimit?: number
+  /** Characters per parsed file (default: the preset's `parseLimit`, 10,000,000). Part of the compiled theme: renders of one `theme` object with different values compile it once per value. */
+  parseLimit?: number
+  /** `'report'` (default) renders an unknown tag as nothing and reports it; `'error'` makes it a parse error, as for `createShopifyLiquid`. Part of the compiled theme, like `parseLimit`. */
+  unknownTags?: 'report' | 'error'
+}
+
+/** What `renderSection` takes: `renderPage`'s options and the `section` to render, the id `renderPage` reports for it (`template--product__main`), a key of the JSON template's `sections` (`main`) or a static section's name. */
+export interface RenderSectionOptions extends RenderPageOptions {
+  section: string
 }
 
 export interface RenderPageResult {
@@ -186,8 +196,8 @@ export class CompiledTheme {
   public readonly liquid: Liquid
   private readonly jsonCache = new Map<string, { source: string, value: unknown }>()
 
-  public constructor (public readonly files: Record<string, string>) {
-    this.liquid = createShopifyLiquid({ files })
+  public constructor (public readonly files: Record<string, string>, options: Pick<RenderPageOptions, 'parseLimit' | 'unknownTags'> = {}) {
+    this.liquid = createShopifyLiquid({ files, parseLimit: options.parseLimit, unknownTags: options.unknownTags })
   }
 
   public has (path: string): boolean {
@@ -247,18 +257,26 @@ export class CompiledTheme {
   }
 }
 
-const compiled = new WeakMap<ThemeInput, CompiledTheme>()
+/** Compiled themes by theme object, then by the engine options they were compiled with (`parseLimit` and `unknownTags`). */
+const compiled = new WeakMap<ThemeInput, Map<string, CompiledTheme>>()
 
 /**
- * The compiled form of `theme`, made on first use and kept as long as the theme object lives. Editing `theme.files[path]` is picked up (the engine and the JSON cache compare each file's contents); replacing `theme.files` with a new map compiles the theme again.
+ * The compiled form of `theme`, made on first use and kept as long as the theme object lives; `renderPage` and `renderSection` use it, so calling it first parses a theme ahead of its first render. Pass the same `parseLimit` and `unknownTags` the renders will get: a theme is compiled once for each combination. Editing `theme.files[path]` is picked up (the engine and the JSON cache compare each file's contents); replacing `theme.files` with a new map compiles the theme again.
  *
  * The compiled theme reads `theme.files` live, so a render that is still running when a file is edited can mix the old and new versions of different files. Give each saved version of a theme its own `theme` object (or its own `files` map) and do not edit a map a render is using.
  */
-export function compileTheme (theme: ThemeInput): CompiledTheme {
-  let result = compiled.get(theme)
+export function compileTheme (theme: ThemeInput, options: Pick<RenderPageOptions, 'parseLimit' | 'unknownTags'> = {}): CompiledTheme {
+  const engine = { parseLimit: options.parseLimit ?? SHOPIFY_DEFAULT_LIMITS.parseLimit, unknownTags: options.unknownTags ?? 'report' }
+  const key = `${engine.parseLimit}:${engine.unknownTags}`
+  let byOptions = compiled.get(theme)
+  if (!byOptions) {
+    byOptions = new Map()
+    compiled.set(theme, byOptions)
+  }
+  let result = byOptions.get(key)
   if (!result || result.files !== theme.files) {
-    result = new CompiledTheme(theme.files)
-    compiled.set(theme, result)
+    result = new CompiledTheme(theme.files, engine)
+    byOptions.set(key, result)
   }
   return result
 }
@@ -838,7 +856,7 @@ class PageRender implements ThemeHooks {
  * It rejects when there is no page to show: the template does not exist or is not a JSON object, `config/settings_data.json` or `config/settings_schema.json` is not valid, or the page runs past `renderLimit`, `memoryLimit` or `parseLimit`. Anything narrower is reported and the page still renders: a section, block, layout or section group that is missing or broken, a locale file or contextual group file that is not valid JSON, a `wrapper` or `order` of the wrong type.
  */
 export async function renderPage (options: RenderPageOptions): Promise<RenderPageResult> {
-  return new PageRender(compileTheme(options.theme), options).page()
+  return new PageRender(compileTheme(options.theme, options), options).page()
 }
 
 /**
@@ -846,6 +864,6 @@ export async function renderPage (options: RenderPageOptions): Promise<RenderPag
  *
  * https://shopify.dev/docs/api/ajax/section-rendering returns a section's HTML alone, as this does, and addresses sections by these ids, but the section object's page says `index` is nil there, where this keeps the index the section has on the page so the section matches its place in a preview. The `assets` of the result hold the section's `{% stylesheet %}` and `{% javascript %}` bodies; see `RenderSectionResult`.
  */
-export async function renderSection (options: RenderPageOptions & { section: string }): Promise<RenderSectionResult> {
-  return new PageRender(compileTheme(options.theme), options).section(options.section)
+export async function renderSection (options: RenderSectionOptions): Promise<RenderSectionResult> {
+  return new PageRender(compileTheme(options.theme, options), options).section(options.section)
 }

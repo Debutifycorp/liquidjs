@@ -171,6 +171,21 @@ describe('shopify/theme/runtime', () => {
     const files = { ...theme.files, 'sections/hog.liquid': '{% for i in (1..1000) %}{% endfor %}', 'templates/hog.json': '{ "sections": { "h": { "type": "hog" } }, "order": ["h"] }' }
     await expect(renderPage({ theme: { files }, templateName: 'hog', memoryLimit: 100 })).rejects.toThrow('memory alloc limit exceeded')
   })
+  it('takes parseLimit and unknownTags, and compiles a theme once for each combination', async () => {
+    const files = { 'templates/t.json': '{ "sections": { "s": { "type": "s" } }, "order": ["s"] }', 'sections/s.liquid': 'a{% frobnicate %}b' }
+    const one = { files }
+    const lax = await renderPage({ theme: one, templateName: 't' })
+    expect(lax.html).toBe('<div id="shopify-section-template--t__s" class="shopify-section">ab</div>')
+    expect(lax.report.unknownTags.map(entry => entry.name)).toEqual(['frobnicate'])
+    const strict = await renderPage({ theme: one, templateName: 't', unknownTags: 'error' })
+    expect(strict.report.sections).toMatchObject([{ status: 'failed', reason: "Liquid syntax error (sections/s line 1): Unknown tag 'frobnicate'" }])
+    expect((await renderSection({ theme: one, templateName: 't', section: 's', unknownTags: 'error' })).report.sections).toMatchObject([{ status: 'failed' }])
+    await expect(renderPage({ theme: one, templateName: 't', parseLimit: 5 })).rejects.toThrow('parse length limit exceeded')
+    expect((await renderPage({ theme: one, templateName: 't' })).html).toBe(lax.html)
+    expect(compileTheme(one)).toBe(compileTheme(one, { unknownTags: 'report' }))
+    expect(compileTheme(one, { unknownTags: 'error' })).not.toBe(compileTheme(one))
+    expect(compileTheme(one, { parseLimit: 5 })).not.toBe(compileTheme(one))
+  })
   it('compiles a theme again when its files map is replaced', async () => {
     const copy = { files: { ...theme.files } }
     const first = compileTheme(copy)
