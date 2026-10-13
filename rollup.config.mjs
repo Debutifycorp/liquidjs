@@ -8,7 +8,7 @@ const pkg = createRequire(import.meta.url)('./package.json')
 const version = process.env.VERSION || pkg.version
 const sourcemap = true
 const banner = `/*
- * liquidjs@${version}, https://github.com/harttle/liquidjs
+ * @debutify/liquidjs@${version} (fork of liquidjs@${pkg.upstreamLiquidjs}), https://github.com/Debutifycorp/liquidjs
  * (c) 2016-${new Date().getFullYear()} harttle
  * Released under the MIT License.
  */`
