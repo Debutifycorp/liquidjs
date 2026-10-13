@@ -118,7 +118,7 @@ function colorModify (this: FilterImpl, input: unknown, component: unknown, valu
 }
 
 /**
- * Channel-wise blend, alpha included. https://shopify.dev/docs/api/liquid/filters/color_mix only shows a weight of 50, which is symmetric, so which colour the weight belongs to is not pinned: here `weight` is the percentage of the input (25 is 25% of the first colour), the Sass convention. A missing or non-numeric weight, or an unreadable second colour, returns the input unchanged and is reported (not pinned either).
+ * Channel-wise blend, alpha included. https://shopify.dev/docs/api/liquid/filters/color_mix pins the direction of the weight in its tip ("A percentage factor of 100 returns the color being filtered. A percentage factor of 0 returns the color supplied to the filter."): `weight` is the percentage of the input, so 25 is 25% of the first colour. The page's example shows only a weight of 50, so how the values between the two ends are interpolated (linearly, per channel, alpha included) is not pinned. A missing or non-numeric weight, or an unreadable second colour, returns the input unchanged and is reported (not pinned either).
  */
 function colorMix (this: FilterImpl, input: unknown, other: unknown, weight: unknown) {
   const x = read(this, 'color_mix', input)

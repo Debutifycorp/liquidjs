@@ -63,7 +63,7 @@ describe('shopify/filters/color: forms the pages describe but give no example fo
     ["{{ '#f808' | color_to_rgb }}", 'rgba(255, 136, 0, 0.53)'],
     // hsl() input.
     ["{{ 'hsl(240, 100%, 50%)' | color_to_hex }}", '#0000ff'],
-    // color_mix at a weight other than 50. Not pinned by shopify.dev, which shows only 50: 25 is 25% of the first colour (the Sass convention).
+    // color_mix at a weight other than 50. The tip on the page pins the ends ("A percentage factor of 100 returns the color being filtered. A percentage factor of 0 returns the color supplied to the filter."), so 25 is 25% of the first colour; the page's example shows only 50, so the values between the ends are not pinned.
     ["{{ '#EA5AB9' | color_mix: '#00936F', 25 }}", '#3b8582'],
     ["{{ '#EA5AB9' | color_mix: '#00936F', 100 }}", '#ea5ab9'],
     ["{{ '#EA5AB9' | color_mix: '#00936F', 0 }}", '#00936f']

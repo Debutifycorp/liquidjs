@@ -298,6 +298,8 @@ function buildCart (data: StoreData, products: HandleMap<LiquidObject>): LiquidO
     if (!product || !variant) continue
     const price = variant.price as number
     items.push({
+      // `index` (0-based) is not a property of https://shopify.dev/docs/api/liquid/objects/line_item, but themes read it (Dawn's cart prints `item.index | plus: 1`), so it is built; the page does not pin its base
+      index: items.length,
       id: variant.id,
       key: `${variant.id}:${items.length + 1}`,
       quantity: line.quantity,

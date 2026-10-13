@@ -209,3 +209,35 @@ export function sanitizeHtml (html: string): string {
   closeTo(0)
   return out
 }
+
+const DOCUMENT_TAGS = new Set(['html', 'head', 'body'])
+
+/**
+ * `html` with its `<html>`, `<head>` and `<body>` tags removed, opening and closing, with their attributes, and everything else (the text and elements between them included) left as written. This is what Shopify does to an `html` setting: "The following HTML tags will be automatically removed" (https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings, `html`). The page does not say whether the content between the tags stays; it does here, because a tag is what it names. A tag that never closes (no `>` after it) is left as it is. One pass, so hostile input stays linear.
+ */
+export function removeDocumentTags (html: string): string {
+  let out = ''
+  let copied = 0
+  let at = html.indexOf('<')
+  while (at !== -1) {
+    const name = /^<\/?([a-zA-Z][a-zA-Z0-9-]*)/.exec(html.slice(at, at + 64))
+    let end = -1
+    if (name && DOCUMENT_TAGS.has(name[1].toLowerCase())) {
+      end = at + name[0].length
+      while (end < html.length && html[end] !== '>') {
+        const quote = html[end]
+        if (quote === '"' || quote === "'") {
+          const close = html.indexOf(quote, end + 1)
+          end = close === -1 ? html.length : close + 1
+        } else {
+          end++
+        }
+      }
+      if (end >= html.length) break
+      out += html.slice(copied, at)
+      copied = end + 1
+    }
+    at = html.indexOf('<', end === -1 ? at + 1 : end + 1)
+  }
+  return out + html.slice(copied)
+}

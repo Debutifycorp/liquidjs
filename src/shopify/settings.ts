@@ -15,7 +15,7 @@ import type { LiquidObject, StoreObjects } from './store/build'
 import type { Translator } from './translations'
 import { escapeHtml } from './util/html'
 import { own } from './util/own'
-import { isSafeUrl, sanitizeHtml } from './util/sanitize'
+import { isSafeUrl, removeDocumentTags, sanitizeHtml } from './util/sanitize'
 
 /** One entry of a `settings` array in a section, block or `settings_schema.json`. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings */
 export interface SettingDefinition {
@@ -148,15 +148,21 @@ function safeUrl (definition: SettingDefinition, url: string | null, env: Settin
   return null
 }
 
-const optionValues = (definition: SettingDefinition): string[] => Array.isArray(definition.options) ? definition.options.map(option => isRecord(option) ? option.value : undefined).filter((value): value is string => typeof value === 'string' && !UNSAFE_KEY_CHARACTER.test(value)) : []
+const rawOptionValues = (definition: SettingDefinition): string[] => Array.isArray(definition.options) ? definition.options.map(option => isRecord(option) ? option.value : undefined).filter((value): value is string => typeof value === 'string') : []
+const optionValues = (definition: SettingDefinition): string[] => rawOptionValues(definition).filter(value => !UNSAFE_KEY_CHARACTER.test(value))
 
-/** A `select`, `radio` or `text_alignment` value: untrusted themes only get one of the setting's options, else its default if that is one, else nil. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings (`select` and `radio` "return a string", the chosen option's `value`; `text_alignment` accepts `left`, `right` and `center`). */
+/**
+ * A `select`, `radio` or `text_alignment` value. Without a saved value, the setting's `default`; with no `default` either, the first option ("If `default` is unspecified, then the first option is selected by default", for `select` and `radio`; "If no default is set, `left` applies", for `text_alignment`). Untrusted themes only get one of the setting's options: a saved value that is not one is replaced by the default if that is an option, else (when the setting has no `default`) by the first option, else nil, and reported. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings (`select` and `radio` "return a string", the chosen option's `value`; `text_alignment` accepts `left`, `right` and `center`).
+ */
 function choice (definition: SettingDefinition, stored: unknown, env: SettingsEnv): unknown {
-  if (env.trust.htmlSettings) return stored === undefined ? definition.default ?? null : stored
-  const options = definition.type === 'text_alignment' ? ['left', 'center', 'right'] : optionValues(definition)
+  const alignment = definition.type === 'text_alignment'
+  const options = alignment ? ['left', 'center', 'right'] : env.trust.htmlSettings ? rawOptionValues(definition) : optionValues(definition)
+  const first = alignment ? 'left' : options[0] ?? null
+  const fallback = definition.default === undefined ? first : !env.trust.htmlSettings && !(typeof definition.default === 'string' && options.includes(definition.default)) ? null : definition.default
+  if (env.trust.htmlSettings) return stored === undefined ? fallback : stored
   if (typeof stored === 'string' && options.includes(stored)) return stored
   if (stored !== undefined) reject(env, 'invalid_setting', definition, 'has a value that is not one of its options and was replaced by its default')
-  return typeof definition.default === 'string' && options.includes(definition.default) ? definition.default : null
+  return fallback
 }
 
 /** A finite number from a stored number or numeric string, else undefined. */
@@ -236,6 +242,8 @@ function imageData (definition: SettingDefinition, value: Record<string, unknown
 export function resolveSettingValue (definition: SettingDefinition, stored: unknown, env: SettingsEnv): unknown {
   let value = stored === undefined ? definition.default : stored
   if (TRANSLATABLE.has(definition.type) && typeof value === 'string' && value.startsWith('t:')) value = env.translator.schemaText(value)
+  // https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings: for `text`, `textarea`, `html`, `richtext`, `inline_richtext` and `liquid`, "An `empty` object, if nothing has been entered". The empty string is what `== empty` and `== blank` match, prints as nothing and is not nil, as that object is.
+  if (TRANSLATABLE.has(definition.type) && (value === undefined || value === null || value === '')) return ''
   switch (definition.type) {
     case 'color':
       return colour(definition, stored, env)
@@ -288,15 +296,15 @@ export function resolveSettingValue (definition: SettingDefinition, stored: unkn
     case 'url':
       return safeUrl(definition, settingUrl(value), env)
     case 'product':
-      return lookup(env, env.store.products, value, 'product')
+      return printsHandle(lookup(env, env.store.products, value, 'product'))
     case 'collection':
-      return lookup(env, env.store.collections, value, 'collection')
+      return printsHandle(lookup(env, env.store.collections, value, 'collection'))
     case 'page':
-      return lookup(env, env.store.pages, value, 'page')
+      return printsHandle(lookup(env, env.store.pages, value, 'page'))
     case 'blog':
-      return lookup(env, env.store.blogs, value, 'blog')
+      return printsHandle(lookup(env, env.store.blogs, value, 'blog'))
     case 'article':
-      return lookup(env, env.store.articles, value, 'article')
+      return printsHandle(lookup(env, env.store.articles, value, 'article'))
     case 'link_list':
       return lookup(env, env.linklists, value, 'menu')
     case 'product_list':
@@ -306,7 +314,7 @@ export function resolveSettingValue (definition: SettingDefinition, stored: unkn
     case 'liquid':
       return typeof value === 'string' ? new LiquidSetting(value) : null
     case 'html':
-      return typeof value === 'string' ? (env.trust.htmlSettings ? value : sanitizeHtml(value)) : null
+      return typeof value === 'string' ? (env.trust.htmlSettings ? removeDocumentTags(value) : sanitizeHtml(value)) : null
     case 'richtext':
     case 'inline_richtext':
       return typeof value === 'string' ? sanitizeHtml(value) : null
@@ -339,6 +347,22 @@ function buildColorSchemes (definition: SettingDefinition, stored: unknown, env:
     schemes.push([id, new ColorSchemeDrop(id, Object.fromEntries(settings))])
   }
   return new HandleMap(schemes)
+}
+
+const HANDLE_VIEWS = new WeakMap<LiquidObject, LiquidObject>()
+
+/**
+ * A `product`, `collection`, `page`, `blog` or `article` setting's object as the setting returns it: the same fields, but printed on its own it is the handle. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings says for each of these types that "outputting the setting directly will return the object's handle"; it says nothing of `link_list`, or of the elements of a `product_list` or `collection_list`, which stay as they are. The view is a shallow copy with a non-enumerable `toString`, so reading fields, `json` and the filters that take the object work as on the object itself.
+ */
+function printsHandle (object: LiquidObject | null): LiquidObject | null {
+  if (!object) return null
+  let view = HANDLE_VIEWS.get(object)
+  if (!view) {
+    view = { ...object }
+    Object.defineProperty(view, 'toString', { value: () => String(object.handle ?? ''), enumerable: false })
+    HANDLE_VIEWS.set(object, view)
+  }
+  return view
 }
 
 function lookup (env: SettingsEnv, map: HandleMap<LiquidObject>, handle: unknown, kind: string): LiquidObject | null {

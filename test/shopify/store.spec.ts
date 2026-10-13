@@ -275,7 +275,7 @@ describe('shopify/settings safety', () => {
     const e = env()
     const settings = new SettingsDrop([{ type: 'video', id: 'clip' }, { type: 'text', id: 'constructor' }, { type: 'text', id: 'toString', default: 'kept' }], { clip: 'shopify://files/videos/constructor' }, e)
     expect(SettingsDrop.value(settings, 'clip')).toBeNull()
-    expect(SettingsDrop.value(settings, 'constructor')).toBeNull()
+    expect(SettingsDrop.value(settings, 'constructor')).toBe('')
     expect(SettingsDrop.value(settings, 'toString')).toBe('kept')
     const report = new ReportCollector()
     for (const templateName of ['constructor', 'toString', '__proto__', 'hasOwnProperty', 'customers/constructor']) {
@@ -492,6 +492,105 @@ describe('shopify/settings forms', () => {
     expect(one({ type: 'url', id: 'a' }, 'javascript:alert(1)', t).value).toBe('javascript:alert(1)')
     expect(one({ type: 'url', id: 'a' }, '/a b"c', t).value).toBe('/a b"c')
     expect(one({ type: 'video_url', id: 'a' }, 'https://x.example/"y', t).unsupported).toEqual([])
+  })
+})
+
+/**
+ * Fidelity to https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings (select and radio: "If `default` is unspecified, then the first option is selected by default"; text_alignment: "If no default is set, `left` applies"; html: "The following HTML tags will be automatically removed" (`<html>`, `<head>`, `<body>`); text, textarea, html, richtext, inline_richtext and liquid: "An `empty` object, if nothing has been entered"; product, collection, page, blog and article: "outputting the setting directly will return the object's handle"), https://shopify.dev/docs/api/liquid/objects/recommendations (`intent`: "If `performed?` is `false`, then `nil` is returned") and the cart's line items (`index` is not on shopify.dev; Dawn's cart reads it).
+ */
+describe('shopify/settings fidelity', () => {
+  const trusted = { liquidSettings: true, htmlSettings: true }
+  const options = [{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }]
+  const read = (definition: SettingDefinition, stored: unknown, overrides: Partial<SettingsEnv> = {}) => {
+    const settings = new SettingsDrop([definition], stored === undefined ? {} : { x: stored }, env(overrides))
+    return SettingsDrop.value(settings, 'x')
+  }
+
+  it.each([['select', undefined], ['radio', undefined], ['select', 'nope'], ['radio', 'nope']])('reads a %s with no default as its first option (saved: %p)', (type, saved) => {
+    expect(read({ type, id: 'x', options }, saved)).toBe('left')
+    // the first option of a theme trusted with html is the first option as written
+    expect(read({ type, id: 'x', options: [{ value: 'a"b' }, { value: 'c' }] }, undefined, { trust: trusted })).toBe('a"b')
+    expect(read({ type, id: 'x', options: [{ value: 'a"b' }, { value: 'c' }] }, undefined)).toBe('c')
+  })
+  it('keeps a default that is given, and a saved option', () => {
+    expect(read({ type: 'select', id: 'x', options, default: 'right' }, undefined)).toBe('right')
+    expect(read({ type: 'select', id: 'x', options, default: 'right' }, undefined, { trust: trusted })).toBe('right')
+    expect(read({ type: 'select', id: 'x', options }, 'right')).toBe('right')
+    expect(read({ type: 'select', id: 'x', options, default: 'up' }, 'nope')).toBeNull()
+    expect(read({ type: 'select', id: 'x' }, undefined)).toBeNull()
+    expect(read({ type: 'select', id: 'x', options: [] }, undefined, { trust: trusted })).toBeNull()
+    expect(read({ type: 'select', id: 'x', options }, 'other', { trust: trusted })).toBe('other')
+  })
+  it('reads a text_alignment with no default as left', () => {
+    expect(read({ type: 'text_alignment', id: 'x' }, undefined)).toBe('left')
+    expect(read({ type: 'text_alignment', id: 'x' }, undefined, { trust: trusted })).toBe('left')
+    expect(read({ type: 'text_alignment', id: 'x', default: 'center' }, undefined)).toBe('center')
+    expect(read({ type: 'text_alignment', id: 'x' }, 'diagonal')).toBe('left')
+  })
+
+  it('removes the document tags from a trusted html setting and keeps what is between them', async () => {
+    const definition: SettingDefinition = { type: 'html', id: 'x' }
+    const html = '<!doctype html><HTML lang="en"><head><title>T</title></head><body class=\'a>b\' onload="x>y"><p onclick="z()">B</p></BODY></html>'
+    expect(read(definition, html, { trust: trusted })).toBe('<!doctype html><title>T</title><p onclick="z()">B</p>')
+    expect(read(definition, '<htmlx>a</htmlx><header>b</header><bodyguard>c', { trust: trusted })).toBe('<htmlx>a</htmlx><header>b</header><bodyguard>c')
+    expect(read(definition, 'a<body', { trust: trusted })).toBe('a<body')
+    expect(read(definition, 'a<body class="x', { trust: trusted })).toBe('a<body class="x')
+    expect(read(definition, '<p>a < b</p>', { trust: trusted })).toBe('<p>a < b</p>')
+    // untrusted themes get the sanitiser, which drops them as well
+    expect(read(definition, html)).toBe('<p>B</p>')
+    const started = Date.now()
+    expect(read(definition, '<body '.repeat(100000), { trust: trusted })).toBe('<body '.repeat(100000))
+    expect(read(definition, '<body>'.repeat(200000) + 'x', { trust: trusted })).toBe('x')
+    expect(Date.now() - started).toBeLessThan(2000)
+  })
+
+  it.each(['text', 'textarea', 'html', 'richtext', 'inline_richtext', 'liquid'])('reads an unset %s as empty', async type => {
+    for (const trust of [undefined, trusted]) {
+      for (const saved of [undefined, null, '']) {
+        const settings = new SettingsDrop([{ type, id: 'x' }], saved === undefined ? {} : { x: saved }, env(trust ? { trust } : {}))
+        expect(await render('{% if s.x == empty %}empty{% endif %}|{% if s.x == blank %}blank{% endif %}|{% if s.x == nil %}nil{% endif %}|{% if s.x %}set{% endif %}|{{ s.x | default: "fallback" }}|{{ s.x.size }}|[{{ s.x }}]', { s: settings })).toBe('empty|blank||set|fallback|0|[]')
+        expect(await render('{{ s | json }}', { s: settings })).toBe('{"x":""}')
+      }
+    }
+    const given = new SettingsDrop([{ type, id: 'x' }], { x: 'Hi' }, env())
+    expect(await render('{% if s.x == empty %}empty{% else %}text{% endif %}|{{ s.x }}', { s: given })).toBe('text|Hi')
+    // a default is something that was entered
+    expect(await render('{{ s.x }}', { s: new SettingsDrop([{ type, id: 'x', default: 'Dflt' }], {}, env()) })).toBe('Dflt')
+  })
+
+  it.each([['product', 'canvas-bag', 'products'], ['collection', 'apparel', 'collections'], ['page', 'about', 'pages'], ['blog', 'news', 'blogs'], ['article', 'news/hello-world', 'articles']])('prints a %s setting as its handle, and keeps it an object otherwise', async (type, handle, key) => {
+    const settings = new SettingsDrop([{ type, id: 'x' }, { type: 'text', id: 'other' }], { x: handle }, env())
+    const object = HandleMap.get((store as any)[key] as HandleMap<Record<string, unknown>>, handle) as Record<string, unknown>
+    expect(await render('[{{ s.x }}]|{{ s.x.title }}|{{ s.x.url }}|{{ s.x.handle }}|{% if s.x %}set{% endif %}|{% if s.x == blank %}blank{% endif %}', { s: settings })).toBe(`[${object.handle}]|${object.title}|${object.url}|${object.handle}|set|`)
+    expect(JSON.parse(await render('{{ s.x | json }}', { s: settings }))).toEqual(JSON.parse(JSON.stringify(object)))
+    expect(Object.keys(SettingsDrop.value(settings, 'x') as object)).toEqual(Object.keys(object))
+    // the object the store holds is untouched
+    expect(Object.prototype.hasOwnProperty.call(object, 'toString')).toBe(false)
+    expect(await render('{{ s.x }}', { s: new SettingsDrop([{ type, id: 'x' }], {}, env()) })).toBe('')
+  })
+  it('lets filters take a resource setting as the object', async () => {
+    const settings = new SettingsDrop([{ type: 'product', id: 'p' }, { type: 'collection', id: 'c' }], { p: 'classic-tee', c: 'apparel' }, env())
+    expect(await render('{{ s.p.url | within: s.c }}|{{ s.p | image_url: width: 100 }}|{{ s.c.products.first.title }}|{{ s.p.variants[0].product.title }}', { s: settings })).toBe('/collections/apparel/products/classic-tee|/sample/images/classic-tee.jpg?width=100|Classic Tee|Classic Tee')
+  })
+  it('leaves menus and lists as they are', async () => {
+    const settings = new SettingsDrop([{ type: 'link_list', id: 'menu' }, { type: 'collection_list', id: 'cols' }], { menu: 'main-menu', cols: ['apparel'] }, env())
+    expect(await render('{{ s.menu.title }}|{{ s.cols.size }}|{{ s.cols[0].title }}|{{ s.cols[0].handle }}', { s: settings })).toBe('Main menu|1|Apparel|apparel')
+    expect(String(SettingsDrop.value(settings, 'menu'))).toBe('[object Object]')
+    expect(String((SettingsDrop.value(settings, 'cols') as unknown[])[0])).toBe('[object Object]')
+  })
+
+  it('gives recommendations a nil intent while nothing is recommended', async () => {
+    const page = buildGlobals({ store, templateName: 'product', request: {}, locale: 'en', report: new ReportCollector() })
+    expect(await render('[{{ recommendations.intent }}]|{% if recommendations.intent == nil %}nil{% endif %}|{{ recommendations.performed? }}|{{ recommendations.products_count }}|{% if recommendations.products == empty %}empty{% endif %}', page.globals)).toBe('[]|nil|false|0|empty')
+  })
+  it('numbers cart lines from 0, skipping lines the store cannot fill', async () => {
+    const data = {
+      shop: { name: 'Odd', domain: 'odd.example', currency: 'USD' },
+      products: [{ id: 1, handle: 'a', title: 'A', variants: [{ id: 11, title: 'Default Title', price: 100, available: true, option1: 'Default Title' }] }, { id: 2, handle: 'b', title: 'B', variants: [{ id: 22, title: 'Default Title', price: 200, available: true, option1: 'Default Title' }] }],
+      cart: { items: [{ product_handle: 'a', variant_id: 11, quantity: 1 }, { product_handle: 'gone', variant_id: 99, quantity: 1 }, { product_handle: 'b', variant_id: 22, quantity: 3 }] }
+    }
+    const cart = buildStore(data).cart
+    expect(await render('{% for item in cart.items %}{{ forloop.index0 }}:{{ item.index }}:{{ item.index | plus: 1 }}:{{ item.key }} {% endfor %}', { cart })).toBe('0:0:1:11:1 1:1:2:22:2 ')
   })
 })
 
