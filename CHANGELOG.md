@@ -1,3 +1,78 @@
+# [1.0.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v0.1.0...debutify-v1.0.0) (2026-10-13)
+
+
+### Bug Fixes
+
+* charge slice's memory for the result, not the requested length ([6e472dd](https://github.com/Debutifycorp/liquidjs/commit/6e472dda82d3b7c8d257afe12b7ac9f82a923d64))
+* **shopify:** accept a block id of 0, keep static blocks apart from dynamic ones, ignore a wrapper class that is not a string and stop blocks that nest themselves ([54fcaa5](https://github.com/Debutifycorp/liquidjs/commit/54fcaa5d3d458dc22bf77711b9f339b2ed03e1b6))
+* **shopify:** address group sections by keys that hold __, report bad group JSON from renderSection, and keep malformed contextual files, preset static blocks and block schemas apart ([b1970c3](https://github.com/Debutifycorp/liquidjs/commit/b1970c3f86f6718da41ae4d0d670bb68a6b40e65))
+* **shopify:** answer recommendations.performed as well as recommendations.performed? ([c9e338d](https://github.com/Debutifycorp/liquidjs/commit/c9e338d955c38c758a73e79684eb95d0ba3ebe71))
+* **shopify:** balance sanitised HTML and restrict link attributes ([3c1f7d0](https://github.com/Debutifycorp/liquidjs/commit/3c1f7d019d9b262e55fb21a3017570fc18cc1832))
+* **shopify:** contain a malformed block in the block, and list such errors in one way ([5235e83](https://github.com/Debutifycorp/liquidjs/commit/5235e836e46c285bbb0f10eea182df35cd0bb168))
+* **shopify:** correct two stale comments and an error message that named an internal ([e88a9ec](https://github.com/Debutifycorp/liquidjs/commit/e88a9ec7ede59f0ebe3d7465b75aedb52a6d8526))
+* **shopify:** drop the engine trust options that never reached a render ([e02329f](https://github.com/Debutifycorp/liquidjs/commit/e02329f8ba154b9cc1c9d60e16b0481da37f049b))
+* **shopify:** error on an unknown date format, read zone-less dates in DST zones, follow liquid-spec for money ([b6326c1](https://github.com/Debutifycorp/liquidjs/commit/b6326c126f13d2a833d32a5a72750d6b9500af81))
+* **shopify:** follow shopify.dev for select defaults, html tags, empty text, resource handles and cart indexes ([6550522](https://github.com/Debutifycorp/liquidjs/commit/655052271da9c816087dc88e6684266a36468095))
+* **shopify:** follow the paginate window_size, form object and 25,000-item limit pages and harden the tag tests ([69de8d5](https://github.com/Debutifycorp/liquidjs/commit/69de8d5300d5a90f013fcaccfced8d20088b0b72))
+* **shopify:** follow the shopify.dev pages where the media filters departed from them ([94af879](https://github.com/Debutifycorp/liquidjs/commit/94af8795d5ecca2d73c0dbc35d21b7d5ba0c6eec))
+* **shopify:** freeze the defaults every render shares and the sample store ([87458fc](https://github.com/Debutifycorp/liquidjs/commit/87458fc2aa7485039fab4178fa2f328f4e98f0cd))
+* **shopify:** give product images and media their position ([8f4bdab](https://github.com/Debutifycorp/liquidjs/commit/8f4bdab5a01e9e3ed702fb640581022d1a59df80))
+* **shopify:** give sections and blocks the theme's colour schemes ([a68d11d](https://github.com/Debutifycorp/liquidjs/commit/a68d11d26a36b31d61d47f40ae62c131a271ce8b))
+* **shopify:** give the sample blog moderated? ([d5671ab](https://github.com/Debutifycorp/liquidjs/commit/d5671abd92232e7548bcb5a205e45b9d95e2c467))
+* **shopify:** give variant images the position of the product image and hedge the position base ([c88ffd5](https://github.com/Debutifycorp/liquidjs/commit/c88ffd53c258cd12d7c14f2767e0f1df23b08ab7))
+* **shopify:** hold section and block keys, image alt and URL forms to plain values ([8230686](https://github.com/Debutifycorp/liquidjs/commit/82306869bd7057d81bf6b663a4cc0b38e15c537e))
+* **shopify:** hold untrusted settings to their documented form and escape json output ([272c5f1](https://github.com/Debutifycorp/liquidjs/commit/272c5f1bbb62ab59f827cf6dd4631a6b76eb6bda))
+* **shopify:** image_url without a width or height returns the original-size URL instead of an error ([04a5710](https://github.com/Debutifycorp/liquidjs/commit/04a5710ef74f54ff3c5fcef4fc95dc38b9310670))
+* **shopify:** keep image alt apostrophes as typographic ones instead of dropping the alt ([2a5b53f](https://github.com/Debutifycorp/liquidjs/commit/2a5b53fd83fafd46e8afcfeffa585fd40ef53e3e))
+* **shopify:** keep the smoke script's refusal case-proof, survive broken templates and warn about its output ([fb39507](https://github.com/Debutifycorp/liquidjs/commit/fb3950770d3b54e28d6c768e63c3a02496f04bdc))
+* **shopify:** keep untrusted setting values from printing raw ([b8d1823](https://github.com/Debutifycorp/liquidjs/commit/b8d18230e39f3b14cb5ecb98978429c8eaecef52))
+* **shopify:** match menu links as shopify.dev documents and pin the derived fields ([e3b7546](https://github.com/Debutifycorp/liquidjs/commit/e3b754683617445d957d28c90c07bfa5d361d2e6))
+* **shopify:** pin the filter status split by invariants, look names up as own properties, check the docs checkout ([b9ccd4f](https://github.com/Debutifycorp/liquidjs/commit/b9ccd4fbd856740c882eb0985b40ad6afbf77a8c))
+* **shopify:** print tablerow with Shopify's line breaks ([f11bc58](https://github.com/Debutifycorp/liquidjs/commit/f11bc583350479b4cb37e5fe9de0f58a6b897479))
+* **shopify:** read an undefined top-level size as nothing ([1a424c6](https://github.com/Debutifycorp/liquidjs/commit/1a424c6216b2f14dfaa445a4616b1392cd5b1bf8))
+* **shopify:** render sections by the ids renderPage reports and keep malformed theme files inside what uses them ([5154630](https://github.com/Debutifycorp/liquidjs/commit/51546305e9f424bb411f719d15ac9ec5e7dc5b28))
+* **shopify:** report bad colour and font arguments instead of writing NaN, and test the alpha, hex3, mix and font_modify paths ([e7f4581](https://github.com/Debutifycorp/liquidjs/commit/e7f4581b197f01a216525e41be15fd09ee0fe665))
+* **shopify:** scale an oversized image_url request proportionally ([84356bc](https://github.com/Debutifycorp/liquidjs/commit/84356bc0bd24f5f288b9e6b1b7d6799ac274991e))
+* **shopify:** use snake_case report features and keep angle brackets out of reports ([7bbba2d](https://github.com/Debutifycorp/liquidjs/commit/7bbba2de290f5e67f13948a91361d6e1c49b434c))
+* **shopify:** write no HTML attribute whose name is not valid ([de7e354](https://github.com/Debutifycorp/liquidjs/commit/de7e3545374ee43666946026a377ef2fe756d7a5))
+
+
+### Code Refactoring
+
+* **shopify:** trim the /shopify entry to the API that 1.0.0 covers ([fc41646](https://github.com/Debutifycorp/liquidjs/commit/fc41646423ffb051532528946b9cfd3d75f3c63c))
+
+
+### Features
+
+* run the CLI on commander 15 and require Node 24 or later ([5710560](https://github.com/Debutifycorp/liquidjs/commit/5710560317acd538c52c4503fd24e6166f292f31))
+* **shopify:** add asset, image, video and media filters through injected services ([88a2495](https://github.com/Debutifycorp/liquidjs/commit/88a249503fb5653b546d89f79951d6bf7e207dde))
+* **shopify:** add schema, javascript, stylesheet, doc, style, layout, form and paginate tags ([786c272](https://github.com/Debutifycorp/liquidjs/commit/786c27267bea4b3171b0e3b1805ffdbba910de1b))
+* **shopify:** add t, money and Shopify's text filters ([ae6f66e](https://github.com/Debutifycorp/liquidjs/commit/ae6f66e027577b0e37682f0459f816af8ab160d6))
+* **shopify:** add the colour and font filters with Shopify's color and font objects ([23d6e00](https://github.com/Debutifycorp/liquidjs/commit/23d6e007776626f338043914be3ec05fee8e7867))
+* **shopify:** build store objects, page globals and settings, sanitising untrusted HTML ([cbba3dc](https://github.com/Debutifycorp/liquidjs/commit/cbba3dc905295a9989c716e425577d8853c33488))
+* **shopify:** parseLimit and unknownTags for renderPage and renderSection ([719774a](https://github.com/Debutifycorp/liquidjs/commit/719774ae08656c8f78b6f51a33a569094d64d3be))
+* **shopify:** register every filter in Shopify's theme-liquid-docs, stubbing the unimplemented ([c34c615](https://github.com/Debutifycorp/liquidjs/commit/c34c6150aa82f925634624cc9aca19caf5c05bcf))
+* **shopify:** render Online Store 2.0 pages and sections from a theme's files ([22abb09](https://github.com/Debutifycorp/liquidjs/commit/22abb09cd675ec142a6629e490b401559c2bbf30))
+* **shopify:** render theme blocks and static blocks with content_for ([b5d8b80](https://github.com/Debutifycorp/liquidjs/commit/b5d8b803d3219723c4c3e6e9b29b18c3bbea48c3))
+* **shopify:** resolve color_scheme and color_scheme_group settings ([c8c9da5](https://github.com/Debutifycorp/liquidjs/commit/c8c9da573457e90075795a95f50c04e1254c0952))
+
+
+### BREAKING CHANGES
+
+* **shopify:** defaultServices, SHOPIFY_DEFAULT_LIMITS and sampleStoreData are frozen, so assigning to them throws a TypeError. Pass your own services and limits as options, and pass a copy of the sample store (structuredClone(sampleStoreData)) as data to change it.
+* **shopify:** report feature values are renamed to snake_case: "section-group" is section_group, "static block" is static_block, "app block" is app_block, "disabled section" is disabled_section, "locale file" is locale_file, "money input" is money_input and "date format" is date_format. The MissingKind "section-group" is section_group. UnsupportedEntry.feature is typed as the new UnsupportedFeature union instead of string.
+* **shopify:** @debutify/liquidjs/shopify no longer exports these internal names: SHOPIFY_RAW_TAGS, resolveServices, parseFontHandle, cdnStyleImageUrl, emptyTranslator, ReportCollector, errorMessage, shopifyState, createState, currentFrame, STATE, DEFAULT_MONEY_FORMAT, DEFAULT_MONEY_WITH_CURRENCY_FORMAT, ThemeFS, ThemeCache, UnknownTag, installFallbacks, escapeHtml, attribute, registerShopifyFilters, shopifyFilterImplementations, SHOPIFY_FILTER_SETS, SHOPIFY_TAGS, registerShopifyTags, filterStatus, SHOPIFY_FILTER_DOCS, THEME_LIQUID_DOCS_REVISION, imageSource, DEFAULT_SRCSET_WIDTHS, legacySize, cssFamily, fontSlug, parseColor, FormDrop, buildPaginate, formatMoney, handleize, HandleMap, TemplateDrop, sanitizeHtml, isSafeUrl, buildStore, buildProduct, buildLinklists, buildGlobals, ROUTES, LiquidSetting, resolveSettingValue, settingUrl, parseThemeJson, deepMerge, contentForHeader, HEADER_MARKER and newHeaderMarker, and the types SectionLocales, ShopifyState, StateInit, Frame, ThemeHooks, ShopifyFilter, ShopifyFilterDoc, ShopifyFilterSet, ImageSource, Rgba, Paginate, PaginatePart, LiquidObject, StoreObjects, GlobalsInput, PageGlobals and SettingsEnv. CompiledTheme is exported as a type only.
+* **shopify:** under @debutify/liquidjs/shopify, TablerowTag is now the root entry's tag class; the Shopify tablerow tag is exported as ShopifyTablerowTag.
+* **shopify:** renderLiquid takes only (liquid, source, scope); its fourth argument, a StateInit, and its fifth, a file path, are gone.
+* **shopify:** createShopifyLiquid no longer takes the runtime option, and ThemeHooks is no longer exported. Since 0.1.0 that interface had also gained the required members renderBlocks and renderStaticBlock.
+* **shopify:** createShopifyLiquid and renderLiquid no longer take trustLiquidSettings or trustHtmlSettings, which had no effect; pass them to renderPage or renderSection.
+* Node 24 or newer is required.
+
+
+### Upstream
+
+Based on [LiquidJS 10.30.0](https://github.com/harttle/liquidjs/releases/tag/v10.30.0).
+
 # [0.1.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v0.0.0...debutify-v0.1.0) (2026-10-13)
 
 
