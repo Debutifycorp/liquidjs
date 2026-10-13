@@ -97,6 +97,88 @@ describe('shopify/settings', () => {
   })
 })
 
+describe('shopify/settings safety', () => {
+  const payload = '</script><img src=x onerror=alert(1)>'
+  const liquidDefinitions: SettingDefinition[] = [{ type: 'liquid', id: 'code' }]
+  const trusted = { liquidSettings: true, htmlSettings: true }
+  const untrusted = { liquidSettings: false, htmlSettings: false }
+
+  it('never prints a liquid setting raw through json or inspect', async () => {
+    const s = new SettingsDrop(liquidDefinitions, { code: payload }, env())
+    const html = await render('{{ s | json }}|{{ s | inspect }}|{{ s.code | json }}', { s })
+    expect(html).not.toContain('<img')
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;')
+    expect(JSON.parse(await render('{{ s | json }}', { s }))).toEqual({ code: '&lt;/script&gt;&lt;img src=x onerror=alert(1)&gt;' })
+  })
+  it('prints trusted liquid settings through json as strings, also after one has rendered', async () => {
+    const s = new SettingsDrop(liquidDefinitions, { code: '{{ greeting }} <b>' }, env({ trust: { liquidSettings: true, htmlSettings: false } }))
+    const html = await render('{{ s.code }}|{{ s | json }}|{{ s.code }}', { s, greeting: 'Hi' })
+    expect(html).toBe('Hi <b>|{"code":"{{ greeting }} <b>"}|Hi <b>')
+  })
+  it('stops liquid settings that print settings recursively', async () => {
+    const s = new SettingsDrop([{ type: 'liquid', id: 'self' }, { type: 'liquid', id: 'a' }, { type: 'liquid', id: 'b' }], { self: 'x{{ s.self }}', a: '[{{ s.b }}]', b: 'B' }, env({ trust: { liquidSettings: true, htmlSettings: false } }))
+    const started = Date.now()
+    const result = await renderLiquid(liquid, '{{ s.self }}', { s })
+    expect(result.html).toBe('xxxxx')
+    expect(result.report.errors).toEqual([{ message: 'Liquid error (line 1): liquid setting is nested more than 5 levels deep', line: 1 }])
+    expect(Date.now() - started).toBeLessThan(500)
+    expect(await render('{{ s.a }}|{{ s.a }}', { s })).toBe('[B]|[B]')
+  })
+
+  const text = (id: string, type = 'text', extra: object = {}): SettingDefinition => ({ type, id, ...extra })
+  it('passes plain text through unchanged and sanitises text that contains markup', async () => {
+    const definitions = [text('plain'), text('area', 'textarea'), text('pick', 'select'), text('markup'), text('lt'), text('fallback', 'text', { default: '<i onclick=x>d</i>' })]
+    const stored = { plain: 'Fish & chips "x" > y', area: 'Line one\nLine two', pick: 'option-1', markup: '<img src=x onerror=alert(1)>Hi', lt: 'a < b', legacy: '<script>alert(1)</script>ok', nested: { list: ['<b onclick=x>t</b>', 3, null], clean: 'fine' } }
+    const s = new SettingsDrop(definitions, stored, env())
+    expect(await render('{{ s.plain }}|{{ s.area }}|{{ s.pick }}|{{ s.markup }}|{{ s.lt }}|{{ s.fallback }}|{{ s.legacy }}', { s })).toBe('Fish & chips "x" > y|Line one\nLine two|option-1|<img src="x">Hi|a &lt; b|<i>d</i>|ok')
+    expect(JSON.parse(await render('{{ s.nested | json }}', { s }))).toEqual({ list: ['<b>t</b>', 3, null], clean: 'fine' })
+    const trustedHtml = new SettingsDrop(definitions, stored, env({ trust: trusted }))
+    expect(await render('{{ s.markup }}|{{ s.lt }}|{{ s.legacy }}', { s: trustedHtml })).toBe('<img src=x onerror=alert(1)>Hi|a < b|<script>alert(1)</script>ok')
+  })
+  it('drops url settings with an unsafe scheme and reports them', async () => {
+    const definitions: SettingDefinition[] = [{ type: 'url', id: 'link' }, { type: 'video_url', id: 'video' }]
+    for (const bad of ['javascript:alert(2)', ' JavaScript:alert(2)', 'jav&#x09;ascript:alert(2)', 'data:text/html,<b>x', 'vbscript:x', 'file:///etc/passwd']) {
+      const e = env()
+      expect(await render('[{{ s.link }}]', { s: new SettingsDrop(definitions, { link: bad }, e) })).toBe('[]')
+      expect(e.report.toReport([], 0).unsupported).toEqual([{ feature: 'unsafe_url', detail: 'url setting link has a URL scheme other than http, https, mailto or tel and was dropped' }])
+    }
+    const e = env()
+    expect(await render('[{{ s.video.type }}]', { s: new SettingsDrop(definitions, { video: 'javascript:alert(1)' }, e) })).toBe('[]')
+    expect(e.report.toReport([], 0).unsupported).toHaveLength(1)
+    for (const good of ['https://example.com/a?b=c', 'http://example.com', 'mailto:a@b.c', 'tel:+15551234567', '/pages/about', '#top', 'relative/path', '/collections']) {
+      expect(await render('{{ s.link }}', { s: new SettingsDrop(definitions, { link: good }, env()) })).toBe(good)
+    }
+    expect(await render('{{ s.link }}|{{ s.l2 }}', { s: new SettingsDrop([{ type: 'url', id: 'link' }, { type: 'url', id: 'l2' }], { link: 'shopify://collections/apparel', l2: 'shopify://search' }, env()) })).toBe('/collections/apparel|/search')
+    expect(await render('{{ s.link }}', { s: new SettingsDrop(definitions, { link: 'javascript:alert(2)' }, env({ trust: trusted })) })).toBe('javascript:alert(2)')
+    expect(await render('{{ s.video.type }}', { s: new SettingsDrop(definitions, { video: 'https://vimeo.com/76979871' }, env()) })).toBe('vimeo')
+  })
+  it('reads missing, null and non-object settings as empty, so the schema defaults apply', async () => {
+    const definitions: SettingDefinition[] = [{ type: 'text', id: 'heading', default: 'Hello' }, { type: 'range', id: 'columns', default: 3 }]
+    for (const stored of [null, undefined, 'text', 4, [], [{ heading: 'x' }]]) {
+      expect(await render('{{ s.heading }}|{{ s.columns }}', { s: new SettingsDrop(definitions, stored as never, env()) })).toBe('Hello|3')
+    }
+    expect(await render('{{ s.heading }}|{{ s.x }}', { s: new SettingsDrop(null, null, env()) })).toBe('|')
+    expect(await render('{{ s.heading }}', { s: new SettingsDrop([null, 'x', { type: 'text', id: 'heading', default: 'Hi' }] as never, { heading: null }, env()) })).toBe('')
+    expect(await render('{{ s.heading }}', { s: new SettingsDrop(definitions, { heading: null }, env()) })).toBe('')
+  })
+  it('reads data keys as own properties only', async () => {
+    const e = env()
+    const settings = new SettingsDrop([{ type: 'video', id: 'clip' }, { type: 'text', id: 'constructor' }, { type: 'text', id: 'toString', default: 'kept' }], { clip: 'shopify://files/videos/constructor' }, e)
+    expect(SettingsDrop.value(settings, 'clip')).toBeNull()
+    expect(SettingsDrop.value(settings, 'constructor')).toBeNull()
+    expect(SettingsDrop.value(settings, 'toString')).toBe('kept')
+    const report = new ReportCollector()
+    for (const templateName of ['constructor', 'toString', '__proto__', 'hasOwnProperty', 'customers/constructor']) {
+      const page = buildGlobals({ store, templateName, request: {}, locale: 'en', report })
+      expect(page.request.path).toBe(templateName.startsWith('customers/') ? '/account/constructor' : `/${templateName}`)
+      expect(await render('{{ request.page_type }}|{{ template.name }}', page.globals)).toBe(`${templateName}|${templateName.replace('customers/', '')}`)
+    }
+  })
+  it('keeps the untrusted flags the default', () => {
+    expect(env().trust).toEqual(untrusted)
+  })
+})
+
 describe('shopify/util/sanitize', () => {
   it.each([
     ['<p>ok</p>', '<p>ok</p>'],

@@ -1,5 +1,6 @@
 import { HandleMap } from '../objects/handle-map'
 import { TemplateDrop } from '../objects/template'
+import { own } from '../util/own'
 import type { ReportCollector } from '../report'
 import { buildLinklists, LiquidObject, StoreObjects } from './build'
 
@@ -51,7 +52,8 @@ const PATHS: Record<string, string> = { index: '/', cart: '/cart', search: '/sea
 /** The path a template is served from when the caller gives none: the resource's own URL, or the storefront path of the template. shopify.dev's request page (https://shopify.dev/docs/api/liquid/objects/request) documents `path` as the page's path but not the path of each template, so the account and gift card paths here are the conventional ones and are not pinned. */
 function defaultPath (pageType: string, template: TemplateDrop, resource: LiquidObject | null): string {
   if (resource) return String(resource.url)
-  if (PATHS[pageType]) return PATHS[pageType]
+  const known = own(PATHS, pageType)
+  if (known) return known
   if (template.directory === 'customers') return template.name === 'account' ? '/account' : `/account/${template.name}`
   return `/${pageType}`
 }
@@ -83,7 +85,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   const template = new TemplateDrop(input.templateName)
   const pageType = template.directory ? `${template.directory}/${template.name}` : template.name
   const resources: Record<string, LiquidObject | null> = {}
-  const kind = RESOURCE_TYPES[template.name]
+  const kind = own(RESOURCE_TYPES, template.name)
   if (kind) {
     const map = store[kind] as HandleMap<LiquidObject>
     const found = request.resource ? HandleMap.get(map, request.resource) : HandleMap.values(map)[0]
