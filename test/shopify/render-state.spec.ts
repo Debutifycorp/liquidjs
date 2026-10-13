@@ -151,7 +151,6 @@ describe('the state of a render', () => {
     const engineOptions: ShopifyLiquidOptions = {
       moneyFormat: '{{amount}} EUR',
       moneyWithCurrencyFormat: '{{amount}} EUR!',
-      trustLiquidSettings: true,
       services: { assetUrl: path => `/engine/${path}`, shopifyAssetUrl: path => `/engine-shopify/${path}` },
       translator: new Translator({ locale: 'fr', defaultLocale: 'fr', locales: {} })
     }
@@ -165,8 +164,6 @@ describe('the state of a render', () => {
           withCurrency: state.money.withCurrencyFormat,
           asset: state.services.assetUrl('a.css'),
           shopifyAsset: state.services.shopifyAssetUrl('b.js'),
-          trustLiquid: state.trust.liquidSettings,
-          trustHtml: state.trust.htmlSettings,
           locale: state.translator.locale,
           frame: currentFrame(state)?.section.id,
           path: state.request.path
@@ -177,20 +174,18 @@ describe('the state of a render', () => {
 
     it('starts from the engine defaults', async () => {
       const { html } = await renderLiquid(describing(), '{{ 1 | describe }}')
-      expect(JSON.parse(html)).toEqual({ money: '{{amount}} EUR', withCurrency: '{{amount}} EUR!', asset: '/engine/a.css', shopifyAsset: '/engine-shopify/b.js', trustLiquid: true, trustHtml: false, locale: 'fr', path: '/' })
+      expect(JSON.parse(html)).toEqual({ money: '{{amount}} EUR', withCurrency: '{{amount}} EUR!', asset: '/engine/a.css', shopifyAsset: '/engine-shopify/b.js', locale: 'fr', path: '/' })
     })
     it('puts the init argument over the engine defaults, field by field', async () => {
       const init = {
         moneyFormat: '{{amount}} GBP',
-        trustHtmlSettings: true,
-        trustLiquidSettings: false,
         translator: new Translator({ locale: 'de', defaultLocale: 'de', locales: {} }),
         services: { shopifyAssetUrl: (path: string) => `/init-shopify/${path}` },
         request: { path: '/products' },
         frames: [frame('init-frame')]
       }
       const { html } = await renderLiquid(describing(), '{{ 1 | describe }}', {}, init)
-      expect(JSON.parse(html)).toEqual({ money: '{{amount}} GBP', withCurrency: '{{amount}} EUR!', asset: '/engine/a.css', shopifyAsset: '/init-shopify/b.js', trustLiquid: false, trustHtml: true, locale: 'de', frame: 'init-frame', path: '/products' })
+      expect(JSON.parse(html)).toEqual({ money: '{{amount}} GBP', withCurrency: '{{amount}} EUR!', asset: '/engine/a.css', shopifyAsset: '/init-shopify/b.js', locale: 'de', frame: 'init-frame', path: '/products' })
     })
   })
 })

@@ -36,7 +36,9 @@ export interface RenderPageOptions {
   locale?: string
   request?: RequestInput
   services?: Partial<ShopifyServices>
+  /** Render the Liquid in `liquid` settings where they print. Off by default: they print as escaped text. Shopify renders them, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings, so off is Debutify's safety choice for settings it did not write. */
   trustLiquidSettings?: boolean
+  /** Lift every other rule for untrusted settings: `html` settings print unsanitised (less `<html>`, `<head>` and `<body>`, which shopify.dev says Shopify removes, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings), the other setting types are not held to their documented forms, stored keys are not checked, and section keys, block keys and types, group types and the template `wrapper` are not held to the plain-id rule. Off by default, which is Debutify's safety choice and differs from Shopify. `richtext` settings and the escapes of `json` stay on either way. */
   trustHtmlSettings?: boolean
   /** Milliseconds for the whole page (default: the preset's `renderLimit`). A page that runs past it, or past `memoryLimit` or the engine's `parseLimit` (10,000,000 characters per file), rejects. */
   renderLimit?: number
@@ -272,6 +274,8 @@ function matchesContext (wanted: ContextFile['context'], request: RequestInput['
 /** Renders one page; implements the hooks the `section`, `sections` and `content_for` tags call. */
 class PageRender implements ThemeHooks {
   public readonly state: ShopifyState
+  /** Which setting values print as written, from `RenderPageOptions`; see `SettingsEnv.trust`. */
+  private readonly trust: SettingsEnv['trust']
   private readonly started = now()
   private readonly errors: LiquidError[] = []
   private readonly env: SettingsEnv
@@ -285,18 +289,17 @@ class PageRender implements ThemeHooks {
     const store = buildStore(options.data ?? sampleStoreData)
     const locale = options.locale ?? String(store.shop.locale)
     const translator = theme.translator(locale, message => this.state.report.unsupported('locale file', message))
+    this.trust = { liquidSettings: !!options.trustLiquidSettings, htmlSettings: !!options.trustHtmlSettings }
     this.state = createState({
       services: options.services,
       translator,
       moneyFormat: String(store.shop.money_format),
       moneyWithCurrencyFormat: String(store.shop.money_with_currency_format),
-      trustLiquidSettings: options.trustLiquidSettings,
-      trustHtmlSettings: options.trustHtmlSettings,
       runtime: this
     })
     const page = buildGlobals({ store, templateName: options.templateName, request: options.request ?? {}, locale, report: this.state.report })
     this.state.request = page.request
-    const env: SettingsEnv = { store, linklists: page.linklists, services: this.state.services, translator, report: this.state.report, trust: this.state.trust }
+    const env: SettingsEnv = { store, linklists: page.linklists, services: this.state.services, translator, report: this.state.report, trust: this.trust }
     const settingsData = theme.json('config/settings_data.json') ?? {}
     if (!isObject(settingsData)) throw new Error('config/settings_data.json: must be a JSON object')
     // `current` is an object on https://shopify.dev/docs/storefronts/themes/architecture/config/settings-data-json; a preset name there is the older shape, not pinned by shopify.dev
@@ -380,14 +383,14 @@ class PageRender implements ThemeHooks {
    * Whether a section or block key of the saved JSON may be used. Unless the theme is trusted with html (`trustHtmlSettings`) only keys of letters, digits, `-` and `_` are, because the key becomes `section.id` or `block.id` and themes print those in ids, class names, attributes and `<style>`; any other key is skipped and reported (feature `unsafe_key`) without the key, as the report may be shown as HTML.
    */
   private keyAllowed (key: string, what: 'section' | 'block'): boolean {
-    if (this.state.trust.htmlSettings || SAFE_KEY.test(key)) return true
+    if (this.trust.htmlSettings || SAFE_KEY.test(key)) return true
     this.state.report.unsupported('unsafe_key', `a ${what} key with characters other than letters, digits, - and _ was skipped`)
     return false
   }
 
   /** Whether a saved block `type` may be used, on the same terms as `keyAllowed`; a `type` that is not a string is left to the block's own check. */
   private blockTypeAllowed (type: unknown): boolean {
-    if (this.state.trust.htmlSettings || typeof type !== 'string' || SAFE_BLOCK_TYPE.test(type)) return true
+    if (this.trust.htmlSettings || typeof type !== 'string' || SAFE_BLOCK_TYPE.test(type)) return true
     this.state.report.unsupported('unsafe_key', 'a block type with characters other than letters, digits, - and _ was skipped')
     return false
   }
@@ -451,7 +454,7 @@ class PageRender implements ThemeHooks {
       for (const entry of this.templateEntries(template)) {
         if (!entry.disabled) out += (yield this.renderSection(entry.data, entry.placement)) as string
       }
-      const wrapper = typeof template.wrapper === 'string' ? parseWrapper(template.wrapper, this.state.trust.htmlSettings) : undefined
+      const wrapper = typeof template.wrapper === 'string' ? parseWrapper(template.wrapper, this.trust.htmlSettings) : undefined
       if (template.wrapper !== undefined && !wrapper) this.state.report.unsupported('wrapper', typeof template.wrapper === 'number' || typeof template.wrapper === 'boolean' ? String(template.wrapper) : 'the template wrapper is not a div, main or section with #id, .class and [name=value] parts, or has an event-handler or style attribute the theme is not trusted with, and was not applied')
       return { content: wrapper ? wrapper[0] + out + wrapper[1] : out, layout: template.layout === false ? null : typeof template.layout === 'string' ? template.layout : 'theme' }
     }
@@ -717,7 +720,7 @@ class PageRender implements ThemeHooks {
   /** The sections of a group as `renderPage` places them: ids `sections--<name>__<key>`, the group's `type` as `location` (the name when it has none), a 1-based `index`, and the class `shopify-section-group-<name>`. */
   private groupEntries (name: string, group: GroupJson): Entry[] {
     let location = typeof group.type === 'string' ? group.type : name
-    if (!this.state.trust.htmlSettings && !SAFE_GROUP_TYPE.test(location)) {
+    if (!this.trust.htmlSettings && !SAFE_GROUP_TYPE.test(location)) {
       this.state.report.unsupported('unsafe_key', `sections/${name}.json has a type with characters other than letters, digits, ., - and _ and was replaced by the group name`)
       location = name
     }

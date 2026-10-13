@@ -36,8 +36,6 @@ export interface ShopifyState {
   money: { format: string, withCurrencyFormat: string }
   /** The request being rendered: its path (for pagination links), origin (for video embeds) and `?page=`, https://shopify.dev/docs/api/liquid/objects/request. */
   request: { path: string, origin: string, page: number }
-  /** Whether `liquid` setting values are rendered and `html` setting values left unsanitised. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings says Shopify renders the Liquid in a `liquid` setting (without `layout`, `content_for_header`, `content_for_layout`, `content_for_index`, `section`, `javascript`, `stylesheet`, `schema` and `settings`) and removes only `<html>`, `<head>` and `<body>` from an `html` setting. Off by default is therefore Debutify's safety choice for untrusted themes and differs from Shopify. */
-  trust: { liquidSettings: boolean, htmlSettings: boolean }
   frames: Frame[]
   /** `{% stylesheet %}` and `{% javascript %}` bodies met while rendering, by file, in the order first rendered; `content_for_header` inlines them. https://shopify.dev/docs/api/liquid/tags/stylesheet and https://shopify.dev/docs/api/liquid/tags/javascript say how the bodies are loaded only by reference, and https://shopify.dev/docs/api/liquid/objects/content_for_header says only that it returns the scripts Shopify requires, so inlining the bodies there is Debutify's choice. */
   assets: { stylesheets: Map<string, string>, javascripts: Map<string, string> }
@@ -56,8 +54,6 @@ export interface StateInit {
   moneyFormat?: string
   moneyWithCurrencyFormat?: string
   request?: Partial<ShopifyState['request']>
-  trustLiquidSettings?: boolean
-  trustHtmlSettings?: boolean
   runtime?: ThemeHooks
   /** Frames to start with, for rendering a snippet as if inside a section. */
   frames?: Frame[]
@@ -70,7 +66,6 @@ export function createState (init: StateInit = {}): ShopifyState {
     report: new ReportCollector(),
     money: { format: init.moneyFormat ?? DEFAULT_MONEY_FORMAT, withCurrencyFormat: init.moneyWithCurrencyFormat ?? DEFAULT_MONEY_WITH_CURRENCY_FORMAT },
     request: { path: '/', origin: '', page: 1, ...init.request },
-    trust: { liquidSettings: !!init.trustLiquidSettings, htmlSettings: !!init.trustHtmlSettings },
     frames: [...(init.frames ?? [])],
     assets: { stylesheets: new Map(), javascripts: new Map() },
     runtime: init.runtime
@@ -95,8 +90,6 @@ export function stateFromDefaults (defaults: ShopifyState | undefined, init: Sta
     translator: init.translator ?? defaults?.translator,
     moneyFormat: init.moneyFormat ?? defaults?.money.format,
     moneyWithCurrencyFormat: init.moneyWithCurrencyFormat ?? defaults?.money.withCurrencyFormat,
-    trustLiquidSettings: init.trustLiquidSettings ?? defaults?.trust.liquidSettings,
-    trustHtmlSettings: init.trustHtmlSettings ?? defaults?.trust.htmlSettings,
     runtime: init.runtime ?? defaults?.runtime,
     request: init.request,
     frames: init.frames,

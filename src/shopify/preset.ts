@@ -37,10 +37,6 @@ export interface ShopifyLiquidOptions {
   moneyWithCurrencyFormat?: string
   /** `'report'` (default) renders unknown tags as nothing and reports them; `'error'` fails the parse with `Unknown tag 'name'`, as Shopify does (liquid-spec `specs/basics/error-handling.yml`: `unknown_tag_strict_parse_error`; shopify.dev does not document it). An unknown filter has no such option: set `engine: { strictFilters: true }` to make it a parse error. */
   unknownTags?: 'report' | 'error'
-  /** Render the Liquid in `liquid` type settings. Off by default: their values are escaped. Shopify renders them, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings, so off is Debutify's safety choice for untrusted themes. */
-  trustLiquidSettings?: boolean
-  /** Leave `html` type settings unsanitised. Off by default: they pass an allowlist sanitiser. Shopify removes only `<html>`, `<head>` and `<body>` from them, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings, so the sanitiser is Debutify's safety choice for untrusted themes. The same flag lifts the form checks on the other setting types and, in `renderPage`, the key rule for sections and blocks and the `wrapper` rule. */
-  trustHtmlSettings?: boolean
   runtime?: ThemeHooks
   parseLimit?: number
   renderLimit?: number
