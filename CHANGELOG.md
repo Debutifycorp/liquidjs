@@ -1,3 +1,30 @@
+# [0.1.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v0.0.0...debutify-v0.1.0) (2026-10-13)
+
+
+### Bug Fixes
+
+* export deep dist type paths and the bin script like the published upstream layout ([d8b0d72](https://github.com/Debutifycorp/liquidjs/commit/d8b0d72b84a1af6e87c58b738d9f9b41e98af698))
+* export isLimitError, document that rawTags replaces the default list, and complete the upstream merge steps ([8297513](https://github.com/Debutifycorp/liquidjs/commit/82975138e5e6de9e655d2a93437cd8a181af17a5))
+* keep the liquidjs and liquid CLI bins in the published package ([9a2d304](https://github.com/Debutifycorp/liquidjs/commit/9a2d3045d00c91639b0573538f8d1f0eb61d7a7a))
+* merge equal decimals in uniq under numberSemantics ruby ([2f22b3a](https://github.com/Debutifycorp/liquidjs/commit/2f22b3a74d787d192864804c2504bd6693f6f987))
+* Shopify parity fixes found by liquid-spec ([dd25b3f](https://github.com/Debutifycorp/liquidjs/commit/dd25b3f5256f3926e4a87ec1b06915a16dbd48e6))
+* **shopify:** give every render its own state and honour the engine's runtime, globals and strictFilters ([2d95e87](https://github.com/Debutifycorp/liquidjs/commit/2d95e8768499ff8cb3f8e852e959b6fe9e3dca75))
+* **shopify:** load the CJS builds in Node so require and import share one copy ([2afc952](https://github.com/Debutifycorp/liquidjs/commit/2afc952869c51bb30b174b7e5b7f73fd489e1ff2))
+* unwrap join and reverse input like upstream and trim the default render path ([e230e06](https://github.com/Debutifycorp/liquidjs/commit/e230e0671232bd635982f5c0fa5a96798caa23fd))
+
+
+### Features
+
+* inline render errors as Shopify writes them ([b79f6ec](https://github.com/Debutifycorp/liquidjs/commit/b79f6ecb56a6d3664e567325d485f6aed0e5ca83))
+* raw-body tags and a nesting comment through the rawTags option ([105e8e0](https://github.com/Debutifycorp/liquidjs/commit/105e8e0282460d7efb76dba4609ad557de226f23))
+* ruby number semantics keep whole numbers and decimals apart ([63c168d](https://github.com/Debutifycorp/liquidjs/commit/63c168de0cabdfac6f2b4f6cf7d4f71de1b0ab29))
+* **shopify:** add the @debutify/liquidjs/shopify entry with the Shopify preset and render report ([a45eac8](https://github.com/Debutifycorp/liquidjs/commit/a45eac8125d1cc7e4079ae3099006726bd0839f5))
+
+
+### Upstream
+
+Based on [LiquidJS 10.30.0](https://github.com/harttle/liquidjs/releases/tag/v10.30.0).
+
 # [10.30.0](https://github.com/harttle/liquidjs/compare/v10.29.0...v10.30.0) (2026-10-01)
 
 
