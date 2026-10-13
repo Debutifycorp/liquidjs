@@ -11,11 +11,10 @@ function env (overrides: Partial<SettingsEnv> = {}): SettingsEnv {
 }
 
 describe('shopify/store', () => {
-  // Amounts print in cents: the `money` filters are a later task's, so the store derivations are pinned without them.
   it('derives product fields', async () => {
     const product = store.products.liquidMethodMissing('classic-tee')
-    expect(await render("{{ p.url }}|{{ p.price }}|{{ p.price_varies }}|{{ p.compare_at_price }}|{{ p.first_available_variant.id }}|{{ p.options_with_values[0].values | join: ',' }}|{{ p.selected_or_first_available_variant.url }}|{{ p.featured_image.width }}|{{ p.has_only_default_variant }}|{{ p.featured_image.aspect_ratio }}|{{ p.featured_image.preview_image }}|{{ p.media[0].preview_image.width }}|{{ 1 | divided_by: p.featured_media.preview_image.aspect_ratio }}", { p: product }))
-      .toBe('/products/classic-tee|2500|true|3000|3001|S,M,L|/products/classic-tee?variant=3001|1200|false|1.0||1200|1.0')
+    expect(await render("{{ p.url }}|{{ p.price | money }}|{{ p.price_varies }}|{{ p.compare_at_price | money }}|{{ p.first_available_variant.id }}|{{ p.options_with_values[0].values | join: ',' }}|{{ p.selected_or_first_available_variant.url }}|{{ p.featured_image.width }}|{{ p.has_only_default_variant }}|{{ p.featured_image.aspect_ratio }}|{{ p.featured_image.preview_image }}|{{ p.media[0].preview_image.width }}|{{ 1 | divided_by: p.featured_media.preview_image.aspect_ratio }}", { p: product }))
+      .toBe('/products/classic-tee|$25.00|true|$30.00|3001|S,M,L|/products/classic-tee?variant=3001|1200|false|1.0||1200|1.0')
   })
   it('numbers product images and media from 1, and leaves other images without a position', async () => {
     const product = buildProduct({
@@ -62,12 +61,12 @@ describe('shopify/store', () => {
       }]
     })
     const p = odd.products.liquidMethodMissing('odd')
-    expect(await render('{{ p.price }}|{{ p.price_min }}|{{ p.price_max }}|{{ p.compare_at_price }}|{{ p.compare_at_price_min }}|{{ p.compare_at_price_max }}|{{ p.compare_at_price_varies }}|{{ p.first_available_variant.id }}|{{ p.selected_or_first_available_variant.id }}|{{ p.available }}|{{ p.options_with_values[0].selected_value }}', { p }))
-      .toBe('4000|4000|9000|5000|5000|12000|true|12|12|true|S')
+    expect(await render('{{ p.price | money }}|{{ p.price_min | money }}|{{ p.price_max | money }}|{{ p.compare_at_price | money }}|{{ p.compare_at_price_min | money }}|{{ p.compare_at_price_max | money }}|{{ p.compare_at_price_varies }}|{{ p.first_available_variant.id }}|{{ p.selected_or_first_available_variant.id }}|{{ p.available }}|{{ p.options_with_values[0].selected_value }}', { p }))
+      .toBe('$40.00|$40.00|$90.00|$50.00|$50.00|$120.00|true|12|12|true|S')
   })
   it('builds the cart', async () => {
-    expect(await render('{{ cart.item_count }}|{{ cart.total_price }}|{{ cart.items[0].title }}|{{ cart.items[0].final_line_price }}', { cart: store.cart }))
-      .toBe('2|5000|Classic Tee - S / Black|5000')
+    expect(await render('{{ cart.item_count }}|{{ cart.total_price | money }}|{{ cart.items[0].title }}|{{ cart.items[0].final_line_price | money }}', { cart: store.cart }))
+      .toBe('2|$50.00|Classic Tee - S / Black|$50.00')
   })
   it('ignores query strings when matching links, and types them by where they point', async () => {
     const lists = [{
