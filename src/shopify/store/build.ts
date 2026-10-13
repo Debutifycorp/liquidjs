@@ -216,15 +216,48 @@ function buildBlog (data: BlogData): LiquidObject {
   }
 }
 
-/** One menu link. `current` is true when the link's URL is the request path; `active` when it is the path or a parent of it (`child_active` and `child_current` look at the children), `levels` counts the nested levels below the link. These are https://shopify.dev/docs/api/liquid/objects/link. Whether `active` and `current` ignore a query string is not pinned by shopify.dev, so the path is compared as given. */
+/** A URL without its query string and fragment: `link.current` and `link.child_current` "ignore URL parameters". https://shopify.dev/docs/api/liquid/objects/link */
+function stripQuery (url: string): string {
+  return url.split(/[?#]/)[0]
+}
+
+/** The path `link.current` compares: a product reached through a collection (`/collections/x/products/y`) is "treated as equal to a standard product URL for the same product". https://shopify.dev/docs/api/liquid/objects/link */
+function linkPath (url: string): string {
+  return stripQuery(url).replace(/^\/collections\/[^/]+(\/products\/)/, '$1')
+}
+
+/**
+ * The `link.type` of a URL. shopify.dev lists the types and what each points at (`frontpage_link`, `catalog_link`, `collections_link`, `collection_link`, `product_link`, `page_link`, `blog_link`, `article_link`, `search_link`, `policy_link`, `customer_account_page_link`, `http_link` for "an external web page, or a product type or vendor collection", `metaobject_link`) but not the URL each one is chosen from, so the patterns here are Shopify's storefront paths read from those descriptions. `metaobject_link` is never produced: a metaobject page has no URL form in the store data. https://shopify.dev/docs/api/liquid/objects/link
+ */
+function linkType (url: string): string {
+  const path = linkPath(url)
+  if (path === '/') return 'frontpage_link'
+  if (path === '/collections') return 'collections_link'
+  if (path === '/collections/all') return 'catalog_link'
+  if (path === '/collections/vendors' || path === '/collections/types') return 'http_link'
+  if (/^\/collections\/[^/]+$/.test(path)) return 'collection_link'
+  if (/^\/products\/[^/]+$/.test(path)) return 'product_link'
+  if (/^\/pages\/[^/]+$/.test(path)) return 'page_link'
+  if (/^\/blogs\/[^/]+$/.test(path)) return 'blog_link'
+  if (/^\/blogs\/[^/]+\/[^/]+$/.test(path)) return 'article_link'
+  if (path === '/search') return 'search_link'
+  if (/^\/policies\/[^/]+$/.test(path)) return 'policy_link'
+  if (path === '/account' || path.startsWith('/account/')) return 'customer_account_page_link'
+  return 'http_link'
+}
+
+/**
+ * One menu link, https://shopify.dev/docs/api/liquid/objects/link. `current` is true when the link's path is the request path and `active` when it is the path or a parent of it ("matches, or contains, the link's url"); both ignore query strings, `current` also reads a product in a collection as the product, and `child_active` and `child_current` look at the children. `levels` counts the nested levels below the link. `object` is always nil: the page says it is the article, blog, collection, metaobject, page, policy or product the link points at, which this layer does not resolve from a URL. `handle` and `data_sharing_opt_out_icon` are not built.
+ */
 function buildLink (data: LinkData, path: string): LiquidObject {
   const links = (data.links ?? []).map(child => buildLink(child, path))
-  const current = data.url === path
-  const active = current || (data.url !== '/' && path.startsWith(`${data.url}/`))
+  const current = linkPath(data.url) === linkPath(path)
+  const target = stripQuery(data.url)
+  const active = current || (target !== '/' && stripQuery(path).startsWith(`${target}/`))
   return {
     title: data.title,
     url: data.url,
-    type: data.url.startsWith('/collections/') ? 'collection_link' : data.url.startsWith('/products/') ? 'product_link' : data.url.startsWith('/pages/') ? 'page_link' : data.url.startsWith('/blogs/') ? 'blog_link' : data.url === '/' ? 'frontpage_link' : 'http_link',
+    type: linkType(data.url),
     active,
     current,
     child_active: links.some(link => link.active || link.child_active),

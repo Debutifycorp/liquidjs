@@ -30,9 +30,54 @@ describe('shopify/store', () => {
     expect(await render("{% for l in linklists['main-menu'].links %}{{ l.title }}:{{ l.active }}:{{ l.child_active }}:{{ l.levels }} {% endfor %}", { linklists }))
       .toBe('Home:false:false:0 Catalog:false:true:1 Contact:false:false:0 ')
   })
+  it('takes price, compare-at price and the first available variant from all the variants', async () => {
+    const odd = buildStore({
+      shop: { name: 'Odd', domain: 'odd.example', currency: 'USD' },
+      products: [{
+        id: 1,
+        handle: 'odd',
+        title: 'Odd',
+        options: ['Size'],
+        variants: [
+          { id: 11, title: 'XL', price: 9000, compare_at_price: 12000, available: false, option1: 'XL' },
+          { id: 12, title: 'S', price: 4000, compare_at_price: 5000, available: true, option1: 'S' },
+          { id: 13, title: 'M', price: 6000, compare_at_price: 8000, available: true, option1: 'M' }
+        ]
+      }]
+    })
+    const p = odd.products.liquidMethodMissing('odd')
+    expect(await render('{{ p.price }}|{{ p.price_min }}|{{ p.price_max }}|{{ p.compare_at_price }}|{{ p.compare_at_price_min }}|{{ p.compare_at_price_max }}|{{ p.compare_at_price_varies }}|{{ p.first_available_variant.id }}|{{ p.selected_or_first_available_variant.id }}|{{ p.available }}|{{ p.options_with_values[0].selected_value }}', { p }))
+      .toBe('4000|4000|9000|5000|5000|12000|true|12|12|true|S')
+  })
   it('builds the cart', async () => {
     expect(await render('{{ cart.item_count }}|{{ cart.total_price }}|{{ cart.items[0].title }}|{{ cart.items[0].final_line_price }}', { cart: store.cart }))
       .toBe('2|5000|Classic Tee - S / Black|5000')
+  })
+  it('ignores query strings when matching links, and types them by where they point', async () => {
+    const lists = [{
+      handle: 'm',
+      title: 'M',
+      links: [
+        { title: 'Catalog', url: '/collections/all?sort_by=price' },
+        { title: 'Collections', url: '/collections' },
+        { title: 'Tee', url: '/products/classic-tee' },
+        { title: 'Blog', url: '/blogs/news' },
+        { title: 'Group', url: '/pages/group', links: [{ title: 'Deep', url: '/pages/group/deep#x' }] }
+      ]
+    }]
+    const show = (path: string) => render('{% for l in linklists.m.links %}{{ l.title }}:{{ l.current }}:{{ l.active }}:{{ l.child_current }}:{{ l.child_active }} {% endfor %}', { linklists: buildLinklists(lists, path) })
+    expect(await show('/collections/all')).toBe('Catalog:true:true:false:false Collections:false:true:false:false Tee:false:false:false:false Blog:false:false:false:false Group:false:false:false:false ')
+    expect(await show('/collections/apparel/products/classic-tee')).toBe('Catalog:false:false:false:false Collections:false:true:false:false Tee:true:true:false:false Blog:false:false:false:false Group:false:false:false:false ')
+    expect(await show('/blogs/news/hello-world')).toBe('Catalog:false:false:false:false Collections:false:false:false:false Tee:false:false:false:false Blog:false:true:false:false Group:false:false:false:false ')
+    expect(await show('/pages/group/deep?page=2')).toBe('Catalog:false:false:false:false Collections:false:false:false:false Tee:false:false:false:false Blog:false:false:false:false Group:false:true:true:true ')
+    const types: Array<[string, string]> = [
+      ['/', 'frontpage_link'], ['/collections', 'collections_link'], ['/collections/all', 'catalog_link'], ['/collections/apparel', 'collection_link'],
+      ['/collections/vendors?q=Acme', 'http_link'], ['/collections/types?q=Shirt', 'http_link'], ['/products/classic-tee', 'product_link'], ['/pages/about', 'page_link'],
+      ['/blogs/news', 'blog_link'], ['/blogs/news/hello-world', 'article_link'], ['/search', 'search_link'], ['/policies/refund-policy', 'policy_link'],
+      ['/account/login', 'customer_account_page_link'], ['https://example.com/x', 'http_link']
+    ]
+    const typed = buildLinklists([{ handle: 't', title: 'T', links: types.map(([url]) => ({ title: url, url })) }], '/')
+    expect(await render('{% for l in linklists.t.links %}{{ l.type }},{% endfor %}{{ linklists.t.links[0].object }}', { linklists: typed })).toBe(types.map(([, type]) => type).join(',') + ',')
   })
   it('builds the page globals for a template', async () => {
     const report = new ReportCollector()
@@ -114,6 +159,8 @@ describe('shopify/settings safety', () => {
     const s = new SettingsDrop(liquidDefinitions, { code: '{{ greeting }} <b>' }, env({ trust: { liquidSettings: true, htmlSettings: false } }))
     const html = await render('{{ s.code }}|{{ s | json }}|{{ s.code }}', { s, greeting: 'Hi' })
     expect(html).toBe('Hi <b>|{"code":"{{ greeting }} <b>"}|Hi <b>')
+    // the parse cache is not a field of the setting, so nothing that walks the setting reaches it
+    expect(Object.keys(SettingsDrop.value(s, 'code') as object)).toEqual(['source'])
   })
   it('stops liquid settings that print settings recursively', async () => {
     const s = new SettingsDrop([{ type: 'liquid', id: 'self' }, { type: 'liquid', id: 'a' }, { type: 'liquid', id: 'b' }], { self: 'x{{ s.self }}', a: '[{{ s.b }}]', b: 'B' }, env({ trust: { liquidSettings: true, htmlSettings: false } }))
@@ -135,6 +182,13 @@ describe('shopify/settings safety', () => {
     const trustedHtml = new SettingsDrop(definitions, stored, env({ trust: trusted }))
     expect(await render('{{ s.markup }}|{{ s.lt }}|{{ s.legacy }}', { s: trustedHtml })).toBe('<img src=x onerror=alert(1)>Hi|a < b|<script>alert(1)</script>ok')
   })
+  it('makes image and colour values safe when they are data rather than a file reference', async () => {
+    const definitions: SettingDefinition[] = [{ type: 'image_picker', id: 'bad' }, { type: 'image_picker', id: 'good' }, { type: 'color', id: 'color' }]
+    const stored = { bad: { src: 'javascript:alert(1)', alt: 'x' }, good: { src: '/img.png', width: 3, height: 2, alt: '<img src=x onerror=y>t' }, color: '<img src=x onerror=1>' }
+    const s = new SettingsDrop(definitions, stored, env())
+    expect(await render('[{{ s.bad }}]|{{ s.good }}|{{ s.good.alt }}|{{ s.color }}', { s })).toBe('[]|/img.png|<img src="x">t|<img src="x">')
+    expect(await render('{{ s.good.alt }}|{{ s.color }}', { s: new SettingsDrop(definitions, stored, env({ trust: trusted })) })).toBe('<img src=x onerror=y>t|<img src=x onerror=1>')
+  })
   it('drops url settings with an unsafe scheme and reports them', async () => {
     const definitions: SettingDefinition[] = [{ type: 'url', id: 'link' }, { type: 'video_url', id: 'video' }]
     for (const bad of ['javascript:alert(2)', ' JavaScript:alert(2)', 'jav&#x09;ascript:alert(2)', 'data:text/html,<b>x', 'vbscript:x', 'file:///etc/passwd']) {
@@ -148,7 +202,7 @@ describe('shopify/settings safety', () => {
     for (const good of ['https://example.com/a?b=c', 'http://example.com', 'mailto:a@b.c', 'tel:+15551234567', '/pages/about', '#top', 'relative/path', '/collections']) {
       expect(await render('{{ s.link }}', { s: new SettingsDrop(definitions, { link: good }, env()) })).toBe(good)
     }
-    expect(await render('{{ s.link }}|{{ s.l2 }}', { s: new SettingsDrop([{ type: 'url', id: 'link' }, { type: 'url', id: 'l2' }], { link: 'shopify://collections/apparel', l2: 'shopify://search' }, env()) })).toBe('/collections/apparel|/search')
+    expect(await render('{{ s.link }}|{{ s.l2 }}|{{ s.l3 }}', { s: new SettingsDrop([{ type: 'url', id: 'link' }, { type: 'url', id: 'l2' }, { type: 'url', id: 'l3' }], { link: 'shopify://collections/apparel', l2: 'shopify://search', l3: 'shopify://metaobjects/team/ada' }, env()) })).toBe('/collections/apparel|/search|shopify://metaobjects/team/ada')
     expect(await render('{{ s.link }}', { s: new SettingsDrop(definitions, { link: 'javascript:alert(2)' }, env({ trust: trusted })) })).toBe('javascript:alert(2)')
     expect(await render('{{ s.video.type }}', { s: new SettingsDrop(definitions, { video: 'https://vimeo.com/76979871' }, env()) })).toBe('vimeo')
   })
@@ -265,6 +319,8 @@ describe('shopify/util/sanitize', () => {
     ['<textarea><b>x</b></textarea>tail', 'tail'],
     // a browser uses the first of two attributes with one name; attributes belong to their element
     ['<a href="/a" href="javascript:x">x</a>', '<a href="/a">x</a>'],
+    ['<a href="/a" href="/b">x</a>', '<a href="/a">x</a>'],
+    ['<a href="javascript:x" href="/b">x</a>', '<a>x</a>'],
     ['<a src="/y" href="/x" width="3">x</a><p href="/x">y</p>', '<a href="/x">x</a><p>y</p>'],
     // links: target and rel
     ['<a href="/x" target="_top">x</a>', '<a href="/x">x</a>'],
