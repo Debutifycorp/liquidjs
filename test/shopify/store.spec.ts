@@ -91,6 +91,10 @@ describe('shopify/store', () => {
     buildGlobals({ store, templateName: 'product', request: { resource: 'nope' }, locale: 'en', report })
     expect(report.toReport([], 0).missing).toEqual([{ kind: 'resource', name: 'product nope' }])
   })
+  it('answers recommendations.performed as well as recommendations.performed?', async () => {
+    const page = buildGlobals({ store, templateName: 'product', request: {}, locale: 'en', report: new ReportCollector() })
+    expect(await render('{% if recommendations.performed == false %}false{% endif %}|{% if recommendations.performed? == false %}false?{% endif %}|{% if recommendations.performed %}yes{% else %}no{% endif %}', page.globals)).toBe('false|false?|no')
+  })
 })
 
 describe('shopify/settings', () => {
