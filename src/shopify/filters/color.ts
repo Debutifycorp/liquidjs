@@ -16,15 +16,40 @@ function read (filter: FilterImpl, name: string, input: unknown): Rgba | undefin
   return color
 }
 
-const num = (value: unknown) => Number(plainValue(value))
+/** A colour passed as an argument (`color_mix: '#00936F'`). A missing or unreadable one is reported, and the filter returns its input unchanged (see `badArgument`). */
+function readArgument (filter: FilterImpl, name: string, argument: unknown): Rgba | undefined {
+  const text = stringify(toValue(argument))
+  const color = parseColor(text)
+  if (!color) shopifyState(filter.context).report.unsupported(name, text ? `not a colour: ${text}` : 'missing argument')
+  return color
+}
+
+/** A number passed as an argument, or undefined for a missing or non-numeric one (`nil`, `''`, `'abc'`, `'30%'`). */
+function num (value: unknown): number | undefined {
+  const plain = plainValue(value)
+  if (typeof plain !== 'number' && (typeof plain !== 'string' || plain.trim() === '')) return undefined
+  const n = Number(plain)
+  return Number.isFinite(n) ? n : undefined
+}
+
+/**
+ * A missing or unusable argument (a number that is not one, an unknown component) returns the filter's input unchanged and is reported, so the page never carries `NaN` and the report names the filter. shopify.dev documents the arguments but not what Shopify does with a wrong one, so this error case is Debutify's choice.
+ */
+function badArgument (filter: FilterImpl, name: string, input: unknown, argument: unknown, expected: string) {
+  const text = stringify(toValue(argument))
+  shopifyState(filter.context).report.unsupported(name, text ? `not ${expected}: ${text}` : 'missing argument')
+  return input
+}
 
 /** `color_lighten`, `color_darken`, `color_saturate` and `color_desaturate` move HSL lightness or saturation by the given points (https://shopify.dev/docs/api/liquid/filters/color_lighten and its siblings). The pages show hex input only, so the format returned for `rgb()` or `hsl()` input (hex when opaque, `rgba()` otherwise) is not pinned. */
 function adjust (name: string, key: 's' | 'l', sign: 1 | -1) {
   return function (this: FilterImpl, input: unknown, amount: unknown) {
     const color = read(this, name, input)
     if (!color) return ''
+    const points = num(amount)
+    if (points === undefined) return badArgument(this, name, input, amount, 'a number')
     const hsl = rgbToHsl(color)
-    hsl[key] = clamp(hsl[key] + sign * num(amount), 0, 100)
+    hsl[key] = clamp(hsl[key] + sign * points, 0, 100)
     return formatColor({ ...hslToRgb(hsl.h, hsl.s, hsl.l), a: color.a })
   }
 }
@@ -56,7 +81,7 @@ function colorToOklch (this: FilterImpl, input: unknown) {
   return color ? `oklch(${oklchText(color)} / ${new LiquidFloat(Number(color.a.toFixed(2)))})` : ''
 }
 
-/** The components the page lists: red, green, blue, alpha, hue, saturation and lightness (https://shopify.dev/docs/api/liquid/filters/color_extract). Any other name renders empty, which the page does not pin. */
+/** The components the page lists: red, green, blue, alpha, hue, saturation and lightness (https://shopify.dev/docs/api/liquid/filters/color_extract). Any other name, or none, returns the input unchanged and is reported; the page does not pin that error case. */
 function colorExtract (this: FilterImpl, input: unknown, component: unknown) {
   const color = read(this, 'color_extract', input)
   if (!color) return ''
@@ -69,32 +94,40 @@ function colorExtract (this: FilterImpl, input: unknown, component: unknown) {
     case 'hue': return Math.round(hsl.h)
     case 'saturation': return Math.round(hsl.s)
     case 'lightness': return Math.round(hsl.l)
-    default: return ''
+    default: return badArgument(this, 'color_extract', input, component, 'a colour component')
   }
 }
 
-/** https://shopify.dev/docs/api/liquid/filters/color_modify: hex when opaque, `rgba()` once alpha is changed. An unknown component returns the colour unchanged, which the page does not pin. */
+const COMPONENTS = ['red', 'green', 'blue', 'alpha', 'hue', 'saturation', 'lightness']
+
+/** https://shopify.dev/docs/api/liquid/filters/color_modify: hex when opaque, `rgba()` once alpha is changed. An unknown component, or a value that is not a number, returns the input unchanged and is reported; the page does not pin that error case. */
 function colorModify (this: FilterImpl, input: unknown, component: unknown, value: unknown) {
   const color = read(this, 'color_modify', input)
   if (!color) return ''
-  const n = num(value)
   const name = stringify(component)
+  if (!COMPONENTS.includes(name)) return badArgument(this, 'color_modify', input, component, 'a colour component')
+  const n = num(value)
+  if (n === undefined) return badArgument(this, 'color_modify', input, value, 'a number')
   if (name === 'red' || name === 'green' || name === 'blue') return formatColor({ ...color, [name[0]]: clamp(n, 0, 255) })
   if (name === 'alpha') return toRgbaFunction({ ...color, a: clamp(n, 0, 1) })
   const hsl = rgbToHsl(color)
   if (name === 'hue') hsl.h = clamp(n, 0, 360)
   else if (name === 'saturation') hsl.s = clamp(n, 0, 100)
-  else if (name === 'lightness') hsl.l = clamp(n, 0, 100)
-  else return formatColor(color)
+  else hsl.l = clamp(n, 0, 100)
   return formatColor({ ...hslToRgb(hsl.h, hsl.s, hsl.l), a: color.a })
 }
 
-/** Channel-wise blend, `weight` percent of the input; alpha blends the same way. https://shopify.dev/docs/api/liquid/filters/color_mix */
+/**
+ * Channel-wise blend, alpha included. https://shopify.dev/docs/api/liquid/filters/color_mix only shows a weight of 50, which is symmetric, so which colour the weight belongs to is not pinned: here `weight` is the percentage of the input (25 is 25% of the first colour), the Sass convention. A missing or non-numeric weight, or an unreadable second colour, returns the input unchanged and is reported (not pinned either).
+ */
 function colorMix (this: FilterImpl, input: unknown, other: unknown, weight: unknown) {
   const x = read(this, 'color_mix', input)
-  const y = read(this, 'color_mix', other)
-  if (!x || !y) return ''
-  const p = clamp(num(weight), 0, 100) / 100
+  if (!x) return ''
+  const y = readArgument(this, 'color_mix', other)
+  if (!y) return input
+  const amount = num(weight)
+  if (amount === undefined) return badArgument(this, 'color_mix', input, weight, 'a number')
+  const p = clamp(amount, 0, 100) / 100
   const mix = (a: number, b: number) => a * p + b * (1 - p)
   const alpha = Number(mix(x.a, y.a).toFixed(2))
   return formatColor({ r: mix(x.r, y.r), g: mix(x.g, y.g), b: mix(x.b, y.b), a: alpha })
@@ -109,8 +142,9 @@ function colorBrightness (this: FilterImpl, input: unknown) {
 /** The WCAG contrast ratio to one decimal (https://shopify.dev/docs/api/liquid/filters/color_contrast). */
 function colorContrast (this: FilterImpl, input: unknown, other: unknown) {
   const x = read(this, 'color_contrast', input)
-  const y = read(this, 'color_contrast', other)
-  if (!x || !y) return ''
+  if (!x) return ''
+  const y = readArgument(this, 'color_contrast', other)
+  if (!y) return input
   const [a, b] = [luminance(x), luminance(y)]
   return new LiquidFloat(Math.round((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) * 10) / 10)
 }
@@ -118,16 +152,18 @@ function colorContrast (this: FilterImpl, input: unknown, other: unknown) {
 /** https://shopify.dev/docs/api/liquid/filters/color_difference */
 function colorDifference (this: FilterImpl, input: unknown, other: unknown) {
   const x = read(this, 'color_difference', input)
-  const y = read(this, 'color_difference', other)
-  if (!x || !y) return ''
+  if (!x) return ''
+  const y = readArgument(this, 'color_difference', other)
+  if (!y) return input
   return Math.round(Math.abs(x.r - y.r) + Math.abs(x.g - y.g) + Math.abs(x.b - y.b))
 }
 
 /** https://shopify.dev/docs/api/liquid/filters/brightness_difference */
 function brightnessDifference (this: FilterImpl, input: unknown, other: unknown) {
   const x = read(this, 'brightness_difference', input)
-  const y = read(this, 'brightness_difference', other)
-  if (!x || !y) return ''
+  if (!x) return ''
+  const y = readArgument(this, 'brightness_difference', other)
+  if (!y) return input
   return Math.round(Math.abs(brightness(x) - brightness(y)))
 }
 
@@ -135,7 +171,12 @@ function brightnessDifference (this: FilterImpl, input: unknown, other: unknown)
 function hexToRgba (this: FilterImpl, input: unknown, alpha: unknown) {
   const color = read(this, 'hex_to_rgba', input)
   if (!color) return ''
-  const a = alpha === undefined ? color.a : clamp(num(alpha), 0, 1)
+  let a = color.a
+  if (alpha !== undefined) {
+    const amount = num(alpha)
+    if (amount === undefined) return badArgument(this, 'hex_to_rgba', input, alpha, 'a number')
+    a = clamp(amount, 0, 1)
+  }
   return `rgba(${Math.round(color.r)},${Math.round(color.g)},${Math.round(color.b)},${alphaText(a)})`
 }
 

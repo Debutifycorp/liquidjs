@@ -17,7 +17,7 @@ function alphaOf (text: string | undefined): number {
   return text.endsWith('%') ? Number(text.slice(0, -1)) / 100 : Number(text)
 }
 
-/** Reads the colour notations Shopify's colour filters accept: `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb()`, `rgba()`, `hsl()` and `hsla()`. */
+/** Reads the notations Debutify understands: `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb()`, `rgba()`, `hsl()` and `hsla()`. The colour filters' pages say only "CSS color string" (https://shopify.dev/docs/api/liquid/filters/color-filters; `hex_to_rgba` shows a three-digit hex), so which notations Shopify accepts is not pinned. Named colours (`red`), `transparent`, `oklch()` and `color()` are rejected here, and the filters report them as not a colour; Shopify may accept them. */
 export function parseColor (input: string): Rgba | undefined {
   const text = input.trim()
   let match = HEX.exec(text)
