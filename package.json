@@ -20,13 +20,13 @@
         "import": "./dist/liquid.browser.mjs",
         "require": "./dist/liquid.browser.umd.js"
       },
-      "import": "./dist/liquid.node.mjs",
-      "require": "./dist/liquid.node.js"
+      "module": "./dist/liquid.node.mjs",
+      "default": "./dist/liquid.node.js"
     },
     "./shopify": {
       "types": "./dist/shopify/index.d.ts",
-      "import": "./dist/shopify.node.mjs",
-      "require": "./dist/shopify.node.js"
+      "module": "./dist/shopify.node.mjs",
+      "default": "./dist/shopify.node.js"
     },
     "./dist/*": "./dist/*",
     "./package.json": "./package.json"

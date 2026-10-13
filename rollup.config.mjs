@@ -155,7 +155,7 @@ const browserMin = {
   input
 }
 
-// The Shopify layer, `@debutify/liquidjs/shopify`: Node only, re-exporting the engine so one copy of each class is loaded.
+// The Shopify layer, `@debutify/liquidjs/shopify`: Node only. It re-exports the engine, so inside this entry Drops and the engine are one copy; the root entry is a separate bundle with its own. Node loads the CJS builds (the `exports` map's `default`), so `require` and `import` share one copy of each entry; bundlers read the ESM builds through the `module` condition.
 const shopifyInput = './src/shopify/index.ts'
 
 const shopifyCjs = {
