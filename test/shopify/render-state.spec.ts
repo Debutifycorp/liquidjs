@@ -132,7 +132,7 @@ describe('the state of a render', () => {
   })
 
   describe('runtime', () => {
-    const runtime: ThemeHooks = { renderStaticSection: function * () { return '' }, renderSectionGroup: function * () { return '' } }
+    const runtime: ThemeHooks = { renderStaticSection: function * () { return '' }, renderSectionGroup: function * () { return '' }, renderBlocks: function * () { return '' }, renderStaticBlock: function * () { return '' } }
     it('reaches every kind of render', async () => {
       const { liquid, seen } = probed({ runtime })
       await renderLiquid(liquid, '{{ 1 | probe }}')
@@ -140,7 +140,7 @@ describe('the state of a render', () => {
       expect(seen.map(state => state.runtime)).toEqual([runtime, runtime])
     })
     it('is overridden by the one renderLiquid is given', async () => {
-      const other: ThemeHooks = { renderStaticSection: function * () { return 'other' }, renderSectionGroup: function * () { return '' } }
+      const other: ThemeHooks = { renderStaticSection: function * () { return 'other' }, renderSectionGroup: function * () { return '' }, renderBlocks: function * () { return '' }, renderStaticBlock: function * () { return '' } }
       const { liquid, seen } = probed({ runtime })
       await renderLiquid(liquid, '{{ 1 | probe }}', {}, { runtime: other })
       expect(seen[0].runtime).toBe(other)

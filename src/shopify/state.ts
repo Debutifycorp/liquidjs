@@ -18,10 +18,12 @@ export interface Frame {
   sectionObject: unknown
 }
 
-/** What the theme runtime offers the `section` and `sections` tags, https://shopify.dev/docs/api/liquid/tags/section and https://shopify.dev/docs/api/liquid/tags/sections. */
+/** What the theme runtime offers the `section`, `sections` and `content_for` tags, https://shopify.dev/docs/api/liquid/tags/section, https://shopify.dev/docs/api/liquid/tags/sections and https://shopify.dev/docs/api/liquid/tags/content_for. */
 export interface ThemeHooks {
   renderStaticSection: (name: string, ctx: Context) => Generator<unknown, string, unknown>
   renderSectionGroup: (name: string, ctx: Context) => Generator<unknown, string, unknown>
+  renderBlocks: (ctx: Context) => Generator<unknown, string, unknown>
+  renderStaticBlock: (type: string, id: string, params: Record<string, unknown>, ctx: Context) => Generator<unknown, string, unknown>
 }
 
 export interface ShopifyState {

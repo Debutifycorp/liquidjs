@@ -10,13 +10,13 @@ import { errorMessage, RenderReport } from '../report'
 import { sampleStoreData } from '../sample/sample-data'
 import type { ShopifyServices } from '../services'
 import { SettingDefinition, SettingsDrop, SettingsEnv } from '../settings'
-import { createState, Frame, ShopifyState, STATE, ThemeHooks } from '../state'
+import { createState, currentFrame, Frame, ShopifyState, STATE, ThemeHooks } from '../state'
 import { buildStore, LiquidObject } from '../store/build'
 import { buildGlobals, RequestInput } from '../store/globals'
 import type { StoreData } from '../store/types'
 import { SchemaTag } from '../tags/raw'
 import { Translator } from '../translations'
-import type { LocaleTree, SectionData } from '../types'
+import type { BlockData, LocaleTree, SectionData } from '../types'
 import { escapeHtml } from '../util/html'
 import { deepMerge, parseThemeJson, parseWrapper } from './json'
 import { contentForHeader, HEADER_MARKER } from './header'
@@ -92,6 +92,11 @@ const now = () => getPerformance().now()
 const LOCALE_FILE = /^locales\/([\w-]+?)(\.default)?(\.schema)?\.json$/
 const TAG_NAME = /^[a-z][a-z0-9-]*$/
 
+/** A block of an app, https://shopify.dev/docs/storefronts/themes/architecture/blocks/app-blocks (`@app` in a schema) and https://shopify.dev/docs/apps/build/online-store/theme-app-extensions/configuration (`shopify://apps/<app_name>/blocks/<block_name>/<unique_ID>` as the `type` in saved JSON). */
+function isAppBlock (type: unknown): boolean {
+  return typeof type === 'string' && (type === '@app' || type.startsWith('shopify://apps/'))
+}
+
 /** One theme, parsed once: an engine over its files and its parsed JSON, both re-read only when a file's contents change. */
 export class CompiledTheme {
   public readonly liquid: Liquid
@@ -165,7 +170,7 @@ function matchesContext (wanted: ContextFile['context'], request: RequestInput['
   return true
 }
 
-/** Renders one page; implements the hooks the `section` and `sections` tags call. */
+/** Renders one page; implements the hooks the `section`, `sections` and `content_for` tags call. */
 class PageRender implements ThemeHooks {
   public readonly state: ShopifyState
   private readonly started = now()
@@ -425,6 +430,87 @@ class PageRender implements ThemeHooks {
       out += (yield this.renderSection(data, { id: `sections--${name}__${key}`, location: group.type ?? name, index: ++index, groupClass: `shopify-section-group-${name}` })) as string
     }
     return `<!-- BEGIN sections: ${name} -->${out}<!-- END sections: ${name} -->`
+  }
+
+  /**
+   * `{% content_for 'blocks' %}`: the theme blocks of the section or block being rendered, in `block_order` (the order of the saved `blocks` when there is none), each as `renderThemeBlock` renders it. https://shopify.dev/docs/api/liquid/tags/content_for ("renders theme blocks as configured in the JSON template or section groups") and https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks ("The content is rendered in the order that's stored in the JSON template"; a theme block can accept other theme blocks as children, and its own `content_for 'blocks'` renders those).
+   *
+   * A `disabled` block and a `static` one are skipped: https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks/static-blocks says static block ids are not in `block_order` and a static block is placed by its own `content_for 'block'`. shopify.dev does not say whether `disabled` is a key of a block (https://shopify.dev/docs/storefronts/themes/architecture/templates/json-templates documents it for sections only), so skipping it follows `section.blocks` (Task 8).
+   *
+   * An app block is rendered by its app, so it is skipped and reported. https://shopify.dev/docs/storefronts/themes/architecture/blocks/app-blocks says `content_for 'blocks'` "handles block rendering, including app blocks".
+   */
+  public * renderBlocks (): Generator<unknown, string, unknown> {
+    const frame = currentFrame(this.state)
+    if (!frame) {
+      this.state.report.unsupported('content_for', "'blocks' outside a section")
+      return ''
+    }
+    let out = ''
+    for (const id of frame.container.block_order ?? Object.keys(frame.container.blocks ?? {})) {
+      const data = frame.container.blocks?.[id]
+      if (!data || data.disabled || data.static) continue
+      if (isAppBlock(data.type)) {
+        this.state.report.unsupported('app block', `${frame.section.type}: ${data.type}`)
+        continue
+      }
+      out += (yield this.renderThemeBlock(id, data, {}, frame)) as string
+    }
+    return out
+  }
+
+  /**
+   * `{% content_for 'block', type: 'slide', id: 'slide-1', color: '#111' %}`: one static block. https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks/static-blocks says the `id` is required and only has to be unique among its siblings, that Shopify never generates it, and that extra parameters are passed to the block as variables. Its saved settings are the entry of the same `id` in the `blocks` of the section or block it is rendered in, which is also where that page's JSON puts a static block (with `"static": true`); a block with no saved entry uses the schema's default settings ("will always get added … using the default settings values").
+   *
+   * A saved entry of another `type` keeps its settings under the tag's type, and a saved entry marked `disabled` renders nothing, like a dynamic block. shopify.dev pins neither, so both go on the "confirm on a development store" list.
+   */
+  public * renderStaticBlock (type: string, id: string, params: Record<string, unknown>): Generator<unknown, string, unknown> {
+    const frame = currentFrame(this.state)
+    if (!frame) {
+      this.state.report.unsupported('content_for', "'block' outside a section")
+      return ''
+    }
+    const stored = frame.container.blocks?.[id]
+    if (stored?.disabled) return ''
+    return (yield this.renderThemeBlock(id, { ...stored, type, static: true }, params, frame)) as string
+  }
+
+  /**
+   * One theme block, from `blocks/<type>.liquid`, in Shopify's wrapper `<div id="shopify-block-<id>" class="shopify-block [schema class]">`, or bare when its schema says `"tag": null`. https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks/schema#tag and #class give the wrapper, its `id`, and the appended class.
+   *
+   * The block renders in a context of its own: the page's globals, the `section` object of the section that holds it, `block` (`id`, `type`, `settings` over the schema's defaults, and an empty `shopify_attributes`) and the static block's extra parameters. https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks says a block can read global objects and the `section` object but "can't see variables from outside the block", and https://shopify.dev/docs/api/liquid/objects/block says `shopify_attributes` returns no value outside the theme editor, which this package never is. The block is pushed on the frame stack, so its own `content_for 'blocks'` and static blocks use its `blocks`.
+   *
+   * A block file that does not exist renders nothing and is reported as `missing`. One that does not parse prints its error inside the default wrapper, as a section does, and one whose render raises an error prints it inline in its content; either error fails the section that holds the block (the report lists it as `failed`). A `renderLimit` or `memoryLimit` hit is not caught: it rejects the page, as in a section. Not pinned by shopify.dev: those cases, the wrapper of a block that does not parse (the default one is used), any `tag` other than a lowercase element name (`div` is used; the schema page allows "any string up to a limit of 50 characters", and what Shopify renders for a longer or invalid one is not stated), and whether `class` applies when `tag` is `null` (it does not here).
+   */
+  private * renderThemeBlock (id: string, data: BlockData, params: Record<string, unknown>, frame: Frame): Generator<unknown, string, unknown> {
+    const type = typeof data.type === 'string' ? data.type : '(no type)'
+    const file = `blocks/${type}.liquid`
+    if (typeof data.type !== 'string' || !this.theme.has(file)) {
+      this.state.report.missing('block', type)
+      return ''
+    }
+    let templates: Template[]
+    try {
+      templates = this.theme.templates(file)
+    } catch (err) {
+      return this.wrapBlock(id, {}, escapeHtml(this.fail(err)))
+    }
+    const schema = this.schema<BlockSchema>(templates, file)
+    const block = { id, type, settings: new SettingsDrop(schema.settings, data.settings, this.env), shopify_attributes: '' }
+    this.state.frames.push({ kind: 'block', section: frame.section, container: data, sectionObject: frame.sectionObject })
+    let html: string
+    try {
+      html = (yield this.theme.liquid.renderer.renderTemplates(templates, this.child({ section: frame.sectionObject, block }, { ...params }))) as string
+    } finally {
+      this.state.frames.pop()
+    }
+    return this.wrapBlock(id, schema, html)
+  }
+
+  private wrapBlock (id: string, schema: BlockSchema, html: string): string {
+    if (schema.tag === null) return html
+    const tag = typeof schema.tag === 'string' && TAG_NAME.test(schema.tag) ? schema.tag : 'div'
+    const classes = ['shopify-block', schema.class].filter(Boolean).join(' ')
+    return `<${tag} id="shopify-block-${escapeHtml(id)}" class="${escapeHtml(classes)}">${html}</${tag}>`
   }
 }
 

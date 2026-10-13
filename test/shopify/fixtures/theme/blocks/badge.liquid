@@ -1,0 +1,4 @@
+<span class="badge" style="color: {{ color }}">{{ block.settings.label }}|{{ block.id }}|{{ section.id }}</span>
+{%- schema -%}
+{ "name": "Badge", "tag": null, "settings": [{ "type": "text", "id": "label", "default": "New" }] }
+{%- endschema -%}

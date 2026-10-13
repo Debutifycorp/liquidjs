@@ -1,0 +1,4 @@
+<div class="slides">{% content_for 'blocks' %}</div>{{ section.blocks.size }}|{{ section.blocks[1].settings.title }}
+{%- schema -%}
+{ "name": "Slideshow", "blocks": [{ "type": "@theme" }, { "type": "@app" }] }
+{%- endschema -%}

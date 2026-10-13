@@ -1,0 +1,18 @@
+{
+  "layout": false,
+  "sections": {
+    "slides": {
+      "type": "slideshow",
+      "blocks": {
+        "s1": { "type": "slide", "settings": { "title": "First" }, "blocks": { "badge": { "type": "badge", "static": true, "settings": { "label": "Sale" } } } },
+        "s2": { "type": "slide", "settings": { "title": "Second" }, "disabled": true },
+        "s3": { "type": "slide" },
+        "app": { "type": "@app" },
+        "ghost": { "type": "no-such-block" }
+      },
+      "block_order": ["s1", "s2", "s3", "app", "ghost"]
+    },
+    "promo": { "type": "promo" }
+  },
+  "order": ["slides", "promo"]
+}

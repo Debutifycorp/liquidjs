@@ -52,3 +52,4 @@ export type { ThemeInput, RenderPageOptions, RenderPageResult } from './theme/ru
 export { parseThemeJson, deepMerge, parseWrapper } from './theme/json'
 export { contentForHeader, HEADER_MARKER } from './theme/header'
 export { SectionTag, SectionsTag } from './tags/section'
+export { ContentForTag } from './tags/content-for'
