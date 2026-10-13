@@ -72,6 +72,13 @@ describe('DoS related', function () {
       await expect(liquid.parseAndRender('{{ array | slice: 0, 300 | join }}', { array })).rejects.toThrow('memory alloc limit exceeded, line:1, col:1')
       await expect(liquid.parseAndRender('{{ array | slice: 0, 300 | join }}', { array }, { memoryLimit: 1e3 })).resolves.toBe(Array(300).fill(0).join(' '))
     })
+    it('should charge slice for the length it returns, not the length it was asked for', async () => {
+      const liquid = new Liquid({ memoryLimit: 100 })
+      await expect(liquid.parseAndRender('{{ array | slice: 1, 1000000000 | join }}', { array: [1, 2, 3] })).resolves.toBe('2 3')
+      await expect(liquid.parseAndRender('{{ "hello" | slice: 1, 1000000000 }}')).resolves.toBe('ello')
+      await expect(liquid.parseAndRender('{{ array | slice: 0, 1000000000 | size }}', { array: Array(1e3).fill(0) })).rejects.toThrow('memory alloc limit exceeded')
+      await expect(liquid.parseAndRender('{{ text | slice: 0, 1000000000 | size }}', { text: 'x'.repeat(1e3) })).rejects.toThrow('memory alloc limit exceeded')
+    })
     it('should throw for too many array iteration in tags', async () => {
       const array = ['a']
       const liquid = new Liquid({ memoryLimit: 100 })

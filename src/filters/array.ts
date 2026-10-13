@@ -120,10 +120,12 @@ export function slice<T> (this: FilterImpl, v: T[] | string, begin: number, leng
   if (!isArray(v)) v = stringify(original instanceof LiquidFloat ? original : v)
   begin = begin < 0 ? v.length + begin : begin
   if (begin < 0 || length < 0) return isArray(v) ? [] : ''
-  this.context.memoryLimit.use(length)
-  return isArray(v)
+  // charge for what the slice returns, not for the length asked for: `slice: 0, 1000000000` of a three-element array allocates three
+  const result = isArray(v)
     ? Array.prototype.slice.call(v, begin, begin + length)
     : String.prototype.slice.call(v, begin, begin + length)
+  this.context.memoryLimit.use(result.length)
+  return result
 }
 
 function * matches (this: FilterImpl, value: unknown, expected: unknown): Generator<unknown, boolean, any> {
