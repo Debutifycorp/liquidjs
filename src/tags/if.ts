@@ -23,10 +23,10 @@ export default class extends Tag {
         })
       })
       .on<TagToken>('tag:else', tag => {
-      assertEmpty(tag.args)
-      assert(!this.elseTemplates, 'duplicated else')
-      p = this.elseTemplates = []
-    })
+        assertEmpty(tag.args)
+        assert(!this.elseTemplates, 'duplicated else')
+        p = this.elseTemplates = []
+      })
       .on<TagToken>('tag:endif', function (tag) { assertEmpty(tag.args); this.stop() })
       .on('template', (tpl: Template) => p.push(tpl))
       .on('end', () => { throw new Error(`tag ${tagToken.getText()} not closed`) })

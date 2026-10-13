@@ -11,9 +11,9 @@ import { isArray, isFunction } from '../util/underscore'
  */
 export type OperatorGenerator = Generator<unknown, boolean, any>
 export type OperatorResult = boolean | Promise<boolean> | OperatorGenerator
-export type UnaryOperatorHandler = (operand: any, ctx: Context) => OperatorResult;
-export type BinaryOperatorHandler = (lhs: any, rhs: any, ctx: Context) => OperatorResult;
-export type OperatorHandler = UnaryOperatorHandler | BinaryOperatorHandler;
+export type UnaryOperatorHandler = (operand: any, ctx: Context) => OperatorResult
+export type BinaryOperatorHandler = (lhs: any, rhs: any, ctx: Context) => OperatorResult
+export type OperatorHandler = UnaryOperatorHandler | BinaryOperatorHandler
 export type Operators = Record<string, OperatorHandler>
 
 export const defaultOperators: Operators = {

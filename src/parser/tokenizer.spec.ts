@@ -14,7 +14,7 @@ describe('Tokenizer', function () {
   })
   it('should read identifier', () => {
     expect(new Tokenizer('foo bar').readIdentifier()).toHaveProperty('content', 'foo')
-    // eslint-disable-next-line deprecation/deprecation
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     expect(new Tokenizer('foo bar').readWord()).toHaveProperty('content', 'foo')
   })
   it('should read integer number', () => {

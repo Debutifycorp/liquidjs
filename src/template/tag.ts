@@ -19,7 +19,7 @@ export abstract class Tag extends TemplateImpl<TagToken> implements Template {
     this.liquid = liquid
     this.tokenizer = token.tokenizer
   }
-  public abstract render (ctx: Context, emitter: Emitter): TagRenderReturn;
+  public abstract render (ctx: Context, emitter: Emitter): TagRenderReturn
 }
 
 export interface TagClass {

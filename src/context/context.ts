@@ -6,7 +6,7 @@ import { createScope, Scope } from './scope'
 import type { LiquidError } from '../util/error'
 import { hasOwnProperty, isArray, isNil, isUndefined, isString, isFunction, isNumber, toLiquid, InternalUndefinedVariableError, toValueSync, isObject, Limiter, toValue, readArrayElement } from '../util'
 
-type PropertyKey = string | number;
+type PropertyKey = string | number
 
 export class Context {
   /**
@@ -39,10 +39,10 @@ export class Context {
   /**
    * Throw when accessing undefined variable?
    */
-  public strictVariables: boolean;
-  public ownPropertyOnly: boolean;
-  public memoryLimit: Limiter;
-  public renderLimit: Limiter;
+  public strictVariables: boolean
+  public ownPropertyOnly: boolean
+  public memoryLimit: Limiter
+  public renderLimit: Limiter
   private _errors?: LiquidError[]
   public constructor (env: object = {}, opts: NormalizedFullOptions = defaultOptions, renderOptions: RenderOptions = {}, { memoryLimit, renderLimit, liquid, errors }: { memoryLimit?: Limiter, renderLimit?: Limiter, liquid?: any, errors?: LiquidError[] } = {}) {
     this.sync = !!renderOptions.sync

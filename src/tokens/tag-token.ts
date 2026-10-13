@@ -5,7 +5,7 @@ import type { NormalizedFullOptions } from '../liquid-options'
 export class TagToken extends DelimitedToken {
   public name: string
   public tokenizer: Tokenizer
-  public readonly args: string;
+  public readonly args: string
   public constructor (
     input: string,
     begin: number,

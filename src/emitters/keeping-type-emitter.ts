@@ -2,7 +2,7 @@ import { stringify, toValue } from '../util'
 import { Emitter } from './emitter'
 
 export class KeepingTypeEmitter implements Emitter {
-  public buffer: any = '';
+  public buffer: any = ''
 
   public write (html: any) {
     html = toValue(html)

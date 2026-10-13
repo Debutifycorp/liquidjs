@@ -8,7 +8,7 @@ export interface FilterImpl {
   liquid: Liquid;
 }
 
-export type FilterHandler = (this: FilterImpl, value: any, ...args: any[]) => any;
+export type FilterHandler = (this: FilterImpl, value: any, ...args: any[]) => any
 
 export interface FilterOptions {
   handler: FilterHandler;

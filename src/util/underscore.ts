@@ -10,7 +10,7 @@ export function isString (value: any): value is string {
   return typeof value === 'string'
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export function isFunction (value: any): value is Function {
   return typeof value === 'function'
 }
@@ -23,8 +23,8 @@ export function isIterator (val: any): val is IterableIterator<any> {
   return val && isFunction(val.next) && isFunction(val.throw) && isFunction(val.return)
 }
 
-export function promisify<T1, T2> (fn: (arg1: T1, cb: (err: Error | null, result: T2) => void) => void): (arg1: T1) => Promise<T2>;
-export function promisify<T1, T2, T3> (fn: (arg1: T1, arg2: T2, cb: (err: Error | null, result: T3) => void) => void): (arg1: T1, arg2: T2) => Promise<T3>;
+export function promisify<T1, T2> (fn: (arg1: T1, cb: (err: Error | null, result: T2) => void) => void): (arg1: T1) => Promise<T2>
+export function promisify<T1, T2, T3> (fn: (arg1: T1, arg2: T2, cb: (err: Error | null, result: T3) => void) => void): (arg1: T1, arg2: T2) => Promise<T3>
 export function promisify (fn: any) {
   return function (...args: any[]) {
     return new Promise((resolve, reject) => {
@@ -118,7 +118,7 @@ export function isIterable (value: any): value is Iterable<any> {
  */
 export function forOwn <T> (
   obj: Record<string, T> | undefined,
-  iteratee: ((val: T, key: string, obj: {[key: string]: T}) => boolean | void)
+  iteratee: ((val: T, key: string, obj: { [key: string]: T }) => boolean | void)
 ) {
   obj = obj || {}
   for (const k in obj) {
@@ -129,8 +129,8 @@ export function forOwn <T> (
   return obj
 }
 
-export function last <T>(arr: T[]): T;
-export function last (arr: string): string;
+export function last <T> (arr: T[]): T
+export function last (arr: string): string
 export function last (arr: any[] | string): any | string {
   return arr[arr.length - 1]
 }

@@ -59,12 +59,12 @@ export class Variable {
 /**
  * Property names and array indexes that make up a path to a variable.
  */
-export type VariableSegments = Array<string | number | Variable>;
+export type VariableSegments = Array<string | number | Variable>
 
 /**
  * A mapping of variable names to an array of locations at which the variable was found.
  */
-export type Variables = { [key: string]: Variable[] };
+export type Variables = { [key: string]: Variable[] }
 
 /**
  * Group variables by the string representation of their root segment.

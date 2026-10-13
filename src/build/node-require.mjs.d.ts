@@ -1,1 +1,1 @@
-export declare function requireResolve(file: string): string;
+export declare function requireResolve (file: string): string

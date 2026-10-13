@@ -1,4 +1,4 @@
-/* eslint-disable no-template-curly-in-string, @typescript-eslint/no-var-requires */
+/* eslint-disable no-template-curly-in-string */
 const { upstreamLiquidjs } = require('./package.json')
 
 // Appends the LiquidJS release this fork is based on to every release's notes, so the GitHub release, CHANGELOG.md and the release commit all name it. semantic-release joins the notes of every generateNotes plugin, so the release-notes-generator's sections, including BREAKING CHANGES, stay as they are.

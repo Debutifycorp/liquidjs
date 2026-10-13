@@ -21,7 +21,7 @@ export class Liquid {
 
   public constructor (opts: LiquidOptions = {}) {
     this.options = normalize(opts)
-    // eslint-disable-next-line deprecation/deprecation
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     this.parser = new Parser(this)
     forOwn(tags, (conf: TagClass, name: string) => this.registerTag(name, conf))
     forOwn(filters, (handler: FilterImplOptions, name: string) => this.registerFilter(name, handler))

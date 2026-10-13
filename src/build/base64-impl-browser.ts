@@ -1,4 +1,3 @@
-
 export function base64Encode (str: string): string {
   const bytes = new TextEncoder().encode(str)
   let binary = ''

@@ -1,7 +1,7 @@
 import { isNil } from '../util'
 
 export class MapFS {
-  constructor (private mapping: {[key: string]: string}) {}
+  constructor (private mapping: { [key: string]: string }) {}
 
   public sep = '/'
 

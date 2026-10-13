@@ -3,7 +3,7 @@ import { Emitter } from './emitter'
 import { PassThrough } from 'stream'
 
 export class StreamedEmitter implements Emitter {
-  public buffer = '';
+  public buffer = ''
   public stream: NodeJS.ReadWriteStream = new PassThrough()
   public write (html: any) {
     this.stream.write(stringify(html))

@@ -113,7 +113,7 @@ describe('drop/drop', function () {
   })
   it('should correctly evaluate custom Drop objects with equals function without full Comparable implementation', async () => {
     class TestDrop extends Drop {
-      value: string;
+      value: string
       constructor () {
         super()
         this.value = 'test'

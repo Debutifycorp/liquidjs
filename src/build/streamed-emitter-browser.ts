@@ -1,7 +1,7 @@
 import { Emitter } from '../emitters'
 
 export class StreamedEmitter implements Emitter {
-  public buffer = '';
+  public buffer = ''
   public stream: NodeJS.ReadableStream = null as any
   constructor () {
     throw new Error('streaming not supported in browser')
