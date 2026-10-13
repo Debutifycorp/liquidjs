@@ -30,7 +30,7 @@ describe('shopify/theme/blocks', () => {
   })
 
   /** A one-section page over `files`, rendered without a layout: the section is `sec` in `templates/x.json`, with `data` as its saved JSON. */
-  const page = (files: Record<string, string>, data: object = {}, options: { renderLimit?: number } = {}) =>
+  const page = (files: Record<string, string>, data: object = {}, options: { renderLimit?: number, trustHtmlSettings?: boolean } = {}) =>
     renderPage({
       theme: { files: { 'templates/x.json': JSON.stringify({ layout: false, sections: { main: { type: 'sec', ...data } } }), ...files } },
       templateName: 'x',
@@ -155,7 +155,8 @@ describe('shopify/theme/blocks', () => {
       const { html } = await page(files, {
         blocks: { p: { type: 'pic' }, c: { type: 'custom' }, e: { type: 'evil' }, n: { type: 'numeric' }, b: { type: 'bare' }, d: { type: 'plain' }, 'x"y': { type: 'plain' } },
         block_order: ['p', 'c', 'e', 'n', 'b', 'd', 'x"y']
-      })
+      }, { trustHtmlSettings: true })
+      // a block key with a quote is only kept for a theme trusted with html (see the next test), and the wrapper escapes it
       expect(html).toBe(SECTION(
         '<picture id="shopify-block-p" class="shopify-block hero wide"><img></picture>' +
         '<my-card id="shopify-block-c" class="shopify-block">.</my-card>' +
@@ -165,6 +166,19 @@ describe('shopify/theme/blocks', () => {
         '<div id="shopify-block-d" class="shopify-block">.</div>' +
         '<div id="shopify-block-x&quot;y" class="shopify-block">.</div>'
       ))
+    })
+    it('skips a block whose key or type is not plain unless the theme is trusted with html, and reports it without the value', async () => {
+      const files = { 'sections/sec.liquid': "{% content_for 'blocks' %}|{% for b in section.blocks %}{{ b.id }}={{ b.type }},{% endfor %}", 'blocks/plain.liquid': '.' }
+      const data = { blocks: { 'x"y': { type: 'plain' }, ok: { type: 'plain' }, t: { type: 'p"q' } }, block_order: ['x"y', 'ok', 't'] }
+      const { html, report } = await page(files, data)
+      expect(html).toBe(SECTION(WRAP('ok', '.') + '|ok=plain,'))
+      expect(report.unsupported).toEqual([
+        { feature: 'unsafe_key', detail: 'a block key with characters other than letters, digits, - and _ was skipped' },
+        { feature: 'unsafe_key', detail: 'a block type with characters other than letters, digits, - and _ was skipped' }
+      ])
+      const trusted = await page(files, data, { trustHtmlSettings: true })
+      expect(trusted.html).toContain('x&quot;y')
+      expect(trusted.report.unsupported.filter(entry => entry.feature === 'unsafe_key')).toEqual([])
     })
     it('ignores a class that is not a string, and reports it', async () => {
       const files = {

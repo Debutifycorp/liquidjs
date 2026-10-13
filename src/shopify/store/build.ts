@@ -33,6 +33,14 @@ function hidden (target: LiquidObject, key: string, value: unknown) {
   Object.defineProperty(target, key, { value, enumerable: false })
 }
 
+/**
+ * Makes `object` print as its handle: https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings says of the `product`, `collection`, `page`, `blog` and `article` settings that "outputting the setting directly will return the object's handle". Applied to the object itself, so a setting returns the store's own object and `==`, `contains` and the filters that take the object work as on any other; shopify.dev does not say what the object prints elsewhere (a `product_list` element, `{{ product }}` on a product page), so the same handle is printed there too, on the confirm-on-a-development-store list. The `toString` is not enumerable, so `json`, `inspect` and `for` do not see it.
+ */
+function printsHandle (object: LiquidObject): LiquidObject {
+  Object.defineProperty(object, 'toString', { value: () => String(object.handle ?? ''), enumerable: false })
+  return object
+}
+
 /** Product media: images (https://shopify.dev/docs/api/liquid/objects/media), videos (https://shopify.dev/docs/api/liquid/objects/video) and external videos (https://shopify.dev/docs/api/liquid/objects/external_video). Only media images carry a `preview_image`, https://shopify.dev/docs/api/liquid/objects/image#image-preview_image. `index` is the media's place in `product.media`; it becomes the media's `position`, counted from 1 (https://shopify.dev/docs/api/liquid/objects/media#media-position). That base is not pinned: the media page and shopify.dev's image page (https://shopify.dev/docs/api/liquid/objects/image#image-position) both show `1` in their example for the first entry but neither states the base, so it is on the confirm-on-a-development-store list. Media from anywhere else has no position. */
 function buildMedia (media: MediaData, index?: number): unknown {
   const position = index === undefined ? null : index + 1
@@ -141,7 +149,7 @@ export function buildProduct (data: ProductData): LiquidObject {
     metafields: data.metafields ?? {}
   }
   for (const variant of variants) hidden(variant, 'product', product)
-  return product
+  return printsHandle(product)
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/collection. Filtering, tags and sorting are not applied: `products` is the collection's product list as given, `filters` and `tags` are empty and `sort_options` lists Shopify's standard options. */
@@ -149,7 +157,7 @@ function buildCollection (data: CollectionData, products: HandleMap<LiquidObject
   const items = data.products.map(handle => HandleMap.get(products, handle)).filter((product): product is LiquidObject => !!product)
   const collect = (key: string) => unique(items.flatMap(product => product[key] as string | string[]).filter(Boolean)).sort()
   const own = image(data.image)
-  return {
+  return printsHandle({
     id: data.id,
     handle: data.handle,
     title: data.title,
@@ -179,18 +187,18 @@ function buildCollection (data: CollectionData, products: HandleMap<LiquidObject
     ],
     template_suffix: null,
     metafields: data.metafields ?? {}
-  }
+  })
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/page. */
 function buildPage (data: PageData): LiquidObject {
-  return { ...data, url: `/pages/${data.handle}`, template_suffix: null, published_at: data.published_at ?? null, metafields: data.metafields ?? {} }
+  return printsHandle({ ...data, url: `/pages/${data.handle}`, template_suffix: null, published_at: data.published_at ?? null, metafields: data.metafields ?? {} })
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/article. Comments are not modelled: `comments` is empty and `comments_enabled?` false. */
 function buildArticle (data: ArticleData, blogHandle: string): LiquidObject {
   const author = data.author ?? ''
-  return {
+  return printsHandle({
     id: data.id,
     handle: data.handle,
     title: data.title,
@@ -208,13 +216,13 @@ function buildArticle (data: ArticleData, blogHandle: string): LiquidObject {
     comments_count: 0,
     'comments_enabled?': false,
     metafields: {}
-  }
+  })
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/blog. Comments are not modelled: `comments_enabled?` and `moderated?` are false. */
 function buildBlog (data: BlogData): LiquidObject {
   const articles = data.articles.map(article => buildArticle(article, data.handle))
-  return {
+  return printsHandle({
     id: data.id,
     handle: data.handle,
     title: data.title,
@@ -226,7 +234,7 @@ function buildBlog (data: BlogData): LiquidObject {
     'comments_enabled?': false,
     'moderated?': false,
     metafields: {}
-  }
+  })
 }
 
 /** A URL without its query string and fragment: `link.current` and `link.child_current` "ignore URL parameters". https://shopify.dev/docs/api/liquid/objects/link */

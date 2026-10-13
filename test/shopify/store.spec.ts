@@ -178,7 +178,7 @@ describe('shopify/settings', () => {
     const settings = new SettingsDrop(definitions, stored, e)
     const source = '{{ s.accent }}|{{ s.accent.red }}|{{ s.hero.width }}|{{ s.gone }}|{{ s.link }}|{{ s.featured.title }}|{{ s.lists.size }}|{{ s.menu.links.size }}|{{ s.heading }}|{{ s.show }}|{{ s.columns | plus: 1 }}|{{ s.font.family }}|{{ s.video.id }} {{ s.video.type }}|{{ s.legacy }}|{{ s.unset }}'
     expect(await render(source, { s: settings })).toBe('#334fb4|51|2400||/collections/apparel|Canvas Bag|1|3|Welcome|true|4|Assistant|vj01PAffOac youtube|kept|')
-    expect(e.report.toReport([], 0).missing).toEqual([{ kind: 'resource', name: 'image missing.png' }, { kind: 'resource', name: 'collection nope' }])
+    expect(e.report.toReport([], 0).missing).toEqual([{ kind: 'resource', name: 'image of setting gone' }, { kind: 'resource', name: 'collection of setting lists' }])
   })
   it('escapes liquid settings unless the theme is trusted', async () => {
     const scope = { greeting: 'Hello', shop: { name: 'Shop' } }
@@ -237,25 +237,25 @@ describe('shopify/settings safety', () => {
     const definitions: SettingDefinition[] = [{ type: 'image_picker', id: 'bad' }, { type: 'image_picker', id: 'good' }, { type: 'color', id: 'color' }]
     const stored = { bad: { src: 'javascript:alert(1)', alt: 'x' }, good: { src: '/img.png', width: 3, height: 2, alt: '<img src=x onerror=y>t' }, color: '<img src=x onerror=1>' }
     const s = new SettingsDrop(definitions, stored, env())
-    expect(await render('[{{ s.bad }}]|{{ s.good }}|{{ s.good.alt }}|[{{ s.color }}]', { s })).toBe('[]|/img.png|<img src="x">t|[]')
+    expect(await render('[{{ s.bad }}]|{{ s.good }}|{{ s.good.alt }}|[{{ s.color }}]', { s })).toBe('[]|/img.png||[]')
     expect(await render('{{ s.good.alt }}|{{ s.color }}', { s: new SettingsDrop(definitions, stored, env({ trust: trusted })) })).toBe('<img src=x onerror=y>t|<img src=x onerror=1>')
   })
   it('drops url settings with an unsafe scheme and reports them', async () => {
     const definitions: SettingDefinition[] = [{ type: 'url', id: 'link' }, { type: 'video_url', id: 'video' }]
-    for (const bad of ['javascript:alert(2)', 'JavaScript:alert(2)', 'jav&#x09;ascript:alert(2)', 'vbscript:x', 'file:///etc/passwd']) {
+    for (const bad of ['javascript:alert(2)', 'JavaScript:alert(2)', 'vbscript:x', 'file:///etc/passwd']) {
       const e = env()
       expect(await render('[{{ s.link }}]', { s: new SettingsDrop(definitions, { link: bad }, e) })).toBe('[]')
       expect(e.report.toReport([], 0).unsupported).toEqual([{ feature: 'unsafe_url', detail: 'url setting link has a URL scheme other than http, https, mailto or tel and was dropped' }])
     }
-    for (const bad of [' JavaScript:alert(2)', 'data:text/html,<b>x', 'https://x.example/"><script>alert(4)</script>', "/a' onfocus='x", '/a b', '/a\tb', '/a"b', "/a'b", '/a<b', '/a>b', '/a`b', '/a\u0001b', '/a\u007fb', '/a\u0085b', '/a\u00a0b', '/a\u2028b', 'https://x.example/`', 'shopify://products/<img src=x onerror=alert(3)>']) {
+    for (const bad of ['jav&#x09;ascript:alert(2)', 'https://x.example/&#39;);alert(1);//', 'https://x.example/&#x27;', 'https://x.example/&#34;', 'https://x.example/&quot;', 'https://x.example/&QUOT', 'https://x.example/&apos;', '/a&#', ' JavaScript:alert(2)', 'data:text/html,<b>x', 'https://x.example/"><script>alert(4)</script>', "/a' onfocus='x", '/a b', '/a\tb', '/a"b', "/a'b", '/a<b', '/a>b', '/a`b', '/a\u0001b', '/a\u007fb', '/a\u0085b', '/a\u00a0b', '/a\u2028b', 'https://x.example/`', 'shopify://products/<img src=x onerror=alert(3)>']) {
       const e = env()
       expect(await render('[{{ s.link }}]', { s: new SettingsDrop(definitions, { link: bad }, e) })).toBe('[]')
-      expect(e.report.toReport([], 0).unsupported).toEqual([{ feature: 'unsafe_url', detail: 'url setting link has a URL with a quote, angle bracket, backtick, space or control character and was dropped' }])
+      expect(e.report.toReport([], 0).unsupported).toEqual([{ feature: 'unsafe_url', detail: 'url setting link has a URL with a quote, angle bracket, backtick, space, control character or character reference and was dropped' }])
     }
     const e = env()
     expect(await render('[{{ s.video.type }}]', { s: new SettingsDrop(definitions, { video: 'javascript:alert(1)' }, e) })).toBe('[]')
     expect(e.report.toReport([], 0).unsupported).toHaveLength(1)
-    for (const good of ['https://example.com/a?b=c', 'http://example.com', 'mailto:a@b.c', 'tel:+15551234567', '/pages/about', '#top', 'relative/path', '/collections']) {
+    for (const good of ['https://example.com/a?b=c&d=e', 'https://example.com/a?b=c&amp;d=e', 'http://example.com', 'mailto:a@b.c', 'tel:+15551234567', '/pages/about', '#top', 'relative/path', '/collections']) {
       expect(await render('{{ s.link }}', { s: new SettingsDrop(definitions, { link: good }, env()) })).toBe(good)
     }
     expect(await render('{{ s.link }}|{{ s.l2 }}|{{ s.l3 }}', { s: new SettingsDrop([{ type: 'url', id: 'link' }, { type: 'url', id: 'l2' }, { type: 'url', id: 'l3' }], { link: 'shopify://collections/apparel', l2: 'shopify://search', l3: 'shopify://metaobjects/team/ada' }, env()) })).toBe('/collections/apparel|/search|shopify://metaobjects/team/ada')
@@ -410,12 +410,15 @@ describe('shopify/settings forms', () => {
     ['true', false, ['has a value that is not a boolean and was replaced by its default']],
     ['" autofocus onfocus="x', false, ['has a value that is not a boolean and was replaced by its default']],
     [1, false, ['has a value that is not a boolean and was replaced by its default']],
-    [undefined, null, []]
+    [undefined, false, []]
   ] as Array<[unknown, unknown, string[]]>)('holds a checkbox to a boolean: %p gives %p', (stored, expected, reasons) => {
     const result = one({ type: 'checkbox', id: 'flag' }, stored)
     expect(result.value).toBe(expected)
     expect(result.unsupported).toEqual(reasons.map(reason => invalid('checkbox', 'flag', reason)))
     expect(one({ type: 'checkbox', id: 'flag', default: true }, 'yes').value).toBe(true)
+    // https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings: "If `default` is unspecified, then the value is `false` by default"
+    expect(one({ type: 'checkbox', id: 'flag' }, undefined, { trust: trusted }).value).toBe(false)
+    expect(one({ type: 'checkbox', id: 'flag', default: true }, undefined).value).toBe(true)
   })
   it('holds a colour to a colour, and a background to a colour or a gradient', async () => {
     expect(text(one({ type: 'color', id: 'c', default: '#112233' }, '#abcdef').value)).toBe('#abcdef')
@@ -431,22 +434,32 @@ describe('shopify/settings forms', () => {
     expect(one({ type: 'color_background', id: 'b' }, gradient).value).toBe(gradient)
     expect(one({ type: 'color_background', id: 'b' }, '#fff').value).toBe('#fff')
     expect(one({ type: 'color_background', id: 'b' }, '').value).toBe('')
-    for (const bad of ['red;}</style>', 'url("x")', 'a" b', 'a\\b', 'a:b', 'a;b', 'a{b}', "x'y", 'a`b', 'x'.repeat(2001)]) {
+    for (const bad of ['red;}</style>', 'url("x")', 'url(//evil.example/beacon)', 'URL(//evil.example/b)', 'url (//evil.example/b)', 'linear-gradient(red, url(//evil.example/b))', 'image-set(red)', 'expression(alert)', 'var(--x)', 'a" b', 'a\\b', 'a:b', 'a;b', 'a{b}', "x'y", 'a`b', 'x'.repeat(2001)]) {
       expect([bad.slice(0, 20), one({ type: 'color_background', id: 'b', default: gradient }, bad).value]).toEqual([bad.slice(0, 20), gradient])
       expect(one({ type: 'color_background', id: 'b' }, bad).value).toBeNull()
     }
+    for (const good of ['radial-gradient(circle, #fff 0%, #000 100%)', 'conic-gradient(from 0deg, red, blue)', 'repeating-linear-gradient(45deg, #fff, #000 10px)', 'LINEAR-GRADIENT(red, blue)', 'linear-gradient(0deg, hsl(10, 20%, 30%) 0%, rgb(1 2 3 / 50%) 100%)']) expect([good, one({ type: 'color_background', id: 'b' }, good).value]).toEqual([good, good])
     expect(one({ type: 'color_background', id: 'b' }, 'red";x', { trust: trusted }).value).toBe('red";x')
+    expect(one({ type: 'color_background', id: 'b' }, 'url(//x.example/b)', { trust: trusted }).value).toBe('url(//x.example/b)')
   })
   it('keeps what it must of an image given as data, and drops the rest', async () => {
     const image = (value: unknown, overrides: Partial<SettingsEnv> = {}) => one({ type: 'image_picker', id: 'pic' }, value, overrides)
-    const ok = image({ src: '/a.png', width: 10, height: 5, id: 3, alt: 'A <b>b</b>', focal_point: { x: 10, y: '20' } }).value as any
-    expect([ok.src, ok.width, ok.height, ok.id, ok.alt, text(ok.presentation.focal_point)]).toEqual(['/a.png', 10, 5, 3, 'A <b>b</b>', '10% 20%'])
+    const ok = image({ src: '/a.png', width: 10, height: 5, id: 3, alt: 'A red bag, front & back', focal_point: { x: 10, y: '20' } }).value as any
+    expect([ok.src, ok.width, ok.height, ok.id, ok.alt, text(ok.presentation.focal_point)]).toEqual(['/a.png', 10, 5, 3, 'A red bag, front & back', '10% 20%'])
     const odd = image({ src: 'https://c.example/a.png', width: '10" onload="x', height: NaN, id: '3', alt: 7, focal_point: { x: 'a', y: 1 }, extra: '<img>' }).value as any
     expect([odd.src, odd.width, odd.height, odd.id, odd.alt, text(odd.presentation.focal_point)]).toEqual(['https://c.example/a.png', null, null, null, '', '50% 50%'])
     for (const src of ['javascript:alert(1)', 'https://c.example/a.png" onerror="x', 'https://c.example/a b.png', '/a<b', '', 7, null]) {
       expect(image({ src }).value).toBeNull()
     }
     expect(image({ src: 'https://c.example/a.png" onerror="x' }).unsupported).toEqual([{ feature: 'unsafe_url', detail: 'image_picker setting pic has an image whose src is not a safe URL and was dropped' }])
+    // an alt is printed in an attribute: one with a quote, angle bracket, backtick or control character is dropped (the image stays) and reported without the alt
+    for (const alt of ['a" onerror="alert(12)', "a' onerror='x", 'a<b>b</b>', 'a>b', 'a`b', 'a\u0001b', 'a\u2028b', 'a\u007fb']) {
+      const result = image({ src: '/a.png', alt })
+      expect([alt, (result.value as any).src, (result.value as any).alt]).toEqual([alt, '/a.png', ''])
+      expect(result.unsupported).toEqual([{ feature: 'invalid_setting', detail: 'image_picker setting pic has an image alt with a quote, angle bracket, backtick or control character and the alt was dropped' }])
+    }
+    for (const src of ['https://c.example/a.png?x=&#34;onerror=&#34;', '/a.png?x=&quot;', '/a.png?x=&apos;']) expect(image({ src }).value).toBeNull()
+    expect((image({ src: '/a.png?x=1&y=2&amp;z=3' }).value as any).src).toBe('/a.png?x=1&y=2&amp;z=3')
     const kept = image({ src: 'x" y', width: '3', alt: '<b>' }, { trust: trusted }).value as any
     expect([kept.src, kept.width, kept.alt]).toEqual(['x" y', '3', '<b>'])
   })
@@ -563,10 +576,34 @@ describe('shopify/settings fidelity', () => {
     const object = HandleMap.get((store as any)[key] as HandleMap<Record<string, unknown>>, handle) as Record<string, unknown>
     expect(await render('[{{ s.x }}]|{{ s.x.title }}|{{ s.x.url }}|{{ s.x.handle }}|{% if s.x %}set{% endif %}|{% if s.x == blank %}blank{% endif %}', { s: settings })).toBe(`[${object.handle}]|${object.title}|${object.url}|${object.handle}|set|`)
     expect(JSON.parse(await render('{{ s.x | json }}', { s: settings }))).toEqual(JSON.parse(JSON.stringify(object)))
-    expect(Object.keys(SettingsDrop.value(settings, 'x') as object)).toEqual(Object.keys(object))
-    // the object the store holds is untouched
-    expect(Object.prototype.hasOwnProperty.call(object, 'toString')).toBe(false)
+    // the setting returns the object the store holds, not a copy, so it is equal to it and found in the lists that hold it; the handle print is a non-enumerable `toString` of that object
+    expect(SettingsDrop.value(settings, 'x')).toBe(object)
+    expect(Object.getOwnPropertyDescriptor(object, 'toString')?.enumerable).toBe(false)
+    expect(Object.keys(object)).not.toContain('toString')
     expect(await render('{{ s.x }}', { s: new SettingsDrop([{ type, id: 'x' }], {}, env()) })).toBe('')
+  })
+  it('compares a resource setting with the store object it is, and finds it in a list', async () => {
+    const settings = new SettingsDrop([{ type: 'product', id: 'p' }, { type: 'collection', id: 'c' }, { type: 'product_list', id: 'list' }], { p: 'classic-tee', c: 'apparel', list: ['classic-tee', 'canvas-bag'] }, env())
+    const scope = { s: settings, all_products: store.products, collections: store.collections }
+    expect(await render("{% if s.p == all_products['classic-tee'] %}same{% endif %}|{% if collections.apparel.products contains s.p %}contains{% endif %}|{% if s.p != all_products['canvas-bag'] %}differs{% endif %}|{% if s.c == collections['apparel'] %}same{% endif %}", scope)).toBe('same|contains|differs|same')
+    // the elements of a list are the store's objects too and print as their handle (unpinned by shopify.dev)
+    expect(await render('{% for p in s.list %}{{ p }},{% endfor %}{{ s.list.first.title }}', scope)).toBe('classic-tee,canvas-bag,Classic Tee')
+  })
+  it('keeps resource handles out of the report, which may be shown as HTML', async () => {
+    const e = env()
+    const hostile = '"><img src=x onerror=alert(1)>'
+    const settings = new SettingsDrop([{ type: 'product', id: 'p' }, { type: 'link_list', id: 'menu' }, { type: 'image_picker', id: 'pic' }, { type: 'font_picker', id: 'font' }, { type: 'collection_list', id: 'cols' }], { p: hostile, menu: hostile, pic: `shopify://shop_images/${hostile}`, font: hostile, cols: [hostile] }, e)
+    for (const id of ['p', 'menu', 'pic', 'font', 'cols']) SettingsDrop.value(settings, id)
+    const report = e.report.toReport([], 0)
+    expect(report.missing).toEqual([{ kind: 'resource', name: 'product of setting p' }, { kind: 'resource', name: 'menu of setting menu' }, { kind: 'resource', name: 'image of setting pic' }, { kind: 'resource', name: 'collection of setting cols' }])
+    expect(report.unsupported).toEqual([{ feature: 'font_picker', detail: 'font_picker setting font has a font that is not known' }])
+    expect(JSON.stringify(report)).not.toContain('onerror')
+  })
+  it('keeps a metaobject setting that is a string to the text rule', async () => {
+    const definitions: SettingDefinition[] = [{ type: 'metaobject', id: 'mo' }, { type: 'metaobject_list', id: 'mos' }]
+    const stored = { mo: 'a <img src=x onerror=1> b', mos: ['<script>x</script>ok', 'plain'] }
+    expect(await render('{{ s.mo }}|{{ s.mos | join: "," }}', { s: new SettingsDrop(definitions, stored, env()) })).toBe('a <img src="x"> b|ok,plain')
+    expect(await render('{{ s.mo }}', { s: new SettingsDrop(definitions, stored, env({ trust: { liquidSettings: false, htmlSettings: true } })) })).toBe('a <img src=x onerror=1> b')
   })
   it('lets filters take a resource setting as the object', async () => {
     const settings = new SettingsDrop([{ type: 'product', id: 'p' }, { type: 'collection', id: 'c' }], { p: 'classic-tee', c: 'apparel' }, env())
@@ -576,7 +613,8 @@ describe('shopify/settings fidelity', () => {
     const settings = new SettingsDrop([{ type: 'link_list', id: 'menu' }, { type: 'collection_list', id: 'cols' }], { menu: 'main-menu', cols: ['apparel'] }, env())
     expect(await render('{{ s.menu.title }}|{{ s.cols.size }}|{{ s.cols[0].title }}|{{ s.cols[0].handle }}', { s: settings })).toBe('Main menu|1|Apparel|apparel')
     expect(String(SettingsDrop.value(settings, 'menu'))).toBe('[object Object]')
-    expect(String((SettingsDrop.value(settings, 'cols') as unknown[])[0])).toBe('[object Object]')
+    // the elements of a list are the store's objects, which print as their handle (unpinned by shopify.dev)
+    expect(String((SettingsDrop.value(settings, 'cols') as unknown[])[0])).toBe('apparel')
   })
 
   it('gives recommendations a nil intent while nothing is recommended', async () => {

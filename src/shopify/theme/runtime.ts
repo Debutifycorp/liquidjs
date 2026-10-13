@@ -127,6 +127,16 @@ const isObject = (value: unknown): value is Record<string, unknown> => !!value &
 /** A key's own value: a JSON key such as `constructor` is not looked up on the prototype. */
 const own = (object: Record<string, unknown>, key: string): unknown => Object.prototype.hasOwnProperty.call(object, key) ? object[key] : undefined
 
+/** What a section or block key may hold when the theme is not trusted with html: Shopify's own keys are letters, digits, `-` and `_` (`main`, `image_banner`, `heading_aBc123`), and a key is printed in ids, class names and CSS selectors by themes such as Dawn. */
+const SAFE_KEY = /^[A-Za-z0-9_-]+$/
+/** A block `type` when the theme is not trusted with html: a key, or an app block's `@app` or `shopify://apps/<app>/blocks/<block>/<id>` (https://shopify.dev/docs/apps/build/online-store/theme-app-extensions/configuration). */
+const SAFE_BLOCK_TYPE = /^(?:[A-Za-z0-9_-]+|@app|shopify:\/\/apps\/[A-Za-z0-9_-]+\/blocks\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+)$/
+/** A section group's `type` when the theme is not trusted with html: `header`, `footer`, `aside` or `custom.<name>` (https://shopify.dev/docs/storefronts/themes/architecture/section-groups). */
+const SAFE_GROUP_TYPE = /^[A-Za-z0-9_.-]+$/
+
+/** A name from the saved JSON as the report shows it: as it is when plain (letters, digits and `. _ - / : @`, up to 100 characters), else `(unsafe name)`, because the report may be shown as HTML. */
+const reportName = (name: string): string => /^[\w.\-/:@]{1,100}$/.test(name) ? name : '(unsafe name)'
+
 /** A block of an app, https://shopify.dev/docs/storefronts/themes/architecture/blocks/app-blocks (`@app` in a schema) and https://shopify.dev/docs/apps/build/online-store/theme-app-extensions/configuration (`shopify://apps/<app_name>/blocks/<block_name>/<unique_ID>` as the `type` in saved JSON). */
 function isAppBlock (type: unknown): boolean {
   return typeof type === 'string' && (type === '@app' || type.startsWith('shopify://apps/'))
@@ -366,6 +376,22 @@ class PageRender implements ThemeHooks {
     return {}
   }
 
+  /**
+   * Whether a section or block key of the saved JSON may be used. Unless the theme is trusted with html (`trustHtmlSettings`) only keys of letters, digits, `-` and `_` are, because the key becomes `section.id` or `block.id` and themes print those in ids, class names, attributes and `<style>`; any other key is skipped and reported (feature `unsafe_key`) without the key, as the report may be shown as HTML.
+   */
+  private keyAllowed (key: string, what: 'section' | 'block'): boolean {
+    if (this.state.trust.htmlSettings || SAFE_KEY.test(key)) return true
+    this.state.report.unsupported('unsafe_key', `a ${what} key with characters other than letters, digits, - and _ was skipped`)
+    return false
+  }
+
+  /** Whether a saved block `type` may be used, on the same terms as `keyAllowed`; a `type` that is not a string is left to the block's own check. */
+  private blockTypeAllowed (type: unknown): boolean {
+    if (this.state.trust.htmlSettings || typeof type !== 'string' || SAFE_BLOCK_TYPE.test(type)) return true
+    this.state.report.unsupported('unsafe_key', 'a block type with characters other than letters, digits, - and _ was skipped')
+    return false
+  }
+
   /** The ids of `sections` in `order`; without a usable `order`, in the order the JSON lists them. */
   private orderOf (order: unknown, sections: Record<string, unknown>, where: string): string[] {
     if (Array.isArray(order)) return order.filter((key): key is string => typeof key === 'string')
@@ -382,7 +408,7 @@ class PageRender implements ThemeHooks {
     let index = 0
     for (const key of this.orderOf(container.order, sections, where)) {
       const data = own(sections, key) as SectionData | undefined
-      if (!data) continue
+      if (!data || !this.keyAllowed(key, 'section')) continue
       const disabled = !!data.disabled
       entries.push({ key, data, disabled, placement: place(key, disabled ? null : ++index) })
     }
@@ -425,8 +451,8 @@ class PageRender implements ThemeHooks {
       for (const entry of this.templateEntries(template)) {
         if (!entry.disabled) out += (yield this.renderSection(entry.data, entry.placement)) as string
       }
-      const wrapper = typeof template.wrapper === 'string' ? parseWrapper(template.wrapper) : undefined
-      if (template.wrapper !== undefined && !wrapper) this.state.report.unsupported('wrapper', String(template.wrapper))
+      const wrapper = typeof template.wrapper === 'string' ? parseWrapper(template.wrapper, this.state.trust.htmlSettings) : undefined
+      if (template.wrapper !== undefined && !wrapper) this.state.report.unsupported('wrapper', typeof template.wrapper === 'number' || typeof template.wrapper === 'boolean' ? String(template.wrapper) : 'the template wrapper is not a div, main or section with #id, .class and [name=value] parts, or has an event-handler or style attribute the theme is not trusted with, and was not applied')
       return { content: wrapper ? wrapper[0] + out + wrapper[1] : out, layout: template.layout === false ? null : typeof template.layout === 'string' ? template.layout : 'theme' }
     }
     let templates: Template[]
@@ -556,7 +582,7 @@ class PageRender implements ThemeHooks {
     const blocks: LiquidObject[] = []
     for (const id of data.block_order ?? Object.keys(data.blocks ?? {})) {
       const block = data.blocks ? own(data.blocks, id) as BlockData | undefined : undefined
-      if (!block || block.disabled || block.static) continue
+      if (!block || block.disabled || block.static || !this.keyAllowed(id, 'block') || !this.blockTypeAllowed(block.type)) continue
       blocks.push({ id, type: block.type, settings: new SettingsDrop(this.blockDefinitions(block.type, schema), block.settings ?? undefined, this.env), shopify_attributes: '' })
     }
     return blocks
@@ -572,11 +598,12 @@ class PageRender implements ThemeHooks {
   private * renderSection (data: SectionData, placement: Placement): Generator<unknown, string, unknown> {
     const started = now()
     const type = typeof data.type === 'string' ? data.type : '(no type)'
-    const report = (status: 'rendered' | 'missing' | 'failed', reason?: string) => this.state.report.section({ id: placement.id, type, location: placement.location, status, ms: now() - started, reason })
+    const report = (status: 'rendered' | 'missing' | 'failed', reason?: string, shown = type) => this.state.report.section({ id: placement.id, type: shown, location: placement.location, status, ms: now() - started, reason })
     const file = `sections/${type}.liquid`
     if (typeof data.type !== 'string' || !this.theme.has(file)) {
-      this.state.report.missing('section', type)
-      report('missing')
+      const shown = typeof data.type === 'string' ? reportName(type) : type
+      this.state.report.missing('section', shown)
+      report('missing', undefined, shown)
       return ''
     }
     let templates: Template[]
@@ -689,7 +716,11 @@ class PageRender implements ThemeHooks {
 
   /** The sections of a group as `renderPage` places them: ids `sections--<name>__<key>`, the group's `type` as `location` (the name when it has none), a 1-based `index`, and the class `shopify-section-group-<name>`. */
   private groupEntries (name: string, group: GroupJson): Entry[] {
-    const location = typeof group.type === 'string' ? group.type : name
+    let location = typeof group.type === 'string' ? group.type : name
+    if (!this.state.trust.htmlSettings && !SAFE_GROUP_TYPE.test(location)) {
+      this.state.report.unsupported('unsafe_key', `sections/${name}.json has a type with characters other than letters, digits, ., - and _ and was replaced by the group name`)
+      location = name
+    }
     return this.entries(group, `sections/${name}.json`, (key, index) => ({ id: `sections--${name}__${key}`, location, index, groupClass: `shopify-section-group-${name}` }))
   }
 
@@ -725,9 +756,9 @@ class PageRender implements ThemeHooks {
     let out = ''
     for (const id of frame.container.block_order ?? Object.keys(frame.container.blocks ?? {})) {
       const data = frame.container.blocks?.[id]
-      if (!data || data.disabled || data.static) continue
+      if (!data || data.disabled || data.static || !this.keyAllowed(id, 'block') || !this.blockTypeAllowed(data.type)) continue
       if (isAppBlock(data.type)) {
-        this.state.report.unsupported('app block', `${frame.block ? `${frame.section.type} > ${frame.block.type} ${frame.block.id}` : frame.section.type}: ${data.type}`)
+        this.state.report.unsupported('app block', `${frame.block ? `${frame.section.type} > ${frame.block.type} ${frame.block.id}` : frame.section.type}: ${typeof data.type === 'string' ? reportName(data.type) : String(data.type)}`)
         continue
       }
       out += (yield this.renderThemeBlock(id, data, {}, frame)) as string
@@ -765,7 +796,7 @@ class PageRender implements ThemeHooks {
     const type = typeof data.type === 'string' ? data.type : '(no type)'
     const file = `blocks/${type}.liquid`
     if (typeof data.type !== 'string' || !this.theme.has(file)) {
-      this.state.report.missing('block', type)
+      this.state.report.missing('block', typeof data.type === 'string' ? reportName(type) : type)
       return ''
     }
     let templates: Template[] = []

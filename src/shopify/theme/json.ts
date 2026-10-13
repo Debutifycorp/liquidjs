@@ -24,9 +24,9 @@ export function deepMerge<T> (base: T, override: unknown): T {
 }
 
 /**
- * Splits a JSON template's `wrapper` (`div#id.class[attr=value]`) into the opening and closing tags. https://shopify.dev/docs/storefronts/themes/architecture/templates/json-templates lists the tags `div`, `main` and `section` and gives one example, `div#div_id.div_class[attribute-one=value]`, but no grammar: the parts here (`#id`, `.class`, `[name=value]`, any number of each) are read from that example and are not pinned. A wrapper that does not parse returns undefined.
+ * Splits a JSON template's `wrapper` (`div#id.class[attr=value]`) into the opening and closing tags. https://shopify.dev/docs/storefronts/themes/architecture/templates/json-templates lists the tags `div`, `main` and `section` and gives one example, `div#div_id.div_class[attribute-one=value]`, but no grammar: the parts here (`#id`, `.class`, `[name=value]`, any number of each) are read from that example and are not pinned. A wrapper that does not parse returns undefined, and so does one with an event-handler attribute (a name starting with `on`) or a `style` attribute unless `trusted` is true, as a wrapper written by whoever edits a template must not be a way to run script.
  */
-export function parseWrapper (spec: string): [string, string] | undefined {
+export function parseWrapper (spec: string, trusted = false): [string, string] | undefined {
   const match = /^(div|main|section)((?:#[\w-]+|\.[\w-]+|\[[\w-]+=[^\]]*\])*)$/.exec(spec.trim())
   if (!match) return undefined
   const [, tag, rest] = match
@@ -38,6 +38,7 @@ export function parseWrapper (spec: string): [string, string] | undefined {
     else if (part[0] === '.') classes.push(part.slice(1))
     else {
       const eq = part.indexOf('=')
+      if (!trusted && /^(?:on|style$)/i.test(part.slice(1, eq))) return undefined
       attributes.push(`${part.slice(1, eq)}="${part.slice(eq + 1, -1).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"`)
     }
   }

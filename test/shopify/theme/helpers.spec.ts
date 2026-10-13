@@ -34,6 +34,14 @@ describe('shopify/theme/json parseWrapper', () => {
   })
   it('escapes attribute values', () => {
     expect(parseWrapper('div[data-x=a"b&c]')).toEqual(['<div data-x="a&quot;b&amp;c">', '</div>'])
+    expect(parseWrapper('div[data-on=a][aria-label=b]')).toEqual(['<div data-on="a" aria-label="b">', '</div>'])
+  })
+  it('refuses an event-handler or style attribute unless the caller trusts the wrapper', () => {
+    for (const spec of ['div[onmouseover=alert(1)]', 'div#a.b[ONCLICK=x]', 'main[onfocus=x][data-a=b]', 'section[style=position:fixed]', 'div[Style=x]']) {
+      expect([spec, parseWrapper(spec)]).toEqual([spec, undefined])
+      expect(parseWrapper(spec, true)).toEqual(expect.any(Array))
+    }
+    expect(parseWrapper('div[onmouseover=alert(1)]', true)).toEqual(['<div onmouseover="alert(1)">', '</div>'])
   })
   it('refuses other tags and malformed specs', () => {
     expect(parseWrapper('span.x')).toBeUndefined()

@@ -37,10 +37,12 @@ export interface SettingsEnv {
    *
    * Without `liquidSettings`, `liquid` settings print as escaped text. Without `htmlSettings`:
    * - `html` settings are sanitised, and `richtext` and `inline_richtext` always are;
-   * - `url` and `video_url` values are dropped (feature `unsafe_url`) when they contain a quote, an angle bracket, a backtick, whitespace or a control character, which a URL never carries unencoded, or have a scheme other than `http`, `https`, `mailto` and `tel` (relative paths, `/…`, `#…` and `shopify://…` pass);
-   * `select`, `radio` and `text_alignment` values must be one of the setting's options, `range` and `number` values finite numbers (a `range` is clamped to its `min` and `max`), `checkbox` values booleans, `color` values colours (`#rgb`, `#rrggbb`, `rgb()`, `hsl()` and their alpha forms), `color_background` values a colour or a gradient made of letters, digits and `#%.,()/+-` and spaces, and an `image_picker` given as data a URL-shaped `src` and numeric `width`, `height`, `id` and `focal_point`;
+   * - `url` and `video_url` values are dropped (feature `unsafe_url`) when they contain a quote, an angle bracket, a backtick, whitespace or a control character, which a URL never carries unencoded, or a character reference to a quote or a number (`&#`, `&quot`, `&apos`), or have a scheme other than `http`, `https`, `mailto` and `tel` (relative paths, `/…`, `#…` and `shopify://…` pass);
+   * `select`, `radio` and `text_alignment` values must be one of the setting's options, `range` and `number` values finite numbers (a `range` is clamped to its `min` and `max`), `checkbox` values booleans, `color` values colours (`#rgb`, `#rrggbb`, `rgb()`, `hsl()` and their alpha forms), `color_background` values a colour or a gradient made of letters, digits and `#%.,()/+-` and spaces that calls only gradient and colour functions (not `url()`), and an `image_picker` given as data a URL-shaped `src` and numeric `width`, `height`, `id` and `focal_point`, and an `alt` free of quotes, angle brackets, backticks and control characters (dropped, with the image kept, when it is not);
    * every other text-like value (`text`, `textarea`, a stored value no setting declares, a `default`) is passed through unchanged unless it contains `<`, when it goes through the sanitiser, so plain text stays byte-identical to Shopify and a theme's own `| escape` keeps working;
    * stored keys (undeclared setting ids and keys inside undeclared data) with a quote, an angle bracket, a backtick or a control character are dropped (feature `unsafe_key`), and so are colour-scheme ids with anything but letters, digits, `-` and `_` (feature `color_scheme`).
+   *
+   * The theme runtime (`renderPage`) holds section keys, block keys and block types, group types and the template `wrapper` to the same flag.
    *
    * `json` and `inspect` escape `<`, `>` and `&` whatever these say (see `jsonFilters`).
    */
@@ -101,6 +103,8 @@ const TRANSLATABLE = new Set(['text', 'textarea', 'richtext', 'inline_richtext',
 /** What a URL never carries unencoded: whitespace, control characters, quotes, angle brackets and the backtick. One of them in a URL setting could end the attribute or the element the URL is printed in. */
 // eslint-disable-next-line no-control-regex
 const UNSAFE_URL_CHARACTER = /[\s\u0000-\u001f\u007f-\u009f"'<>`]/
+/** A character reference to a quote or to anything by number (`&#39;`, `&#x27;`, `&quot;`, `&apos;`), which a browser decodes inside an attribute value or a script string where the URL is printed: a pasted URL carries `&` but not these. */
+const CHARACTER_REFERENCE = /&(?:#|quot|apos)/i
 /** What a stored key or an option value must not carry, as it may be printed in text or in an attribute. */
 // eslint-disable-next-line no-control-regex
 const UNSAFE_KEY_CHARACTER = /["'<>`\u0000-\u001f\u007f-\u009f\u2028\u2029]/
@@ -108,6 +112,8 @@ const UNSAFE_KEY_CHARACTER = /["'<>`\u0000-\u001f\u007f-\u009f\u2028\u2029]/
 const SCHEME_ID = /^[A-Za-z0-9_-]+$/
 /** A gradient as `color_background` stores it: function names, numbers, colours, units and separators, no quote, semicolon, brace, colon, backslash or angle bracket. */
 const GRADIENT = /^[A-Za-z0-9#%.,()/+\s-]{1,2000}$/
+/** The only CSS functions a `color_background` value may call when the theme is not trusted with html: the gradients and the colour notations (a function such as `url(` or `image-set(` would make the page fetch from a host the value names). */
+const BACKGROUND_FUNCTIONS = /^(?:(?:repeating-)?(?:linear|radial|conic)-gradient|rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)$/
 const NUMERIC = /^\s*-?\d+(?:\.\d+)?\s*$/
 
 /** Reports a value that was rejected, without the value (the report may be shown as HTML), under `feature`. */
@@ -136,11 +142,11 @@ function safeKey (key: string, env: SettingsEnv): boolean {
   return false
 }
 
-/** A URL setting's value as it prints: unchanged for trusted themes; otherwise it must have none of the characters a URL never carries unencoded and only a relative or Shopify route or the schemes `http`, `https`, `mailto` and `tel`, or it is dropped and reported (feature `unsafe_url`). */
+/** A URL setting's value as it prints: unchanged for trusted themes; otherwise it must have none of the characters a URL never carries unencoded, no character reference to a quote or a number, and only a relative or Shopify route or the schemes `http`, `https`, `mailto` and `tel`, or it is dropped and reported (feature `unsafe_url`). */
 function safeUrl (definition: SettingDefinition, url: string | null, env: SettingsEnv): string | null {
   if (url === null || env.trust.htmlSettings) return url
-  if (UNSAFE_URL_CHARACTER.test(url)) {
-    reject(env, 'unsafe_url', definition, 'has a URL with a quote, angle bracket, backtick, space or control character and was dropped')
+  if (UNSAFE_URL_CHARACTER.test(url) || CHARACTER_REFERENCE.test(url)) {
+    reject(env, 'unsafe_url', definition, 'has a URL with a quote, angle bracket, backtick, space, control character or character reference and was dropped')
     return null
   }
   if (url.startsWith('shopify://') || isSafeUrl(url)) return url
@@ -186,12 +192,12 @@ function numeric (definition: SettingDefinition, stored: unknown, env: SettingsE
   return clamped
 }
 
-/** A `checkbox` value: untrusted themes only get a boolean, else the default if that is one, else false. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings (`checkbox`: "a boolean"). */
+/** A `checkbox` value: untrusted themes only get a boolean, else the default if that is one, else false. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings (`checkbox`: "If `default` is unspecified, then the value is `false` by default"). */
 function boolean (definition: SettingDefinition, stored: unknown, env: SettingsEnv): unknown {
-  if (env.trust.htmlSettings) return stored === undefined ? definition.default ?? null : stored
+  if (env.trust.htmlSettings) return stored === undefined ? definition.default ?? false : stored
   if (typeof stored === 'boolean') return stored
   if (stored !== undefined) reject(env, 'invalid_setting', definition, 'has a value that is not a boolean and was replaced by its default')
-  return typeof definition.default === 'boolean' ? definition.default : stored === undefined ? null : false
+  return typeof definition.default === 'boolean' ? definition.default : false
 }
 
 /** A `color` value: untrusted themes only get a colour `ColorDrop.from` reads, else the default if that is one, else nil. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings (`color` returns a `color` object, blank when nothing is selected). */
@@ -206,21 +212,31 @@ function colour (definition: SettingDefinition, stored: unknown, env: SettingsEn
   return fallback ?? null
 }
 
-/** A `color_background` value: a string, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings ("a string", an empty one when nothing is entered); untrusted themes only get a colour or a gradient of the characters `GRADIENT` allows, else the default if that is one, else nil. */
+/** The names of the CSS functions a value calls: each word before a parenthesis, in lower case. */
+const functionsOf = (value: string): string[] => (value.match(/[A-Za-z-]+(?=\s*\()/g) ?? []).map(name => name.toLowerCase())
+
+/** A `color_background` value: a string, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings ("a string", an empty one when nothing is entered); untrusted themes only get a colour or a gradient of the characters `GRADIENT` allows that calls only the functions `BACKGROUND_FUNCTIONS` lists, else the default if that is one, else nil. */
 function background (definition: SettingDefinition, stored: unknown, env: SettingsEnv): unknown {
   const value = stored === undefined ? definition.default : stored
   if (env.trust.htmlSettings || value === undefined || value === null) return value ?? null
-  const ok = (candidate: unknown): candidate is string => typeof candidate === 'string' && (candidate === '' || !!ColorDrop.from(candidate) || GRADIENT.test(candidate))
+  const ok = (candidate: unknown): candidate is string => typeof candidate === 'string' && (candidate === '' || !!ColorDrop.from(candidate) || (GRADIENT.test(candidate) && functionsOf(candidate).every(name => BACKGROUND_FUNCTIONS.test(name))))
   if (ok(value)) return value
   reject(env, 'invalid_setting', definition, 'has a value that is not a colour or gradient and was replaced by its default')
   return stored !== undefined && ok(definition.default) ? definition.default : null
 }
 
-/** An `image_picker` stored as data rather than as a file reference: untrusted themes get an image only when its `src` has the shape of a URL with a safe scheme, and its numbers are numbers, so no field can carry markup or an attribute. */
+/** The `alt` of an `image_picker` stored as data, for a theme that is not trusted with html (`imageData` has returned the image as it is for one that is). It must be free of quotes, angle brackets, backticks and control characters, as themes print it in an `alt` attribute (Dawn escapes it, others do not); one that is not is dropped, and the image stays, and the alt is reported (feature `invalid_setting`) without its text. */
+function safeAlt (definition: SettingDefinition, alt: string, env: SettingsEnv): { alt?: string } {
+  if (!UNSAFE_KEY_CHARACTER.test(alt)) return { alt }
+  reject(env, 'invalid_setting', definition, 'has an image alt with a quote, angle bracket, backtick or control character and the alt was dropped')
+  return {}
+}
+
+/** An `image_picker` stored as data rather than as a file reference: untrusted themes get an image only when its `src` has the shape of a URL with a safe scheme, and its numbers are numbers, and its `alt` is dropped when it is not quote-free (see `safeAlt`), so no field can carry markup or an attribute. */
 function imageData (definition: SettingDefinition, value: Record<string, unknown>, env: SettingsEnv): ImageDrop | null {
   const trusted = env.trust.htmlSettings
   if (typeof value.src !== 'string' || !value.src) return null
-  if (!trusted && (UNSAFE_URL_CHARACTER.test(value.src) || !isSafeUrl(value.src))) {
+  if (!trusted && (UNSAFE_URL_CHARACTER.test(value.src) || CHARACTER_REFERENCE.test(value.src) || !isSafeUrl(value.src))) {
     reject(env, 'unsafe_url', definition, 'has an image whose src is not a safe URL and was dropped')
     return null
   }
@@ -231,7 +247,7 @@ function imageData (definition: SettingDefinition, value: Record<string, unknown
     ...(typeof value.width === 'number' && Number.isFinite(value.width) ? { width: value.width } : {}),
     ...(typeof value.height === 'number' && Number.isFinite(value.height) ? { height: value.height } : {}),
     ...(typeof value.id === 'number' && Number.isFinite(value.id) ? { id: value.id } : {}),
-    ...(typeof value.alt === 'string' ? { alt: safeText(value.alt, env) } : {}),
+    ...(typeof value.alt === 'string' ? safeAlt(definition, value.alt, env) : {}),
     ...(focal ? { focal_point: focal } : {})
   })
 }
@@ -272,7 +288,7 @@ export function resolveSettingValue (definition: SettingDefinition, stored: unkn
     }
     case 'font_picker': {
       const info = typeof value === 'string' ? env.services.fontInfo(value) : undefined
-      if (!info && value) env.report.unsupported('font_picker', `unknown font ${String(value)}`)
+      if (!info && value) env.report.unsupported('font_picker', `${['font_picker', 'setting', definition.id].filter(Boolean).join(' ')} has a font that is not known`)
       return info ? new FontDrop(info, env.services.fontInfo) : null
     }
     case 'image_picker': {
@@ -282,7 +298,7 @@ export function resolveSettingValue (definition: SettingDefinition, stored: unkn
       }
       const name = fromFileReference(value, 'shopify://shop_images/')
       const found = name === undefined ? undefined : HandleMap.get(env.store.images, name)
-      if (name !== undefined && !found) env.report.missing('resource', `image ${name}`)
+      if (name !== undefined && !found) env.report.missing('resource', `image of setting ${definition.id ?? 'image_picker'}`)
       return found ?? null
     }
     case 'video': {
@@ -296,21 +312,21 @@ export function resolveSettingValue (definition: SettingDefinition, stored: unkn
     case 'url':
       return safeUrl(definition, settingUrl(value), env)
     case 'product':
-      return printsHandle(lookup(env, env.store.products, value, 'product'))
+      return lookup(env, definition, env.store.products, value, 'product')
     case 'collection':
-      return printsHandle(lookup(env, env.store.collections, value, 'collection'))
+      return lookup(env, definition, env.store.collections, value, 'collection')
     case 'page':
-      return printsHandle(lookup(env, env.store.pages, value, 'page'))
+      return lookup(env, definition, env.store.pages, value, 'page')
     case 'blog':
-      return printsHandle(lookup(env, env.store.blogs, value, 'blog'))
+      return lookup(env, definition, env.store.blogs, value, 'blog')
     case 'article':
-      return printsHandle(lookup(env, env.store.articles, value, 'article'))
+      return lookup(env, definition, env.store.articles, value, 'article')
     case 'link_list':
-      return lookup(env, env.linklists, value, 'menu')
+      return lookup(env, definition, env.linklists, value, 'menu')
     case 'product_list':
-      return Array.isArray(value) ? value.map(handle => lookup(env, env.store.products, handle, 'product')).filter(Boolean) : []
+      return Array.isArray(value) ? value.map(handle => lookup(env, definition, env.store.products, handle, 'product')).filter(Boolean) : []
     case 'collection_list':
-      return Array.isArray(value) ? value.map(handle => lookup(env, env.store.collections, handle, 'collection')).filter(Boolean) : []
+      return Array.isArray(value) ? value.map(handle => lookup(env, definition, env.store.collections, handle, 'collection')).filter(Boolean) : []
     case 'liquid':
       return typeof value === 'string' ? new LiquidSetting(value) : null
     case 'html':
@@ -318,6 +334,7 @@ export function resolveSettingValue (definition: SettingDefinition, stored: unkn
     case 'richtext':
     case 'inline_richtext':
       return typeof value === 'string' ? sanitizeHtml(value) : null
+    // Also `metaobject` and `metaobject_list`, which https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings returns as objects or blank: this package holds no metaobjects, so a stored value is data, and a string follows the text rule like the text of any setting no case above names.
     default:
       return typeof value === 'string' ? safeText(value, env) : safeData(value ?? null, env)
   }
@@ -349,26 +366,11 @@ function buildColorSchemes (definition: SettingDefinition, stored: unknown, env:
   return new HandleMap(schemes)
 }
 
-const HANDLE_VIEWS = new WeakMap<LiquidObject, LiquidObject>()
-
-/**
- * A `product`, `collection`, `page`, `blog` or `article` setting's object as the setting returns it: the same fields, but printed on its own it is the handle. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings says for each of these types that "outputting the setting directly will return the object's handle"; it says nothing of `link_list`, or of the elements of a `product_list` or `collection_list`, which stay as they are. The view is a shallow copy with a non-enumerable `toString`, so reading fields, `json` and the filters that take the object work as on the object itself.
- */
-function printsHandle (object: LiquidObject | null): LiquidObject | null {
-  if (!object) return null
-  let view = HANDLE_VIEWS.get(object)
-  if (!view) {
-    view = { ...object }
-    Object.defineProperty(view, 'toString', { value: () => String(object.handle ?? ''), enumerable: false })
-    HANDLE_VIEWS.set(object, view)
-  }
-  return view
-}
-
-function lookup (env: SettingsEnv, map: HandleMap<LiquidObject>, handle: unknown, kind: string): LiquidObject | null {
+/** The object a handle names, or nil. A handle that names nothing is reported by the setting's id, never by the handle, as the handle is saved data and the report may be shown as HTML. */
+function lookup (env: SettingsEnv, definition: SettingDefinition, map: HandleMap<LiquidObject>, handle: unknown, kind: string): LiquidObject | null {
   if (typeof handle !== 'string' || !handle) return null
   const found = HandleMap.get(map, handle)
-  if (!found) env.report.missing('resource', `${kind} ${handle}`)
+  if (!found) env.report.missing('resource', `${kind} of setting ${definition.id ?? definition.type}`)
   return found ?? null
 }
 
