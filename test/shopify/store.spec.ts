@@ -92,7 +92,7 @@ describe('shopify/settings', () => {
     expect(await render('{{ s.custom }}', { ...scope, s: new SettingsDrop(definitions, stored, env({ trust: { liquidSettings: true, htmlSettings: false } })) })).toBe('Hello <b>Shop</b>')
   })
   it('sanitises html and rich text settings unless html is trusted', async () => {
-    expect(await render('{{ s.markup }}|{{ s.body }}', { s: new SettingsDrop(definitions, stored, env()) })).toBe('<p>Hi <a>x</a><a href="/pages/about" target="_blank">ok</a></p>|<p>Fine <strong>text</strong><img src="x"></p>')
+    expect(await render('{{ s.markup }}|{{ s.body }}', { s: new SettingsDrop(definitions, stored, env()) })).toBe('<p>Hi <a>x</a><a href="/pages/about" target="_blank" rel="noopener noreferrer">ok</a></p>|<p>Fine <strong>text</strong><img src="x"></p>')
     expect(await render('{{ s.markup }}', { s: new SettingsDrop(definitions, stored, env({ trust: { liquidSettings: false, htmlSettings: true } })) })).toBe(stored.markup)
   })
 })
@@ -111,7 +111,38 @@ describe('shopify/util/sanitize', () => {
     ['<p title="a&quot;b">x</p>', '<p title="a&quot;b">x</p>'],
     ['ok<img src="x', 'ok'],
     ['<p>a</p><!-- open', '<p>a</p>'],
-    ['<br/><IMG SRC=x onerror=y />', '<br><img src="x">']
+    ['<br/><IMG SRC=x onerror=y />', '<br><img src="x">'],
+    // attribute breakout, and the references a browser decodes before it reads a scheme
+    ['<a title=\'x" onmouseover="y\'>t</a>', '<a title="x&quot; onmouseover=&quot;y">t</a>'],
+    ['<a href="java&Tab;script:alert(1)">x</a>', '<a>x</a>'],
+    ['<a href="java&NewLine;script:alert(1)">x</a>', '<a>x</a>'],
+    ['<a href="&#106;avascript:alert(1)">x</a>', '<a>x</a>'],
+    ['<a href="&#x6A;avascript:alert(1)">x</a>', '<a>x</a>'],
+    // foreign content and other elements dropped together with what is inside them
+    ['<svg><desc>hello</desc></svg>tail', 'tail'],
+    ['<math><mi>x</mi></math>tail', 'tail'],
+    ['<textarea><b>x</b></textarea>tail', 'tail'],
+    // a browser uses the first of two attributes with one name; attributes belong to their element
+    ['<a href="/a" href="javascript:x">x</a>', '<a href="/a">x</a>'],
+    ['<a src="/y" href="/x" width="3">x</a><p href="/x">y</p>', '<a href="/x">x</a><p>y</p>'],
+    // links: target and rel
+    ['<a href="/x" target="_top">x</a>', '<a href="/x">x</a>'],
+    ['<a href="/x" target="_BLANK" rel="opener nofollow">x</a>', '<a href="/x" target="_blank" rel="nofollow noopener noreferrer">x</a>'],
+    ['<a href="/x" rel="opener">x</a>', '<a href="/x">x</a>'],
+    ['<a href="/x" rel="NoFollow noreferrer">x</a>', '<a href="/x" rel="nofollow noreferrer">x</a>'],
+    // balanced output: close what is left open, drop closers that close nothing
+    ['<p>Great <a href="https://phish.example/login">shop</p>', '<p>Great <a href="https://phish.example/login">shop</a></p>'],
+    ['</div></section></main><p>moved</p>', '<p>moved</p>'],
+    ['<b><i>x</b>y', '<b><i>x</i></b>y'],
+    // the closing the HTML parser would do by itself is written out, so a closing tag never reaches the page around the value
+    ['<ul><li>a<li>b', '<ul><li>a</li><li>b</li></ul>'],
+    ['<li><br><p><div><li></p>', '<li><br><p></p><div></div></li><li></li>'],
+    ['<h1>a<h2>b</h2>', '<h1>a</h1><h2>b</h2>'],
+    ['<a href=/x>1<a href=/y>2</a>', '<a href="/x">1</a><a href="/y">2</a>'],
+    ['<p>a<ul><li>b</ul>', '<p>a</p><ul><li>b</li></ul>'],
+    ['<ul><li><ul><li>x</ul></ul>', '<ul><li><ul><li>x</li></ul></li></ul>'],
+    ['x</br></p>', 'x'],
+    ['<p>a</p></p><span>b', '<p>a</p><span>b</span>']
   ])('%s', (input, expected) => {
     expect(sanitizeHtml(input)).toBe(expected)
   })
@@ -129,6 +160,15 @@ describe('shopify/util/sanitize', () => {
     expect(sanitizeHtml('<p title="'.repeat(20000))).toBe('')
     expect(sanitizeHtml('<!x'.repeat(20000) + '<?'.repeat(20000))).toBe('')
     expect(sanitizeHtml('<'.repeat(20000))).toBe('&lt;'.repeat(20000))
+    expect(Date.now() - started).toBeLessThan(2000)
+  })
+  it('caps nesting and matches closing tags in constant time', () => {
+    const deep = sanitizeHtml('<b>'.repeat(500) + 'x')
+    expect(deep.split('<b>').length - 1).toBe(100)
+    expect(deep.split('</b>').length - 1).toBe(100)
+    const started = Date.now()
+    const mismatched = sanitizeHtml('<b>'.repeat(100000) + '</i>'.repeat(100000))
+    expect(mismatched.split('</b>').length - 1).toBe(100)
     expect(Date.now() - started).toBeLessThan(2000)
   })
 })
