@@ -1,6 +1,7 @@
 import type { FilterImpl } from '../../template/filter-impl-options'
 import { stringify, toValue } from '../../util'
 import { splitArgs } from '../util/args'
+import { escapeHtml } from '../util/html'
 import type { Paginate } from '../tags/paginate'
 import type { ShopifyFilterSet } from './types'
 
@@ -9,7 +10,8 @@ function defaultPagination (this: FilterImpl, input: unknown, ...args: unknown[]
   const paginate = toValue(input) as Paginate | undefined
   if (!paginate || !Array.isArray(paginate.parts)) return ''
   const { named } = splitArgs(args)
-  const anchor = named.anchor ? `#${stringify(named.anchor)}` : ''
+  // the anchor is escaped for the attribute; the `previous` and `next` texts are not, because they may carry entities (`&laquo;`) as the default titles do
+  const anchor = named.anchor ? `#${escapeHtml(named.anchor)}` : ''
   const link = (url: string | null, text: string) => `<a href="${url}${anchor}" title="">${text}</a>`
   const html: string[] = []
   if (paginate.previous?.url) html.push(`<span class="prev">${link(paginate.previous.url, named.previous ? stringify(named.previous) : paginate.previous.title)}</span>`)

@@ -45,12 +45,12 @@ abstract class AssetTag extends SilentRawTag {
   }
 }
 
-/** `{% javascript %}`: renders nothing where it stands; Shopify bundles the body into a deferred script loaded by `content_for_header`, which is what the theme runtime does with the bodies it records here. https://shopify.dev/docs/storefronts/themes/best-practices/javascript-and-stylesheet-tags#javascript (that Shopify loads the bodies through `content_for_header` is not pinned by shopify.dev; recording them per file is Debutify's choice) */
+/** `{% javascript %}`: renders nothing where it stands and records its body. https://shopify.dev/docs/storefronts/themes/best-practices/javascript-and-stylesheet-tags#javascript says Shopify concatenates the bodies of the section, block and snippet files into `scripts.js`, `block-scripts.js` and `snippet-scripts.js`, loads them through `content_for_header` in a deferred `<script>`, and wraps each body in a self-executing function. That is the theme runtime's job: this tag only records the body in one map keyed by file (the bundle a file belongs to follows from the file's path), the first body of a file winning. The page says a second `{% javascript %}` in one file is a syntax error when editing the theme; here the later one is ignored without a message. Inlining the recorded bodies in `content_for_header`, rather than linking generated files, is Debutify's choice and is not pinned by shopify.dev. */
 export class JavascriptTag extends AssetTag {
   protected readonly assets = (state: ShopifyState) => state.assets.javascripts
 }
 
-/** `{% stylesheet %}`: renders nothing where it stands; Shopify bundles the body into `styles.css`, linked from `content_for_header`, which is what the theme runtime does with the bodies it records here. https://shopify.dev/docs/storefronts/themes/best-practices/javascript-and-stylesheet-tags#stylesheet (that Shopify loads the bodies through `content_for_header` is not pinned by shopify.dev; recording them per file is Debutify's choice) */
+/** `{% stylesheet %}`: renders nothing where it stands and records its body. https://shopify.dev/docs/storefronts/themes/best-practices/javascript-and-stylesheet-tags#stylesheet says Shopify collects the bodies into one `styles.css` that `content_for_header` links to (subsetting it to the files each page renders). That is the theme runtime's job: this tag only records the body in one map keyed by file, the first body of a file winning. The page says a second `{% stylesheet %}` in one file is a syntax error when editing the theme; here the later one is ignored without a message. Inlining the recorded bodies in `content_for_header`, rather than linking `styles.css`, is Debutify's choice and is not pinned by shopify.dev. */
 export class StylesheetTag extends AssetTag {
   protected readonly assets = (state: ShopifyState) => state.assets.stylesheets
 }
