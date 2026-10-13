@@ -33,17 +33,26 @@ function hidden (target: LiquidObject, key: string, value: unknown) {
   Object.defineProperty(target, key, { value, enumerable: false })
 }
 
-/** Product media: images (https://shopify.dev/docs/api/liquid/objects/media), videos (https://shopify.dev/docs/api/liquid/objects/video) and external videos (https://shopify.dev/docs/api/liquid/objects/external_video). Only media images carry a `preview_image`, https://shopify.dev/docs/api/liquid/objects/image#image-preview_image. `index` is the media's place in `product.media`, which becomes its 1-based `position` (https://shopify.dev/docs/api/liquid/objects/media#media-position); media from anywhere else has none. */
+/** Product media: images (https://shopify.dev/docs/api/liquid/objects/media), videos (https://shopify.dev/docs/api/liquid/objects/video) and external videos (https://shopify.dev/docs/api/liquid/objects/external_video). Only media images carry a `preview_image`, https://shopify.dev/docs/api/liquid/objects/image#image-preview_image. `index` is the media's place in `product.media`; it becomes the media's `position`, counted from 1 (https://shopify.dev/docs/api/liquid/objects/media#media-position). That base is not pinned: the media page and shopify.dev's image page (https://shopify.dev/docs/api/liquid/objects/image#image-position) both show `1` in their example for the first entry but neither states the base, so it is on the confirm-on-a-development-store list. Media from anywhere else has no position. */
 function buildMedia (media: MediaData, index?: number): unknown {
   const position = index === undefined ? null : index + 1
   if (media.media_type === 'image') return new ImageDrop(media, true, position)
   return { ...media, alt: media.alt ?? '', preview_image: image(media.preview_image), position }
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/variant. `url` carries `?variant=<id>` as that page documents. `unit_price_measurement` and `selling_plan_allocations` are left empty and `quantity_rule` holds Shopify's defaults; shopify.dev documents the fields but this layer has no data for them. */
-function buildVariant (variant: VariantData, productUrl: string): LiquidObject {
+/** Whether two image entries are the same image: matched by `id` when both have one, by `src` otherwise. */
+const sameImage = (a: ImageData, b: ImageData) => a.id != null && b.id != null ? a.id === b.id : a.src === b.src
+
+/** The place, counted from 1, of an image in a list of a product's images or media (a media entry that is not an image keeps its slot but never matches), or nil when the list does not hold it. The counting base is the unpinned one of `buildMedia`. */
+function positionIn (list: Array<ImageData | { media_type: string }>, target: ImageData): number | null {
+  const index = list.findIndex(item => 'src' in item && sameImage(item, target))
+  return index < 0 ? null : index + 1
+}
+
+/** https://shopify.dev/docs/api/liquid/objects/variant. `url` carries `?variant=<id>` as that page documents. `unit_price_measurement` and `selling_plan_allocations` are left empty and `quantity_rule` holds Shopify's defaults; shopify.dev documents the fields but this layer has no data for them. `featured_image` and `featured_media` are the product's own image, so they carry the `position` of the matching entry in `product.images` and `product.media` (nil when the product does not list that image); shopify.dev does not say so, and it goes on the confirm-on-a-development-store list with the counting base. */
+function buildVariant (variant: VariantData, productUrl: string, productImages: ImageData[], productMedia: MediaData[]): LiquidObject {
   const options = [variant.option1, variant.option2, variant.option3].filter((option): option is string => typeof option === 'string')
-  const featured = image(variant.image)
+  const featured = variant.image ? new ImageDrop(variant.image, false, positionIn(productImages, variant.image)) : null
   return {
     id: variant.id,
     title: variant.title,
@@ -58,7 +67,7 @@ function buildVariant (variant: VariantData, productUrl: string): LiquidObject {
     url: `${productUrl}?variant=${variant.id}`,
     image: featured,
     featured_image: featured,
-    featured_media: variant.image ? new ImageDrop(variant.image, true) : null,
+    featured_media: variant.image ? new ImageDrop(variant.image, true, positionIn(productMedia, variant.image)) : null,
     inventory_quantity: variant.inventory_quantity ?? (variant.available ? 1 : 0),
     inventory_management: null,
     inventory_policy: 'deny',
@@ -76,9 +85,11 @@ function buildVariant (variant: VariantData, productUrl: string): LiquidObject {
  */
 export function buildProduct (data: ProductData): LiquidObject {
   const url = `/products/${data.handle}`
+  // The image `position` counts from 1, which shopify.dev's image page does not state (its example shows 1 for the first image): unpinned, on the confirm-on-a-development-store list.
   const images = (data.images ?? []).map((img, i) => new ImageDrop(img, false, i + 1))
-  const media = (data.media ?? (data.images ?? []).map(img => ({ ...img, media_type: 'image' as const }))).map(buildMedia)
-  const variants = data.variants.map(variant => buildVariant(variant, url))
+  const mediaData: MediaData[] = data.media ?? (data.images ?? []).map(img => ({ ...img, media_type: 'image' as const }))
+  const media = mediaData.map(buildMedia)
+  const variants = data.variants.map(variant => buildVariant(variant, url, data.images ?? [], mediaData))
   const options = data.options ?? ['Title']
   const prices = variants.map(variant => variant.price as number)
   const compares = variants.map(variant => variant.compare_at_price as number | null).filter((price): price is number => typeof price === 'number')

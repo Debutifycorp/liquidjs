@@ -32,6 +32,31 @@ describe('shopify/store', () => {
     expect(await render('{{ p.images[0].position }}|{{ p.images[1].position }}|{{ p.featured_image.position }}|{% for m in p.media %}{{ m.position }}{% endfor %}|{{ p.featured_media.position }}|{{ p.media[1].preview_image.position }}|{{ image.position }}', { p: product, image: store.images.liquidMethodMissing('hero.jpg') }))
       .toBe('1|2|1|123|1||')
   })
+  it('gives a variant image the position of the same image in the product images and media', async () => {
+    const product = buildProduct({
+      id: 9002,
+      handle: 'gallery',
+      title: 'Gallery',
+      images: [{ src: '/a.jpg', width: 100, height: 100 }, { src: '/b.jpg', width: 100, height: 100 }, { src: '/c.jpg', id: 33, width: 100, height: 100 }],
+      media: [
+        { media_type: 'image', src: '/a.jpg', width: 100, height: 100 },
+        { media_type: 'external_video', id: 5, host: 'youtube', external_id: 'abc', preview_image: { src: '/v.jpg' } },
+        { media_type: 'image', src: '/b.jpg', width: 100, height: 100 },
+        { media_type: 'image', src: '/c.jpg', id: 33, width: 100, height: 100 }
+      ],
+      variants: [
+        { id: 1, title: 'A', price: 100, available: true, option1: 'A', image: { src: '/a.jpg', width: 100, height: 100 } },
+        { id: 2, title: 'B', price: 100, available: true, option1: 'B', image: { src: '/b.jpg', width: 100, height: 100 } },
+        { id: 3, title: 'C', price: 100, available: true, option1: 'C', image: { src: '/renamed.jpg', id: 33, width: 100, height: 100 } },
+        { id: 4, title: 'D', price: 100, available: true, option1: 'D', image: { src: '/elsewhere.jpg', width: 100, height: 100 } },
+        { id: 5, title: 'E', price: 100, available: true, option1: 'E' }
+      ]
+    })
+    expect(await render('{% for v in p.variants %}{{ v.featured_image.position }}/{{ v.featured_media.position }}/{{ v.image.position }} {% endfor %}', { p: product }))
+      .toBe('1/1/1 2/3/2 3/4/3 // // ')
+    expect(await render('{{ p.variants[1].featured_image.position }}={{ p.images[1].position }} {{ p.variants[1].featured_media.position }}={{ p.media[2].position }}', { p: product }))
+      .toBe('2=2 3=3')
+  })
   it('gives variants a hidden back reference to their product', async () => {
     const product = store.products.liquidMethodMissing('canvas-bag')
     expect(await render('{{ p.variants[0].product.title }}|{{ p.variants[0] | json }}', { p: product })).toBe('Canvas Bag|' + JSON.stringify((product as any).variants[0]))
