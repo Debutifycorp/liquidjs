@@ -73,11 +73,24 @@ describe('shopify/filters/media', () => {
   it('image_url on nothing renders nothing', async () => {
     expect(await render('{{ nothing | image_url }}', {})).toBe('')
   })
-  it('image_url needs a width or height, as its Caution says, and the error is reported', async () => {
+  // https://shopify.dev/docs/api/liquid/filters/image_url says that without a width or height "an error is returned", yet Shopify's reference theme (recorded in liquid-spec's Dawn template) prints the sizeless form as the last srcset candidate; this package reads the Caution as "no resize happens". Not pinned by shopify.dev, so these expectations are Debutify's, not copied from the page.
+  it('image_url with neither width nor height is the original-size URL, without an error', async () => {
     const { html, report } = await renderWithReport('{{ product | image_url }}')
-    expect(html).toBe('Liquid error (line 1): image_url needs a width or height')
-    expect(report.errors).toHaveLength(1)
-    expect((await render("{{ product | image_url: crop: 'center' }}"))).toMatch(/^Liquid error/)
+    expect(html).toBe(BEAKERS)
+    expect(report.errors).toHaveLength(0)
+    expect(await render("{{ product | image_url: crop: 'center' }}")).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?crop=center&v=1683744744`)
+  })
+  it('image_url as the last srcset candidate and as a plain src', async () => {
+    const source = '<img srcset="{% if product.featured_image.width >= 360 %}{{ product.featured_image | image_url: width: 360 }} 360w,{% endif %}{{ product.featured_image | image_url }} {{ product.featured_image.width }}w" src="{{ product.featured_image | image_url }}">'
+    const { html, report } = await renderWithReport(source)
+    expect(html).toBe(`<img srcset="${BEAKERS}&width=360 360w,${BEAKERS} 3000w" src="${BEAKERS}">`)
+    expect(report.errors).toHaveLength(0)
+    expect(await render('{{ product | image_url | image_tag }}')).toContain(`src="${BEAKERS}" alt="Health potion"`)
+  })
+  it('an empty width or height variable counts as omitted', async () => {
+    expect(await render('{{ product | image_url: width: nothing }}')).toBe(BEAKERS)
+    expect(await render("{{ product | image_url: width: '', height: nothing }}")).toBe(BEAKERS)
+    expect(await render('{{ product | image_url: width: nothing, height: 450 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?height=450&v=1683744744`)
   })
   it('image_url crop region', async () => {
     expect(await render("{{ product | image_url: crop: 'region', crop_left: 32, crop_top: 32, crop_width: 512, crop_height: 512 }}")).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?crop=region&crop_height=512&crop_left=32&crop_top=32&crop_width=512&v=1683744744`)

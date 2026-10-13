@@ -30,7 +30,7 @@ function lazyByDefault (state: ShopifyState): boolean {
 /**
  * Returns the image's CDN URL through the `imageUrl` service; `image_tag` reads the image and parameters from the result. https://shopify.dev/docs/api/liquid/filters/image_url
  *
- * The page's Caution says that without a `width` or `height` "an error is returned", so that is an error here too (its `crop: 'region'` examples, which print a URL with neither, are the one exception); the page does not give the error's text. The page's Note says an image "can never be resized to be larger than its original dimensions", so `width` and `height` stop at the image's own when it has them, and at the 5760 maximum the page gives. When both are given and one is over its limit, both are scaled by the same factor (`min(1, limit / requested)` over the two), so an 800 by 800 request for a 1000 by 600 image is 600 by 600 and keeps the square the template asked for. shopify.dev does not say how the ratio is handled when a request is too large, so this proportional clamp is not pinned. `quality` stays within the page's 10 to 90.
+ * The page's Caution says that without a `width` or `height` "an error is returned", but Shopify's reference theme (Dawn, recorded in liquid-spec's Dawn template) prints `{{ image | image_url }}` with no size as the last `srcset` candidate, so this package reads the Caution as "no resize happens": the URL has no `width` or `height` (the `crop: 'region'` examples on the page print one too), and any other parameter given is kept. A `width` or `height` that is empty, nil or not above zero counts as omitted. What Shopify prints for the sizeless form is not pinned by shopify.dev, so it goes on the "confirm on a development store" list. The page's Note says an image "can never be resized to be larger than its original dimensions", so `width` and `height` stop at the image's own when it has them, and at the 5760 maximum the page gives. When both are given and one is over its limit, both are scaled by the same factor (`min(1, limit / requested)` over the two), so an 800 by 800 request for a 1000 by 600 image is 600 by 600 and keeps the square the template asked for. shopify.dev does not say how the ratio is handled when a request is too large, so this proportional clamp is not pinned. `quality` stays within the page's 10 to 90.
  */
 function imageUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const source = imageSource(input)
@@ -47,9 +47,6 @@ function imageUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
     } else {
       (params as Record<string, string>)[key] = stringify(value)
     }
-  }
-  if (params.width === undefined && params.height === undefined && params.crop !== 'region') {
-    throw new Error('image_url needs a width or height')
   }
   const factor = Math.min(1, params.width ? Math.min(MAX_DIMENSION, source.image.width || Infinity) / params.width : 1, params.height ? Math.min(MAX_DIMENSION, source.image.height || Infinity) / params.height : 1)
   if (factor < 1) {
