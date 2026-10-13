@@ -28,7 +28,15 @@
       "module": "./dist/shopify.node.mjs",
       "default": "./dist/shopify.node.js"
     },
-    "./dist/*": "./dist/*",
+    "./dist/*": {
+      "types": [
+        "./dist/*.d.ts",
+        "./dist/*/index.d.ts",
+        "./dist/*"
+      ],
+      "default": "./dist/*"
+    },
+    "./bin/liquid.js": "./bin/liquid.js",
     "./package.json": "./package.json"
   },
   "typesVersions": {
