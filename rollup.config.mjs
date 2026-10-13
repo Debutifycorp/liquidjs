@@ -1,7 +1,6 @@
-import { uglify } from 'rollup-plugin-uglify'
+import terser from '@rollup/plugin-terser'
 import typescript from 'rollup-plugin-typescript2'
-import replace from 'rollup-plugin-replace'
-import versionInjector from 'rollup-plugin-version-injector'
+import replace from '@rollup/plugin-replace'
 import { createRequire } from 'module'
 
 const pkg = createRequire(import.meta.url)('./package.json')
@@ -19,58 +18,60 @@ const tsconfig = (target) => ({
   check: true,
   tsconfigOverride: {
     include: ['src'],
-    exclude: ['test', 'benchmark'],
+    exclude: ['test', 'benchmark', 'src/**/*.spec.ts'],
     compilerOptions: {
       target,
       module: 'ES2015',
+      moduleResolution: 'node',
       rootDir: 'src',
       downlevelIteration: true
     }
   }
 })
-const versionInjection = versionInjector({
-  injectInComments: false,
-  injectInTags: {
-    fileRegexp: /\.(ts|js|html|css)$/,
-    tagId: 'VI',
-    dateFormat: 'mmmm d, yyyy HH:MM:ss'
-  },
-  packageJson: './package.json',
-  logLevel: 'info',
-  logger: console,
-  exclude: []
+// `export const version = '[VI]{version}[/VI]'` in src/index.ts becomes the package version
+const versionInjection = replace({
+  include: './src/index.ts',
+  delimiters: ['', ''],
+  preventAssignment: true,
+  values: { '[VI]{version}[/VI]': version }
 })
 const input = './src/index.ts'
 const browserFS = {
   include: './src/liquid-options.ts',
   delimiters: ['', ''],
-  './fs/fs-impl': './build/fs-impl-browser'
+  preventAssignment: true,
+  values: { './fs/fs-impl': './build/fs-impl-browser' }
 }
 const browserBase64 = {
   include: './src/filters/base64.ts',
   delimiters: ['', ''],
-  './base64-impl': '../build/base64-impl-browser'
+  preventAssignment: true,
+  values: { './base64-impl': '../build/base64-impl-browser' }
 }
 const browserCrypto = {
   include: './src/filters/crypto.ts',
   delimiters: ['', ''],
-  './crypto-impl': '../build/crypto-impl-browser'
+  preventAssignment: true,
+  values: { './crypto-impl': '../build/crypto-impl-browser' }
 }
 const browserStream = {
   include: './src/emitters/index.ts',
   delimiters: ['', ''],
-  './streamed-emitter': '../build/streamed-emitter-browser'
+  preventAssignment: true,
+  values: { './streamed-emitter': '../build/streamed-emitter-browser' }
 }
 const esmRequire = {
   include: './src/fs/fs-impl.ts',
   delimiters: ['', ''],
-  './node-require': '../build/node-require.mjs'
+  preventAssignment: true,
+  values: { './node-require': '../build/node-require.mjs' }
 }
 
 const nodeCjs = {
   output: [{
     file: 'dist/liquid.node.js',
     format: 'cjs',
+    esModule: true,
     banner
   }],
   external: ['path', 'fs', 'stream', 'crypto'],
@@ -119,6 +120,7 @@ const browserUmd = {
     file: 'dist/liquid.browser.umd.js',
     name: 'liquidjs',
     format: 'umd',
+    esModule: true,
     sourcemap,
     banner
   }],
@@ -139,6 +141,7 @@ const browserMin = {
     file: 'dist/liquid.browser.min.js',
     name: 'liquidjs',
     format: 'umd',
+    esModule: true,
     sourcemap,
     banner
   }],
@@ -149,7 +152,7 @@ const browserMin = {
     replace(browserCrypto),
     replace(browserStream),
     typescript(tsconfig('es5')),
-    uglify()
+    terser()
   ],
   treeshake,
   input
@@ -162,6 +165,7 @@ const shopifyCjs = {
   output: [{
     file: 'dist/shopify.node.js',
     format: 'cjs',
+    esModule: true,
     banner
   }],
   external: ['path', 'fs', 'stream', 'crypto'],
