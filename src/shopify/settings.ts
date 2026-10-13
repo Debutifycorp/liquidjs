@@ -3,6 +3,7 @@ import type { Context } from '../context'
 import type { Liquid } from '../liquid'
 import type { Template } from '../template'
 import { ColorDrop } from './objects/color'
+import { ColorSchemeDrop } from './objects/color-scheme'
 import { FontDrop } from './objects/font'
 import { HandleMap } from './objects/handle-map'
 import { ImageDrop } from './objects/image'
@@ -35,6 +36,10 @@ export interface SettingsEnv {
    * Without `liquidSettings`, `liquid` settings print as escaped text. Without `htmlSettings`: `html` settings are sanitised; a `url` or `video_url` setting whose scheme is not `http`, `https`, `mailto` or `tel`, or a relative or Shopify route (`/…`, `#…`, `shopify://…`), is dropped (prints empty) and reported as unsupported; and every other text-like value (`text`, `textarea`, `select`, a stored value no setting declares, a `default`) is passed through unchanged unless it contains `<`, when it goes through the sanitiser. Plain text therefore stays byte-identical to Shopify, so a theme's own `| escape` keeps working. `richtext` and `inline_richtext` are always sanitised, whatever this says.
    */
   trust: { liquidSettings: boolean, htmlSettings: boolean }
+  /**
+   * The theme's colour schemes, which `color_scheme` settings choose from. A `SettingsDrop` built from definitions that hold a `color_scheme_group` uses its own group; for the settings of sections and blocks, pass the global settings' group: `colorSchemes: SettingsDrop.colorSchemes(globalSettings)`. Without a group a `color_scheme` setting is nil and reported as unsupported, which is what shopify.dev gives for a theme without `color_scheme_group` data.
+   */
+  colorSchemes?: HandleMap<ColorSchemeDrop>
 }
 
 /**
@@ -62,8 +67,11 @@ export class VideoUrlDrop extends Drop {
   }
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
+
 const VALUES = Symbol('values')
 const TRUSTED = Symbol('trusted')
+const SCHEMES = Symbol('colorSchemes')
 const RESOURCE_URL = /^shopify:\/\/(collections|products|pages|blogs|policies)\/(.+)$/
 
 /** The storefront path a `url` setting's `shopify://` value points at; other values pass through, blanks are nil. shopify.dev documents the Liquid side only (a `url` setting is "a string that contains the selected URL", nil when empty, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings#url); the stored `shopify://` forms are taken from exported themes and are on the "confirm on a development store" list. */
@@ -112,6 +120,18 @@ export function resolveSettingValue (definition: SettingDefinition, stored: unkn
     case 'color': {
       if (typeof value !== 'string' || !value) return value ?? null
       return ColorDrop.from(value) ?? safeText(value, env)
+    }
+    case 'color_scheme_group':
+      return buildColorSchemes(definition, stored, env)
+    case 'color_scheme': {
+      const group = env.colorSchemes
+      if (!group) {
+        env.report.unsupported('color_scheme', `${definition.id ?? 'color_scheme'} has no color_scheme_group data`)
+        return null
+      }
+      // The order shopify.dev gives: the selected scheme, the setting's default, the group's first scheme, nil.
+      const pick = (id: unknown) => typeof id === 'string' ? HandleMap.get(group, id) : undefined
+      return pick(stored) ?? pick(definition.default) ?? HandleMap.values(group)[0] ?? null
     }
     case 'font_picker': {
       const info = typeof value === 'string' ? env.services.fontInfo(value) : undefined
@@ -167,6 +187,28 @@ export function resolveSettingValue (definition: SettingDefinition, stored: unkn
   }
 }
 
+/**
+ * A `color_scheme_group` setting as `settings.color_schemes` reads it: the schemes saved for the theme, each as a `color_scheme` object. The saved data is `{ "<scheme id>": { "settings": { … } } }`; every setting the group's `definition` declares is resolved like any other setting (defaults from the schema, `color` settings as `color` objects). A theme with no saved schemes has an empty group. The `role` attribute maps definition ids to the editor's preview and has no effect in Liquid, so it is not read.
+ *
+ * https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings (`color_scheme_group`: `definition`, `role`), https://shopify.dev/docs/api/liquid/objects/color_scheme_group (`{% for scheme in settings.color_schemes %}`), https://shopify.dev/docs/api/liquid/objects/color_scheme. shopify.dev documents the Liquid side only: the saved shape above is taken from exported themes, and whether a group can be looked up by scheme id (`settings.color_schemes['scheme-1']`) is not pinned, so this one can.
+ */
+function buildColorSchemes (definition: SettingDefinition, stored: unknown, env: SettingsEnv): HandleMap<ColorSchemeDrop> {
+  const fields = Array.isArray(definition.definition) ? definition.definition.filter(isRecord) as SettingDefinition[] : []
+  const schemes: Array<[string, ColorSchemeDrop]> = []
+  for (const [id, entry] of isRecord(stored) ? Object.entries(stored) : []) {
+    const saved = isRecord(entry) && isRecord(entry.settings) ? entry.settings : {}
+    const settings: Array<[string, unknown]> = []
+    for (const field of fields) {
+      if (field.id) settings.push([field.id, resolveSettingValue(field, own(saved, field.id), env)])
+    }
+    for (const [key, value] of Object.entries(saved)) {
+      if (!fields.some(field => field.id === key)) settings.push([key, safeData(value, env)])
+    }
+    schemes.push([id, new ColorSchemeDrop(id, Object.fromEntries(settings))])
+  }
+  return new HandleMap(schemes)
+}
+
 function lookup (env: SettingsEnv, map: HandleMap<LiquidObject>, handle: unknown, kind: string): LiquidObject | null {
   if (typeof handle !== 'string' || !handle) return null
   const found = HandleMap.get(map, handle)
@@ -181,25 +223,37 @@ const PARSED = new WeakMap<LiquidSetting, Template[]>()
 const MAX_LIQUID_SETTING_DEPTH = 5
 const DEPTH = new WeakMap<Context, number>()
 
-const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
-
 /**
  * A `settings` object (global, section or block), https://shopify.dev/docs/api/liquid/objects/settings (global) and https://shopify.dev/docs/api/liquid/objects/section (`section.settings`, `block.settings`). Settings saved as `null` or left out, as a block's often are, read as empty and the schema defaults apply. Values are not own properties, so a setting id such as `size`, `values`, `first` or `last` never collides with a drop member; the drop's own members (`toJSON`, `liquidMethodMissing`) and the ones every JavaScript object has (`constructor`, `toString`, `valueOf`, `hasOwnProperty`, `__proto__`) still win over a setting of the same name, so a setting with such an id reads as empty or as `[object Object]` (on the Task 12 list; no theme names a setting that). Values stored without a definition (settings of a removed schema entry) are kept, and made safe like text. `liquid` settings are escaped text unless the theme is trusted (`SettingsEnv.trust.liquidSettings`, a Debutify safety choice that differs from Shopify), in which case they render where they are printed, with the scope of that place, to at most `MAX_LIQUID_SETTING_DEPTH` levels. `json` and `inspect` print the same strings `{{ settings.x }}` does, never a `liquid` setting's raw source.
  */
 export class SettingsDrop extends Drop {
   private readonly [VALUES] = new Map<string, unknown>()
   private readonly [TRUSTED]: boolean
+  private readonly [SCHEMES]?: HandleMap<ColorSchemeDrop>
 
   public constructor (definitions: SettingDefinition[] | null = [], stored: Record<string, unknown> | null = {}, env: SettingsEnv) {
     super()
     this[TRUSTED] = env.trust.liquidSettings
     const values = isRecord(stored) ? stored : {}
-    for (const definition of Array.isArray(definitions) ? definitions : []) {
-      if (isRecord(definition) && definition.id) this[VALUES].set(definition.id, resolveSettingValue(definition, own(values, definition.id), env))
+    const list = (Array.isArray(definitions) ? definitions : []).filter(definition => isRecord(definition) && definition.id)
+    // The colour schemes come first: `color_scheme` settings of the same list choose from them.
+    for (const definition of list.filter(item => item.type === 'color_scheme_group')) {
+      const group = resolveSettingValue(definition, own(values, definition.id as string), env) as HandleMap<ColorSchemeDrop>
+      this[VALUES].set(definition.id as string, group)
+      this[SCHEMES] = this[SCHEMES] ?? group
+    }
+    const withSchemes = this[SCHEMES] ? { ...env, colorSchemes: this[SCHEMES] } : env
+    for (const definition of list.filter(item => item.type !== 'color_scheme_group')) {
+      this[VALUES].set(definition.id as string, resolveSettingValue(definition, own(values, definition.id as string), withSchemes))
     }
     for (const [id, value] of Object.entries(values)) {
       if (!this[VALUES].has(id)) this[VALUES].set(id, safeData(value, env))
     }
+  }
+
+  /** The colour schemes of a settings object whose definitions hold a `color_scheme_group` (the global settings), to pass as `SettingsEnv.colorSchemes` when building the settings of sections and blocks. */
+  public static colorSchemes (settings: SettingsDrop): HandleMap<ColorSchemeDrop> | undefined {
+    return settings[SCHEMES]
   }
 
   /** The resolved value of a setting, for code (templates read settings as properties). */

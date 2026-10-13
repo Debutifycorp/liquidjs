@@ -1,4 +1,4 @@
-import { buildGlobals, buildLinklists, buildStore, createShopifyLiquid, isSafeUrl, renderLiquid, ReportCollector, resolveServices, sampleStoreData, sanitizeHtml, SettingsDrop, Translator } from '../../src/shopify'
+import { buildGlobals, buildLinklists, buildStore, ColorSchemeDrop, createShopifyLiquid, HandleMap, isSafeUrl, renderLiquid, ReportCollector, resolveServices, sampleStoreData, sanitizeHtml, SettingsDrop, Translator } from '../../src/shopify'
 import type { SettingDefinition, SettingsEnv } from '../../src/shopify'
 
 const store = buildStore(sampleStoreData)
@@ -176,6 +176,65 @@ describe('shopify/settings safety', () => {
   })
   it('keeps the untrusted flags the default', () => {
     expect(env().trust).toEqual(untrusted)
+  })
+})
+
+describe('shopify/settings colour schemes', () => {
+  const group: SettingDefinition = {
+    type: 'color_scheme_group',
+    id: 'color_schemes',
+    definition: [
+      { type: 'header', content: 'Colors' },
+      { type: 'color', id: 'background', label: 'Background', default: '#ffffff' },
+      { type: 'color_background', id: 'background_gradient', label: 'Gradient' },
+      { type: 'color', id: 'text', label: 'Text', default: '#121212' },
+      { type: 'range', id: 'shadow', label: 'Shadow', default: 4 }
+    ],
+    role: { text: 'text', background: { solid: 'background', gradient: 'background_gradient' } }
+  }
+  const schemes = {
+    'scheme-1': { settings: { background: '#336699', text: '#ffffff', background_gradient: 'linear-gradient(#000, #fff)', extra: 'kept' } },
+    'scheme-2': { settings: { background: '#f4f4f4' } },
+    'scheme-3': null
+  }
+  const global = [group, { type: 'color_scheme', id: 'scheme', default: 'scheme-2' }]
+
+  it('resolves colour scheme groups to scheme objects with colour settings and schema defaults', async () => {
+    const s = new SettingsDrop(global, { color_schemes: schemes, scheme: 'scheme-1' }, env())
+    const loop = '{% for scheme in s.color_schemes %}[{{ scheme.id }}:{{ scheme.settings.background }}:{{ scheme.settings.background.red }}:{{ scheme.settings.text }}:{{ scheme.settings.shadow | plus: 1 }}:{{ scheme.settings.background_gradient }}:{{ scheme.settings.extra }}]{% endfor %}'
+    expect(await render(loop, { s })).toBe('[scheme-1:#336699:51:#ffffff:5:linear-gradient(#000, #fff):kept][scheme-2:#f4f4f4:244:#121212:5::][scheme-3:#ffffff:255:#121212:5::]')
+    expect(await render("{{ s.color_schemes.size }}|{{ s.color_schemes['scheme-2'].settings.background.green }}|{{ s.scheme }}|{{ s.scheme.id }}|{{ s.scheme.settings.background.blue }}|{{ s.scheme.settings.text.alpha }}", { s })).toBe('3|244|scheme-1|scheme-1|153|1.0')
+    expect(SettingsDrop.colorSchemes(s)).toBe(SettingsDrop.value(s, 'color_schemes'))
+    expect(HandleMap.get(SettingsDrop.colorSchemes(s) as HandleMap<ColorSchemeDrop>, 'scheme-1')).toBeInstanceOf(ColorSchemeDrop)
+  })
+  it('picks the stored scheme, else the default, else the first, else nil', async () => {
+    const pick = async (stored: unknown, def: unknown) => render('{{ s.scheme }}|{{ s.scheme.settings.background }}', { s: new SettingsDrop([group, { type: 'color_scheme', id: 'scheme', default: def }], { color_schemes: schemes, scheme: stored }, env()) })
+    expect(await pick('scheme-2', 'scheme-1')).toBe('scheme-2|#f4f4f4')
+    expect(await pick('nope', 'scheme-2')).toBe('scheme-2|#f4f4f4')
+    expect(await pick(undefined, 'scheme-2')).toBe('scheme-2|#f4f4f4')
+    expect(await pick('nope', 'also-nope')).toBe('scheme-1|#336699')
+    expect(await pick(undefined, undefined)).toBe('scheme-1|#336699')
+    expect(await pick(['scheme-2'], 7)).toBe('scheme-1|#336699')
+  })
+  it('gives sections the global schemes, and nil without a group', async () => {
+    const globalSettings = new SettingsDrop(global, { color_schemes: schemes }, env())
+    const section = new SettingsDrop([{ type: 'color_scheme', id: 'scheme', default: 'scheme-1' }], { scheme: 'scheme-2' }, env({ colorSchemes: SettingsDrop.colorSchemes(globalSettings) }))
+    expect(await render('{{ s.scheme }}|{{ s.scheme.settings.text }}', { s: section })).toBe('scheme-2|#121212')
+    const e = env()
+    const lonely = new SettingsDrop([{ type: 'color_scheme', id: 'scheme', default: 'scheme-1' }], { scheme: 'scheme-2' }, e)
+    expect(await render('[{{ s.scheme }}]', { s: lonely })).toBe('[]')
+    expect(e.report.toReport([], 0).unsupported).toEqual([{ feature: 'color_scheme', detail: 'scheme has no color_scheme_group data' }])
+    const empty = new SettingsDrop([group, { type: 'color_scheme', id: 'scheme' }], {}, env())
+    expect(await render('{{ s.color_schemes.size }}|[{{ s.scheme }}]|{{ s.color_schemes.size }}', { s: empty })).toBe('0|[]|0')
+    expect(SettingsDrop.colorSchemes(new SettingsDrop([], {}, env()))).toBeUndefined()
+  })
+  it('keeps scheme ids and setting names that are also object members as plain data', async () => {
+    const s = new SettingsDrop([{ type: 'color_scheme_group', id: 'color_schemes', definition: [{ type: 'color', id: 'constructor', default: '#000000' }] }], { color_schemes: { constructor: { settings: { constructor: '#ff0000', __proto__: '#00ff00' } } } }, env())
+    const group = SettingsDrop.colorSchemes(s) as HandleMap<ColorSchemeDrop>
+    const scheme = HandleMap.get(group, 'constructor') as ColorSchemeDrop
+    expect(scheme.id).toBe('constructor')
+    expect(Object.prototype.hasOwnProperty.call(scheme.settings, 'constructor')).toBe(true)
+    expect(Object.getPrototypeOf(scheme.settings)).toBe(Object.prototype)
   })
 })
 
