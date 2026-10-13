@@ -10,10 +10,18 @@ import { registerShopifyFilters } from './filters'
 import { registerShopifyTags } from './tags'
 import type { Translator } from './translations'
 
-/** Tags whose bodies are never parsed under the Shopify preset. `style` is not here: Shopify evaluates the Liquid inside it. */
+/**
+ * Tags whose bodies are never parsed under the Shopify preset. `style` is not here: Shopify evaluates the Liquid inside it, https://shopify.dev/docs/api/liquid/tags/style (its example prints `{{ settings.colors_accent_1 }}` as `#121212`).
+ *
+ * `raw`: https://shopify.dev/docs/api/liquid/tags/raw. `comment`: https://shopify.dev/docs/api/liquid/tags/comment says its Liquid is "parsed, but not executed" and does not mention nesting; nested comments follow Shopify Liquid's `CommentTagUnitTest#test_nested_comment_tag_with_extra_strings` in liquid-spec `specs/liquid_ruby/specs.yml`, and are not pinned by shopify.dev.
+ *
+ * `schema`: https://shopify.dev/docs/storefronts/themes/architecture/sections/section-schema (the Liquid reference has no page for it today). `javascript` and `stylesheet`: https://shopify.dev/docs/api/liquid/tags/javascript and https://shopify.dev/docs/api/liquid/tags/stylesheet ("Liquid isn't rendered inside").
+ *
+ * `doc`: https://shopify.dev/docs/api/liquid/tags/doc says its Liquid is "parsed but not executed", yet the body is read raw here because Shopify Liquid ignores even malformed syntax in it (liquid-spec `specs/liquid_ruby/specs.yml`: `DocTagUnitTest#test_doc_tag_ignores_malformed_syntax`, `…ignores_unclosed_assign`); the wording and the behaviour differ, so the behaviour is not pinned by shopify.dev.
+ */
 export const SHOPIFY_RAW_TAGS = ['raw', 'comment', 'schema', 'javascript', 'stylesheet', 'doc']
 
-/** Safe defaults for untrusted themes; callers may lower (or deliberately raise) each. `parseLimit` counts characters per parsed file, `renderLimit` milliseconds per render call, `memoryLimit` LiquidJS's allocation units per render. */
+/** Safe defaults for untrusted themes; callers may lower (or deliberately raise) each. `parseLimit` counts characters per parsed file, `renderLimit` milliseconds per render call, `memoryLimit` LiquidJS's allocation units per render. These are Debutify's safety limits, not Shopify's: shopify.dev publishes no parse, render or memory limits for Liquid. */
 export const SHOPIFY_DEFAULT_LIMITS = {
   parseLimit: 10000000,
   renderLimit: 2000,
@@ -21,23 +29,23 @@ export const SHOPIFY_DEFAULT_LIMITS = {
 }
 
 export interface ShopifyLiquidOptions {
-  /** The theme's files by path (`snippets/price.liquid`). `render`, `include` and layouts read them; nothing is read from disk. */
+  /** The theme's files by path (`snippets/price.liquid`). `render`, `include` and layouts read them; nothing is read from disk. https://shopify.dev/docs/api/liquid/tags/render and https://shopify.dev/docs/api/liquid/tags/include. */
   files?: Record<string, string>
   services?: Partial<ShopifyServices>
   translator?: Translator
   moneyFormat?: string
   moneyWithCurrencyFormat?: string
-  /** `'report'` (default) renders unknown tags as nothing and reports them; `'error'` fails the parse with `Unknown tag 'name'`, as Shopify does. */
+  /** `'report'` (default) renders unknown tags as nothing and reports them; `'error'` fails the parse with `Unknown tag 'name'`, as Shopify does (liquid-spec `specs/basics/error-handling.yml`: `unknown_tag_strict_parse_error`; shopify.dev does not document it). An unknown filter has no such option: set `engine: { strictFilters: true }` to make it a parse error. */
   unknownTags?: 'report' | 'error'
-  /** Render the Liquid in `liquid` type settings. Off by default: their values are escaped. */
+  /** Render the Liquid in `liquid` type settings. Off by default: their values are escaped. Shopify renders them, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings, so off is Debutify's safety choice for untrusted themes. */
   trustLiquidSettings?: boolean
-  /** Leave `html` type settings unsanitised. Off by default: they pass an allowlist sanitiser. */
+  /** Leave `html` type settings unsanitised. Off by default: they pass an allowlist sanitiser. Shopify removes only `<html>`, `<head>` and `<body>` from them, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings, so the sanitiser is Debutify's safety choice for untrusted themes. */
   trustHtmlSettings?: boolean
   runtime?: ThemeHooks
   parseLimit?: number
   renderLimit?: number
   memoryLimit?: number
-  /** Advanced: engine options applied last, over the preset. */
+  /** Advanced: engine options applied last, over the preset. `globals` are merged with the preset's state rather than replacing it. */
   engine?: LiquidOptions
 }
 
@@ -66,6 +74,8 @@ class ShopifyLiquid extends Liquid {
 
 /**
  * A `Liquid` engine configured as Shopify renders themes: Ruby number semantics, raw `schema`/`javascript`/`stylesheet`/`doc` bodies, nesting comments, inline errors, theme files from memory, safe limits, and every Shopify tag and filter registered.
+ *
+ * Ruby number semantics: https://shopify.dev/docs/api/liquid/filters/divided_by ("the result will be the same type as the divisor"). Inline errors: the `Liquid error (line N): …` text is not documented on shopify.dev; it follows liquid-spec `specs/basics/error-handling.yml` and `specs/shopify_production_recordings/recorded_specs.yml`. Limits and safe defaults: Debutify's, see `SHOPIFY_DEFAULT_LIMITS`.
  */
 export function createShopifyLiquid (options: ShopifyLiquidOptions = {}): Liquid {
   const files = options.files ?? {}
@@ -84,7 +94,7 @@ export function createShopifyLiquid (options: ShopifyLiquidOptions = {}): Liquid
     relativeReference: false,
     fs: new ThemeFS(files),
     cache,
-    // 'UTC', not 0: with an offset `%Z` prints `+0000`, where Ruby and liquid-spec print `UTC`
+    // 'UTC', not 0: with an offset `%Z` prints `+0000`, where Ruby and liquid-spec print `UTC` (specs/basics/date-filters.yml `date_format_Z_timezone_name`); https://shopify.dev/docs/api/liquid/filters/date defers to Ruby's strftime and does not name the zone Shopify renders in
     timezoneOffset: 'UTC',
     parseLimit: options.parseLimit ?? SHOPIFY_DEFAULT_LIMITS.parseLimit,
     renderLimit: options.renderLimit ?? SHOPIFY_DEFAULT_LIMITS.renderLimit,

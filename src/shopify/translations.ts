@@ -35,6 +35,8 @@ function forLocale<T> (map: Record<string, T> | undefined, locale: string): T | 
 
 /**
  * Translation lookup with Shopify's sources: the storefront locale file of the locale being rendered, then the default locale's file, each followed by the section schema's `locales` for `sections.<type>.<key>` keys. https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files and https://shopify.dev/docs/storefronts/themes/architecture/sections/section-schema#locales
+ *
+ * The file naming (`fr-CA.json`, or the 2-letter `fr.json` when a language is not region specific) is on the first page. That page does not say that a missing key falls back to the default locale, that `fr-CA` falls back to `fr`, or in which order a locale file and a section's `locales` are searched, so these three are not pinned by shopify.dev and go on the "confirm on a development store" list.
  */
 export class Translator {
   public readonly locale: string
@@ -59,7 +61,7 @@ export class Translator {
     return undefined
   }
 
-  /** A schema string: `t:sections.header.name` resolved through the schema locale files, anything else unchanged. */
+  /** A schema string: `t:sections.header.name` resolved through the schema locale files, anything else unchanged. https://shopify.dev/docs/storefronts/themes/architecture/locales/schema-locale-files (`"name": "t:sections.product.name"` in a `{% schema %}`). The page does not say what a missing key prints; the `t:` string is kept, which is not pinned. */
   public schemaText (value: unknown): unknown {
     if (typeof value !== 'string' || !value.startsWith('t:')) return value
     const path = value.slice(2).split('.')

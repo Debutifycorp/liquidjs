@@ -6,7 +6,9 @@ import type { Liquid } from '../liquid'
 const has = (files: Record<string, string>, path: string) => Object.prototype.hasOwnProperty.call(files, path)
 
 /**
- * The theme's files, from memory only: `{% render 'price' %}` reads `snippets/price.liquid` from the map and nothing ever touches the disk. A missing file fails with Shopify's message, `Could not find asset snippets/price.liquid`.
+ * The theme's files, from memory only: `{% render 'price' %}` reads `snippets/price.liquid` from the map and nothing ever touches the disk (https://shopify.dev/docs/api/liquid/tags/render and https://shopify.dev/docs/api/liquid/tags/include look a snippet up by name; the directory layout is https://shopify.dev/docs/storefronts/themes/architecture).
+ *
+ * A missing file fails with `Could not find asset snippets/price.liquid`. shopify.dev does not document this text. The wording `Liquid error (line 1): Could not find asset <name>` is recorded from Shopify in liquid-spec `specs/shopify_production_recordings/recorded_specs.yml` (`test_rendering_include_tag_with_file_does_not_exist_does_not_repeat_dot_liquid_extension`); those recordings use their own file system, so the `snippets/` prefix and the `.liquid` suffix are not pinned and stay on the "confirm on a development store" list. A path such as `../package` is looked up literally and never normalised, as liquid-spec `specs/liquid_ruby/filesystem.yml` `fs_dotdot_does_not_match_normalized` records.
  */
 export class ThemeFS implements FS {
   public sep = '/'
@@ -42,7 +44,7 @@ export class ThemeFS implements FS {
 }
 
 /**
- * LiquidJS's parsed-partial cache, kept per theme and checked against the file's current source, so editing one snippet in the theme map re-parses that snippet only.
+ * LiquidJS's parsed-partial cache, kept per theme and checked against the file's current source, so editing one snippet in the theme map re-parses that snippet only. This is Debutify's performance device and has no Shopify counterpart to cite.
  */
 export class ThemeCache implements LiquidCache {
   private readonly entries = new Map<string, { source: string | undefined, value: Template[] | Promise<Template[]> }>()

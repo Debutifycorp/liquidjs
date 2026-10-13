@@ -7,7 +7,7 @@ import type { BlockData, LocaleTree } from './types'
 /** Where the per-render state lives: a symbol key on the render's globals, which LiquidJS shares with every partial and which no template can name. */
 export const STATE = Symbol.for('@debutify/liquidjs/shopify:state')
 
-/** The section or theme block being rendered. The theme runtime pushes one per section and block; `t`, `image_tag` and `content_for` read the innermost. */
+/** The section or theme block being rendered, https://shopify.dev/docs/api/liquid/objects/section and https://shopify.dev/docs/api/liquid/objects/block. The theme runtime pushes one per section and block; `t`, `image_tag` and `content_for` read the innermost. The stack is Debutify's device for those filters; shopify.dev does not describe how Shopify scopes them. */
 export interface Frame {
   kind: 'section' | 'block'
   /** The section's id, type, 1-based index in its location (null when static) and schema `locales`. */
@@ -18,7 +18,7 @@ export interface Frame {
   sectionObject: unknown
 }
 
-/** What the theme runtime offers the `section` and `sections` tags. */
+/** What the theme runtime offers the `section` and `sections` tags, https://shopify.dev/docs/api/liquid/tags/section and https://shopify.dev/docs/api/liquid/tags/sections. */
 export interface ThemeHooks {
   renderStaticSection: (name: string, ctx: Context) => Generator<unknown, string, unknown>
   renderSectionGroup: (name: string, ctx: Context) => Generator<unknown, string, unknown>
@@ -30,19 +30,19 @@ export interface ShopifyState {
   report: ReportCollector
   /** The shop's money formats (`shop.money_format`, `shop.money_with_currency_format`). */
   money: { format: string, withCurrencyFormat: string }
-  /** The request being rendered: its path (for pagination links), origin (for video embeds) and `?page=`. */
+  /** The request being rendered: its path (for pagination links), origin (for video embeds) and `?page=`, https://shopify.dev/docs/api/liquid/objects/request. */
   request: { path: string, origin: string, page: number }
-  /** Whether `liquid` setting values are rendered and `html` setting values left unsanitised. */
+  /** Whether `liquid` setting values are rendered and `html` setting values left unsanitised. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings says Shopify renders the Liquid in a `liquid` setting (without `layout`, `content_for_header`, `content_for_layout`, `content_for_index`, `section`, `javascript`, `stylesheet`, `schema` and `settings`) and removes only `<html>`, `<head>` and `<body>` from an `html` setting. Off by default is therefore Debutify's safety choice for untrusted themes and differs from Shopify. */
   trust: { liquidSettings: boolean, htmlSettings: boolean }
   frames: Frame[]
-  /** `{% stylesheet %}` and `{% javascript %}` bodies met while rendering, by file, in the order first rendered; `content_for_header` inlines them. */
+  /** `{% stylesheet %}` and `{% javascript %}` bodies met while rendering, by file, in the order first rendered; `content_for_header` inlines them. https://shopify.dev/docs/api/liquid/tags/stylesheet and https://shopify.dev/docs/api/liquid/tags/javascript say how the bodies are loaded only by reference, and https://shopify.dev/docs/api/liquid/objects/content_for_header says only that it returns the scripts Shopify requires, so inlining the bodies there is Debutify's choice. */
   assets: { stylesheets: Map<string, string>, javascripts: Map<string, string> }
   runtime?: ThemeHooks
-  /** Set by `{% layout %}`: a layout name, `null` for `none`, `undefined` when the template did not say. */
+  /** Set by `{% layout %}`: a layout name, `null` for `none`, `undefined` when the template did not say, https://shopify.dev/docs/api/liquid/tags/layout. */
   layout?: string | null
 }
 
-/** Shopify's formats for a new USD shop. */
+/** Shopify's formats for a new USD shop. https://shopify.dev/docs/api/liquid/objects/shop shows `money_format` as `${{amount}}` and `money_with_currency_format` as `${{amount}} CAD` for a Canadian shop; the ` USD` suffix here is the same pattern for a USD shop and is not pinned by shopify.dev. */
 export const DEFAULT_MONEY_FORMAT = '${{amount}}' // eslint-disable-line no-template-curly-in-string
 export const DEFAULT_MONEY_WITH_CURRENCY_FORMAT = '${{amount}} USD' // eslint-disable-line no-template-curly-in-string
 

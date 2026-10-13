@@ -2,32 +2,32 @@ import type { FontInfo, ImageData, ImageUrlParams } from './types'
 import { escapeHtml } from './util/html'
 
 /**
- * Everything the Shopify layer needs from outside the theme: URLs, artwork, the font library and the clock. The package never fetches anything and never hard-codes a host; the caller supplies these.
+ * Everything the Shopify layer needs from outside the theme: URLs, artwork, the font library and the clock. The package never fetches anything and never hard-codes a host; the caller supplies these. shopify.dev describes what each filter does but not the URLs, artwork or font data Shopify serves, so those come from the caller.
  */
 export interface ShopifyServices {
-  /** `asset_url`: the URL of `assets/<path>`. */
+  /** `asset_url`: the URL of `assets/<path>`, https://shopify.dev/docs/api/liquid/filters/asset_url. */
   assetUrl: (path: string) => string
-  /** `shopify_asset_url`: the URL of one of Shopify's global assets (`option_selection.js`). */
+  /** `shopify_asset_url`: the URL of one of Shopify's global assets (`option_selection.js`), https://shopify.dev/docs/api/liquid/filters/shopify_asset_url. */
   shopifyAssetUrl: (path: string) => string
-  /** `image_url`, `image_tag`, `img_url`: the URL of `image` with the CDN parameters `params`. */
+  /** `image_url`, `image_tag`, `img_url`: the URL of `image` with the CDN parameters `params`, https://shopify.dev/docs/api/liquid/filters/image_url, https://shopify.dev/docs/api/liquid/filters/image_tag and https://shopify.dev/docs/api/liquid/filters/img_url. */
   imageUrl: (image: ImageData, params: ImageUrlParams) => string
-  /** `font_url` and the default `font_face`: the URL of a font file. */
+  /** `font_url` and the default `font_face`: the URL of a font file, https://shopify.dev/docs/api/liquid/filters/font_url and https://shopify.dev/docs/api/liquid/filters/font_face. */
   fontUrl: (font: FontInfo, format: 'woff2' | 'woff') => string
-  /** `font_face`: the whole `@font-face` rule. When absent, the filter builds Shopify's rule from `fontUrl`. */
+  /** `font_face`: the whole `@font-face` rule, https://shopify.dev/docs/api/liquid/filters/font_face. When absent, the filter builds Shopify's rule from `fontUrl`. */
   fontFace?: (font: FontInfo, options: { fontDisplay?: string }) => string
-  /** The Shopify font library: a `font_picker` value (`assistant_n4`) to its font, or undefined. */
+  /** The Shopify font library: a `font_picker` value (`assistant_n4`) to its font, or undefined, https://shopify.dev/docs/storefronts/themes/architecture/settings/fonts. Which fonts exist and how their handles are spelled is not pinned by shopify.dev. */
   fontInfo: (handle: string) => FontInfo | undefined
-  /** `placeholder_svg_tag`: the `<svg>` markup for a placeholder name (`product-1`). */
+  /** `placeholder_svg_tag`: the `<svg>` markup for a placeholder name (`product-1`), https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag (the page lists the names; the artwork is Shopify's, so the caller supplies it). */
   placeholderSvg: (name: string) => string
-  /** `payment_type_svg_tag`: the `<svg>` markup for a payment type (`visa`). */
+  /** `payment_type_svg_tag`: the `<svg>` markup for a payment type (`visa`), https://shopify.dev/docs/api/liquid/filters/payment_type_svg_tag. */
   paymentTypeSvg: (type: string) => string
-  /** `'now' | date`, `time_tag`: the current time. */
+  /** `'now' | date`, `time_tag`: the current time, https://shopify.dev/docs/api/liquid/filters/date (`'now'` and `'today'`) and https://shopify.dev/docs/api/liquid/filters/time_tag. */
   currentTime: () => Date
 }
 
 const FONT_HANDLE = /^([a-z0-9_]+?)_([nio])([1-9])$/
 
-/** Reads a Shopify font handle (`<family>_<style><weight / 100>`, e.g. `assistant_n4`). Variants are guessed as regular, italic, bold and bold italic. */
+/** Reads a Shopify font handle (`<family>_<style><weight / 100>`, e.g. `assistant_n4`). shopify.dev lists handles but does not define their grammar (https://shopify.dev/docs/storefronts/themes/architecture/settings/fonts), so this reading and the guessed variants (regular, italic, bold and bold italic) are Debutify's and not pinned; callers with the real font library replace `fontInfo`. */
 export function parseFontHandle (handle: string): FontInfo | undefined {
   const match = FONT_HANDLE.exec(handle)
   if (!match) return undefined
@@ -42,7 +42,7 @@ export function parseFontHandle (handle: string): FontInfo | undefined {
   return { handle, family, style, weight: Number(weightCode) * 100, fallback_families: 'sans-serif', baseline_ratio: 0, system: false, variants }
 }
 
-/** Merges `params` into the query of `src` and sorts the keys, which is the shape of Shopify's CDN URLs (`?crop=bottom&height=400&v=1&width=400`). */
+/** Merges `params` into the query of `src` and sorts the keys, which is the shape of Shopify's CDN URLs (`?crop=bottom&height=400&v=1&width=400`). https://shopify.dev/docs/api/liquid/filters/image_url shows `?v=1683744744&width=450`; it does not state that keys are sorted, so the order is not pinned and the URL stays `approx`. */
 export function cdnStyleImageUrl (image: ImageData, params: ImageUrlParams): string {
   const at = image.src.indexOf('?')
   const base = at === -1 ? image.src : image.src.slice(0, at)
@@ -61,7 +61,7 @@ export function cdnStyleImageUrl (image: ImageData, params: ImageUrlParams): str
   return keys.length ? `${base}?${keys.map(key => `${key}=${query.get(key)}`).join('&')}` : base
 }
 
-/** Deterministic stand-ins: relative URLs, neutral SVG boxes, Shopify-shaped image URLs and the system clock. Callers replace them with their own. */
+/** Deterministic stand-ins (Debutify's, not Shopify's output): relative URLs, neutral SVG boxes, Shopify-shaped image URLs and the system clock. Callers replace them with their own. */
 export const defaultServices: ShopifyServices = {
   assetUrl: path => `/assets/${path}`,
   shopifyAssetUrl: path => `/shopify-assets/${path}`,

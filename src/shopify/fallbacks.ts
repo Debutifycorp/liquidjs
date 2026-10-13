@@ -6,7 +6,7 @@ import type { Context } from '../context'
 import type { Liquid } from '../liquid'
 import { shopifyState } from './state'
 
-/** A tag the engine does not know: renders nothing and is listed in the render report, so one unknown tag never blanks a section. Its `end…` tag, if any, is another unknown tag and behaves the same. */
+/** A tag the engine does not know: renders nothing and is listed in the render report, so one unknown tag never blanks a section. Its `end…` tag, if any, is another unknown tag and behaves the same. This is Debutify's choice: Shopify fails the parse on an unknown tag (the `'error'` mode below), and shopify.dev does not describe either behaviour. */
 export class UnknownTag extends Tag {
   public constructor (token: TagToken, remainTokens: TopLevelToken[], liquid: Liquid) {
     super(token, remainTokens, liquid)
@@ -18,7 +18,7 @@ export class UnknownTag extends Tag {
   }
 }
 
-/** With `unknownTags: 'error'`: fails the parse with Shopify's message, `Unknown tag 'name'`, as Shopify Liquid does in every error mode (liquid-spec `unknown_tag_*`). */
+/** With `unknownTags: 'error'`: fails the parse with Shopify's message, `Unknown tag 'name'`, as Shopify Liquid does in every error mode (liquid-spec `specs/basics/error-handling.yml`: `unknown_tag_lax`, `unknown_tag_strict_parse_error`, `unknown_tag_strict2_parse_error`). shopify.dev does not document the message. */
 function strictUnknownTag (name: string): TagClass {
   return class extends Tag {
     public constructor (token: TagToken, remainTokens: TopLevelToken[], liquid: Liquid) {
@@ -32,7 +32,7 @@ function strictUnknownTag (name: string): TagClass {
   }
 }
 
-/** A filter neither Shopify's docs nor the engine know: passes its input through unchanged, as Shopify Liquid does (liquid-spec `unknown_filter_lax`), and is listed in the render report. */
+/** A filter neither Shopify's docs nor the engine know: passes its input through unchanged, as Shopify Liquid does (liquid-spec `specs/basics/error-handling.yml`: `unknown_filter_lax`, `unknown_filter_strict_in_liquid_ruby`), and is listed in the render report. shopify.dev does not document what an unknown filter does. */
 function unknownFilter (name: string): FilterHandler {
   return function (value: unknown) {
     shopifyState(this.context).report.unknownFilter(name, this.token?.file)

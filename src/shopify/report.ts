@@ -1,7 +1,7 @@
 import { LiquidError } from '../util/error'
 import { inlineErrorMessage } from '../util/inline-error'
 
-/** The text Shopify prints for an error: `Liquid syntax error (sections/x line 1): …` for a template that does not parse, `Liquid error (…): …` for a failure while rendering. */
+/** The text Shopify prints for an error: `Liquid syntax error (sections/x line 1): …` for a template that does not parse, `Liquid error (…): …` for a failure while rendering. shopify.dev does not document these texts; they follow liquid-spec `specs/basics/error-handling.yml` (`render_error_line_5_structured`) and the recordings in `specs/shopify_production_recordings/recorded_specs.yml` (`Liquid error (foo line 1): …` for an error inside a snippet), and stay on the "confirm on a development store" list. */
 export function errorMessage (err: unknown): string {
   return LiquidError.is(err) ? inlineErrorMessage(err) : `Liquid error: ${(err as Error).message}`
 }
@@ -41,7 +41,7 @@ export interface SectionEntry {
   reason?: string
 }
 
-/** What a render could not do as Shopify would. Unknown and stubbed names render empty (or, for unknown filters, pass their input through as Shopify does) and are listed here. */
+/** What a render could not do as Shopify would. Unknown and stubbed names render empty (or, for unknown filters, pass their input through as Shopify does) and are listed here. Debutify's own report: shopify.dev has no counterpart. */
 export interface RenderReport {
   unknownTags: CountEntry[]
   unknownFilters: CountEntry[]
