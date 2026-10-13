@@ -33,10 +33,11 @@ function hidden (target: LiquidObject, key: string, value: unknown) {
   Object.defineProperty(target, key, { value, enumerable: false })
 }
 
-/** Product media: images (https://shopify.dev/docs/api/liquid/objects/media), videos (https://shopify.dev/docs/api/liquid/objects/video) and external videos (https://shopify.dev/docs/api/liquid/objects/external_video). Only media images carry a `preview_image`, https://shopify.dev/docs/api/liquid/objects/image#image-preview_image. */
-function buildMedia (media: MediaData): unknown {
-  if (media.media_type === 'image') return new ImageDrop(media, true)
-  return { ...media, alt: media.alt ?? '', preview_image: image(media.preview_image) }
+/** Product media: images (https://shopify.dev/docs/api/liquid/objects/media), videos (https://shopify.dev/docs/api/liquid/objects/video) and external videos (https://shopify.dev/docs/api/liquid/objects/external_video). Only media images carry a `preview_image`, https://shopify.dev/docs/api/liquid/objects/image#image-preview_image. `index` is the media's place in `product.media`, which becomes its 1-based `position` (https://shopify.dev/docs/api/liquid/objects/media#media-position); media from anywhere else has none. */
+function buildMedia (media: MediaData, index?: number): unknown {
+  const position = index === undefined ? null : index + 1
+  if (media.media_type === 'image') return new ImageDrop(media, true, position)
+  return { ...media, alt: media.alt ?? '', preview_image: image(media.preview_image), position }
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/variant. `url` carries `?variant=<id>` as that page documents. `unit_price_measurement` and `selling_plan_allocations` are left empty and `quantity_rule` holds Shopify's defaults; shopify.dev documents the fields but this layer has no data for them. */
@@ -75,7 +76,7 @@ function buildVariant (variant: VariantData, productUrl: string): LiquidObject {
  */
 export function buildProduct (data: ProductData): LiquidObject {
   const url = `/products/${data.handle}`
-  const images = (data.images ?? []).map(img => new ImageDrop(img))
+  const images = (data.images ?? []).map((img, i) => new ImageDrop(img, false, i + 1))
   const media = (data.media ?? (data.images ?? []).map(img => ({ ...img, media_type: 'image' as const }))).map(buildMedia)
   const variants = data.variants.map(variant => buildVariant(variant, url))
   const options = data.options ?? ['Title']

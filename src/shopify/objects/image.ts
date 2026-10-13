@@ -33,12 +33,15 @@ export class ImageDrop extends Drop {
   /** `image` for product media, nil for images from anywhere else. https://shopify.dev/docs/api/liquid/objects/image#image-media_type */
   public readonly media_type: 'image' | null
   public readonly presentation: { focal_point: FocalPointDrop }
+  /** The place in `product.images` or `product.media`, nil for images from anywhere else. https://shopify.dev/docs/api/liquid/objects/image#image-position; the page's example shows `1` for the first, and does not otherwise say the numbering starts at 1. */
+  public readonly position: number | null
   private readonly [AS_MEDIA]: boolean
 
-  /** `asMedia` marks an image reached as product media (`product.media`, `featured_media`), the only images whose `preview_image` and `media_type` are set. */
-  public constructor (public readonly data: ImageData, asMedia = false) {
+  /** `asMedia` marks an image reached as product media (`product.media`, `featured_media`), the only images whose `preview_image` and `media_type` are set. `position` is the image's place in the product's `images` or `media`. */
+  public constructor (public readonly data: ImageData, asMedia = false, position: number | null = null) {
     super()
     this[AS_MEDIA] = asMedia
+    this.position = position
     this.src = data.src
     this.width = data.width ?? null
     this.height = data.height ?? null

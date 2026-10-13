@@ -1,4 +1,4 @@
-import { buildGlobals, buildLinklists, buildStore, ColorSchemeDrop, createShopifyLiquid, HandleMap, isSafeUrl, renderLiquid, ReportCollector, resolveServices, sampleStoreData, sanitizeHtml, SettingsDrop, Translator } from '../../src/shopify'
+import { buildGlobals, buildLinklists, buildProduct, buildStore, ColorSchemeDrop, createShopifyLiquid, HandleMap, isSafeUrl, renderLiquid, ReportCollector, resolveServices, sampleStoreData, sanitizeHtml, SettingsDrop, Translator } from '../../src/shopify'
 import type { SettingDefinition, SettingsEnv } from '../../src/shopify'
 
 const store = buildStore(sampleStoreData)
@@ -16,6 +16,22 @@ describe('shopify/store', () => {
     const product = store.products.liquidMethodMissing('classic-tee')
     expect(await render("{{ p.url }}|{{ p.price }}|{{ p.price_varies }}|{{ p.compare_at_price }}|{{ p.first_available_variant.id }}|{{ p.options_with_values[0].values | join: ',' }}|{{ p.selected_or_first_available_variant.url }}|{{ p.featured_image.width }}|{{ p.has_only_default_variant }}|{{ p.featured_image.aspect_ratio }}|{{ p.featured_image.preview_image }}|{{ p.media[0].preview_image.width }}|{{ 1 | divided_by: p.featured_media.preview_image.aspect_ratio }}", { p: product }))
       .toBe('/products/classic-tee|2500|true|3000|3001|S,M,L|/products/classic-tee?variant=3001|1200|false|1.0||1200|1.0')
+  })
+  it('numbers product images and media from 1, and leaves other images without a position', async () => {
+    const product = buildProduct({
+      id: 9001,
+      handle: 'gallery',
+      title: 'Gallery',
+      images: [{ src: '/a.jpg', width: 100, height: 100 }, { src: '/b.jpg', width: 100, height: 100 }],
+      media: [
+        { media_type: 'image', src: '/a.jpg', width: 100, height: 100 },
+        { media_type: 'external_video', id: 5, host: 'youtube', external_id: 'abc', preview_image: { src: '/v.jpg' } },
+        { media_type: 'image', src: '/b.jpg', width: 100, height: 100 }
+      ],
+      variants: [{ id: 9101, title: 'Default Title', price: 100, available: true, option1: 'Default Title' }]
+    })
+    expect(await render('{{ p.images[0].position }}|{{ p.images[1].position }}|{{ p.featured_image.position }}|{% for m in p.media %}{{ m.position }}{% endfor %}|{{ p.featured_media.position }}|{{ p.media[1].preview_image.position }}|{{ image.position }}', { p: product, image: store.images.liquidMethodMissing('hero.jpg') }))
+      .toBe('1|2|1|123|1||')
   })
   it('gives variants a hidden back reference to their product', async () => {
     const product = store.products.liquidMethodMissing('canvas-bag')
