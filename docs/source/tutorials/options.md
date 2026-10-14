@@ -212,6 +212,17 @@ new Liquid({ globals }).parseAndRender('[{{ size }}]').then(console.log)        
 new Liquid({ globals, topLevelSize: false }).parseAndRender('[{{ size }}]').then(console.log)  // []
 ```
 
+## bugCompatibleWhitespaceTrimming
+
+**bugCompatibleWhitespaceTrimming** is added by the `@debutify/liquidjs` fork and does not exist in upstream LiquidJS. It is Ruby Liquid's `bug_compatible_whitespace_trimming` parse option, which Shopify's storefront parses themes with. When `{%-` or `{{-` strips the text before it to nothing, the text keeps its first character, so a newline or space between two tags survives. A text that a `-%}` or `-}}` already stripped to nothing keeps nothing, a text with anything but whitespace in it is stripped as before, and the body of a raw tag is never trimmed. It defaults to `false`, Ruby Liquid's default; the Shopify preset (`createShopifyLiquid`) sets it to `true`.
+
+```javascript
+const { Liquid } = require('@debutify/liquidjs')
+const source = "{{ 'B' }} \n{%- if true %}C{% endif %}"
+new Liquid().parseAndRender(source).then(console.log)                                          // BC
+new Liquid({ bugCompatibleWhitespaceTrimming: true }).parseAndRender(source).then(console.log)  // B C
+```
+
 [liquid]: /api/classes/Liquid.html
 [caching]: ./caching.html
 [abstract-fs]: ./render-file.html#Abstract-File-System

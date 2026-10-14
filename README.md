@@ -10,6 +10,7 @@ Debutify's fork of [LiquidJS](https://github.com/harttle/liquidjs) for rendering
 | `rawTags` | `['raw']` | Tags whose bodies are never parsed; register a `RawBodyTag` subclass for each new name. A listed `comment` nests. The list replaces the default, so include `raw` to keep `{% raw %}` raw. |
 | `inlineErrors` | `false` | Write render errors inline (`Liquid error (line 1): …`) and keep rendering; collect them with `render(tpl, scope, { errors })`. |
 | `topLevelSize` | `true` | `false` makes an undefined top-level `size` print nothing, as Ruby Liquid does, instead of the number of keys in the render's globals as upstream LiquidJS does; a `size` that a scope or the globals define, and the `size` of a value (`list.size`), are not affected. The Shopify preset sets it to `false`. |
+| `bugCompatibleWhitespaceTrimming` | `false` | `true` trims as Ruby Liquid's `bug_compatible_whitespace_trimming` parse option, which Shopify's storefront parses themes with: when `{%-` or `{{-` strips the text before it to nothing, the text keeps its first character, so `{{ a }}\n  {%- if b %}` keeps the newline. The Shopify preset sets it to `true`. |
 
 ```js
 const { Liquid } = require('@debutify/liquidjs')
@@ -32,8 +33,9 @@ Details that do not fit the table:
 - With `inlineErrors`, an undefined filter is recorded and not written only when it is met while rendering, for example inside a grouped expression (`groupedExpressions`). Under `strictFilters` a misspelt filter in an ordinary tag is a parse error and still throws, as in upstream LiquidJS, and without `strictFilters` it is not an error at all.
 - With `inlineErrors`, a syntax error met while rendering, such as in a partial parsed at render time, is written as `Liquid syntax error (<file> line <n>): <message>`. A syntax error in the template you pass to `parse` still throws, and so does a limit error (`memoryLimit`, `renderLimit`, `parseLimit`). A limit hit while rendering arrives wrapped in a `RenderError`, so test what you catch with `isLimitError(err)`, which looks through `originalError`; `LimitError.is(err)` is false for the wrapper.
 - With `topLevelSize: false`, `{{ size }}` prints nothing, `{% if size %}` is false and `{{ size | default: 'M' }}` prints `M` when nothing defines `size`. Under `strictVariables` an undefined `size` throws like any other undefined variable.
+- With `bugCompatibleWhitespaceTrimming: true`, a text that a `-%}` or `-}}` already stripped to nothing keeps nothing, a text with anything but whitespace in it is stripped as before, and the body of a raw tag is never trimmed.
 
-All four defaults are upstream LiquidJS's behaviour, so none of these options changes anything until you opt in.
+All five defaults are upstream LiquidJS's behaviour, so none of these options changes anything until you opt in.
 
 One behaviour differs from upstream without an opt-in: the `slice` filter charges `memoryLimit` for the length of the array or string it returns, where upstream LiquidJS 10.30.0 charges the length it was asked for, so `{{ list | slice: 0, 1000 }}` over a short array no longer hits a low `memoryLimit`. It only matters once you set `memoryLimit`, which is unlimited by default; the Shopify preset sets it.
 
@@ -47,7 +49,7 @@ The `./shopify` entry of the package's `exports` map has `types`, `module` and `
 
 What each tag, filter and object prints follows its page in shopify.dev's [Liquid reference](https://shopify.dev/docs/api/liquid); where shopify.dev does not pin an output, the package follows the closest documented behaviour or Shopify Liquid's own tests, and the case is listed under [Behaviours still to confirm on Shopify](#behaviours-still-to-confirm-on-shopify).
 
-The preset parses templates as Shopify's storefront does. An `if`, `unless`, `case` or `for` whose every branch is blank, holding only whitespace and tags that print nothing (`assign`, `capture`, `comment`, an empty `raw` or `doc`, and blocks as blank as these), prints nothing at all, as Ruby Liquid drops the text of such a block (`remove_blank_strings` in Shopify/liquid's `if.rb`, `for.rb` and `case.rb`); a `tablerow` keeps its text, as in Ruby.
+The preset parses templates as Shopify's storefront does. Its whitespace control is bug-compatible (`bugCompatibleWhitespaceTrimming`): a heading that prints `{{ heading }}`, a newline and `{%- if accent -%}` keeps that newline, as liquid-spec's Dawn recordings and Shopify's own Dawn demo store show. An `if`, `unless`, `case` or `for` whose every branch is blank, holding only whitespace and tags that print nothing (`assign`, `capture`, `comment`, an empty `raw` or `doc`, and blocks as blank as these), prints nothing at all, as Ruby Liquid drops the text of such a block (`remove_blank_strings` in Shopify/liquid's `if.rb`, `for.rb` and `case.rb`); a `tablerow` keeps its text, as in Ruby.
 
 ### Render a page
 
@@ -169,7 +171,7 @@ Shopify's liquid-spec runs in CI on the Shopify preset, including the recordings
 
 On the Shopify preset (`createShopifyLiquid`), 3990 of the 4585 specs in Shopify's [liquid-spec](https://github.com/Shopify/liquid-spec) (commit 84bf25e) pass (87.0%), and 13 of the 26 specs recorded from Shopify's Dawn theme pass (the other 13 need Dawn's snippets, see Known gaps). CI runs them on every push to `master` and on every pull request, and gates on the per-spec baseline in `spec/liquid-spec/baseline.json`: a spec that passed must keep passing, and the pass count may not drop.
 
-The figures count the specs the adapter runs, not every spec in the gem. `spec/liquid-spec/adapter.rb` skips the specs that need Ruby objects or bytes that JSON cannot carry (Ruby drops and types, drop class names, randomness, binary data, template factories, `self` shadowing the environment), the range resource limits and the strict2 blank-body errors, and five Shopify feature groups (`shopify_includes`, `shopify_blank`, `shopify_error_handling`, `shopify_error_format`, `shopify_string_access`) stay switched off because each has failing specs. Most of the other known failures are differences in the core engine inherited from LiquidJS: parser edge cases and error texts, `for` loop `limit` and `offset` permutations, and Ruby `inspect` text.
+The figures count the specs the adapter runs, not every spec in the gem. `spec/liquid-spec/adapter.rb` skips the specs that need Ruby objects or bytes that JSON cannot carry (Ruby drops and types, drop class names, randomness, binary data, template factories, `self` shadowing the environment), the range resource limits and the strict2 blank-body errors, and five Shopify feature groups (`shopify_includes`, `shopify_blank`, `shopify_error_handling`, `shopify_error_format`, `shopify_string_access`) stay switched off because each has failing specs. liquid-spec records its specs from Ruby Liquid without bug-compatible trimming, so `spec/liquid-spec/server.mjs` runs the preset with `bugCompatibleWhitespaceTrimming: false`; the Dawn suite compares whitespace-normalised HTML, so this changes no Dawn result, and the preset's own tests cover the bug-compatible mode. Most of the other known failures are differences in the core engine inherited from LiquidJS: parser edge cases and error texts, `for` loop `limit` and `offset` permutations, and Ruby `inspect` text.
 
 ### Known gaps
 

@@ -11,16 +11,18 @@ describe('shopify/theme colour schemes', () => {
   const banner = '<div class="banner" style="background: #336699; color: #f4f4f4">scheme-2|scheme-2|#121212|#ffffff</div>'
   // t1 saves scheme-1, t2 saves an id no scheme has and t3 saves nothing, so t2 and t3 read the tile setting's default, scheme-2
   const tiles = '<div id="shopify-block-t1" class="shopify-block"><span class="tile" style="color: #121212">scheme-1:#ffffff</span></div><div id="shopify-block-t2" class="shopify-block"><span class="tile" style="color: #f4f4f4">scheme-2:#336699</span></div><div id="shopify-block-t3" class="shopify-block"><span class="tile" style="color: #f4f4f4">scheme-2:#336699</span></div>'
+  // banner.liquid ends `{% content_for 'blocks' %}`, a newline and `{%- schema -%}`: the storefront's bug-compatible trimming keeps that newline
+  const section = `<div id="shopify-section-template--schemes__banner" class="shopify-section">${banner}${tiles}\n</div>`
 
   it('gives a section and its blocks the scheme settings_data.json holds, through renderPage', async () => {
     const { html, report } = await renderPage({ theme, templateName: 'schemes' })
-    expect(html).toBe(`<div id="shopify-section-template--schemes__banner" class="shopify-section">${banner}${tiles}</div>`)
+    expect(html).toBe(section)
     expect(report.unsupported).toEqual([])
     expect(report.errors).toEqual([])
   })
   it('does the same through renderSection', async () => {
     const { html, report } = await renderSection({ theme, templateName: 'schemes', section: 'banner' })
-    expect(html).toBe(`<div id="shopify-section-template--schemes__banner" class="shopify-section">${banner}${tiles}</div>`)
+    expect(html).toBe(section)
     expect(report.unsupported).toEqual([])
   })
   it('falls back to the first scheme when the setting default is no scheme either', async () => {

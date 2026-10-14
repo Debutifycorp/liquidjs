@@ -9,7 +9,7 @@ export function whiteSpaceCtrl (tokens: Token[], options: NormalizedFullOptions)
     const token = tokens[i]
     if (!isDelimitedToken(token)) continue
     if (!inRaw && token.trimLeft) {
-      trimLeft(tokens[i - 1], options.greedy)
+      trimLeft(tokens[i - 1], options.greedy, options.bugCompatibleWhitespaceTrimming)
     }
 
     if (isTagToken(token)) {
@@ -23,11 +23,14 @@ export function whiteSpaceCtrl (tokens: Token[], options: NormalizedFullOptions)
   }
 }
 
-function trimLeft (token: Token, greedy: boolean) {
+function trimLeft (token: Token, greedy: boolean, bugCompatible: boolean) {
   if (!token || !isHTMLToken(token)) return
 
   const mask = greedy ? BLANK : INLINE_BLANK
   while (TYPES[token.input.charCodeAt(token.end - 1 - token.trimRight)] & mask) token.trimRight++
+  // Ruby Liquid's `bug_compatible_whitespace_trimming` (block_body.rb `whitespace_handler`): a text stripped to nothing keeps its first character, unless a right trim had already emptied it
+  const start = token.begin + token.trimLeft
+  if (bugCompatible && start < token.end && token.end - token.trimRight <= start) token.trimRight = token.end - start - 1
 }
 
 function trimRight (token: Token, greedy: boolean) {

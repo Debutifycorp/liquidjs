@@ -61,6 +61,11 @@ describe('createShopifyLiquid', () => {
     expect((await render('{{ list.size }} {{ list | size }} {{ text.size }}', { list: [1, 2], text: 'abc' })).html).toBe('2 2 3')
   })
   it('hides own-property-less values', async () => expect((await render('{{ obj.constructor }}', { obj: {} })).html).toBe(''))
+  // Shopify's storefront parses themes with Ruby Liquid's `bug_compatible_whitespace_trimming`. Recorded in liquid-spec (84bf25e) specs/shopify_theme_dawn/index-announcement-bar: Dawn's announcement bar prints its text, then `{%- if block.settings.link != blank -%}`, false there, and Shopify keeps a newline before `</p>`. Shopify's Dawn demo store prints the same kept newline today (`<span>Add to cart\n</span>`, https://theme-dawn-demo.myshopify.com/products/puff-olive-leaf, fetched 2026-10-14).
+  it('trims whitespace as the Shopify storefront does', async () => {
+    const source = '<p class="announcement-bar__message h5">\n                {{ block.settings.text | escape }}\n                {%- if block.settings.link != blank -%}\n                  {% render \'icon-arrow\' %}\n                {%- endif -%}\n              </p>'
+    expect((await render(source, { block: { settings: { text: 'Welcome to our store', link: '' } } })).html).toBe('<p class="announcement-bar__message h5">\n                Welcome to our store\n</p>')
+  })
 })
 
 // Ruby Liquid drops the text of an `if`, `unless`, `case` or `for` whose every branch is blank, holding only whitespace and tags that print nothing: `parse` in Shopify/liquid lib/liquid/tags/if.rb, for.rb and case.rb calls `remove_blank_strings`. The cases are Shopify/liquid test/integration/blank_test.rb, recorded in liquid-spec (84bf25e) specs/liquid_ruby/specs.yml as `BlankTest#…`.
@@ -98,4 +103,9 @@ describe('blank block bodies', () => {
   })
   // Ruby's `Doc#blank?` (lib/liquid/tags/doc.rb) is `@body.empty?`, so a doc with text in it keeps the whitespace around it
   it('a doc tag with text is not blank', async () => expect(await html(wrap(' {% doc %}x{% enddoc %} '))).toBe('  '.repeat(N + 1)))
+  // with bug-compatible trimming the `{%-` puts a newline back in the body (block_body.rb `whitespace_handler`), and the blank body drops it again
+  it('drops the newline bug-compatible trimming keeps in a blank body', async () => {
+    expect(await html('{% if true %}\n  {%- assign a = 1 %}{% endif %}')).toBe('')
+    expect(await html('{% if true %}\n  {%- assign a = 1 %}{{ a }}{% endif %}')).toBe('\n1')
+  })
 })

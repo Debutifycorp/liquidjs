@@ -80,6 +80,8 @@ export interface LiquidOptions {
   preserveTimezones?: boolean;
   /** Whether `trim*Left`/`trim*Right` is greedy. When set to `true`, all consecutive blank characters including `\n` will be trimmed regardless of line breaks. Defaults to `true`. */
   greedy?: boolean;
+  /** Ruby Liquid's `bug_compatible_whitespace_trimming` parse option, which Shopify's storefront renders themes with: when `{%-` or `{{-` strips the text before it to nothing, the text keeps its first character, so `{{ a }}\n  {%- if b %}` prints `a`, a newline, then the `if`. A text that a `-%}` or `-}}` already stripped to nothing keeps nothing. Defaults to `false`, Ruby Liquid's default. */
+  bugCompatibleWhitespaceTrimming?: boolean;
   /** `fs` is used to override the default file-system module with a custom implementation. */
   fs?: FS;
   /** keyValue separator */
@@ -176,6 +178,7 @@ export interface NormalizedFullOptions extends NormalizedOptions {
   outputDelimiterRight: string;
   preserveTimezones: boolean;
   greedy: boolean;
+  bugCompatibleWhitespaceTrimming: boolean;
   globals: object;
   keepOutputType: boolean;
   operators: Operators;
@@ -209,6 +212,7 @@ export const defaultOptions: NormalizedFullOptions = {
   trimOutputRight: false,
   trimOutputLeft: false,
   greedy: true,
+  bugCompatibleWhitespaceTrimming: false,
   tagDelimiterLeft: '{%',
   tagDelimiterRight: '%}',
   outputDelimiterLeft: '{{',

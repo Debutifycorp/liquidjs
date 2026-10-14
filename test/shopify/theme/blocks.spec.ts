@@ -7,11 +7,12 @@ const theme = loadTheme(join(__dirname, '../fixtures/theme'))
 describe('shopify/theme/blocks', () => {
   it('renders theme blocks, nested static blocks and section static blocks', async () => {
     const { html, report } = await renderPage({ theme, templateName: 'page.slides' })
+    // slide.liquid and slideshow.liquid end with a tag or output, a newline and `{%- schema -%}`: the storefront's bug-compatible trimming keeps that newline
     expect(html).toBe(
       '<div id="shopify-section-template--page-slides__slides" class="shopify-section"><div class="slides">' +
-      '<div id="shopify-block-s1" class="shopify-block slide"><h3>First</h3><span class="badge" style="color: red">Sale|badge|template--page-slides__slides</span></div>' +
-      '<div id="shopify-block-s3" class="shopify-block slide"><h3>Untitled</h3><span class="badge" style="color: red">New|badge|template--page-slides__slides</span></div>' +
-      '</div>4|Untitled</div>' +
+      '<div id="shopify-block-s1" class="shopify-block slide"><h3>First</h3><span class="badge" style="color: red">Sale|badge|template--page-slides__slides</span>\n</div>' +
+      '<div id="shopify-block-s3" class="shopify-block slide"><h3>Untitled</h3><span class="badge" style="color: red">New|badge|template--page-slides__slides</span>\n</div>' +
+      '</div>4|Untitled\n</div>' +
       '<div id="shopify-section-template--page-slides__promo" class="shopify-section"><aside><span class="badge" style="color: blue">New|promo-badge|template--page-slides__promo</span></aside></div>'
     )
     expect(report.missing).toEqual([{ kind: 'block', name: 'no-such-block' }])

@@ -48,7 +48,8 @@ describe('shopify/theme/runtime', () => {
   })
   it('wraps JSON template sections in the template wrapper', async () => {
     const { html } = await renderPage({ theme, templateName: 'product', request: { resource: 'canvas-bag' } })
-    expect(html).toContain('<main id="MainContent"><div id="product-wrapper" class="page-width" data-template="product"><div id="shopify-section-template--product__main" class="shopify-section"><h1>Canvas Bag</h1>$45.00 USD<form method="post" action="/cart/add" id="product_form_1002"')
+    // main-product.liquid prints the price, a newline and `{%- form`: the storefront's bug-compatible trimming keeps that newline
+    expect(html).toContain('<main id="MainContent"><div id="product-wrapper" class="page-width" data-template="product"><div id="shopify-section-template--product__main" class="shopify-section"><h1>Canvas Bag</h1>$45.00 USD\n<form method="post" action="/cart/add" id="product_form_1002"')
     expect(html).toContain('<button>Add to cart</button>')
   })
   it('renders without a layout when the template says so', async () => {

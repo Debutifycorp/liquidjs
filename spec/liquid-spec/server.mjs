@@ -62,7 +62,8 @@ function engine (filesystem) {
     services: { currentTime: () => clock ?? new Date() },
     // wall-clock milliseconds for one render() call, partials included. A runaway spec (endless partial recursion) must end with an error before the harness's own timeout kills the whole server
     renderLimit: 1000,
-    engine: { fs: new FlatFS(filesystem ?? {}) }
+    // liquid-spec records its specs from Ruby Liquid without `bug_compatible_whitespace_trimming` (liquid_ruby/specs.yml `TrimModeTest#test_pre_trim_blank_preceding_text` expects `BC`, shopify_production_recordings `RecordedTest#test_for_loop_with_offset_continue` keeps no newline), while the Shopify storefront the preset follows parses themes with it. The Dawn suite compares whitespace-normalised HTML, so turning it off changes no Dawn result
+    engine: { fs: new FlatFS(filesystem ?? {}), bugCompatibleWhitespaceTrimming: false }
   })
 }
 
