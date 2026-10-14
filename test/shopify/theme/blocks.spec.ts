@@ -81,6 +81,29 @@ describe('shopify/theme/blocks', () => {
       })
       expect(html).toBe(SECTION(WRAP('full', '2:a=one,b=two,') + WRAP('empty', '0:(template--x__main|empty)')))
     })
+    // https://shopify.dev/docs/api/liquid/tags/render renders "a snippet or app block", and https://shopify.dev/docs/storefronts/themes/architecture/blocks/app-blocks shows `{% render block %}` in a section's block loop. Shopify renders a theme block the same way: Ella 7.1.0 (Halothemes) blocks/_media-gallery.liquid loops `{% for child_block in block.blocks %}` and does `{% render child_block %}` in an `<li id="Slide-{{ child_block.id }}-{{ forloop.index }}" …>`, and Ella's demo store (https://new-ella-demo-07.myshopify.com/, Ella 7.3.1, fetched 2026-10-14) prints each child inside it as `<div id="shopify-block-<child id>" class="shopify-block">` and the child's content, and a child whose schema has `"tag": null` (its `group` block) bare, as `content_for` renders them.
+    it('renders a theme block given to render as content_for does, wrapper and children included', async () => {
+      const { html, report } = await page({
+        'sections/sec.liquid': "{% content_for 'blocks' %}{% for b in section.blocks %}({% render b %}){% endfor %}",
+        'blocks/list.liquid': '{% for child in block.blocks %}<li>{% render child %}</li>{% endfor %}',
+        'blocks/item.liquid': '{{ block.id }}:{{ block.settings.text }}{% content_for "blocks" %}{% schema %}{ "name": "Item", "settings": [{ "type": "text", "id": "text", "label": "Text" }] }{% endschema %}',
+        'blocks/bare.liquid': '[{{ block.id }}]{% schema %}{ "name": "Bare", "tag": null }{% endschema %}'
+      }, {
+        blocks: {
+          l: { type: 'list', blocks: { i1: { type: 'item', settings: { text: 'one' }, blocks: { n: { type: 'bare' } } }, i2: { type: 'bare' }, app: { type: '@app' } }, block_order: ['i1', 'i2', 'app'] }
+        },
+        block_order: ['l']
+      })
+      const list = '<li>' + WRAP('i1', 'i1:one[n]') + '</li><li>[i2]</li><li></li>'
+      expect(html).toBe(SECTION(WRAP('l', list) + '(' + WRAP('l', list) + ')'))
+      expect(report.errors).toEqual([])
+      expect(report.unsupported).toEqual([{ feature: 'app_block', detail: 'sec block list l: @app' }])
+      expect(report.sections.map(entry => entry.status)).toEqual(['rendered'])
+    })
+    it('makes a render of a value that is neither a snippet name nor a block a Liquid error', async () => {
+      const { html } = await page({ 'sections/sec.liquid': '{% assign n = 5 %}[{% render n %}][{% render section.settings %}]' })
+      expect(html).toBe(SECTION('[Liquid error (sections/sec line 1): render needs a snippet name or a block, not a number][Liquid error (sections/sec line 1): render needs a snippet name or a block, not an object]'))
+    })
     it('shows a block the page globals and its section but not the variables around it', async () => {
       const { html } = await page({
         'sections/sec.liquid': "{% assign outer = 'o' %}{% content_for 'blocks' %}|{{ inner }}|{{ block.id }}",

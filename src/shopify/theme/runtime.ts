@@ -298,6 +298,8 @@ class PageRender implements ThemeHooks {
   private readonly current: Record<string, unknown>
   private readonly templateId: string
   private readonly headerMarker = newHeaderMarker()
+  /** The saved JSON behind each block object of `section.blocks` and `block.blocks`, for `{% render block %}`. */
+  private readonly blockObjects = new WeakMap<object, { id: string, data: BlockData }>()
 
   public constructor (private readonly theme: CompiledTheme, private readonly options: RenderPageOptions) {
     const store = buildStore(options.data ?? sampleStoreData)
@@ -607,7 +609,9 @@ class PageRender implements ThemeHooks {
       if (block.disabled || block.static || !this.keyAllowed(id, 'block') || !this.blockTypeAllowed(block.type)) continue
       const settings = block.settings === undefined || block.settings === null || isRecord(block.settings) ? block.settings : undefined
       if (settings !== block.settings) this.ignored('blocks', `${where}: block ${id} "settings"`, 'an object')
-      blocks.push({ id, type: block.type, settings: new SettingsDrop(this.blockDefinitions(block.type as string, schema), settings ?? undefined, this.env), shopify_attributes: '' })
+      const object: LiquidObject = { id, type: block.type, settings: new SettingsDrop(this.blockDefinitions(block.type as string, schema), settings ?? undefined, this.env), shopify_attributes: '' }
+      this.blockObjects.set(object, { id, data: block as unknown as BlockData })
+      blocks.push(object)
     }
     return blocks
   }
@@ -789,6 +793,18 @@ class PageRender implements ThemeHooks {
       out += (yield this.renderThemeBlock(id, data, {}, frame)) as string
     }
     return out
+  }
+
+  /** `{% render block %}` for a block of `section.blocks` or `block.blocks`: a theme block renders as `renderThemeBlock` renders it under `content_for`, and an app block prints nothing and is reported. `undefined` for a value that is not one of this page's blocks. See `ShopifyRenderTag`. */
+  public * renderBlockObject (value: object): Generator<unknown, string | undefined, unknown> {
+    const entry = this.blockObjects.get(value)
+    const frame = currentFrame(this.state)
+    if (!entry || !frame) return undefined
+    if (isAppBlock(entry.data.type)) {
+      this.state.report.unsupported('app_block', `${frame.block ? `${frame.section.type} block ${frame.block.type} ${frame.block.id}` : frame.section.type}: ${reportName(entry.data.type as string)}`)
+      return ''
+    }
+    return (yield this.renderThemeBlock(entry.id, entry.data, {}, frame)) as string
   }
 
   /**

@@ -8,6 +8,7 @@ import { PaginateTag } from './paginate'
 import { SectionTag, SectionsTag } from './section'
 import { ContentForTag } from './content-for'
 import { ShopifyTablerowTag } from './tablerow'
+import { ShopifyRenderTag } from './render'
 import { registerBlankText } from './blank'
 
 /** Shopify's platform tags, by name. */
@@ -23,7 +24,8 @@ export const SHOPIFY_TAGS: Readonly<Record<string, TagClass>> = Object.freeze({
   section: SectionTag,
   sections: SectionsTag,
   content_for: ContentForTag,
-  tablerow: ShopifyTablerowTag
+  tablerow: ShopifyTablerowTag,
+  render: ShopifyRenderTag
 })
 
 export function registerShopifyTags (liquid: Liquid) {

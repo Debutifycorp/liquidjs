@@ -10,7 +10,7 @@ export type ParsedFileName = Template[] | Token | string | undefined
 type RenderBinding = { value: ValueToken; alias?: string }
 
 export default class extends Tag {
-  private file: ParsedFileName
+  protected file: ParsedFileName
   private currentFile?: string
   private hash: Hash
   private with?: RenderBinding
