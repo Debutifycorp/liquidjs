@@ -170,14 +170,15 @@ if (flags.includes('--presets')) {
     try {
       const match = SCHEMA.exec(theme.files[path])
       list = match ? JSON.parse(match[1]).presets ?? [] : []
+      if (!Array.isArray(list)) throw new Error('"presets" must be an array')
     } catch (err) {
       presets.failed[`${path}#schema`] = err.message
       continue
     }
     for (const [index, preset] of list.entries()) {
-      theme.files[templatePath] = JSON.stringify({ sections: { main: { type, settings: preset.settings ?? {}, ...toBlocks(preset.blocks, preset.block_order) } }, order: ['main'] })
       const started = performance.now()
       try {
+        theme.files[templatePath] = JSON.stringify({ sections: { main: { type, settings: preset.settings ?? {}, ...toBlocks(preset.blocks, preset.block_order) } }, order: ['main'] })
         const { report } = await renderSection({ theme, templateName: 'page.smoke-preset', section: 'main', request: { resource: 'about' } })
         presetTimes.push(performance.now() - started)
         collect(report)

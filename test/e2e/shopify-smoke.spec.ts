@@ -82,6 +82,27 @@ describe('bin/shopify-smoke.mjs', () => {
     expect(JSON.parse(stdout).presets).toEqual({ rendered: 2, failed: {} })
   })
 
+  it('records a malformed preset as a failure and goes on rendering the others', () => {
+    writeTheme(dir, {
+      ...base,
+      'sections/broken.liquid': '<p>broken</p>{% schema %}{"name":"Broken","blocks":[{"type":"line","name":"Line"}],"presets":[{"name":"Broken","blocks":[null]},{"name":"Fine"}]}{% endschema %}',
+      'sections/empty.liquid': '<p>empty</p>{% schema %}{"name":"Empty","presets":[null]}{% endschema %}',
+      'sections/shape.liquid': '<p>shape</p>{% schema %}{"name":"Shape","presets":{"name":"Shape"}}{% endschema %}'
+    })
+    const asJson = smoke([dir, '--json', '--presets'])
+    expect(asJson.stderr).toBe('')
+    expect(asJson.status).toBe(0)
+    const { presets } = JSON.parse(asJson.stdout)
+    expect(Object.keys(presets.failed).sort()).toEqual(['sections/broken.liquid#0', 'sections/empty.liquid#0', 'sections/shape.liquid#schema'])
+    for (const message of Object.values(presets.failed)) expect(message).toEqual(expect.any(String))
+    expect(presets.rendered).toBe(2)
+    const strict = smoke([dir, '--strict', '--presets'])
+    expect(strict.status).toBe(1)
+    expect(strict.stderr).toContain('presetFailures: sections/broken.liquid#0')
+    expect(strict.stderr).toContain('presetFailures: sections/empty.liquid#0')
+    expect(strict.stderr).toContain('presetFailures: sections/shape.liquid#schema')
+  })
+
   it('passes --strict on a clean theme', () => {
     writeTheme(dir, base)
     expect(smoke([dir, '--strict']).status).toBe(0)
