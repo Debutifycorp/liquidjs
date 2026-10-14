@@ -186,7 +186,8 @@ export interface GiftCardData {
   enabled?: boolean
   expired?: boolean
   expires_on?: string | null
-  customer?: Record<string, unknown> | null
+  /** The customer who is logged in; nobody when omitted. */
+  customer?: CustomerData | null
   message?: string | null
   send_on?: string | null
   pass_url?: string | null
@@ -197,6 +198,103 @@ export interface GiftCardData {
   recipient?: Record<string, unknown> | null
   template_suffix?: string | null
   url?: string | null
+}
+
+/** An address, https://shopify.dev/docs/api/liquid/objects/address: one of the customer's addresses, or an order's billing or shipping address. `country` is the country's name and `country_code` its ISO 3166-1 alpha-2 code; `province_code` leaves out the country code (`ON`, not `CA-ON`). A customer address needs its `id`, which its URL and its edit form use. */
+export interface AddressData {
+  id?: number
+  first_name?: string | null
+  last_name?: string | null
+  company?: string | null
+  address1: string
+  address2?: string | null
+  city: string
+  province?: string | null
+  province_code?: string | null
+  country: string
+  country_code: string
+  zip: string
+  phone?: string | null
+}
+
+/** A line of an order: a product and variant by handle and id, as in `CartData`, https://shopify.dev/docs/api/liquid/objects/line_item. */
+export interface OrderLineData {
+  product_handle: string
+  variant_id: number
+  quantity: number
+}
+
+/** A shipment of an order, https://shopify.dev/docs/api/liquid/objects/fulfillment. `line_items` names the lines it ships by their variant (the order's first line of that variant) and how many of each (the whole line when `quantity` is omitted). */
+export interface FulfillmentData {
+  created_at: string
+  tracking_company?: string | null
+  tracking_number?: string | null
+  tracking_url?: string | null
+  line_items: Array<{ variant_id: number, quantity?: number }>
+}
+
+/** A payment of an order, https://shopify.dev/docs/api/liquid/objects/transaction. `amount` is in the currency's subunit. */
+export interface TransactionData {
+  id: number
+  amount: number
+  kind: 'authorization' | 'capture' | 'sale' | 'void' | 'refund'
+  status: 'success' | 'pending' | 'failure' | 'error'
+  /** The handleized name of the payment provider (`shopify_payments`). */
+  gateway: string
+  /** Defaults to `gateway`. */
+  gateway_display_name?: string
+  created_at: string
+  name?: string | null
+  payment_details?: Record<string, unknown> | null
+  receipt?: string | null
+}
+
+/** An order the customer placed, https://shopify.dev/docs/api/liquid/objects/order. Amounts are in the currency's subunit; the order's totals are computed from its lines, shipping methods and tax lines. */
+export interface OrderData {
+  id: number
+  order_number: number
+  /** Defaults to `#<order_number>`. */
+  name?: string
+  created_at: string
+  email?: string | null
+  phone?: string | null
+  confirmation_number?: string | null
+  line_items: OrderLineData[]
+  billing_address?: AddressData | null
+  shipping_address?: AddressData | null
+  shipping_methods?: Array<{ title: string, price: number }>
+  tax_lines?: Array<{ title: string, rate: number, price: number }>
+  /** One of the values the order page lists (`paid`, `pending`, `refunded`…); `paid` when omitted. */
+  financial_status?: string
+  /** `fulfilled`, `partial` or `unfulfilled` from `fulfillments` when omitted. */
+  fulfillment_status?: string
+  fulfillments?: FulfillmentData[]
+  transactions?: TransactionData[]
+  total_refunded_amount?: number
+  cancelled_at?: string | null
+  cancel_reason?: 'customer' | 'declined' | 'fraud' | 'inventory' | 'staff' | 'other' | null
+  note?: string | null
+  tags?: string[]
+  attributes?: Record<string, string>
+}
+
+/** The customer who is logged in, https://shopify.dev/docs/api/liquid/objects/customer, with their addresses and orders. Fields this type does not name are passed through as given. */
+export interface CustomerData {
+  id?: number
+  email?: string
+  first_name?: string
+  last_name?: string
+  phone?: string | null
+  accepts_marketing?: boolean
+  tax_exempt?: boolean
+  tags?: string[]
+  addresses?: AddressData[]
+  /** The `id` of the default address among `addresses`; the first address when omitted. */
+  default_address_id?: number
+  /** The customer's orders, in the order `customer.orders` lists them. */
+  orders?: OrderData[]
+  metafields?: Metafields
+  [key: string]: unknown
 }
 
 /**

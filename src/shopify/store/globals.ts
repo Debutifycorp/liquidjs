@@ -16,7 +16,7 @@ export interface RequestInput {
   origin?: string
   /** `?page=` for `paginate`. */
   page?: number
-  /** The handle of the product, collection, page or blog the template shows (`<blog>/<article>` for articles); the first one in the store when omitted. */
+  /** The handle of the product, collection, page or blog the template shows (`<blog>/<article>` for articles), or the name (`#1001`), number or id of the customer's order on `customers/order`; the first one in the store, or the customer's first order, when omitted. */
   resource?: string
   /** Chooses contextual section group files (`header-group.context.<market>.json`). */
   context?: { market?: string, b2b?: boolean }
@@ -62,6 +62,15 @@ function defaultPath (pageType: string, template: TemplateDrop, resource: Liquid
   return `/${pageType}`
 }
 
+/** The customer's order the `customers/order` template shows: the one `resource` names by its name, number or id, or the first one; nil when the customer has none, and nil and reported when `resource` names none of them. https://shopify.dev/docs/api/liquid/objects/order */
+function orderFor (customer: LiquidObject | null, resource: string | undefined, report: ReportCollector): LiquidObject | null {
+  const orders = (customer?.orders as LiquidObject[] | undefined) ?? []
+  if (resource === undefined) return orders[0] ?? null
+  const found = orders.find(order => order.name === resource || String(order.order_number) === resource || String(order.id) === resource)
+  if (!found) report.missing('resource', `order ${resource}`)
+  return found ?? null
+}
+
 export interface GlobalsInput {
   store: StoreObjects
   templateName: string
@@ -80,7 +89,7 @@ export interface PageGlobals {
 }
 
 /**
- * The global objects of one page, each following its page under https://shopify.dev/docs/api/liquid/objects: `shop`, `cart`, `customer`, `localization`, `collections`, `all_products`, `pages`, `blogs`, `articles`, `linklists`, `images`, `routes`, `template`, `request` (`page_type`, `path`, `host`, `origin`, `locale`, `design_mode`, `visual_preview_mode`), `page_title`, `page_description`, `canonical_url`, `handle`, `current_page`, `current_tags`, `search`, `recommendations`, `powered_by_link`, `additional_checkout_buttons`, `content_for_additional_checkout_buttons`, `metaobjects`, `country_option_tags`, `all_country_option_tags`, `gift_card` on the `gift_card` template (https://shopify.dev/docs/api/liquid/objects/gift_card, nil when the store data issues none), and the template's resource under its own name (`product`, `collection`, `page`, `blog`, `article`; an article also sets `blog`).
+ * The global objects of one page, each following its page under https://shopify.dev/docs/api/liquid/objects: `shop`, `cart`, `customer`, `localization`, `collections`, `all_products`, `pages`, `blogs`, `articles`, `linklists`, `images`, `routes`, `template`, `request` (`page_type`, `path`, `host`, `origin`, `locale`, `design_mode`, `visual_preview_mode`), `page_title`, `page_description`, `canonical_url`, `handle`, `current_page`, `current_tags`, `search`, `recommendations`, `powered_by_link`, `additional_checkout_buttons`, `content_for_additional_checkout_buttons`, `metaobjects`, `country_option_tags`, `all_country_option_tags`, `gift_card` on the `gift_card` template (https://shopify.dev/docs/api/liquid/objects/gift_card, nil when the store data issues none), `order` on the `customers/order` template (https://shopify.dev/docs/api/liquid/objects/order, the customer's order `orderFor` picks), and the template's resource under its own name (`product`, `collection`, `page`, `blog`, `article`; an article also sets `blog`).
  *
  * Choices shopify.dev does not pin, for the "confirm on a development store" list: `canonical_url` is the origin plus the path, with no query string or page number (the page says only that it is the canonical URL of the current page); `page_title` is the resource's title or the shop's name, without the shop-name suffix a live store adds; `powered_by_link` is empty because the link points at shopify.com, which a Debutify store does not show; `search` runs only when the request has `searchTerms` (`buildSearch`, whose matching is Debutify's), `recommendations` is performed only for a request's `recommendations` (`buildRecommendations`, whose related products are Debutify's) and carries `performed` beside `performed?` (shopify.dev names only `performed?`, but liquid-spec's recorded Shopify environments hold both, so a template that reads `recommendations.performed` takes the same branch as on a store), and `metaobjects` is empty.
  */
@@ -143,6 +152,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     country_option_tags: store.country_option_tags,
     all_country_option_tags: store.all_country_option_tags,
     ...(pageType === 'gift_card' ? { gift_card: store.gift_card } : {}),
+    ...(pageType === 'customers/order' ? { order: orderFor(store.customer, request.resource, report) } : {}),
     ...resources
   }
   return { globals, linklists, request: { path, origin, page } }

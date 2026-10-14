@@ -4,7 +4,7 @@ import { DEFAULT_MONEY_FORMAT, DEFAULT_MONEY_WITH_CURRENCY_FORMAT } from '../sta
 import type { ImageData } from '../types'
 import { escapeHtml } from '../util/html'
 import { buildFilters } from './filters'
-import type { ArticleData, BlogData, CollectionData, CountryOptionData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, PageData, ProductData, StoreData, VariantData } from './types'
+import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, ProductData, StoreData, TransactionData, VariantData } from './types'
 
 /**
  * Turns `StoreData` into the objects Liquid reads, computing what Shopify derives (URLs, price ranges, the first available variant, option values) so templates find every field they expect. Built objects are plain objects, readable under `ownPropertyOnly`; images become `ImageDrop`s and handle-keyed collections `HandleMap`s. Field lists follow https://shopify.dev/docs/api/liquid/objects, object by object as each builder cites.
@@ -305,16 +305,16 @@ export function buildLinklists (lists: LinkListData[], path: string): HandleMap<
   }))
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/cart and https://shopify.dev/docs/api/liquid/objects/line_item. Lines naming a product or variant the store does not have are skipped. No discounts, properties or selling plans are applied, so original, final and line prices are equal. */
-function buildCart (data: StoreData, products: HandleMap<LiquidObject>): LiquidObject {
+/** The line items of `lines`, https://shopify.dev/docs/api/liquid/objects/line_item, for a cart or an order. Lines naming a product or variant the store does not have are skipped. No discounts, properties or selling plans are applied, so original, final and line prices are equal. */
+function buildLineItems (lines: Array<{ product_handle: string, variant_id: number, quantity: number }>, products: HandleMap<LiquidObject>): LiquidObject[] {
   const items: LiquidObject[] = []
-  for (const line of data.cart?.items ?? []) {
+  for (const line of lines) {
     const product = HandleMap.get(products, line.product_handle)
     const variant = (product?.variants as LiquidObject[] | undefined)?.find(item => item.id === line.variant_id)
     if (!product || !variant) continue
     const price = variant.price as number
     items.push({
-      // `index` (0-based) is not a property of https://shopify.dev/docs/api/liquid/objects/line_item, but themes read it (Dawn's cart prints `item.index | plus: 1`), so it is built; the page does not pin its base
+      // `index` (0-based) is not a property of https://shopify.dev/docs/api/liquid/objects/line_item, but themes read it as a row number (`item.index | plus: 1`), so it is built; the page does not pin its base
       index: items.length,
       id: variant.id,
       key: `${variant.id}:${items.length + 1}`,
@@ -346,6 +346,12 @@ function buildCart (data: StoreData, products: HandleMap<LiquidObject>): LiquidO
       gift_card: false
     })
   }
+  return items
+}
+
+/** https://shopify.dev/docs/api/liquid/objects/cart, with its line items (`buildLineItems`). */
+function buildCart (data: StoreData, products: HandleMap<LiquidObject>): LiquidObject {
+  const items = buildLineItems(data.cart?.items ?? [], products)
   const total = items.reduce((sum, item) => sum + (item.final_line_price as number), 0)
   return {
     items,
@@ -415,6 +421,197 @@ function buildGiftCard (data: GiftCardData, products: HandleMap<LiquidObject>, c
   }
 }
 
+/** A status value as English text, its first letter upper-case and `_` as a space (`partially_paid` is `Partially paid`), for the `_label` properties, which shopify.dev describes as the localized value and shows only as `Paid`, `Partial` and `Success` in its examples. */
+const statusLabel = (value: string) => value ? value.charAt(0).toUpperCase() + value.slice(1).replace(/_/g, ' ') : value
+
+/** The `cancel_reason_label` of each `cancel_reason`: the description the order page gives each value. https://shopify.dev/docs/api/liquid/objects/order#order-cancel_reason */
+const CANCEL_REASON_LABELS: Record<string, string> = { customer: 'Customer changed/cancelled order', declined: 'Payment declined', fraud: 'Fraudulent order', inventory: 'Items unavailable', staff: 'Staff error', other: 'Other' }
+
+/** https://shopify.dev/docs/api/liquid/objects/address. `name` joins the first and last names, `street` the two lines, and `summary` the name, lines, city, province and country, as the page lists them (its example joins them with `, `). `country` is a country object (https://shopify.dev/docs/api/liquid/objects/country) that prints its name, as that page says a country does when referenced directly. `url` is `/account/addresses/<id>` for a customer address, as the page's example shows, and nil for an order's address ("This only applies to customer addresses"). */
+function buildAddress (data: AddressData, ofCustomer: boolean): LiquidObject {
+  const name = [data.first_name, data.last_name].filter(Boolean).join(' ')
+  const street = [data.address1, data.address2].filter(Boolean).join(', ')
+  const country: LiquidObject = { iso_code: data.country_code, name: data.country }
+  Object.defineProperty(country, 'toString', { value: () => data.country, enumerable: false })
+  return {
+    id: data.id ?? null,
+    first_name: data.first_name ?? null,
+    last_name: data.last_name ?? null,
+    name,
+    company: data.company ?? null,
+    address1: data.address1,
+    address2: data.address2 ?? null,
+    street,
+    city: data.city,
+    province: data.province ?? null,
+    province_code: data.province_code ?? null,
+    country,
+    country_code: data.country_code,
+    zip: data.zip,
+    phone: data.phone ?? null,
+    summary: [name, street, data.city, data.province, data.country].filter(Boolean).join(', '),
+    url: ofCustomer && data.id !== undefined ? `/account/addresses/${data.id}` : null
+  }
+}
+
+/** https://shopify.dev/docs/api/liquid/objects/transaction. */
+function buildTransaction (data: TransactionData): LiquidObject {
+  return {
+    id: data.id,
+    amount: data.amount,
+    kind: data.kind,
+    status: data.status,
+    status_label: statusLabel(data.status),
+    gateway: data.gateway,
+    gateway_display_name: data.gateway_display_name ?? data.gateway,
+    created_at: data.created_at,
+    name: data.name ?? null,
+    payment_details: data.payment_details ?? null,
+    receipt: data.receipt ?? null,
+    buyer_pending_payment_instructions: [],
+    buyer_pending_payment_notice: null,
+    'show_buyer_pending_payment_instructions?': false
+  }
+}
+
+/**
+ * https://shopify.dev/docs/api/liquid/objects/order, with its line items (https://shopify.dev/docs/api/liquid/objects/line_item), addresses, shipping methods (https://shopify.dev/docs/api/liquid/objects/shipping_method), tax lines (https://shopify.dev/docs/api/liquid/objects/tax_line), fulfillments (https://shopify.dev/docs/api/liquid/objects/fulfillment) and transactions. No discounts or duties are modelled: `line_items_subtotal_price` and `subtotal_price` are the sum of the lines, `total_price` adds the shipping and tax prices to it, `total_net_amount` is `total_price` minus `total_refunded_amount`, as the page defines it, and `total_duties` is nil ("If there are no duties"). Each line item carries the `fulfillment` that ships it (the first one that lists it) and its `successfully_fulfilled_quantity`. `tags` are sorted, as the page says. `customer_url` is `/account/orders/<id>`, and `order_status_url` and `customer_order_url` are nil: the page's examples are URLs with tokens a store issues.
+ */
+function buildOrder (data: OrderData, products: HandleMap<LiquidObject>): LiquidObject {
+  const lineItems = buildLineItems(data.line_items, products)
+  const fulfilled = new Map<LiquidObject, number>()
+  const fulfillments = (data.fulfillments ?? []).map(entry => {
+    const lines = entry.line_items.flatMap(line => {
+      const item = lineItems.find(candidate => candidate.variant_id === line.variant_id)
+      if (!item) return []
+      const quantity = line.quantity ?? item.quantity as number
+      fulfilled.set(item, (fulfilled.get(item) ?? 0) + quantity)
+      const part: LiquidObject = { quantity }
+      hidden(part, 'line_item', item)
+      return [part]
+    })
+    const fulfillment: LiquidObject = {
+      created_at: entry.created_at,
+      fulfillment_line_items: lines,
+      item_count: lines.reduce((sum, line) => sum + (line.quantity as number), 0),
+      tracking_company: entry.tracking_company ?? null,
+      tracking_number: entry.tracking_number ?? null,
+      tracking_numbers: entry.tracking_number ? [entry.tracking_number] : [],
+      tracking_url: entry.tracking_url ?? null
+    }
+    for (const line of lines) {
+      const item = line.line_item as LiquidObject
+      if (!item.fulfillment) item.fulfillment = fulfillment
+    }
+    return fulfillment
+  })
+  for (const item of lineItems) {
+    item.fulfillment ??= null
+    item.successfully_fulfilled_quantity = Math.min(item.quantity as number, fulfilled.get(item) ?? 0)
+    item.fulfillment_service = 'manual'
+  }
+  const sum = (values: number[]) => values.reduce((total, value) => total + value, 0)
+  const itemCount = sum(lineItems.map(item => item.quantity as number))
+  const shippedCount = sum(lineItems.map(item => item.successfully_fulfilled_quantity as number))
+  const fulfillmentStatus = data.fulfillment_status ?? (itemCount > 0 && shippedCount === itemCount ? 'fulfilled' : shippedCount > 0 ? 'partial' : 'unfulfilled')
+  const financialStatus = data.financial_status ?? 'paid'
+  const shippingMethods = (data.shipping_methods ?? []).map(method => ({ title: method.title, price: method.price, original_price: method.price, price_with_discounts: method.price, handle: null, id: null, tax_lines: [], discount_allocations: [] }))
+  const taxLines = (data.tax_lines ?? []).map(line => ({ title: line.title, rate: line.rate, rate_percentage: Math.round(line.rate * 10000) / 100, price: line.price }))
+  const subtotal = sum(lineItems.map(item => item.final_line_price as number))
+  const shippingPrice = sum(shippingMethods.map(method => method.price))
+  const taxPrice = sum(taxLines.map(line => line.price))
+  const totalPrice = subtotal + shippingPrice + taxPrice
+  const refunded = data.total_refunded_amount ?? 0
+  return {
+    id: data.id,
+    name: data.name ?? `#${data.order_number}`,
+    order_number: data.order_number,
+    confirmation_number: data.confirmation_number ?? null,
+    created_at: data.created_at,
+    email: data.email ?? null,
+    phone: data.phone ?? null,
+    customer_url: `/account/orders/${data.id}`,
+    customer_order_url: null,
+    order_status_url: null,
+    line_items: lineItems,
+    subtotal_line_items: lineItems,
+    item_count: itemCount,
+    billing_address: data.billing_address ? buildAddress(data.billing_address, false) : null,
+    shipping_address: data.shipping_address ? buildAddress(data.shipping_address, false) : null,
+    'pickup_in_store?': false,
+    shipping_methods: shippingMethods,
+    shipping_price: shippingPrice,
+    tax_lines: taxLines,
+    tax_price: taxPrice,
+    line_items_subtotal_price: subtotal,
+    subtotal_price: subtotal,
+    total_discounts: 0,
+    total_duties: null,
+    total_price: totalPrice,
+    total_refunded_amount: refunded,
+    total_net_amount: totalPrice - refunded,
+    cart_level_discount_applications: [],
+    discount_applications: [],
+    financial_status: financialStatus,
+    financial_status_label: statusLabel(financialStatus),
+    fulfillment_status: fulfillmentStatus,
+    fulfillment_status_label: statusLabel(fulfillmentStatus),
+    fulfillments,
+    transactions: (data.transactions ?? []).map(buildTransaction),
+    cancelled: !!data.cancelled_at,
+    cancelled_at: data.cancelled_at ?? null,
+    cancel_reason: data.cancel_reason ?? null,
+    cancel_reason_label: data.cancel_reason ? CANCEL_REASON_LABELS[data.cancel_reason] ?? statusLabel(data.cancel_reason) : null,
+    note: data.note ?? null,
+    tags: [...(data.tags ?? [])].sort(),
+    attributes: data.attributes ?? {},
+    metafields: {}
+  }
+}
+
+/**
+ * https://shopify.dev/docs/api/liquid/objects/customer, built from `data`, whose other fields are kept as given. `name` joins the first and last names; `addresses` are address objects (`buildAddress`) with `addresses_count`, and `default_address` is the one `default_address_id` names, the first address without it, or nil without addresses; `orders` are order objects (`buildOrder`) in the order the data gives them, each with this customer as its `customer`, with `orders_count`, `last_order` (the order created last) and `total_spent` (the sum of the orders' `total_net_amount`). The customer is not B2B, has an account, has no avatar, saved payment methods, store credit or company locations, and accepts marketing and is tax exempt only when the data says so.
+ */
+function buildCustomer (data: CustomerData, products: HandleMap<LiquidObject>): LiquidObject {
+  const { addresses: addressData, orders: orderData, default_address_id: defaultId, ...rest } = data
+  const addresses = (addressData ?? []).map(address => buildAddress(address, true))
+  const orders = (orderData ?? []).map(order => buildOrder(order, products))
+  const created = (order: LiquidObject) => Date.parse(String(order.created_at)) || 0
+  const firstName = data.first_name ?? ''
+  const lastName = data.last_name ?? ''
+  const customer: LiquidObject = {
+    ...rest,
+    id: data.id ?? null,
+    email: data.email ?? null,
+    first_name: firstName,
+    last_name: lastName,
+    name: [firstName, lastName].filter(Boolean).join(' '),
+    phone: data.phone ?? null,
+    accepts_marketing: data.accepts_marketing ?? false,
+    tax_exempt: data.tax_exempt ?? false,
+    tags: data.tags ?? [],
+    'b2b?': false,
+    has_account: true,
+    'has_avatar?': false,
+    addresses,
+    addresses_count: addresses.length,
+    default_address: addresses.find(address => defaultId !== undefined && address.id === defaultId) ?? addresses[0] ?? null,
+    orders,
+    orders_count: orders.length,
+    last_order: orders.reduce<LiquidObject | null>((last, order) => !last || created(order) >= created(last) ? order : last, null),
+    total_spent: orders.reduce((sum, order) => sum + (order.total_net_amount as number), 0),
+    payment_methods: [],
+    company_available_locations: [],
+    company_available_locations_count: 0,
+    current_company: null,
+    current_location: null,
+    store_credit_account: null,
+    metafields: data.metafields ?? {}
+  }
+  for (const order of orders) hidden(order, 'customer', customer)
+  return customer
+}
+
 const built = new WeakMap<StoreData, StoreObjects>()
 
 /**
@@ -463,7 +660,7 @@ export function buildStore (data: StoreData): StoreObjects {
     videos: Object.fromEntries(Object.entries(data.videos ?? {}).map(([name, video]) => [name, buildMedia(video) as LiquidObject])),
     linklists: data.linklists ?? [],
     cart: buildCart(data, products),
-    customer: data.customer ?? null,
+    customer: data.customer ? buildCustomer(data.customer, products) : null,
     localization,
     country_option_tags: countryOptionTags(shippingCountries),
     all_country_option_tags: countryOptionTags(data.all_country_option_tags ?? shippingCountries),

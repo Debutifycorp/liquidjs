@@ -728,6 +728,55 @@ describe('shopify/settings fidelity', () => {
     const cart = buildStore(data).cart
     expect(await render('{% for item in cart.items %}{{ forloop.index0 }}:{{ item.index }}:{{ item.index | plus: 1 }}:{{ item.key }} {% endfor %}', { cart })).toBe('0:0:1:11:1 1:1:2:22:2 ')
   })
+  it('builds the customer\'s addresses and orders, and gives the customers/order template its order', async () => {
+    const variant = (id: number, price: number) => ({ id, title: 'Default Title', price, available: true, option1: 'Default Title' })
+    const home = { id: 11, first_name: 'Ana', last_name: 'Ruiz', address1: '1 Main St', city: 'Springfield', province: 'Oregon', province_code: 'OR', country: 'United States', country_code: 'US', zip: '97477' }
+    const office = { id: 12, first_name: 'Ana', last_name: 'Ruiz', company: 'Ruiz Ltd', address1: '2 Side Rd', address2: 'Unit 3', city: 'Portland', province: 'Oregon', province_code: 'OR', country: 'United States', country_code: 'US', zip: '97201' }
+    const data = {
+      shop: { name: 'Shop', domain: 'shop.example', currency: 'USD' },
+      products: [{ id: 1, handle: 'mug', title: 'Mug', variants: [variant(10, 1200)] }, { id: 2, handle: 'bowl', title: 'Bowl', variants: [variant(20, 1500)] }],
+      customer: {
+        id: 7,
+        email: 'ana@shop.example',
+        first_name: 'Ana',
+        last_name: 'Ruiz',
+        addresses: [home, office],
+        default_address_id: 12,
+        orders: [
+          {
+            id: 501,
+            order_number: 1001,
+            created_at: '2026-03-01T10:00:00Z',
+            line_items: [{ product_handle: 'mug', variant_id: 10, quantity: 2 }, { product_handle: 'bowl', variant_id: 20, quantity: 1 }],
+            shipping_address: office,
+            billing_address: home,
+            shipping_methods: [{ title: 'Standard', price: 500 }],
+            tax_lines: [{ title: 'Sales tax', rate: 0.1, price: 390 }],
+            fulfillments: [{ created_at: '2026-03-02T10:00:00Z', tracking_company: 'Post', tracking_number: 'TRACK1', tracking_url: 'https://track.example/TRACK1', line_items: [{ variant_id: 10 }] }],
+            transactions: [{ id: 9, amount: 4790, kind: 'sale' as const, status: 'success' as const, gateway: 'manual', created_at: '2026-03-01T10:00:00Z' }]
+          },
+          { id: 502, order_number: 1002, created_at: '2026-04-01T10:00:00Z', line_items: [{ product_handle: 'bowl', variant_id: 20, quantity: 1 }], financial_status: 'partially_refunded', total_refunded_amount: 500 }
+        ]
+      }
+    }
+    const shop = buildStore(data)
+    const page = (templateName: string, resource?: string, report = new ReportCollector()) => buildGlobals({ store: shop, templateName, request: { resource }, locale: 'en', report }).globals
+    const account = '{{ customer.name }}|{{ customer.addresses_count }}|{{ customer.default_address.id }}|{{ customer.default_address | format_address }}|{% for a in customer.addresses %}{{ a.url }}:{% if a == customer.default_address %}default{% endif %}:{{ a.country }}:{{ a.country.iso_code }}:{{ a.street }}:{{ a.summary }},{% endfor %}|{{ customer.orders_count }}|{% for o in customer.orders %}{{ o.name }}:{{ o.total_net_amount | money }}:{{ o.financial_status_label }}:{{ o.fulfillment_status_label }}:{{ o.customer_url }},{% endfor %}|{{ customer.last_order.name }}|{{ customer.total_spent | money }}'
+    expect(await render(account, page('customers/account')))
+      .toBe('Ana Ruiz|2|12|<p>Ana Ruiz<br>Ruiz Ltd<br>2 Side Rd<br>Unit 3<br>Portland OR 97201<br>United States</p>|/account/addresses/11::United States:US:1 Main St:Ana Ruiz, 1 Main St, Springfield, Oregon, United States,/account/addresses/12:default:United States:US:2 Side Rd, Unit 3:Ana Ruiz, 2 Side Rd, Unit 3, Portland, Oregon, United States,|2|#1001:$47.90:Paid:Partial:/account/orders/501,#1002:$10.00:Partially refunded:Unfulfilled:/account/orders/502,|#1002|$57.90')
+    const order = '{{ order.name }}|{{ order.order_number }}|{{ order.created_at }}|{{ order.item_count }}|{% for l in order.line_items %}{{ l.title }}x{{ l.quantity }}={{ l.final_line_price | money }}:{{ l.fulfillment.tracking_company }}:{{ l.fulfillment.tracking_number }}:{{ l.successfully_fulfilled_quantity }},{% endfor %}|{{ order.line_items_subtotal_price | money }}|{{ order.subtotal_price | money }}|{{ order.shipping_methods[0].title }}:{{ order.shipping_price | money }}|{{ order.tax_lines[0].title }}:{{ order.tax_lines[0].rate_percentage }}:{{ order.tax_price | money }}|{{ order.total_price | money }}|{{ order.total_refunded_amount | money }}|{{ order.total_net_amount | money }}|{{ order.shipping_address | format_address }}|{{ order.billing_address.name }}:{{ order.billing_address.url }}|{{ order.fulfillments[0].item_count }}:{{ order.fulfillments[0].fulfillment_line_items[0].line_item.title }}|{{ order.transactions[0].status_label }}:{{ order.transactions[0].gateway_display_name }}|{{ order.customer.email }}|{{ order.cancelled }}|{{ order.total_duties }}'
+    expect(await render(order, page('customers/order')))
+      .toBe('#1001|1001|2026-03-01T10:00:00Z|3|Mugx2=$24.00:Post:TRACK1:2,Bowlx1=$15.00:::0,|$39.00|$39.00|Standard:$5.00|Sales tax:10:$3.90|$47.90|$0.00|$47.90|<p>Ana Ruiz<br>Ruiz Ltd<br>2 Side Rd<br>Unit 3<br>Portland OR 97201<br>United States</p>|Ana Ruiz:|2:Mug|Success:manual|ana@shop.example|false|')
+    expect(await render('{{ order.name }}|{{ order.line_items.size }}|{{ order.fulfillment_status }}', page('customers/order', '#1002'))).toBe('#1002|1|unfulfilled')
+    expect(await render('{{ order.name }}', page('customers/order', '502'))).toBe('#1002')
+    const report = new ReportCollector()
+    expect(await render('{% if order == nil %}none{% endif %}', page('customers/order', '#9999', report))).toBe('none')
+    expect(report.toReport([], 0).missing).toEqual([{ kind: 'resource', name: 'order #9999' }])
+    expect(await render('{{ customer | json }}', page('customers/account'))).toMatch(/^\{"/)
+    expect(await render('{% if order == nil %}none{% endif %}', page('customers/account'))).toBe('none')
+    const anonymous = buildGlobals({ store, templateName: 'customers/order', request: {}, locale: 'en', report: new ReportCollector() }).globals
+    expect(await render('{% if customer == nil %}nobody{% endif %}|{% if order == nil %}none{% endif %}', anonymous)).toBe('nobody|none')
+  })
   it('compares a cart with empty and blank through its empty?', async () => {
     const empty = buildStore({ ...sampleStoreData, cart: { items: [] } }).cart
     const show = '{% if cart == empty %}empty{% else %}items{% endif %}|{% if cart == blank %}blank{% endif %}'
