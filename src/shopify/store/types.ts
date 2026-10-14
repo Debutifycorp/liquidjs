@@ -169,6 +169,14 @@ export interface CountryOptionData {
   provinces?: Array<[string, string]>
 }
 
+/** A storefront filter the merchant set up in the admin. `attribute` is what it filters on, one of the kinds the storefront filtering guide lists (https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/storefront-filtering): variant availability, variant price, product type, vendor, product tag, or the variant option named by `option`. `label` is what shoppers see; `presentation` is how an option filter's values are shown (https://shopify.dev/docs/api/liquid/objects/filter#filter-presentation). */
+export interface FilterData {
+  attribute: 'availability' | 'price' | 'product_type' | 'vendor' | 'tag' | 'option'
+  option?: string
+  label?: string
+  presentation?: 'image' | 'swatch' | 'text'
+}
+
 /**
  * The store a page renders against. Field names follow Shopify's Liquid objects (https://shopify.dev/docs/api/liquid/objects), so data moves into Liquid without renaming. Money amounts are integers in the currency's minor unit (cents), as in Liquid. Derived fields (URLs, price ranges, first available variant) are computed by `buildStore`.
  */
@@ -186,6 +194,8 @@ export interface StoreData {
   cart?: CartData
   customer?: Record<string, unknown> | null
   localization?: LocalizationData
+  /** The storefront filters, in the order shoppers see them; none when omitted. */
+  filters?: FilterData[]
   /** The countries in the store's shipping zones, in the order `country_option_tags` prints them; the store's country when omitted. */
   country_option_tags?: CountryOptionData[]
   /** Every country, in the order `all_country_option_tags` prints them; the `country_option_tags` countries when omitted. */

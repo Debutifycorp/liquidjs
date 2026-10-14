@@ -144,6 +144,22 @@ describe('shopify/store', () => {
   it('gives a blog moderated? and comments_enabled?, both false', async () => {
     expect(await render('{% if blog.moderated? == false %}open{% endif %}|{% if blog.comments_enabled? == false %}off{% endif %}', { blog: store.blogs.liquidMethodMissing('news') })).toBe('open|off')
   })
+  it('builds a collection\'s storefront filters from the filters the store data sets up, and none without them', async () => {
+    const show = '{% for f in c.filters %}[{{ f.label }}|{{ f.type }}|{{ f.param_name }}|{{ f.operator }}|{{ f.presentation }}|{{ f.url_to_remove }}|{{ f.active_values.size }}/{{ f.inactive_values.size }}|{{ f.range_max }}|{{ f.min_value.param_name }}:{{ f.min_value.value }}|{{ f.max_value.param_name }}:{{ f.max_value.value }}|{% for v in f.values %}{{ v.label }}={{ v.value }}:{{ v.count }}:{{ v.active }}:{{ v.param_name }}:{{ v.url_to_add }}:{{ v.url_to_remove }}:{{ v.swatch }};{% endfor %}]{% endfor %}'
+    expect(await render('{{ c.filters.size }}', { c: store.collections.liquidMethodMissing('frontpage') })).toBe('0')
+    const filters = [{ attribute: 'availability' as const }, { attribute: 'price' as const }, { attribute: 'product_type' as const }, { attribute: 'vendor' as const, label: 'Brand' }, { attribute: 'tag' as const }, { attribute: 'option' as const, option: 'Color', presentation: 'swatch' as const }, { attribute: 'option' as const, option: 'Material' }]
+    const filtered = buildStore({ ...sampleStoreData, filters })
+    expect(await render(show, { c: filtered.collections.liquidMethodMissing('frontpage') })).toBe([
+      '[Availability|list|filter.v.availability|OR|text|/collections/frontpage|0/2||:|:|In stock=1:3:false:filter.v.availability:/collections/frontpage?filter.v.availability=1:/collections/frontpage:;Out of stock=0:1:false:filter.v.availability:/collections/frontpage?filter.v.availability=0:/collections/frontpage:;]',
+      '[Price|price_range|filter.v.price|||/collections/frontpage|0/0|4500|filter.v.price.gte:|filter.v.price.lte:|]',
+      '[Product type|list|filter.p.product_type|OR|text|/collections/frontpage|0/3||:|:|Bags=Bags:1:false:filter.p.product_type:/collections/frontpage?filter.p.product_type=Bags:/collections/frontpage:;Home=Home:1:false:filter.p.product_type:/collections/frontpage?filter.p.product_type=Home:/collections/frontpage:;Shirts=Shirts:1:false:filter.p.product_type:/collections/frontpage?filter.p.product_type=Shirts:/collections/frontpage:;]',
+      '[Brand|list|filter.p.vendor|OR|text|/collections/frontpage|0/2||:|:|Kiln & Co=Kiln & Co:1:false:filter.p.vendor:/collections/frontpage?filter.p.vendor=Kiln%20%26%20Co:/collections/frontpage:;Sample Co=Sample Co:2:false:filter.p.vendor:/collections/frontpage?filter.p.vendor=Sample%20Co:/collections/frontpage:;]',
+      '[Tags|list|filter.p.tag|OR|text|/collections/frontpage|0/3||:|:|canvas=canvas:1:false:filter.p.tag:/collections/frontpage?filter.p.tag=canvas:/collections/frontpage:;cotton=cotton:1:false:filter.p.tag:/collections/frontpage?filter.p.tag=cotton:/collections/frontpage:;new=new:1:false:filter.p.tag:/collections/frontpage?filter.p.tag=new:/collections/frontpage:;]',
+      '[Color|list|filter.v.option.color|OR|swatch|/collections/frontpage|0/2||:|:|Black=Black:1:false:filter.v.option.color:/collections/frontpage?filter.v.option.color=Black:/collections/frontpage:;White=White:1:false:filter.v.option.color:/collections/frontpage?filter.v.option.color=White:/collections/frontpage:;]'
+    ].join(''))
+    expect(await render('{% for f in c.filters %}{{ f.label }}:{% for v in f.values %}{{ v.label }}={{ v.count }},{% endfor %}{{ f.range_max }};{% endfor %}', { c: filtered.collections.liquidMethodMissing('apparel') }))
+      .toBe('Availability:In stock=1,Out of stock=1,;Price:2700;Product type:Shirts=1,;Brand:Sample Co=1,;Tags:cotton=1,new=1,;Color:Black=1,White=1,;')
+  })
   it('prints country_option_tags and all_country_option_tags as option tags: a --- option, then each country with its subregions in data-provinces', async () => {
     const canada = { name: 'Canada', provinces: [['Alberta', 'Alberta'], ['British Columbia', 'British Columbia']] as Array<[string, string]> }
     const data = { ...sampleStoreData, country_option_tags: [canada, { name: 'Afghanistan' }], all_country_option_tags: [{ name: 'Afghanistan' }, canada, { name: "Côte d'Ivoire" }] }

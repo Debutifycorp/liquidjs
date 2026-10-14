@@ -3,7 +3,8 @@ import { HandleMap } from '../objects/handle-map'
 import { DEFAULT_MONEY_FORMAT, DEFAULT_MONEY_WITH_CURRENCY_FORMAT } from '../state'
 import type { ImageData } from '../types'
 import { escapeHtml } from '../util/html'
-import type { ArticleData, BlogData, CollectionData, CountryOptionData, LinkData, LinkListData, MediaData, PageData, ProductData, StoreData, VariantData } from './types'
+import { buildFilters } from './filters'
+import type { ArticleData, BlogData, CollectionData, CountryOptionData, FilterData, LinkData, LinkListData, MediaData, PageData, ProductData, StoreData, VariantData } from './types'
 
 /**
  * Turns `StoreData` into the objects Liquid reads, computing what Shopify derives (URLs, price ranges, the first available variant, option values) so templates find every field they expect. Built objects are plain objects, readable under `ownPropertyOnly`; images become `ImageDrop`s and handle-keyed collections `HandleMap`s. Field lists follow https://shopify.dev/docs/api/liquid/objects, object by object as each builder cites.
@@ -155,17 +156,18 @@ export function buildProduct (data: ProductData): LiquidObject {
   return printsHandle(product)
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/collection. Filtering, tags and sorting are not applied: `products` is the collection's product list as given, `filters` and `tags` are empty and `sort_options` lists Shopify's standard options. */
-function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>): LiquidObject {
+/** https://shopify.dev/docs/api/liquid/objects/collection. Filtering, tags and sorting are not applied: `products` is the collection's product list as given, `filters` are the store's storefront filters over those products (`buildFilters`), `tags` is empty and `sort_options` lists Shopify's standard options. */
+function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>, filters: FilterData[] | undefined): LiquidObject {
   const items = data.products.map(handle => HandleMap.get(products, handle)).filter((product): product is LiquidObject => !!product)
   const collect = (key: string) => unique(items.flatMap(product => product[key] as string | string[]).filter(Boolean)).sort()
   const own = image(data.image)
+  const url = `/collections/${data.handle}`
   return printsHandle({
     id: data.id,
     handle: data.handle,
     title: data.title,
     description: data.description ?? '',
-    url: `/collections/${data.handle}`,
+    url,
     image: own,
     featured_image: own ?? items[0]?.featured_image ?? null,
     products: items,
@@ -175,7 +177,7 @@ function buildCollection (data: CollectionData, products: HandleMap<LiquidObject
     all_types: collect('type'),
     all_vendors: collect('vendor'),
     tags: [],
-    filters: [],
+    filters: buildFilters(filters, items, url),
     sort_by: null,
     default_sort_by: 'manual',
     sort_options: [
@@ -393,8 +395,8 @@ export function buildStore (data: StoreData): StoreObjects {
   if (cached) return cached
   const products = new HandleMap((data.products ?? []).map(product => [product.handle, buildProduct(product)]))
   // Every shop answers `collections.all` with all its products. https://shopify.dev/docs/api/liquid/objects/collections
-  const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (data.products ?? []).map(product => product.handle) }, products)
-  const collections = new HandleMap((data.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products)]), [['all', all]])
+  const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (data.products ?? []).map(product => product.handle) }, products, data.filters)
+  const collections = new HandleMap((data.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters)]), [['all', all]])
   const blogs = new HandleMap((data.blogs ?? []).map(blog => [blog.handle, buildBlog(blog)]))
   const localization = buildLocalization(data)
   const shippingCountries = data.country_option_tags ?? [{ name: String((localization.country as LiquidObject).name) }]
