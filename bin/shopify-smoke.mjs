@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Parses every .liquid file of a local Shopify theme, renders every template with the package's public sample data, and prints parse errors, what the render reports found, and timings. For checking private themes on a developer's machine: the theme is read from the given directory and nothing is written anywhere.
 // WARNING: the output names private theme files (with line numbers), section types, template names, unknown tag and filter names and resource handles, and with --json the theme's path. It must not be committed, pasted into issues or pull requests, put in CI logs or placed in the public fork: only aggregate numbers (counts and timings) may leave the machine.
-// Usage: pnpm run build && node bin/shopify-smoke.mjs <theme directory> [--json]
+// Usage: pnpm run build && node bin/shopify-smoke.mjs <theme directory> [--json] [--presets] [--strict] [--allow=<file>]
 import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { join, relative, resolve, sep } from 'node:path'
 import { createRequire } from 'node:module'
@@ -17,7 +17,7 @@ const args = process.argv.slice(2)
 const flags = args.filter(arg => arg.startsWith('--'))
 const dirArg = args.find(arg => !arg.startsWith('--'))
 if (!dirArg) {
-  console.error('usage: node bin/shopify-smoke.mjs <theme directory> [--json]')
+  console.error('usage: node bin/shopify-smoke.mjs <theme directory> [--json] [--presets] [--strict] [--allow=<file>]')
   console.error('warning: the output names private theme files, section types, template names, resource handles and (with --json) the theme path. Never commit it, paste it into an issue or pull request, or put it in the public fork; only aggregate numbers (counts and timings) may leave this machine.')
   process.exit(2)
 }
@@ -68,6 +68,14 @@ for (const path of liquidFiles) {
 const parseMs = performance.now() - parseStarted
 const templates = Object.keys(theme.files).filter(path => /^templates\/.+\.(json|liquid)$/.test(path)).map(path => path.slice('templates/'.length).replace(/\.(json|liquid)$/, '')).sort()
 const totals = { unknownTags: new Map(), unknownFilters: new Map(), stubbedFilters: new Map(), missing: new Map(), unsupported: new Map(), errors: new Map() }
+const collect = (report) => {
+  for (const entry of report.unknownTags) add(totals.unknownTags, entry.name, entry.count)
+  for (const entry of report.unknownFilters) add(totals.unknownFilters, entry.name, entry.count)
+  for (const entry of report.stubbedFilters) add(totals.stubbedFilters, entry.name, entry.count)
+  for (const entry of report.missing) add(totals.missing, `${entry.kind} ${entry.name}`)
+  for (const entry of report.unsupported) add(totals.unsupported, `${entry.feature}: ${entry.detail}`)
+  for (const entry of report.errors) add(totals.errors, entry.message)
+}
 const rows = []
 const cold = []
 for (const templateName of templates) {
@@ -76,12 +84,7 @@ for (const templateName of templates) {
     const { html, report } = await renderPage({ theme, templateName })
     const ms = performance.now() - started
     cold.push(ms)
-    for (const entry of report.unknownTags) add(totals.unknownTags, entry.name, entry.count)
-    for (const entry of report.unknownFilters) add(totals.unknownFilters, entry.name, entry.count)
-    for (const entry of report.stubbedFilters) add(totals.stubbedFilters, entry.name, entry.count)
-    for (const entry of report.missing) add(totals.missing, `${entry.kind} ${entry.name}`)
-    for (const entry of report.unsupported) add(totals.unsupported, `${entry.feature}: ${entry.detail}`)
-    for (const entry of report.errors) add(totals.errors, entry.message)
+    collect(report)
     const notRendered = report.sections.filter(section => section.status !== 'rendered').map(section => `${section.type} ${section.status}`)
     rows.push({ template: templateName, bytes: html.length, ms: Math.round(ms), sections: report.sections.length, notRendered })
   } catch (err) {
@@ -124,6 +127,47 @@ for (const templateName of templates) {
     sectionTimes.push(performance.now() - started)
   }
 }
+const SCHEMA = /\{%-?\s*schema\s*-?%\}([\s\S]*?)\{%-?\s*endschema\s*-?%\}/
+const toBlocks = (list) => {
+  const entries = Array.isArray(list) ? list.map((block, index) => [`b${index}`, block]) : Object.entries(list ?? {})
+  const blocks = {}
+  for (const [id, block] of entries) {
+    blocks[id] = { type: block.type, settings: block.settings ?? {}, ...(block.static ? { static: true } : {}) }
+    if (block.blocks) Object.assign(blocks[id], toBlocks(block.blocks))
+  }
+  return { blocks, block_order: entries.map(([id]) => id) }
+}
+const presets = { rendered: 0, failed: {} }
+const presetTimes = []
+if (flags.includes('--presets')) {
+  const templatePath = 'templates/page.smoke-preset.json'
+  for (const path of liquidFiles.filter(file => /^sections\/[^/]+\.liquid$/.test(file))) {
+    const type = path.slice('sections/'.length, -'.liquid'.length)
+    let list
+    try {
+      const match = SCHEMA.exec(theme.files[path])
+      list = match ? JSON.parse(match[1]).presets ?? [] : []
+    } catch (err) {
+      presets.failed[`${path}#schema`] = err.message
+      continue
+    }
+    for (const [index, preset] of list.entries()) {
+      theme.files[templatePath] = JSON.stringify({ sections: { main: { type, settings: preset.settings ?? {}, ...toBlocks(preset.blocks) } }, order: ['main'] })
+      const started = performance.now()
+      try {
+        const { report } = await renderSection({ theme, templateName: 'page.smoke-preset', section: 'main', request: { resource: 'about' } })
+        presetTimes.push(performance.now() - started)
+        collect(report)
+        const notRendered = report.sections.filter(section => section.status !== 'rendered')
+        if (notRendered.length) presets.failed[`${path}#${index}`] = notRendered.map(section => section.status).join(', ')
+        else presets.rendered++
+      } catch (err) {
+        presets.failed[`${path}#${index}`] = err.message
+      }
+    }
+  }
+  delete theme.files[templatePath]
+}
 const summary = {
   theme: dir,
   parsed: { files: liquidFiles.length, ms: Math.round(parseMs), errors: parseErrors },
@@ -135,12 +179,14 @@ const summary = {
   unsupported: [...totals.unsupported.keys()],
   errors: Object.fromEntries(totals.errors),
   sectionFailures,
+  presets,
   timing: {
     pageFirstP50: Math.round(percentile(cold, 50)),
     pageWarmP50: Math.round(percentile(warm, 50)),
     pageWarmP95: Math.round(percentile(warm, 95)),
     sectionP50: Math.round(percentile(sectionTimes, 50)),
-    sectionP95: Math.round(percentile(sectionTimes, 95))
+    sectionP95: Math.round(percentile(sectionTimes, 95)),
+    presetP95: Math.round(percentile(presetTimes, 95))
   }
 }
 if (flags.includes('--json')) {
@@ -148,8 +194,32 @@ if (flags.includes('--json')) {
 } else {
   console.log(`parsed: ${summary.parsed.files} .liquid files in ${summary.parsed.ms} ms, errors:`, JSON.stringify(parseErrors))
   for (const row of rows) console.log(row.threw ? `${row.template}: THREW ${row.threw}` : `${row.template}: ${row.sections} sections, ${row.bytes} bytes, ${row.ms} ms${row.notRendered.length ? ` (${row.notRendered.join(', ')})` : ''}`)
-  for (const key of ['unknownTags', 'unknownFilters', 'stubbedFilters', 'errors', 'sectionFailures']) console.log(`${key}:`, JSON.stringify(summary[key]))
+  for (const key of ['unknownTags', 'unknownFilters', 'stubbedFilters', 'errors', 'sectionFailures', 'presets']) console.log(`${key}:`, JSON.stringify(summary[key]))
   console.log('missing:', JSON.stringify(summary.missing))
   console.log('unsupported:', JSON.stringify(summary.unsupported))
   console.log('timing (ms):', JSON.stringify(summary.timing))
+}
+
+if (flags.includes('--strict')) {
+  const allowFlag = flags.find(flag => flag.startsWith('--allow='))
+  const allowJson = allowFlag ? JSON.parse(readFileSync(allowFlag.slice('--allow='.length), 'utf8')) : []
+  const allowed = new Set(Array.isArray(allowJson) ? allowJson : Object.keys(allowJson))
+  const problems = [
+    ...Object.keys(parseErrors).map(path => `parse: ${path}`),
+    ...rows.filter(row => row.threw).map(row => `threw: ${row.template}`),
+    ...rows.flatMap(row => (row.notRendered ?? []).map(entry => `notRendered: ${row.template} ${entry}`)),
+    ...Object.keys(summary.unknownTags).map(name => `unknownTags: ${name}`),
+    ...Object.keys(summary.unknownFilters).map(name => `unknownFilters: ${name}`),
+    ...Object.keys(summary.stubbedFilters).map(name => `stubbedFilters: ${name}`),
+    ...summary.missing.map(entry => `missing: ${entry}`),
+    ...summary.unsupported.map(entry => `unsupported: ${entry}`),
+    ...Object.keys(summary.errors).map(message => `errors: ${message}`),
+    ...Object.keys(sectionFailures).map(path => `sectionFailures: ${path}`),
+    ...Object.keys(presets.failed).map(key => `presetFailures: ${key}`)
+  ].filter(problem => !allowed.has(problem))
+  if (problems.length) {
+    console.error(`strict: ${problems.length} problem(s) not in the allow list`)
+    for (const problem of problems) console.error(`  ${problem}`)
+    process.exitCode = 1
+  }
 }
