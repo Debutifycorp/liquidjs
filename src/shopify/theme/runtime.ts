@@ -832,7 +832,8 @@ class PageRender implements ThemeHooks {
       templates = this.theme.templates(file)
       schema = this.schema<BlockSchema>(templates, file)
       this.checkContainer(data, `block ${id}`)
-      block = { id, type, settings: new SettingsDrop(schema.settings, data.settings ?? undefined, this.env), shopify_attributes: '' }
+      // `blocks` is not on https://shopify.dev/docs/api/liquid/objects/block; Shopify's Horizon theme reads `block.blocks.size` in a theme block (blocks/_carousel-content.liquid) as the children its `content_for 'blocks'` renders, so it lists them as `section.blocks` lists a section's
+      block = { id, type, settings: new SettingsDrop(schema.settings, data.settings ?? undefined, this.env), blocks: this.sectionBlocks(data as SectionData, {}, `block ${id}`), shopify_attributes: '' }
     } catch (err) {
       return this.wrapBlock(id, {}, escapeHtml(this.fail(err)))
     }

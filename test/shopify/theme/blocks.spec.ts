@@ -65,6 +65,22 @@ describe('shopify/theme/blocks', () => {
     it('renders nothing for a section without blocks', async () => {
       expect((await page(files)).html).toBe(SECTION('[]'))
     })
+    // `block.blocks` is not on https://shopify.dev/docs/api/liquid/objects/block, but Shopify's Horizon theme reads it in a theme block (blocks/_carousel-content.liquid: `assign slide_count = block.blocks.size`, then `{% content_for 'blocks' %}`), so a theme block's `blocks` are the children its `content_for 'blocks'` renders. https://shopify.dev/docs/api/liquid/tags/render says a snippet "inside a section can access the `section` object", as it can the other objects outside it that are not created variables.
+    it('gives a theme block its own blocks, and a snippet it renders its section and block', async () => {
+      const { html } = await page({
+        'sections/sec.liquid': "{% content_for 'blocks' %}",
+        'blocks/group.liquid': "{{ block.blocks.size }}:{% for child in block.blocks %}{{ child.id }}={{ child.settings.text }},{% endfor %}{% if block.blocks.size == 0 %}{% render 'fallback' %}{% endif %}",
+        'blocks/text.liquid': '{{ block.settings.text }}{% schema %}{ "name": "Text", "settings": [{ "type": "text", "id": "text", "label": "Text" }] }{% endschema %}',
+        'snippets/fallback.liquid': '({{ section.id }}|{{ block.id }})'
+      }, {
+        blocks: {
+          full: { type: 'group', blocks: { b: { type: 'text', settings: { text: 'two' } }, a: { type: 'text', settings: { text: 'one' } }, fixed: { type: 'text', static: true } }, block_order: ['a', 'b'] },
+          empty: { type: 'group' }
+        },
+        block_order: ['full', 'empty']
+      })
+      expect(html).toBe(SECTION(WRAP('full', '2:a=one,b=two,') + WRAP('empty', '0:(template--x__main|empty)')))
+    })
     it('shows a block the page globals and its section but not the variables around it', async () => {
       const { html } = await page({
         'sections/sec.liquid': "{% assign outer = 'o' %}{% content_for 'blocks' %}|{{ inner }}|{{ block.id }}",
