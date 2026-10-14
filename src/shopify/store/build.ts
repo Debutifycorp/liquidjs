@@ -2,7 +2,8 @@ import { ImageDrop } from '../objects/image'
 import { HandleMap } from '../objects/handle-map'
 import { DEFAULT_MONEY_FORMAT, DEFAULT_MONEY_WITH_CURRENCY_FORMAT } from '../state'
 import type { ImageData } from '../types'
-import type { ArticleData, BlogData, CollectionData, LinkData, LinkListData, MediaData, PageData, ProductData, StoreData, VariantData } from './types'
+import { escapeHtml } from '../util/html'
+import type { ArticleData, BlogData, CollectionData, CountryOptionData, LinkData, LinkListData, MediaData, PageData, ProductData, StoreData, VariantData } from './types'
 
 /**
  * Turns `StoreData` into the objects Liquid reads, computing what Shopify derives (URLs, price ranges, the first available variant, option values) so templates find every field they expect. Built objects are plain objects, readable under `ownPropertyOnly`; images become `ImageDrop`s and handle-keyed collections `HandleMap`s. Field lists follow https://shopify.dev/docs/api/liquid/objects, object by object as each builder cites.
@@ -23,6 +24,8 @@ export interface StoreObjects {
   cart: LiquidObject
   customer: LiquidObject | null
   localization: LiquidObject
+  country_option_tags: string
+  all_country_option_tags: string
 }
 
 const image = (data: ImageData | null | undefined) => data ? new ImageDrop(data) : null
@@ -374,6 +377,12 @@ function buildLocalization (data: StoreData): LiquidObject {
   }
 }
 
+/** The `<option>` tags of https://shopify.dev/docs/api/liquid/objects/country_option_tags, one a line as its example prints them: a `---` option first, then each country, its subregions JSON-encoded in `data-provinces` (an empty array when it has none). The page shows no example for https://shopify.dev/docs/api/liquid/objects/all_country_option_tags, which is printed the same way; whether it starts with `---` too is not pinned. */
+function countryOptionTags (countries: CountryOptionData[]): string {
+  const option = (name: string, provinces: Array<[string, string]>) => `<option value="${escapeHtml(name)}" data-provinces="${escapeHtml(JSON.stringify(provinces))}">${escapeHtml(name)}</option>`
+  return [option('---', []), ...countries.map(country => option(country.name, country.provinces ?? []))].join('\n')
+}
+
 const built = new WeakMap<StoreData, StoreObjects>()
 
 /**
@@ -387,6 +396,8 @@ export function buildStore (data: StoreData): StoreObjects {
   const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (data.products ?? []).map(product => product.handle) }, products)
   const collections = new HandleMap((data.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products)]), [['all', all]])
   const blogs = new HandleMap((data.blogs ?? []).map(blog => [blog.handle, buildBlog(blog)]))
+  const localization = buildLocalization(data)
+  const shippingCountries = data.country_option_tags ?? [{ name: String((localization.country as LiquidObject).name) }]
   const articles = new HandleMap(HandleMap.values(blogs).flatMap(blog => (blog.articles as LiquidObject[]).map(article => [`${blog.handle}/${article.handle}`, article] as [string, LiquidObject])))
   const objects: StoreObjects = {
     shop: {
@@ -421,7 +432,9 @@ export function buildStore (data: StoreData): StoreObjects {
     linklists: data.linklists ?? [],
     cart: buildCart(data, products),
     customer: data.customer ?? null,
-    localization: buildLocalization(data)
+    localization,
+    country_option_tags: countryOptionTags(shippingCountries),
+    all_country_option_tags: countryOptionTags(data.all_country_option_tags ?? shippingCountries)
   }
   built.set(data, objects)
   return objects

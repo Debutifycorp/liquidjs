@@ -14,7 +14,7 @@ export type { BlockData, FontInfo, ImageData, ImageUrlParams, LocaleTree, Sectio
 export { Translator } from './translations'
 export type { TranslationsInput } from './translations'
 export { sampleStoreData } from './sample/sample-data'
-export type { StoreData, ShopData, ProductData, VariantData, MediaData, ImageMediaData, VideoMediaData, VideoSourceData, ExternalVideoMediaData, CollectionData, PageData, BlogData, ArticleData, LinkData, LinkListData, CartData, LocalizationData, Metafields } from './store/types'
+export type { StoreData, ShopData, ProductData, VariantData, MediaData, ImageMediaData, VideoMediaData, VideoSourceData, ExternalVideoMediaData, CollectionData, PageData, BlogData, ArticleData, LinkData, LinkListData, CartData, LocalizationData, CountryOptionData, Metafields } from './store/types'
 export type { RequestInput } from './store/globals'
 export { shopifyFilterRegistry } from './filters'
 export type { FilterStatus, ShopifyFilterEntry } from './filters/types'

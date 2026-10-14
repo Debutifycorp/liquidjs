@@ -144,6 +144,21 @@ describe('shopify/store', () => {
   it('gives a blog moderated? and comments_enabled?, both false', async () => {
     expect(await render('{% if blog.moderated? == false %}open{% endif %}|{% if blog.comments_enabled? == false %}off{% endif %}', { blog: store.blogs.liquidMethodMissing('news') })).toBe('open|off')
   })
+  it('prints country_option_tags and all_country_option_tags as option tags: a --- option, then each country with its subregions in data-provinces', async () => {
+    const canada = { name: 'Canada', provinces: [['Alberta', 'Alberta'], ['British Columbia', 'British Columbia']] as Array<[string, string]> }
+    const data = { ...sampleStoreData, country_option_tags: [canada, { name: 'Afghanistan' }], all_country_option_tags: [{ name: 'Afghanistan' }, canada, { name: "Côte d'Ivoire" }] }
+    const page = buildGlobals({ store: buildStore(data), templateName: 'customers/addresses', request: {}, locale: 'en', report: new ReportCollector() })
+    const none = '<option value="---" data-provinces="[]">---</option>'
+    const canadaTag = '<option value="Canada" data-provinces="[[&quot;Alberta&quot;,&quot;Alberta&quot;],[&quot;British Columbia&quot;,&quot;British Columbia&quot;]]">Canada</option>'
+    const afghanistan = '<option value="Afghanistan" data-provinces="[]">Afghanistan</option>'
+    expect(await render('{{ country_option_tags }}', page.globals)).toBe([none, canadaTag, afghanistan].join('\n'))
+    expect(await render('{{ all_country_option_tags }}', page.globals)).toBe([none, afghanistan, canadaTag, '<option value="Côte d&#39;Ivoire" data-provinces="[]">Côte d&#39;Ivoire</option>'].join('\n'))
+  })
+  it('lists the store country in country_option_tags when the data names none, and those countries in all_country_option_tags', async () => {
+    const page = buildGlobals({ store, templateName: 'customers/addresses', request: {}, locale: 'en', report: new ReportCollector() })
+    const tags = '<option value="---" data-provinces="[]">---</option>\n<option value="United States" data-provinces="[]">United States</option>'
+    expect(await render('{{ country_option_tags }}|{{ all_country_option_tags }}', page.globals)).toBe(`${tags}|${tags}`)
+  })
   it('answers recommendations.performed as well as recommendations.performed?', async () => {
     const page = buildGlobals({ store, templateName: 'product', request: {}, locale: 'en', report: new ReportCollector() })
     expect(await render('{% if recommendations.performed == false %}false{% endif %}|{% if recommendations.performed? == false %}false?{% endif %}|{% if recommendations.performed %}yes{% else %}no{% endif %}', page.globals)).toBe('false|false?|no')

@@ -163,6 +163,12 @@ export interface LocalizationData {
   language: { iso_code: string, name: string, endonym_name?: string }
 }
 
+/** A country as `country_option_tags` and `all_country_option_tags` list it: the name its `<option>` shows and submits, and its subregions as `[value, label]` pairs for `data-provinces`, https://shopify.dev/docs/api/liquid/objects/country_option_tags (`[&quot;District of Columbia&quot;,&quot;Washington DC&quot;]` in its example). */
+export interface CountryOptionData {
+  name: string
+  provinces?: Array<[string, string]>
+}
+
 /**
  * The store a page renders against. Field names follow Shopify's Liquid objects (https://shopify.dev/docs/api/liquid/objects), so data moves into Liquid without renaming. Money amounts are integers in the currency's minor unit (cents), as in Liquid. Derived fields (URLs, price ranges, first available variant) are computed by `buildStore`.
  */
@@ -180,4 +186,8 @@ export interface StoreData {
   cart?: CartData
   customer?: Record<string, unknown> | null
   localization?: LocalizationData
+  /** The countries in the store's shipping zones, in the order `country_option_tags` prints them; the store's country when omitted. */
+  country_option_tags?: CountryOptionData[]
+  /** Every country, in the order `all_country_option_tags` prints them; the `country_option_tags` countries when omitted. */
+  all_country_option_tags?: CountryOptionData[]
 }
