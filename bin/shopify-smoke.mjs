@@ -146,15 +146,19 @@ for (const templateName of templates) {
   }
 }
 const SCHEMA = /\{%-?\s*schema\s*-?%\}([\s\S]*?)\{%-?\s*endschema\s*-?%\}/
-// A preset lists its blocks as an array, or as an object keyed by block id with a sibling block_order array (at the preset and inside a block): the given order wins over the key order. An array entry gets its own string id, or one built from its path (`b0`, `b0_1`, `b0_1_2`) so no two blocks of one section share an id; an object key is the block's id as written.
+// A preset lists its blocks as an array, or as an object keyed by block id with a sibling block_order array (at the preset and inside a block): the given order wins over the key order. An array entry gets its own string id, or one built from its path (`b0`, `b0_1`, `b0_1_2`) so no two blocks of one section share an id; an object key is the block's id as written. A static block is addressed by its id and stays out of block_order, so an array entry is static only when it carries a string id of its own, as the engine reads a schema default (`presetData`).
 const toBlocks = (list, order, prefix = 'b') => {
-  const entries = Array.isArray(list) ? list.map((block, index) => [typeof block.id === 'string' && block.id !== '' ? block.id : `${prefix}${index}`, block]) : Object.entries(list ?? {})
+  const array = Array.isArray(list)
+  const entries = array ? list.map((block, index) => [typeof block.id === 'string' && block.id !== '' ? block.id : `${prefix}${index}`, block]) : Object.entries(list ?? {})
   const blocks = {}
+  const dynamic = []
   for (const [id, block] of entries) {
-    blocks[id] = { type: block.type, settings: block.settings ?? {}, ...(block.static ? { static: true } : {}) }
+    const isStatic = block.static === true && (!array || id === block.id)
+    blocks[id] = { type: block.type, settings: block.settings ?? {}, ...(isStatic ? { static: true } : {}) }
+    if (!isStatic) dynamic.push(id)
     if (block.blocks) Object.assign(blocks[id], toBlocks(block.blocks, block.block_order, `${id}_`))
   }
-  return { blocks, block_order: !Array.isArray(list) && Array.isArray(order) ? order : entries.map(([id]) => id) }
+  return { blocks, block_order: !array && Array.isArray(order) ? order : dynamic }
 }
 const presets = { rendered: 0, failed: {} }
 const presetTimes = []

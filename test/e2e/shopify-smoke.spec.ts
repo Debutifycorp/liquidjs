@@ -70,6 +70,18 @@ describe('bin/shopify-smoke.mjs', () => {
     expect(summary.unknownFilters).toEqual({})
   })
 
+  it('reads a static preset block as the engine does: static only with an id of its own', () => {
+    writeTheme(dir, {
+      ...base,
+      'sections/pinned.liquid': "{% capture all %}{% content_for 'block', type: 'tag', id: 'pin' %}{% content_for 'blocks' %}{% endcapture %}{% unless all == '[saved][default][default]' %}{{ 'x' | static_wrong }}{% endunless %}{% schema %}{\"name\":\"Pinned\",\"blocks\":[{\"type\":\"@theme\"}],\"presets\":[{\"name\":\"Pinned\",\"blocks\":[{\"type\":\"tag\",\"static\":true,\"id\":\"pin\",\"settings\":{\"label\":\"saved\"}},{\"type\":\"tag\",\"static\":true},{\"type\":\"tag\"}]}]}{% endschema %}",
+      'blocks/tag.liquid': '[{{ block.settings.label }}]{% schema %}{"name":"Tag","tag":null,"settings":[{"type":"text","id":"label","label":"Label","default":"default"}]}{% endschema %}'
+    })
+    const { status, stdout, stderr } = smoke([dir, '--json', '--presets', '--strict'])
+    expect(stderr).toBe('')
+    expect(status).toBe(0)
+    expect(JSON.parse(stdout).presets).toEqual({ rendered: 2, failed: {} })
+  })
+
   it('passes --strict on a clean theme', () => {
     writeTheme(dir, base)
     expect(smoke([dir, '--strict']).status).toBe(0)
