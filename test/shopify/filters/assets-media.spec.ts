@@ -43,6 +43,12 @@ describe('shopify/filters/assets', () => {
   it('payment_button writes the container the page names', async () => {
     expect(await render('{{ form | payment_button }}', {})).toBe('<div data-shopify="payment-button" class="shopify-payment-button"><button type="button" class="shopify-payment-button__button shopify-payment-button__button--unbranded" disabled="disabled">Buy it now</button></div>')
   })
+  // https://shopify.dev/docs/api/liquid/filters/payment_terms shows no output, and https://shopify.dev/docs/storefronts/themes/pricing-payments/installments says the banner "appears only if Shop Pay Installments is enabled in the merchant's store". Shopify's own output is recorded in liquid-spec (84bf25e, specs/shopify_theme_dawn/products-synergistic-wooden-car-main-product): Dawn puts `{{ form | payment_terms }}` in a product form, and in that store, whose `shop.enabled_payment_types` has no Shop Pay, it prints nothing.
+  it('payment_terms prints nothing in a product form, as Shopify does for a store without Shop Pay Installments', async () => {
+    const { html, report } = await renderWithReport("{% form 'product', product %}[{{ form | payment_terms }}]{% endform %}", { product: { id: 1 } })
+    expect(html).toContain('<input type="hidden" name="utf8" value="✓" />[]')
+    expect(report.stubbedFilters).toEqual([])
+  })
   it('attribute() writes only valid attribute names', () => {
     expect(attribute('data-x.y_z:w', 'v')).toBe(' data-x.y_z:w="v"')
     expect(attribute('x" onerror="y', 'v')).toBe('')

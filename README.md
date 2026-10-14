@@ -124,7 +124,7 @@ An unknown filter returns its input and an unknown tag renders nothing, so one g
 
 ### Filter status
 
-`shopifyFilterRegistry()` lists every filter in Shopify's [theme-liquid-docs](https://github.com/Shopify/theme-liquid-docs) with a status: `exact` (matches output recorded from Shopify), `approx` (implemented from shopify.dev, not yet matched against Shopify), `stub` (documented but not implemented: renders nothing and is reported) or `engine` (a standard Liquid filter provided by the engine). This release has 154 filters: 56 `engine`, 51 `approx`, 47 `stub`, none `exact` yet; a filter becomes `exact` only after it matches output recorded from a Shopify store. `shopifyFilterRegistry()` returns new entries on every call, so editing them changes nothing. `shopifyFilterRegistry().filter((filter) => filter.status === 'stub')` lists the stubs, among them `md5`, `sha1`, `hmac_sha1`, `base64_url_safe_encode`, `base64_url_safe_decode`, `payment_terms`, `asset_img_url`, `file_url`, `payment_type_img_url` and `inline_asset_content`.
+`shopifyFilterRegistry()` lists every filter in Shopify's [theme-liquid-docs](https://github.com/Shopify/theme-liquid-docs) with a status: `exact` (matches output recorded from Shopify), `approx` (implemented from shopify.dev, not yet matched against Shopify), `stub` (documented but not implemented: renders nothing and is reported) or `engine` (a standard Liquid filter provided by the engine). This release has 154 filters: 56 `engine`, 52 `approx`, 46 `stub`, none `exact` yet; a filter becomes `exact` only after it matches output recorded from a Shopify store. `shopifyFilterRegistry()` returns new entries on every call, so editing them changes nothing. `shopifyFilterRegistry().filter((filter) => filter.status === 'stub')` lists the stubs, among them `md5`, `sha1`, `hmac_sha1`, `base64_url_safe_encode`, `base64_url_safe_decode`, `asset_img_url`, `file_url`, `payment_type_img_url` and `inline_asset_content`.
 
 ### Public API
 
@@ -224,6 +224,7 @@ shopify.dev does not pin these outputs, or pins only part of the filter, tag or 
 - [`video_tag`](https://shopify.dev/docs/api/liquid/filters/video_tag): `m3u8` sources when not looping, where `loading` goes, the section index for lazy loading, and the product-title fallback for `aria-label` (and for [`external_video_tag`](https://shopify.dev/docs/api/liquid/filters/external_video_tag)'s `title`), which reads the `product` variable in scope.
 - `media_tag` on an image renders `image_tag` at the image's own width (1100 when it has none); the page has no image example.
 - [`payment_button`](https://shopify.dev/docs/api/liquid/filters/payment_button): the page prints a `<shopify-accelerated-checkout>` element carrying shop tokens; a disabled "Buy it now" button stands in for it here.
+- [`payment_terms`](https://shopify.dev/docs/api/liquid/filters/payment_terms) prints nothing, as Shopify does in liquid-spec's Dawn product page for a store without Shop Pay Installments; the banner a store with Shop Pay Installments shows is not on shopify.dev, and the store data has no Shop Pay Installments setting, so it is never printed here.
 
 **Colour and fonts**
 

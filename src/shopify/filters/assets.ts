@@ -52,6 +52,11 @@ function paymentButton () {
   return '<div data-shopify="payment-button" class="shopify-payment-button"><button type="button" class="shopify-payment-button__button shopify-payment-button__button--unbranded" disabled="disabled">Buy it now</button></div>'
 }
 
+/** The Shop Pay Installments banner, which Shopify shows "only if Shop Pay Installments is enabled in the merchant's store" (https://shopify.dev/docs/storefronts/themes/pricing-payments/installments). The store data has no such setting, so this prints what Shopify prints for a store without it: nothing, as recorded in liquid-spec's Dawn product page. https://shopify.dev/docs/api/liquid/filters/payment_terms does not show the banner's markup. */
+function paymentTerms () {
+  return ''
+}
+
 export const assetFilters: ShopifyFilterSet = {
   asset_url: { status: 'approx', handler: assetUrl },
   shopify_asset_url: { status: 'approx', handler: shopifyAssetUrl },
@@ -59,5 +64,6 @@ export const assetFilters: ShopifyFilterSet = {
   script_tag: { status: 'approx', handler: scriptTag },
   placeholder_svg_tag: { status: 'approx', handler: placeholderSvgTag },
   payment_type_svg_tag: { status: 'approx', handler: paymentTypeSvgTag },
-  payment_button: { status: 'approx', handler: paymentButton }
+  payment_button: { status: 'approx', handler: paymentButton },
+  payment_terms: { status: 'approx', handler: paymentTerms }
 }
