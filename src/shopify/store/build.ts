@@ -28,6 +28,8 @@ export interface StoreObjects {
   country_option_tags: string
   all_country_option_tags: string
   gift_card: LiquidObject | null
+  /** The store data's storefront filters, which the search builds its `filters` from. */
+  storefrontFilters: FilterData[]
 }
 
 const image = (data: ImageData | null | undefined) => data ? new ImageDrop(data) : null
@@ -41,7 +43,7 @@ function hidden (target: LiquidObject, key: string, value: unknown) {
 /**
  * Makes `object` print as its handle: https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings says of the `product`, `collection`, `page`, `blog` and `article` settings that "outputting the setting directly will return the object's handle". Applied to the object itself, so a setting returns the store's own object and `==`, `contains` and the filters that take the object work as on any other; shopify.dev does not say what the object prints elsewhere (a `product_list` element, `{{ product }}` on a product page), so the same handle is printed there too, on the confirm-on-a-development-store list. The `toString` is not enumerable, so `json`, `inspect` and `for` do not see it.
  */
-function printsHandle (object: LiquidObject): LiquidObject {
+export function printsHandle (object: LiquidObject): LiquidObject {
   Object.defineProperty(object, 'toString', { value: () => String(object.handle ?? ''), enumerable: false })
   return object
 }
@@ -465,7 +467,8 @@ export function buildStore (data: StoreData): StoreObjects {
     localization,
     country_option_tags: countryOptionTags(shippingCountries),
     all_country_option_tags: countryOptionTags(data.all_country_option_tags ?? shippingCountries),
-    gift_card: data.gift_card ? buildGiftCard(data.gift_card, products, data.shop.currency) : null
+    gift_card: data.gift_card ? buildGiftCard(data.gift_card, products, data.shop.currency) : null,
+    storefrontFilters: data.filters ?? []
   }
   built.set(data, objects)
   return objects

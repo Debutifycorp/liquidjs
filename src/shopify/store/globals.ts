@@ -3,6 +3,7 @@ import { TemplateDrop } from '../objects/template'
 import { own } from '../util/own'
 import type { ReportCollector } from '../report'
 import { buildLinklists, LiquidObject, StoreObjects } from './build'
+import { buildSearch } from './search'
 
 /** What the caller says about the request being rendered. Everything is optional; defaults follow from the template and the shop. */
 export interface RequestInput {
@@ -78,7 +79,7 @@ export interface PageGlobals {
 /**
  * The global objects of one page, each following its page under https://shopify.dev/docs/api/liquid/objects: `shop`, `cart`, `customer`, `localization`, `collections`, `all_products`, `pages`, `blogs`, `articles`, `linklists`, `images`, `routes`, `template`, `request` (`page_type`, `path`, `host`, `origin`, `locale`, `design_mode`, `visual_preview_mode`), `page_title`, `page_description`, `canonical_url`, `handle`, `current_page`, `current_tags`, `search`, `recommendations`, `powered_by_link`, `additional_checkout_buttons`, `content_for_additional_checkout_buttons`, `metaobjects`, `country_option_tags`, `all_country_option_tags`, `gift_card` on the `gift_card` template (https://shopify.dev/docs/api/liquid/objects/gift_card, nil when the store data issues none), and the template's resource under its own name (`product`, `collection`, `page`, `blog`, `article`; an article also sets `blog`).
  *
- * Choices shopify.dev does not pin, for the "confirm on a development store" list: `canonical_url` is the origin plus the path, with no query string or page number (the page says only that it is the canonical URL of the current page); `page_title` is the resource's title or the shop's name, without the shop-name suffix a live store adds; `powered_by_link` is empty because the link points at shopify.com, which a Debutify store does not show; `search` is empty (no search is run), `recommendations` has `performed?` false, `intent` nil (the page: "If `performed?` is `false`, then `nil` is returned") and `performed` false too (shopify.dev names only `performed?`, but liquid-spec's recorded environment of Shopify's Dawn theme holds both, and Dawn's templates read `recommendations.performed`, so a template that tests `recommendations.performed == false` takes the same branch as on a store) and `metaobjects` is empty.
+ * Choices shopify.dev does not pin, for the "confirm on a development store" list: `canonical_url` is the origin plus the path, with no query string or page number (the page says only that it is the canonical URL of the current page); `page_title` is the resource's title or the shop's name, without the shop-name suffix a live store adds; `powered_by_link` is empty because the link points at shopify.com, which a Debutify store does not show; `search` runs only when the request has `searchTerms` (`buildSearch`, whose matching is Debutify's), `recommendations` has `performed?` false, `intent` nil (the page: "If `performed?` is `false`, then `nil` is returned") and `performed` false too (shopify.dev names only `performed?`, but liquid-spec's recorded environment of Shopify's Dawn theme holds both, and Dawn's templates read `recommendations.performed`, so a template that tests `recommendations.performed == false` takes the same branch as on a store) and `metaobjects` is empty.
  */
 export function buildGlobals (input: GlobalsInput): PageGlobals {
   const { store, request, report } = input
@@ -130,7 +131,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     handle: resource?.handle ?? '',
     current_page: page,
     current_tags: null,
-    search: { performed: false, results: [], results_count: 0, terms: request.searchTerms ?? '', types: ['product', 'page', 'article'], filters: [], sort_by: 'relevance', default_sort_by: 'relevance' },
+    search: buildSearch(store, request.searchTerms),
     recommendations: { 'performed?': false, performed: false, products: [], products_count: 0, intent: null },
     powered_by_link: '',
     additional_checkout_buttons: false,

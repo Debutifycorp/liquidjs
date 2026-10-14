@@ -40,7 +40,7 @@ const listEntries: Record<Exclude<FilterData['attribute'], 'price' | 'option'>, 
 const PARAMS: Record<Exclude<FilterData['attribute'], 'option'>, string> = { availability: 'filter.v.availability', price: 'filter.v.price', product_type: 'filter.p.product_type', vendor: 'filter.p.vendor', tag: 'filter.p.tag' }
 
 /**
- * The storefront filters of a list of products shown at `url` (a collection's `filters`), following https://shopify.dev/docs/api/liquid/objects/filter and https://shopify.dev/docs/api/liquid/objects/filter_value, with the parameter names of https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/storefront-filtering. As the collection page says, only filters relevant to the products are returned: a list filter needs at least one value among them, a price filter at least one product. The request carries no query string here, so no filter is applied: every value is inactive, `active_values` is empty, the price filter's `min_value` and `max_value` have no `value`, `url_to_remove` is `url` and `url_to_add` is `url` with the value's parameter. Availability, price, product type, vendor and tag filters are `list` or `price_range`; an option filter is a `list` named after its option.
+ * The storefront filters of a list of products shown at `url` (a collection's `filters`), following https://shopify.dev/docs/api/liquid/objects/filter and https://shopify.dev/docs/api/liquid/objects/filter_value, with the parameter names of https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/storefront-filtering. As the collection page says, only filters relevant to the products are returned: a list filter needs at least one value among them, a price filter at least one product. The request carries no query string here, so no filter is applied: every value is inactive, `active_values` is empty, the price filter's `min_value` and `max_value` have no `value`, `url_to_remove` is `url` and `url_to_add` is `url` with the value's parameter added to its query. Availability, price, product type, vendor and tag filters are `list` or `price_range`; an option filter is a `list` named after its option.
  *
  * Not pinned by shopify.dev, for the "confirm on a development store" list: the default labels, availability's value labels (`In stock` for `1`, `Out of stock` for `0`) and its listing both values even at count 0, the value order (product types, vendors and tags sorted, option values in the order the products give them), a value counting each product once, the lower-cased option name in `filter.v.option.<name>`, `encodeURIComponent` for values in URLs, the `OR` operator for every list filter, and `swatch`, `image` and `display` being nil (the store data has no swatches).
  */
@@ -54,7 +54,7 @@ export function buildFilters (filters: FilterData[] | undefined, products: Liqui
     image: null,
     swatch: null,
     display: null,
-    url_to_add: entry ? `${url}?${param}=${encodeURIComponent(entry.value)}` : url,
+    url_to_add: entry ? `${url}${url.includes('?') ? '&' : '?'}${param}=${encodeURIComponent(entry.value)}` : url,
     url_to_remove: url
   })
   const out: LiquidObject[] = []

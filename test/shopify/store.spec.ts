@@ -160,6 +160,26 @@ describe('shopify/store', () => {
     expect(await render('{% for f in c.filters %}{{ f.label }}:{% for v in f.values %}{{ v.label }}={{ v.count }},{% endfor %}{{ f.range_max }};{% endfor %}', { c: filtered.collections.liquidMethodMissing('apparel') }))
       .toBe('Availability:In stock=1,Out of stock=1,;Price:2700;Product type:Shirts=1,;Brand:Sample Co=1,;Tags:cotton=1,new=1,;Color:Black=1,White=1,;')
   })
+  it('runs a search for the request\'s terms over products, pages and articles, with filters over the matching products', async () => {
+    const search = (data: typeof sampleStoreData, searchTerms?: string) => buildGlobals({ store: buildStore(data), templateName: 'search', request: { searchTerms }, locale: 'en', report: new ReportCollector() }).globals
+    const show = '{{ search.performed }}|{{ search.terms }}|{{ search.results_count }}|{% for i in search.results %}{{ i.object_type }}:{{ i.title }}:{{ i.url }},{% endfor %}|{{ search.types | join: "," }}|{{ search.sort_by }}|{{ search.default_sort_by }}|{% for o in search.sort_options %}{{ o.value }}={{ o.name }},{% endfor %}|{% for f in search.filters %}{{ f.label }}:{% for v in f.values %}{{ v.label }}={{ v.count }}@{{ v.url_to_add }} {% endfor %}{% endfor %}'
+    const data = { ...sampleStoreData, filters: [{ attribute: 'product_type' as const }] }
+    expect(await render(show, search(data, 'co'))).toBe('true|co|5|product:Classic Tee:/products/classic-tee,product:Canvas Bag:/products/canvas-bag,product:Ceramic Mug:/products/ceramic-mug,page:Contact:/pages/contact,article:Spring collection:/blogs/news/spring-collection,|article,page,product|relevance|relevance|relevance=Relevance,price-ascending=Price, low to high,price-descending=Price, high to low,|Product type:Bags=1@/search?q=co&filter.p.product_type=Bags Home=1@/search?q=co&filter.p.product_type=Home Shirts=1@/search?q=co&filter.p.product_type=Shirts ')
+    expect(await render('{% for i in search.results %}{{ i.title }},{% endfor %}', search(data, 'co mug'))).toBe('Ceramic Mug,')
+    expect(await render('{% for i in search.results %}{{ i.title }},{% endfor %}', search(data, 'CERAMIC'))).toBe('Ceramic Mug,')
+    expect(await render('{{ search.performed }}|{{ search.results_count }}|{{ search.filters.size }}', search(data, 'nothing-matches'))).toBe('true|0|0')
+    const variant = (id: number, available: boolean) => ({ id, title: 'Default Title', price: 1000, available, option1: 'Default Title' })
+    const products = [
+      { id: 1, handle: 'beta', title: 'Beta lamp', description: '<strong>Warm</strong> light', variants: [variant(11, false)] },
+      { id: 2, handle: 'alpha', title: 'Alpha lamp', variants: [variant(12, true)] },
+      { id: 3, handle: 'gamma', title: 'Gamma lamp', variants: [variant(13, true)] }
+    ]
+    const own = { shop: sampleStoreData.shop, products }
+    expect(await render('{% for i in search.results %}{{ i.handle }},{% endfor %}', search(own, 'lamp'))).toBe('alpha,gamma,beta,')
+    expect(await render('{{ search.results_count }}|{% for i in search.results %}{{ i.handle }}{% endfor %}', search(own, 'strong'))).toBe('0|')
+    expect(await render('{{ search.results_count }}|{% for i in search.results %}{{ i.handle }}{% endfor %}', search(own, 'warm'))).toBe('1|beta')
+    expect(await render('{{ search.performed }}|{{ search.terms }}|{{ search.results_count }}|{{ search.results.size }}|{{ search.types | join: "," }}|{{ search.filters.size }}|{{ search.sort_by }}|{{ search.sort_options.size }}', search(data))).toBe('false||0|0|product,page,article|0|relevance|')
+  })
   it('gives the gift_card template the gift card the store data issues, and none without one', async () => {
     const fields = '{{ gift_card.balance | money }}|{{ gift_card.initial_value | money }}|{{ gift_card.code }}|{{ gift_card.last_four_characters }}|{{ gift_card.currency }}|{{ gift_card.enabled }}|{{ gift_card.expired }}|{{ gift_card.expires_on }}|{{ gift_card.qr_identifier }}|{{ gift_card.pass_url }}|{{ gift_card.product.title }}|{{ gift_card.variant.id }}|{{ gift_card.customer.first_name }}|{{ gift_card.properties.Note }}|{{ gift_card.template_suffix }}|{{ gift_card.message }}|{{ gift_card.recipient }}|{{ gift_card.send_on }}|{{ gift_card.url }}'
     const none = buildGlobals({ store, templateName: 'gift_card', request: {}, locale: 'en', report: new ReportCollector() })
