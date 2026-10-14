@@ -53,11 +53,12 @@ describe('bin/shopify-smoke.mjs', () => {
     expect(summary.unknownFilters).toEqual({})
   })
 
-  it('keeps the order of object-form preset blocks given by block_order, also in nested blocks', () => {
+  it('keeps the order of object-form preset blocks given by block_order, and gives every nested block its own id', () => {
     writeTheme(dir, {
       ...base,
       'sections/stack.liquid': "{% assign order = section.blocks | map: 'id' | join: ',' %}{% unless order == 'first,second' %}{{ 'x' | order_wrong }}{% endunless %}{% schema %}{\"name\":\"Stack\",\"blocks\":[{\"type\":\"line\",\"name\":\"Line\"}],\"presets\":[{\"name\":\"Stack\",\"blocks\":{\"second\":{\"type\":\"line\"},\"first\":{\"type\":\"line\"}},\"block_order\":[\"first\",\"second\"]}]}{% endschema %}",
       'sections/deck.liquid': "{% capture all %}{% content_for 'blocks' %}{% endcapture %}{% unless all == '[a][c]' %}{{ 'x' | nested_wrong }}{% endunless %}{% schema %}{\"name\":\"Deck\",\"blocks\":[{\"type\":\"@theme\"}],\"presets\":[{\"name\":\"Deck\",\"blocks\":{\"row-1\":{\"type\":\"row\",\"blocks\":{\"c\":{\"type\":\"cell\"},\"a\":{\"type\":\"cell\"}},\"block_order\":[\"a\",\"c\"]}},\"block_order\":[\"row-1\"]}]}{% endschema %}",
+      'sections/tree.liquid': "{% capture all %}{% content_for 'blocks' %}{% endcapture %}{% unless all == '[b0_0][mine][b1_0][b1_1]' %}{{ 'x' | ids_wrong }}{% endunless %}{% schema %}{\"name\":\"Tree\",\"blocks\":[{\"type\":\"@theme\"}],\"presets\":[{\"name\":\"Tree\",\"blocks\":[{\"type\":\"row\",\"blocks\":[{\"type\":\"cell\"},{\"type\":\"cell\",\"id\":\"mine\"}]},{\"type\":\"row\",\"blocks\":[{\"type\":\"cell\"},{\"type\":\"cell\"}]}]}]}{% endschema %}",
       'blocks/row.liquid': "{% content_for 'blocks' %}{% schema %}{\"name\":\"Row\",\"tag\":null,\"blocks\":[{\"type\":\"@theme\"}]}{% endschema %}",
       'blocks/cell.liquid': '[{{ block.id }}]{% schema %}{"name":"Cell","tag":null}{% endschema %}'
     })
@@ -65,7 +66,7 @@ describe('bin/shopify-smoke.mjs', () => {
     expect(stderr).toBe('')
     expect(status).toBe(0)
     const summary = JSON.parse(stdout)
-    expect(summary.presets).toEqual({ rendered: 3, failed: {} })
+    expect(summary.presets).toEqual({ rendered: 4, failed: {} })
     expect(summary.unknownFilters).toEqual({})
   })
 
@@ -88,8 +89,34 @@ describe('bin/shopify-smoke.mjs', () => {
     const asArray = join(aux, 'allow-array.json')
     writeFileSync(asObject, JSON.stringify({ 'unknownFilters: nope_filter': 'TF-001' }))
     writeFileSync(asArray, JSON.stringify(['unknownFilters: nope_filter']))
-    expect(smoke([dir, '--strict', '--presets', `--allow=${asObject}`]).status).toBe(0)
-    expect(smoke([dir, '--strict', '--presets', `--allow=${asArray}`]).status).toBe(0)
+    for (const allow of [asObject, asArray]) {
+      const { status, stderr } = smoke([dir, '--strict', '--presets', `--allow=${allow}`])
+      expect(stderr).toBe('')
+      expect(status).toBe(0)
+    }
+  })
+
+  it('refuses --allow without --strict', () => {
+    writeTheme(dir, base)
+    const allow = join(aux, 'allow.json')
+    writeFileSync(allow, '[]')
+    const { status, stderr } = smoke([dir, `--allow=${allow}`])
+    expect(status).toBe(2)
+    expect(stderr).toContain('--allow needs --strict')
+  })
+
+  it('warns about --allow entries that matched nothing, and still passes', () => {
+    writeTheme(dir, base)
+    const one = join(aux, 'one.json')
+    const two = join(aux, 'two.json')
+    writeFileSync(one, JSON.stringify(['unknownFilters: gone']))
+    writeFileSync(two, JSON.stringify({ 'unknownFilters: gone': 'TF-001', 'missing: section gone': 'TF-002' }))
+    const single = smoke([dir, '--strict', `--allow=${one}`])
+    expect(single.status).toBe(0)
+    expect(single.stderr).toContain('allow: 1 entry matched nothing:\n  unknownFilters: gone')
+    const both = smoke([dir, '--strict', `--allow=${two}`])
+    expect(both.status).toBe(0)
+    expect(both.stderr).toContain('allow: 2 entries matched nothing:\n  unknownFilters: gone\n  missing: section gone')
   })
 
   it('exits 2 before rendering when the --allow file is missing or not valid', () => {

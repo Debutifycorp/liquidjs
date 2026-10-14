@@ -35,6 +35,10 @@ if (dir === repo || dir.startsWith(repo + sep)) {
 
 const allowFlag = flags.find(flag => flag.startsWith('--allow='))
 let allowed = new Set()
+if (allowFlag && !flags.includes('--strict')) {
+  console.error('--allow needs --strict')
+  process.exit(2)
+}
 if (allowFlag) {
   const allowPath = allowFlag.slice('--allow='.length)
   try {
@@ -142,13 +146,13 @@ for (const templateName of templates) {
   }
 }
 const SCHEMA = /\{%-?\s*schema\s*-?%\}([\s\S]*?)\{%-?\s*endschema\s*-?%\}/
-// A preset lists its blocks as an array, or as an object keyed by block id with a sibling block_order array (at the preset and inside a block): the given order wins over the key order.
-const toBlocks = (list, order) => {
-  const entries = Array.isArray(list) ? list.map((block, index) => [`b${index}`, block]) : Object.entries(list ?? {})
+// A preset lists its blocks as an array, or as an object keyed by block id with a sibling block_order array (at the preset and inside a block): the given order wins over the key order. An array entry gets its own string id, or one built from its path (`b0`, `b0_1`, `b0_1_2`) so no two blocks of one section share an id; an object key is the block's id as written.
+const toBlocks = (list, order, prefix = 'b') => {
+  const entries = Array.isArray(list) ? list.map((block, index) => [typeof block.id === 'string' && block.id !== '' ? block.id : `${prefix}${index}`, block]) : Object.entries(list ?? {})
   const blocks = {}
   for (const [id, block] of entries) {
     blocks[id] = { type: block.type, settings: block.settings ?? {}, ...(block.static ? { static: true } : {}) }
-    if (block.blocks) Object.assign(blocks[id], toBlocks(block.blocks, block.block_order))
+    if (block.blocks) Object.assign(blocks[id], toBlocks(block.blocks, block.block_order, `${id}_`))
   }
   return { blocks, block_order: !Array.isArray(list) && Array.isArray(order) ? order : entries.map(([id]) => id) }
 }
@@ -216,6 +220,7 @@ if (flags.includes('--json')) {
 }
 
 if (flags.includes('--strict')) {
+  const matched = new Set()
   const problems = [
     ...Object.keys(parseErrors).map(path => `parse: ${path}`),
     ...rows.filter(row => row.threw).map(row => `threw: ${row.template}`),
@@ -228,10 +233,19 @@ if (flags.includes('--strict')) {
     ...Object.keys(summary.errors).map(message => `errors: ${message}`),
     ...Object.keys(sectionFailures).map(path => `sectionFailures: ${path}`),
     ...Object.keys(presets.failed).map(key => `presetFailures: ${key}`)
-  ].filter(problem => !allowed.has(problem))
+  ].filter(problem => {
+    if (!allowed.has(problem)) return true
+    matched.add(problem)
+    return false
+  })
   if (problems.length) {
     console.error(`strict: ${problems.length} problem(s) not in the allow list`)
     for (const problem of problems) console.error(`  ${problem}`)
     process.exitCode = 1
+  }
+  const stale = [...allowed].filter(entry => !matched.has(entry))
+  if (stale.length) {
+    console.error(`allow: ${stale.length} ${stale.length === 1 ? 'entry' : 'entries'} matched nothing:`)
+    for (const entry of stale) console.error(`  ${entry}`)
   }
 }
