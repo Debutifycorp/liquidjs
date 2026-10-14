@@ -26,7 +26,11 @@ describe('t', () => {
   it('uses the locale plural rules', async () => expect(await render("{{ 'cart.items' | t: count: 0 }}", {}, 'fr')).toBe('0 article'))
   it('falls back to the default locale', async () => expect(await render("{{ 'layout.header.rock' | t }}", {}, 'fr')).toBe('Rock &amp; Roll'))
   it('reads the requested locale first', async () => expect(await render("{{ 'layout.header.hello_user' | t: name: 'Jo' }}", {}, 'fr')).toBe('Bonjour Jo !'))
-  it('leaves _html keys unescaped and escapes their values', async () => expect(await render("{{ 'layout.header.announcement_html' | t: what: '<b>FREE</b>' }}")).toBe('Spend $50 and get <strong>&lt;b&gt;FREE&lt;/b&gt;</strong>'))
+  it('leaves the whole output of an _html key unescaped, its values included', async () => {
+    expect(await render("{{ 'layout.header.announcement_html' | t: what: '<b>FREE</b>' }}")).toBe('Spend $50 and get <strong><b>FREE</b></strong>')
+    expect(await render("{% capture link %}<a href=\"/x\">X</a>{% endcapture %}{{ 'layout.header.announcement_html' | t: what: link }}")).toBe('Spend $50 and get <strong><a href="/x">X</a></strong>')
+  })
+  it('escapes the whole output of any other key, its values included', async () => expect(await render("{{ 'layout.header.hello_user' | t: name: '<b>Jo</b>' }}")).toBe('Hello &lt;b&gt;Jo&lt;/b&gt;!'))
   it('reports a missing key', async () => {
     const { html, report } = await renderWithState(liquid, "{{ 'nope.key' | t }}", {}, { translator: translator('en') })
     expect(html).toBe('translation missing: en.nope.key')

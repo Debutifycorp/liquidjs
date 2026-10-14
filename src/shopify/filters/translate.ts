@@ -25,7 +25,9 @@ function pluralForm (entry: LocaleTree, count: unknown, locale: string): string 
 /**
  * `t` / `translate`: a translation from the theme's locale files (or the section schema's `locales`), with `{{ name }}` interpolation and `count` pluralisation. https://shopify.dev/docs/api/liquid/filters/translate says only that it returns the text for a key from a locale file or a section's schema `locales`; interpolation and CLDR plural keys are on https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files.
  *
- * Not pinned by shopify.dev, so the filter stays `approx` and these go on the "confirm on a development store" list: the text printed for a missing key (`translation missing: <locale>.<key>` here, escaped because the key can come from data), whether interpolated values in `_html` keys are escaped (they are here, and the translation is left as written), and whether other translations are escaped whole (they are here).
+ * The storefront locale files page says translated content is escaped by default and that the `_html` suffix "prevents the output content from being escaped", so an `_html` key's output, interpolated values included, is printed as it is (a template that passes data into one should escape it first), and any other key's output is escaped whole.
+ *
+ * Not pinned by shopify.dev, so the filter stays `approx` and these go on the "confirm on a development store" list: the text printed for a missing key (`translation missing: <locale>.<key>` here, escaped because the key can come from data), and whether interpolated values count as part of the output content (they do here).
  */
 function translate (this: FilterImpl, key: unknown, ...args: unknown[]): string {
   const state = shopifyState(this.context)
@@ -41,7 +43,7 @@ function translate (this: FilterImpl, key: unknown, ...args: unknown[]): string 
   }
   const text = value.replace(PLACEHOLDER, (whole: string, name: string) => {
     if (!hasOwn(named, name)) return whole
-    return html ? escapeHtml(display[name]) : stringify(display[name])
+    return stringify(display[name])
   })
   return html ? text : escapeHtml(text)
 }

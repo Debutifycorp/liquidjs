@@ -208,7 +208,7 @@ shopify.dev does not pin these outputs, or pins only part of the filter, tag or 
 
 **Translations and text**
 
-- [`t`](https://shopify.dev/docs/api/liquid/filters/translate): the text for a missing key (`translation missing: <locale>.<key>`, escaped), whether interpolated values in `_html` keys are escaped (they are here), and a `zero` key winning for `count: 0` in every locale.
+- [`t`](https://shopify.dev/docs/api/liquid/filters/translate): the text for a missing key (`translation missing: <locale>.<key>`, escaped), whether interpolated values are part of the translated content (here an `_html` key prints them as they are, so a template should escape data it passes in, and any other key escapes them with the rest), and a `zero` key winning for `count: 0` in every locale.
 - Locale fallback ([storefront locale files](https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files)): a missing key falls back to the default locale and `fr-CA` to `fr`, and within a locale the locale file is searched before the section's schema `locales`.
 - [`money`](https://shopify.dev/docs/api/liquid/filters/money): nil prints nothing, a boolean, array or hash prints nothing and is reported, a string is read like Ruby's `to_i` (`"abc"` is `$0.00`), a fraction of a cent is dropped and a negative amount prints `$-1.50`, all as in liquid-spec's reference filters.
 - [`money_without_currency`](https://shopify.dev/docs/api/liquid/filters/money_without_currency) for a format with other placeholders (the first placeholder is used), and the space between amount and currency code in `money_with_currency`.
