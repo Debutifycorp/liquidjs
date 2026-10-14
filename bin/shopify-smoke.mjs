@@ -33,6 +33,20 @@ if (dir === repo || dir.startsWith(repo + sep)) {
   process.exit(2)
 }
 
+const allowFlag = flags.find(flag => flag.startsWith('--allow='))
+let allowed = new Set()
+if (allowFlag) {
+  const allowPath = allowFlag.slice('--allow='.length)
+  try {
+    const allowJson = JSON.parse(readFileSync(allowPath, 'utf8'))
+    if (allowJson === null || typeof allowJson !== 'object') throw new Error('expected a JSON array of problem keys or a JSON object whose keys are problem keys')
+    allowed = new Set(Array.isArray(allowJson) ? allowJson : Object.keys(allowJson))
+  } catch (err) {
+    console.error(`cannot read allow file ${allowPath}: ${err.message}`)
+    process.exit(2)
+  }
+}
+
 function loadTheme (root) {
   const files = {}
   const walk = (path) => {
@@ -128,14 +142,15 @@ for (const templateName of templates) {
   }
 }
 const SCHEMA = /\{%-?\s*schema\s*-?%\}([\s\S]*?)\{%-?\s*endschema\s*-?%\}/
-const toBlocks = (list) => {
+// A preset lists its blocks as an array, or as an object keyed by block id with a sibling block_order array (at the preset and inside a block): the given order wins over the key order.
+const toBlocks = (list, order) => {
   const entries = Array.isArray(list) ? list.map((block, index) => [`b${index}`, block]) : Object.entries(list ?? {})
   const blocks = {}
   for (const [id, block] of entries) {
     blocks[id] = { type: block.type, settings: block.settings ?? {}, ...(block.static ? { static: true } : {}) }
-    if (block.blocks) Object.assign(blocks[id], toBlocks(block.blocks))
+    if (block.blocks) Object.assign(blocks[id], toBlocks(block.blocks, block.block_order))
   }
-  return { blocks, block_order: entries.map(([id]) => id) }
+  return { blocks, block_order: !Array.isArray(list) && Array.isArray(order) ? order : entries.map(([id]) => id) }
 }
 const presets = { rendered: 0, failed: {} }
 const presetTimes = []
@@ -152,7 +167,7 @@ if (flags.includes('--presets')) {
       continue
     }
     for (const [index, preset] of list.entries()) {
-      theme.files[templatePath] = JSON.stringify({ sections: { main: { type, settings: preset.settings ?? {}, ...toBlocks(preset.blocks) } }, order: ['main'] })
+      theme.files[templatePath] = JSON.stringify({ sections: { main: { type, settings: preset.settings ?? {}, ...toBlocks(preset.blocks, preset.block_order) } }, order: ['main'] })
       const started = performance.now()
       try {
         const { report } = await renderSection({ theme, templateName: 'page.smoke-preset', section: 'main', request: { resource: 'about' } })
@@ -201,9 +216,6 @@ if (flags.includes('--json')) {
 }
 
 if (flags.includes('--strict')) {
-  const allowFlag = flags.find(flag => flag.startsWith('--allow='))
-  const allowJson = allowFlag ? JSON.parse(readFileSync(allowFlag.slice('--allow='.length), 'utf8')) : []
-  const allowed = new Set(Array.isArray(allowJson) ? allowJson : Object.keys(allowJson))
   const problems = [
     ...Object.keys(parseErrors).map(path => `parse: ${path}`),
     ...rows.filter(row => row.threw).map(row => `threw: ${row.template}`),
