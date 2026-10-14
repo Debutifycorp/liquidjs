@@ -694,6 +694,31 @@ describe('shopify/settings fidelity', () => {
     const page = buildGlobals({ store, templateName: 'product', request: {}, locale: 'en', report: new ReportCollector() })
     expect(await render('[{{ recommendations.intent }}]|{% if recommendations.intent == nil %}nil{% endif %}|{{ recommendations.performed? }}|{{ recommendations.products_count }}|{% if recommendations.products == empty %}empty{% endif %}', page.globals)).toBe('[]|nil|false|0|empty')
   })
+  it('recommends products for a recommendations request from the collections and type the product shares', async () => {
+    const variant = (id: number, price: number, available = true) => ({ id, title: 'Default Title', price, available, option1: 'Default Title' })
+    const product = (id: number, handle: string, type: string, price = 1000, available = true) => ({ id, handle, title: handle, type, variants: [variant(id * 10, price, available)] })
+    const data = {
+      shop: { name: 'Shop', domain: 'shop.example', currency: 'USD' },
+      products: [product(1, 'lamp', 'Lighting'), product(2, 'desk', 'Furniture'), product(3, 'chair', 'Furniture', 1000, false), product(4, 'rug', 'Textiles'), product(5, 'lantern', 'Lighting'), product(6, 'shelf', 'Furniture'), product(7, 'freebie', 'Furniture', 0), product(8, 'stool', 'Furniture')],
+      collections: [
+        { id: 1, handle: 'frontpage', title: 'Home page', products: ['stool', 'lamp'] },
+        { id: 2, handle: 'study', title: 'Study', products: ['lamp', 'desk', 'chair', 'shelf', 'freebie'] },
+        { id: 3, handle: 'living', title: 'Living', products: ['rug', 'lamp', 'desk'] }
+      ],
+      cart: { items: [{ product_handle: 'shelf', variant_id: 60, quantity: 1 }] }
+    }
+    const shared = buildStore(data)
+    const page = (recommendations?: { productId: number | string, limit?: number, intent?: string }, report = new ReportCollector()) => buildGlobals({ store: shared, templateName: 'product', request: { recommendations }, locale: 'en', report }).globals
+    const show = '{{ recommendations.performed? }}|{{ recommendations.performed }}|{{ recommendations.intent }}|{{ recommendations.products_count }}|{% for p in recommendations.products %}{{ p.handle }},{% endfor %}'
+    expect(await render(show, page({ productId: 1 }))).toBe('true|true|related|3|desk,rug,lantern,')
+    expect(await render(show, page({ productId: '1', limit: 2, intent: 'related' }))).toBe('true|true|related|2|desk,rug,')
+    expect(await render(show, page({ productId: 1, limit: 25 }))).toBe('true|true|related|3|desk,rug,lantern,')
+    expect(await render(show, page({ productId: 1, intent: 'complementary' }))).toBe('true|true|complementary|0|')
+    expect(await render(show, page())).toBe('false|false||0|')
+    const report = new ReportCollector()
+    expect(await render(show, page({ productId: 99 }, report))).toBe('false|false||0|')
+    expect(report.toReport([], 0).missing).toEqual([{ kind: 'resource', name: 'product 99' }])
+  })
   it('numbers cart lines from 0, skipping lines the store cannot fill', async () => {
     const data = {
       shop: { name: 'Odd', domain: 'odd.example', currency: 'USD' },
