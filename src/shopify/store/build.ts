@@ -4,7 +4,7 @@ import { DEFAULT_MONEY_FORMAT, DEFAULT_MONEY_WITH_CURRENCY_FORMAT } from '../sta
 import type { ImageData } from '../types'
 import { escapeHtml } from '../util/html'
 import { buildFilters } from './filters'
-import type { ArticleData, BlogData, CollectionData, CountryOptionData, FilterData, LinkData, LinkListData, MediaData, PageData, ProductData, StoreData, VariantData } from './types'
+import type { ArticleData, BlogData, CollectionData, CountryOptionData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, PageData, ProductData, StoreData, VariantData } from './types'
 
 /**
  * Turns `StoreData` into the objects Liquid reads, computing what Shopify derives (URLs, price ranges, the first available variant, option values) so templates find every field they expect. Built objects are plain objects, readable under `ownPropertyOnly`; images become `ImageDrop`s and handle-keyed collections `HandleMap`s. Field lists follow https://shopify.dev/docs/api/liquid/objects, object by object as each builder cites.
@@ -27,6 +27,7 @@ export interface StoreObjects {
   localization: LiquidObject
   country_option_tags: string
   all_country_option_tags: string
+  gift_card: LiquidObject | null
 }
 
 const image = (data: ImageData | null | undefined) => data ? new ImageDrop(data) : null
@@ -385,6 +386,33 @@ function countryOptionTags (countries: CountryOptionData[]): string {
   return [option('---', []), ...countries.map(country => option(country.name, country.provinces ?? []))].join('\n')
 }
 
+/** https://shopify.dev/docs/api/liquid/objects/gift_card, with the properties that page lists: `last_four_characters` is the code's last four characters (spaces left out, as its example's code `WCGX 7X97 K9HJ DFR8` ends `DFR8`), `currency` defaults to the shop's, `enabled` to true, `expired` to false, `product` and `variant` are the store's own objects, and every other property the data leaves out is nil. */
+function buildGiftCard (data: GiftCardData, products: HandleMap<LiquidObject>, currency: string): LiquidObject {
+  const product = data.product_handle ? HandleMap.get(products, data.product_handle) ?? null : null
+  const variant = product && data.variant_id !== undefined ? (product.variants as LiquidObject[]).find(entry => entry.id === data.variant_id) ?? null : null
+  return {
+    balance: data.balance,
+    initial_value: data.initial_value,
+    code: data.code,
+    last_four_characters: data.code.replace(/\s+/g, '').slice(-4),
+    currency: data.currency ?? currency,
+    enabled: data.enabled ?? true,
+    expired: data.expired ?? false,
+    expires_on: data.expires_on ?? null,
+    customer: data.customer ?? null,
+    message: data.message ?? null,
+    send_on: data.send_on ?? null,
+    pass_url: data.pass_url ?? null,
+    product,
+    variant,
+    properties: data.properties ?? null,
+    qr_identifier: data.qr_identifier ?? null,
+    recipient: data.recipient ?? null,
+    template_suffix: data.template_suffix ?? null,
+    url: data.url ?? null
+  }
+}
+
 const built = new WeakMap<StoreData, StoreObjects>()
 
 /**
@@ -436,7 +464,8 @@ export function buildStore (data: StoreData): StoreObjects {
     customer: data.customer ?? null,
     localization,
     country_option_tags: countryOptionTags(shippingCountries),
-    all_country_option_tags: countryOptionTags(data.all_country_option_tags ?? shippingCountries)
+    all_country_option_tags: countryOptionTags(data.all_country_option_tags ?? shippingCountries),
+    gift_card: data.gift_card ? buildGiftCard(data.gift_card, products, data.shop.currency) : null
   }
   built.set(data, objects)
   return objects

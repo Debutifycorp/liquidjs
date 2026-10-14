@@ -160,6 +160,17 @@ describe('shopify/store', () => {
     expect(await render('{% for f in c.filters %}{{ f.label }}:{% for v in f.values %}{{ v.label }}={{ v.count }},{% endfor %}{{ f.range_max }};{% endfor %}', { c: filtered.collections.liquidMethodMissing('apparel') }))
       .toBe('Availability:In stock=1,Out of stock=1,;Price:2700;Product type:Shirts=1,;Brand:Sample Co=1,;Tags:cotton=1,new=1,;Color:Black=1,White=1,;')
   })
+  it('gives the gift_card template the gift card the store data issues, and none without one', async () => {
+    const fields = '{{ gift_card.balance | money }}|{{ gift_card.initial_value | money }}|{{ gift_card.code }}|{{ gift_card.last_four_characters }}|{{ gift_card.currency }}|{{ gift_card.enabled }}|{{ gift_card.expired }}|{{ gift_card.expires_on }}|{{ gift_card.qr_identifier }}|{{ gift_card.pass_url }}|{{ gift_card.product.title }}|{{ gift_card.variant.id }}|{{ gift_card.customer.first_name }}|{{ gift_card.properties.Note }}|{{ gift_card.template_suffix }}|{{ gift_card.message }}|{{ gift_card.recipient }}|{{ gift_card.send_on }}|{{ gift_card.url }}'
+    const none = buildGlobals({ store, templateName: 'gift_card', request: {}, locale: 'en', report: new ReportCollector() })
+    expect(await render('{% if gift_card == nil %}none{% endif %}', none.globals)).toBe('none')
+    const data = { ...sampleStoreData, gift_card: { balance: 2500, initial_value: 5000, code: 'WCGX 7X97 K9HJ DFR8', expires_on: '2027-01-01', qr_identifier: 'sample-qr-identifier', pass_url: 'https://example.com/passes/1', product_handle: 'canvas-bag', variant_id: 3004, customer: { first_name: 'Ana' }, properties: { Note: 'Happy birthday' }, url: 'https://example.com/gift_cards/1' } }
+    const issued = buildStore(data)
+    const page = buildGlobals({ store: issued, templateName: 'gift_card', request: {}, locale: 'en', report: new ReportCollector() })
+    expect(await render(fields, page.globals)).toBe('$25.00|$50.00|WCGX 7X97 K9HJ DFR8|DFR8|USD|true|false|2027-01-01|sample-qr-identifier|https://example.com/passes/1|Canvas Bag|3004|Ana|Happy birthday|||||https://example.com/gift_cards/1')
+    const product = buildGlobals({ store: issued, templateName: 'product', request: {}, locale: 'en', report: new ReportCollector() })
+    expect(await render('{% if gift_card == nil %}none{% endif %}', product.globals)).toBe('none')
+  })
   it('prints country_option_tags and all_country_option_tags as option tags: a --- option, then each country with its subregions in data-provinces', async () => {
     const canada = { name: 'Canada', provinces: [['Alberta', 'Alberta'], ['British Columbia', 'British Columbia']] as Array<[string, string]> }
     const data = { ...sampleStoreData, country_option_tags: [canada, { name: 'Afghanistan' }], all_country_option_tags: [{ name: 'Afghanistan' }, canada, { name: "Côte d'Ivoire" }] }

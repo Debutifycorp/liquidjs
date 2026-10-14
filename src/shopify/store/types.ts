@@ -177,6 +177,28 @@ export interface FilterData {
   presentation?: 'image' | 'swatch' | 'text'
 }
 
+/** The data behind Shopify's `gift_card` object, https://shopify.dev/docs/api/liquid/objects/gift_card: a gift card issued to a customer, shown by the `gift_card` template. `balance` and `initial_value` are in the currency's subunit; `product_handle` and `variant_id` name the gift card product and variant in the store. */
+export interface GiftCardData {
+  balance: number
+  initial_value: number
+  code: string
+  currency?: string
+  enabled?: boolean
+  expired?: boolean
+  expires_on?: string | null
+  customer?: Record<string, unknown> | null
+  message?: string | null
+  send_on?: string | null
+  pass_url?: string | null
+  product_handle?: string
+  variant_id?: number
+  properties?: Record<string, unknown> | null
+  qr_identifier?: string | null
+  recipient?: Record<string, unknown> | null
+  template_suffix?: string | null
+  url?: string | null
+}
+
 /**
  * The store a page renders against. Field names follow Shopify's Liquid objects (https://shopify.dev/docs/api/liquid/objects), so data moves into Liquid without renaming. Money amounts are integers in the currency's minor unit (cents), as in Liquid. Derived fields (URLs, price ranges, first available variant) are computed by `buildStore`.
  */
@@ -196,6 +218,8 @@ export interface StoreData {
   localization?: LocalizationData
   /** The storefront filters, in the order shoppers see them; none when omitted. */
   filters?: FilterData[]
+  /** The gift card the `gift_card` template shows; none when omitted. */
+  gift_card?: GiftCardData
   /** The countries in the store's shipping zones, in the order `country_option_tags` prints them; the store's country when omitted. */
   country_option_tags?: CountryOptionData[]
   /** Every country, in the order `all_country_option_tags` prints them; the `country_option_tags` countries when omitted. */
