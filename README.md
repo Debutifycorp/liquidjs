@@ -114,7 +114,7 @@ The package never fetches anything and names no host of its own: the only litera
 | `fontUrl(font, format)` | `font_url`, `font_face` | `/fonts/<handle>.<format>` |
 | `fontFace(font, options)` | `font_face` | Shopify's `@font-face` rule built from `fontUrl` |
 | `fontInfo(handle)` | `font_picker` settings, `font_modify` | parsed from the handle (`assistant_n4`) |
-| `placeholderSvg(name)` | `placeholder_svg_tag` | a plain grey square |
+| `placeholderSvg(name)` | `placeholder_svg_tag` | Debutify's own line drawing for each name the filter's page lists, with no background |
 | `paymentTypeSvg(type)` | `payment_type_svg_tag` | a plain card outline |
 | `currentTime()` | `'now' \| date`, `time_tag` | the system clock |
 
@@ -231,6 +231,7 @@ shopify.dev does not pin these outputs, or pins only part of the filter, tag or 
 - [`video_tag`](https://shopify.dev/docs/api/liquid/filters/video_tag): `m3u8` sources when not looping, where `loading` goes, the section index for lazy loading, and the product-title fallback for `aria-label` (and for [`external_video_tag`](https://shopify.dev/docs/api/liquid/filters/external_video_tag)'s `title`), which reads the `product` variable in scope.
 - `media_tag` on an image renders `image_tag` at the image's own width (1100 when it has none); the page has no image example.
 - `escape` after [`image_tag`](https://shopify.dev/docs/api/liquid/filters/image_tag) leaves the tag as it is, as Shopify's Origin demo store shows for Dawn's `image_tag | escape` thumbnails and liquid-spec records for HTML-safe strings; whether Shopify's other tag filters (`stylesheet_tag`, `link_to`, `video_tag` and the rest) are HTML-safe too is not pinned, so `escape` still escapes theirs, and `escape_once` escapes `image_tag`'s.
+- [`placeholder_svg_tag`](https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag) draws Debutify's own line art, not Shopify's, in the markup the page's example shows (`<svg>` with `xmlns`, the `0 0 525.5 525.5` viewBox and unfilled `<path>` elements, so the theme's CSS `fill` colours it and no background is drawn). Not pinned: the viewBox of the names other than the example's `collection-1`, the colour of the names the page lists as colour illustrations (drawn as line art here), and a name the page does not list, which draws `image` here.
 - [`payment_button`](https://shopify.dev/docs/api/liquid/filters/payment_button): the page prints a `<shopify-accelerated-checkout>` element carrying shop tokens; a disabled "Buy it now" button stands in for it here.
 - [`payment_terms`](https://shopify.dev/docs/api/liquid/filters/payment_terms) prints nothing, as Shopify does in liquid-spec's Dawn product page for a store without Shop Pay Installments; the banner a store with Shop Pay Installments shows is not on shopify.dev, and the store data has no Shop Pay Installments setting, so it is never printed here.
 

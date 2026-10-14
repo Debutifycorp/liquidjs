@@ -36,6 +36,20 @@ describe('shopify/filters/assets', () => {
     const { html } = await renderLiquid(liquid, "{{ 'product-1' | placeholder_svg_tag: 'ph' }}|{{ 'visa' | payment_type_svg_tag: class: 'icon' }}")
     expect(html).toBe('<svg class="ph" data-name="product-1"></svg>|<svg class="icon" data-type="visa"></svg>')
   })
+  // https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag
+  it('placeholder_svg_tag draws line art for every name the page lists, in the markup the page shows', async () => {
+    const names = ['product-1', 'product-2', 'product-3', 'product-4', 'product-5', 'product-6', 'collection-1', 'collection-2', 'collection-3', 'collection-4', 'collection-5', 'collection-6', 'lifestyle-1', 'lifestyle-2', 'image', 'product-apparel-1', 'product-apparel-2', 'product-apparel-3', 'product-apparel-4', 'collection-apparel-1', 'collection-apparel-2', 'collection-apparel-3', 'collection-apparel-4', 'hero-apparel-1', 'hero-apparel-2', 'hero-apparel-3', 'blog-apparel-1', 'blog-apparel-2', 'blog-apparel-3', 'detailed-apparel-1']
+    const drawings = new Set<string>()
+    for (const name of names) {
+      const svg = await render(`{{ '${name}' | placeholder_svg_tag }}`)
+      expect(svg).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 525\.5 525\.5">(<path d="[^"]+"\/>)+<\/svg>$/)
+      drawings.add(svg)
+    }
+    expect(drawings.size).toBe(names.length)
+    const image = await render("{{ 'image' | placeholder_svg_tag }}")
+    expect(await render("{{ 'collection-1' | placeholder_svg_tag: 'placeholder-svg' }}")).toBe((await render("{{ 'collection-1' | placeholder_svg_tag }}")).replace('<svg ', '<svg class="placeholder-svg" '))
+    expect(await render("{{ 'not-a-name' | placeholder_svg_tag }}")).toBe(image)
+  })
   it('shopify_asset_url uses its own service, not asset_url', async () => {
     expect(await render("{{ 'option_selection.js' | shopify_asset_url }}|{{ 'a.js' | asset_url }}", {}, {}, { shopifyAssetUrl: path => `//shopify.test/${path}` })).toBe(`//shopify.test/option_selection.js|${assetUrl('a.js')}`)
   })

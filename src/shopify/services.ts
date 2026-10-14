@@ -1,5 +1,6 @@
 import type { FontInfo, ImageData, ImageUrlParams } from './types'
 import { escapeHtml } from './util/html'
+import { placeholderArt } from './placeholder-art'
 
 /**
  * Everything the Shopify layer needs from outside the theme: URLs, artwork, the font library and the clock. The package never fetches anything and never hard-codes a host; the caller supplies these. shopify.dev describes what each filter does but not the URLs, artwork or font data Shopify serves, so those come from the caller.
@@ -17,7 +18,7 @@ export interface ShopifyServices {
   fontFace?: (font: FontInfo, options: { fontDisplay?: string }) => string
   /** The Shopify font library: a `font_picker` value (`assistant_n4`) to its font, or undefined, https://shopify.dev/docs/storefronts/themes/architecture/settings/fonts. Which fonts exist and how their handles are spelled is not pinned by shopify.dev. */
   fontInfo: (handle: string) => FontInfo | undefined
-  /** `placeholder_svg_tag`: the `<svg>` markup for a placeholder name (`product-1`), https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag (the page lists the names; the artwork is Shopify's, so the caller supplies it). */
+  /** `placeholder_svg_tag`: the `<svg>` markup for a placeholder name (`product-1`), https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag (the page lists the names; the artwork is Shopify's, so the default draws Debutify's own line art in the page's markup, `placeholderArt`, and a caller may supply other art). */
   placeholderSvg: (name: string) => string
   /** `payment_type_svg_tag`: the `<svg>` markup for a payment type (`visa`), https://shopify.dev/docs/api/liquid/filters/payment_type_svg_tag. */
   paymentTypeSvg: (type: string) => string
@@ -72,14 +73,14 @@ export function cdnStyleImageUrl (image: ImageData, params: ImageUrlParams): str
   return keys.length ? `${base}?${keys.map(key => `${key}=${query.get(key)}`).join('&')}` : base
 }
 
-/** Deterministic stand-ins (Debutify's, not Shopify's output): relative URLs, neutral SVG boxes, Shopify-shaped image URLs and the system clock. Callers replace them through the `services` option, one service at a time; the object itself is frozen, as every engine and render reads it. */
+/** Deterministic stand-ins (Debutify's, not Shopify's output): relative URLs, Debutify's own placeholder line art, neutral payment icon boxes, Shopify-shaped image URLs and the system clock. Callers replace them through the `services` option, one service at a time; the object itself is frozen, as every engine and render reads it. */
 export const defaultServices: Readonly<ShopifyServices> = Object.freeze<ShopifyServices>({
   assetUrl: path => `/assets/${path}`,
   shopifyAssetUrl: path => `/shopify-assets/${path}`,
   imageUrl: cdnStyleImageUrl,
   fontUrl: (font, format) => `/fonts/${font.handle}.${format}`,
   fontInfo: parseFontHandle,
-  placeholderSvg: name => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 525 525" role="img" aria-label="${escapeHtml(name)}"><rect width="525" height="525" fill="#f1f1f1"/></svg>`,
+  placeholderSvg: placeholderArt,
   paymentTypeSvg: type => `<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 38 24" width="38" height="24" aria-labelledby="pi-${escapeHtml(type)}"><title id="pi-${escapeHtml(type)}">${escapeHtml(type)}</title><rect x=".5" y=".5" width="37" height="23" rx="2.5" fill="#fff" stroke="#000" stroke-opacity=".07"/></svg>`,
   currentTime: () => new Date()
 })
