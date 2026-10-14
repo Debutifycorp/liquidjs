@@ -11,7 +11,7 @@ import { evalToken } from '../../render'
 import { isTagToken, stringify, toValue } from '../../util'
 import { attribute, escapeHtml } from '../util/html'
 import { plainValue } from '../util/args'
-import { shopifyState } from '../state'
+import { currentFrame, shopifyState } from '../state'
 
 type Resource = Record<string, unknown> | undefined
 
@@ -26,8 +26,8 @@ interface FormType {
   extra?: Array<[string, string]>
   /** Hidden inputs after `form_type` and `utf8`. */
   before?: (request: { path: string }) => Array<[string, string]>
-  /** Hidden inputs after the form's content. */
-  after?: (resource: Resource) => Array<[string, string]>
+  /** Hidden inputs after the form's content; `section` is the id of the section being rendered, if any. */
+  after?: (resource: Resource, section?: string) => Array<[string, string]>
 }
 
 const prop = (resource: Resource, key: string) => (resource ? stringify(toValue(resource[key])) : '')
@@ -50,7 +50,8 @@ const FORM_TYPES: Record<string, FormType> = {
   guest_login: { action: () => '/account/login', id: () => 'customer_login_guest', after: () => [['guest', 'true']] },
   localization: { action: () => '/localization', id: () => 'localization_form', className: 'shopify-localization-form', multipart: true, before: request => [['_method', 'put'], ['return_to', request.path]] },
   new_comment: { action: article => `${prop(article, 'url')}/comments#comment_form`, id: () => 'comment_form', className: 'comment-form' },
-  product: { action: () => '/cart/add', id: product => `product_form_${prop(product, 'id')}`, className: 'shopify-product-form', multipart: true, after: product => [['product-id', prop(product, 'id')]] },
+  // `section-id` is not on shopify.dev, whose example renders outside a section; Shopify's Dawn demo store prints it after `product-id` in a product form inside a section, and no Dawn file prints it
+  product: { action: () => '/cart/add', id: product => `product_form_${prop(product, 'id')}`, className: 'shopify-product-form', multipart: true, after: (product, section) => [['product-id', prop(product, 'id')], ...(section === undefined ? [] : [['section-id', section] as [string, string]])] },
   recover_customer_password: { action: () => '/account/recover' },
   reset_customer_password: { action: () => '/account/reset' },
   storefront_password: { action: () => '/password', id: () => 'login_form', className: 'storefront-password-form' }
@@ -145,7 +146,7 @@ export class FormTag extends Tag {
     ctx.push({ form: new FormDrop(formType, resource, spec.formId?.(resource) ?? id ?? '') })
     yield this.liquid.renderer.renderTemplates(this.templates, ctx, emitter)
     ctx.pop()
-    emitter.write((spec.after?.(resource) ?? []).map(([name, value]) => hidden(name, value)).join('') + '</form>')
+    emitter.write((spec.after?.(resource, currentFrame(state)?.section.id) ?? []).map(([name, value]) => hidden(name, value)).join('') + '</form>')
   }
 
   public * children (): Generator<unknown, Template[]> {

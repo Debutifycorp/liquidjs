@@ -195,6 +195,7 @@ shopify.dev does not pin these outputs, or pins only part of the filter, tag or 
 **Tags**
 
 - [`form`](https://shopify.dev/docs/api/liquid/tags/form): the position of extra attributes beyond the documented example; the `customer_address` form for an existing address; `form.id` for form types other than `customer_address`.
+- `form` of type `product` inside a section: after `product-id` it adds `<input type="hidden" name="section-id" value="<the section's id>" />`, which Shopify's Dawn demo store prints today and no Dawn file prints, but which shopify.dev does not document (its example renders outside a section) and liquid-spec's older Dawn recording lacks, together with `product-id`.
 - Blankness of Shopify's own `schema`, `javascript` and `stylesheet` tags, which print nothing where they stand: they count as blank here, so an `if` holding only one of them and whitespace prints nothing. Ruby Liquid does not have these tags, and shopify.dev does not say.
 - [`form` object](https://shopify.dev/docs/api/liquid/objects/form): its example key is `password_needed?` while its property list says `password_needed`; only `password_needed` exists here.
 - `form` of type `localization` or `currency`: an explicit `return_to` replaces the default instead of adding a second input.
