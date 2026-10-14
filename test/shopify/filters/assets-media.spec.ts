@@ -141,6 +141,16 @@ describe('shopify/filters/media', () => {
     expect(await render("{{ product | image_url: width: 200 | image_tag: class: 'custom-class', loading: 'lazy' }}")).toBe(`<img src="${BEAKERS}&amp;width=200" alt="Health potion" srcset="${BEAKERS}&amp;width=200 200w" width="200" height="133" loading="lazy" class="custom-class">`)
     expect(await render("{{ product | image_url: width: 200 | image_tag: sizes: '100vw' }}")).toBe(`<img src="${BEAKERS}&amp;width=200" alt="Health potion" srcset="${BEAKERS}&amp;width=200 200w" width="200" height="133" sizes="100vw">`)
   })
+  // Shopify does not escape image_tag's output. Dawn 15.1.0 snippets/product-media-gallery.liquid (lines 241–250) pipes `image_url | image_tag: …` into `| escape`, and Shopify's Origin demo store (Dawn-based, 15.1.0, https://theme-origin-demo.myshopify.com/products/2unfold-bag-copy, fetched 2026-10-14) prints that thumbnail as a plain `<img src="…&amp;width=416" alt="2Unfold Bag" srcset="…" …>`. liquid-spec (84bf25e) shopify_production_recordings records why: `escape` leaves an HTML-safe string as it is (`RecordedTest#ScratchpadTest#test_do_not_double_escape_replaced_last_html_safe_string_when_no_replacement_is_needed`), while `strip` makes one plain again (`RecordedTest#test_strip_on_html_safe_string_…`).
+  it('escape leaves image_tag output as it is, and a filter that rewrites it makes it plain text again', async () => {
+    const tag = await render("{{ product | image_url: width: 200 | image_tag: alt: 'Health potion' }}")
+    expect(tag.startsWith('<img src=')).toBe(true)
+    expect(await render("{{ product | image_url: width: 200 | image_tag: alt: 'Health potion' | escape }}")).toBe(tag)
+    expect(await render('{% assign thumb = product | image_url: width: 200 | image_tag %}{{ thumb | escape }}')).toBe(await render('{{ product | image_url: width: 200 | image_tag }}'))
+    expect(await render('{{ product | image_url: width: 200 | image_tag | strip | escape }}')).toMatch(/^&lt;img src=/)
+    const plain = await render('{{ product | image_url: width: 200 | image_tag }}')
+    expect(await render('{% assign thumb = product | image_url: width: 200 | image_tag %}{{ thumb.size }} {{ thumb | size }}')).toBe(`${plain.length} ${plain.length}`)
+  })
   it('image_tag writes the focal point as object-position', async () => {
     const header = { src: `${HOST}/files/potions-header.png?v=1650325393`, width: 1300, height: 750, focal_point: { x: 1.923076923, y: 9.791666667 } }
     expect(await render('{{ header | image_url: width: 300 | image_tag }}', { header })).toBe(`<img src="${HOST}/files/potions-header.png?v=1650325393&amp;width=300" alt="" srcset="${HOST}/files/potions-header.png?v=1650325393&amp;width=300 300w" width="300" height="173" style="object-position:1.9231% 9.7917%;">`)

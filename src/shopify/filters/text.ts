@@ -3,6 +3,7 @@ import { date as engineDate } from '../../filters/date'
 import { isNil, LiquidDate, strftime, stringify, toEnumerable, toValue } from '../../util'
 import { getDateTimeFormat } from '../../util/intl'
 import { attribute, escapeChar, escapeHtml } from '../util/html'
+import { SafeHtmlDrop } from '../objects/safe-html'
 import { namedForDisplay, plainValue, splitArgs } from '../util/args'
 import { hasOwn } from '../util/own'
 import { shopifyState } from '../state'
@@ -10,8 +11,9 @@ import type { ShopifyFilterSet } from './types'
 
 const ESCAPE_ONCE = /["><']|&(?!([a-zA-Z]+|(#\d+));)/g
 
-/** Ruby Liquid's `escape` (`CGI.escapeHTML`): `"` becomes `&quot;`, where the engine writes `&#34;`. https://shopify.dev/docs/api/liquid/filters/escape ("Escapes special characters in HTML, such as `<>`, `'`, and `&`"; its example prints `&lt;p&gt;Text to be escaped.&lt;/p&gt;`). The page does not name the entity written for `"` or `'`, so `&quot;` and `&#39;` follow Ruby and are not pinned by shopify.dev. */
+/** Ruby Liquid's `escape` (`CGI.escapeHTML`): `"` becomes `&quot;`, where the engine writes `&#34;`. https://shopify.dev/docs/api/liquid/filters/escape ("Escapes special characters in HTML, such as `<>`, `'`, and `&`"; its example prints `&lt;p&gt;Text to be escaped.&lt;/p&gt;`). The page does not name the entity written for `"` or `'`, so `&quot;` and `&#39;` follow Ruby and are not pinned by shopify.dev. Markup a filter wrote as HTML-safe (`SafeHtmlDrop`, from `image_tag`) is left as it is, as on Shopify. */
 function escape (this: FilterImpl, input: unknown) {
+  if (input instanceof SafeHtmlDrop) return input
   const text = stringify(input)
   this.context.memoryLimit.use(text.length)
   return escapeHtml(text)

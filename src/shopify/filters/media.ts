@@ -7,6 +7,7 @@ import { splitArgs } from '../util/args'
 import { hasOwn } from '../util/own'
 import { currentFrame, shopifyState, ShopifyState } from '../state'
 import { ImageDrop, ImageUrlDrop, imageSource } from '../objects/image'
+import { SafeHtmlDrop } from '../objects/safe-html'
 import type { ImageData, ImageUrlParams } from '../types'
 import type { ShopifyFilterSet } from './types'
 
@@ -110,7 +111,8 @@ function imageTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const loading = hasOwn(named, 'loading') ? named.loading : (named.preload !== true && lazyByDefault(state) ? 'lazy' : undefined)
   html += attribute('loading', loading)
   html += namedAttributes(state.report, 'image_tag', named, order, ['alt', 'width', 'height', 'sizes', 'widths', 'srcset', 'preload', 'loading'])
-  return html + '>'
+  // HTML-safe, so `| escape` after it changes nothing, as on Shopify (see `SafeHtmlDrop`)
+  return new SafeHtmlDrop(html + '>')
 }
 
 /** The named `img_url` sizes and their square dimensions in pixels, `original` and `master` included (1024 by 1024). https://shopify.dev/docs/api/liquid/filters/img_url */
