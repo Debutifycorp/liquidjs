@@ -181,7 +181,7 @@ Useful to check if an array, string, or object is empty.
 ```
 
 {% note info <code>empty</code> implementation %}
-For arrays and strings, LiquidJS checks their `.length` property. For objects, LiquidJS calls `Object.keys()` to check whether they have keys.
+For arrays and strings, LiquidJS checks their `.length` property. A drop or object that has its own `empty?` (a method or property of the drop, an own key of the object) is empty when its `empty?` is truthy, as Ruby Liquid calls `empty?` on a value that has one; `blank` checks it too. For other objects, LiquidJS calls `Object.keys()` to check whether they have keys.
 {% endnote %}
 
 ### nil

@@ -247,6 +247,7 @@ shopify.dev does not pin these outputs, or pins only part of the filter, tag or 
 **Store data and settings**
 
 - [`product.compare_at_price`](https://shopify.dev/docs/api/liquid/objects/product) is nil when no variant has a compare-at price, so dividing by it raises `divided by 0`.
+- `== empty` and `== blank` on a value with its own `empty?` (the [cart](https://shopify.dev/docs/api/liquid/objects/cart)'s `empty?`, or a Drop's `empty?` method) follow that `empty?`, as Ruby Liquid's condition calls `empty?` on a value that has one; liquid-spec's recordings of Shopify show `cart == empty` this way, but `== blank` on such a value is pinned by neither them nor shopify.dev, whose [Liquid basics](https://shopify.dev/docs/api/liquid/basics) page uses `blank` for strings and `empty` for objects.
 - The stored formats of resource settings (`shopify://…`), and a `url` setting that points at a missing resource.
 - `link.active` with a query string, the `link.type` URL patterns and `customer_account_page_link` for `/account…` paths; `canonical_url` on paginated pages (the origin and path, with no query string or page number).
 - `position` on product [images](https://shopify.dev/docs/api/liquid/objects/image) and [media](https://shopify.dev/docs/api/liquid/objects/media) is 1-based here; the pages' examples show 1 and do not state the base.

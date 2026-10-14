@@ -703,6 +703,12 @@ describe('shopify/settings fidelity', () => {
     const cart = buildStore(data).cart
     expect(await render('{% for item in cart.items %}{{ forloop.index0 }}:{{ item.index }}:{{ item.index | plus: 1 }}:{{ item.key }} {% endfor %}', { cart })).toBe('0:0:1:11:1 1:1:2:22:2 ')
   })
+  it('compares a cart with empty and blank through its empty?', async () => {
+    const empty = buildStore({ ...sampleStoreData, cart: { items: [] } }).cart
+    const show = '{% if cart == empty %}empty{% else %}items{% endif %}|{% if cart == blank %}blank{% endif %}'
+    expect(await render(show, { cart: empty })).toBe('empty|blank')
+    expect(await render(show, { cart: store.cart })).toBe('items|')
+  })
 })
 
 describe('shopify/filters/json', () => {

@@ -1,4 +1,10 @@
 import { Liquid } from '../../../src/liquid'
+import { Drop } from '../../../src/drop'
+
+class Box extends Drop {
+  constructor (private readonly count: number) { super() }
+  'empty?' () { return this.count === 0 }
+}
 
 describe('drop/blank-drop', function () {
   let liquid: Liquid
@@ -37,6 +43,12 @@ describe('drop/blank-drop', function () {
     const src = '{%if obj == blank %}{foo: 1} == blank{%else%}{foo: 1} != blank{% endif %}'
     const html = await liquid.parseAndRender(src, { obj: { foo: 1 } })
     expect(html).toBe('{foo: 1} != blank')
+  })
+  it('a drop is blank when its own empty? says it is empty', async function () {
+    const src = '{% if box == blank %}blank{% else %}not{% endif %}|{% if blank != box %}not{% endif %}'
+    expect(await liquid.parseAndRender(src, { box: new Box(0) })).toBe('blank|')
+    expect(await liquid.parseAndRender(src, { box: new Box(1) })).toBe('not|not')
+    expect(await liquid.parseAndRender('{% if obj == blank %}blank{% else %}not{% endif %}', { obj: { items: [], 'empty?': true } })).toBe('blank')
   })
   it('[] is blank', async function () {
     const src = '{%if arr == blank %}[] == blank{%else%}[] != blank{% endif %}'

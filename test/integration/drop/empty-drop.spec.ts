@@ -1,4 +1,14 @@
 import { Liquid } from '../../../src/liquid'
+import { Drop } from '../../../src/drop'
+
+class Box extends Drop {
+  constructor (private readonly count: number) { super() }
+  'empty?' () { return this.count === 0 }
+}
+
+class Full extends Drop {
+  'empty?' () { return false }
+}
 
 describe('drop/empty-drop', function () {
   let liquid: Liquid
@@ -37,6 +47,18 @@ describe('drop/empty-drop', function () {
     const src = '{%if obj == empty %}{foo: 1} == empty{%else%}{foo: 1} != empty{% endif %}'
     const html = await liquid.parseAndRender(src, { obj: { foo: 1 } })
     expect(html).toBe('{foo: 1} != empty')
+  })
+  it('a drop is empty when its own empty? says so', async function () {
+    const src = '{% if box == empty %}empty{% else %}not{% endif %}|{% if empty == box %}empty{% else %}not{% endif %}|{% if box != empty %}not{% endif %}'
+    expect(await liquid.parseAndRender(src, { box: new Box(0) })).toBe('empty|empty|')
+    expect(await liquid.parseAndRender(src, { box: new Box(2) })).toBe('not|not|not')
+    expect(liquid.parseAndRenderSync(src, { box: new Box(0) })).toBe('empty|empty|')
+    expect(await liquid.parseAndRender(src, { box: new Full() })).toBe('not|not|not')
+  })
+  it('an object is empty when its own empty? key says so', async function () {
+    const src = '{% if obj == empty %}empty{% else %}not{% endif %}'
+    expect(await liquid.parseAndRender(src, { obj: { items: [], 'empty?': true } })).toBe('empty')
+    expect(await liquid.parseAndRender(src, { obj: { items: [], 'empty?': false } })).toBe('not')
   })
   it('[] is empty', async function () {
     const src = '{%if arr == empty %}[] == empty{%else%}[] != empty{% endif %}'
