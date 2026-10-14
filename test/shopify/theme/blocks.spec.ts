@@ -81,7 +81,7 @@ describe('shopify/theme/blocks', () => {
       })
       expect(html).toBe(SECTION(WRAP('full', '2:a=one,b=two,') + WRAP('empty', '0:(template--x__main|empty)')))
     })
-    // https://shopify.dev/docs/api/liquid/tags/render renders "a snippet or app block", and https://shopify.dev/docs/storefronts/themes/architecture/blocks/app-blocks shows `{% render block %}` in a section's block loop. Shopify renders a theme block the same way: Ella 7.1.0 (Halothemes) blocks/_media-gallery.liquid loops `{% for child_block in block.blocks %}` and does `{% render child_block %}` in an `<li id="Slide-{{ child_block.id }}-{{ forloop.index }}" …>`, and Ella's demo store (https://new-ella-demo-07.myshopify.com/, Ella 7.3.1, fetched 2026-10-14) prints each child inside it as `<div id="shopify-block-<child id>" class="shopify-block">` and the child's content, and a child whose schema has `"tag": null` (its `group` block) bare, as `content_for` renders them.
+    // https://shopify.dev/docs/api/liquid/tags/render renders "a snippet or app block", and https://shopify.dev/docs/storefronts/themes/architecture/blocks/app-blocks shows `{% render block %}` in a section's block loop. A theme block given to it renders the way `content_for` renders it: in its `<div id="shopify-block-<id>" class="shopify-block">` wrapper, or bare when its schema has `"tag": null`, with its own blocks. shopify.dev documents only the app-block case, so this is Debutify's reading.
     it('renders a theme block given to render as content_for does, wrapper and children included', async () => {
       const { html, report } = await page({
         'sections/sec.liquid': "{% content_for 'blocks' %}{% for b in section.blocks %}({% render b %}){% endfor %}",
