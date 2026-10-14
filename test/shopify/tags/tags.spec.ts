@@ -47,9 +47,10 @@ describe('raw-body Shopify tags', () => {
     expect(defaults.assets.stylesheets.size).toBe(0)
     expect(defaults.layout).toBeUndefined()
   })
+  // a doc is blank only when empty: Ruby Liquid's `Doc#blank?` is `@body.empty?` (Shopify/liquid lib/liquid/tags/doc.rb)
   it('is blank when it prints nothing, so an error in a block holding only these is not written', () => {
-    const tags = liquid.parse('{% schema %}{}{% endschema %}{% javascript %}a{% endjavascript %}{% stylesheet %}.a{}{% endstylesheet %}{% doc %}x{% enddoc %}')
-    expect(tags.map(tag => (tag as SchemaTag).blank())).toEqual([true, true, true, true])
+    const tags = liquid.parse('{% schema %}{}{% endschema %}{% javascript %}a{% endjavascript %}{% stylesheet %}.a{}{% endstylesheet %}{% doc %}x{% enddoc %}{% doc %}{% enddoc %}')
+    expect(tags.map(tag => (tag as SchemaTag).blank())).toEqual([true, true, true, false, true])
   })
 })
 

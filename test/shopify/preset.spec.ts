@@ -62,3 +62,40 @@ describe('createShopifyLiquid', () => {
   })
   it('hides own-property-less values', async () => expect((await render('{{ obj.constructor }}', { obj: {} })).html).toBe(''))
 })
+
+// Ruby Liquid drops the text of an `if`, `unless`, `case` or `for` whose every branch is blank, holding only whitespace and tags that print nothing: `parse` in Shopify/liquid lib/liquid/tags/if.rb, for.rb and case.rb calls `remove_blank_strings`. The cases are Shopify/liquid test/integration/blank_test.rb, recorded in liquid-spec (84bf25e) specs/liquid_ruby/specs.yml as `BlankTest#…`.
+describe('blank block bodies', () => {
+  const N = 10
+  const wrapInFor = (body: string) => `{% for i in (1..${N}) %}${body}{% endfor %}`
+  const wrapInIf = (body: string) => `{% if true %}${body}{% endif %}`
+  const wrap = (body: string) => wrapInFor(body) + wrapInIf(body)
+  const html = async (source: string, files: Record<string, string> = {}) => (await renderLiquid(createShopifyLiquid({ files }), source)).html
+
+  it('loops are blank', async () => expect(await html(wrapInFor(' '))).toBe(''))
+  it('if else are blank', async () => expect(await html('{% if true %} {% elsif false %} {% else %} {% endif %}')).toBe(''))
+  it('unless is blank', async () => expect(await html(wrap('{% unless true %} {% endunless %}'))).toBe(''))
+  it('marks as blank only during parsing', async () => expect(await html(wrap(' {% if false %} this never happens, but still, this block is not blank {% endif %}'))).toBe(' '.repeat(N + 1)))
+  it('comments are blank', async () => expect(await html(wrap(' {% comment %} whatever {% endcomment %} '))).toBe(''))
+  it('captures are blank', async () => expect(await html(wrap(' {% capture foo %} whatever {% endcapture %} '))).toBe(''))
+  it('nested blocks are blank but only if all children are', async () => {
+    expect(await html(wrap(wrap(' ')))).toBe('')
+    expect(await html(wrap('{% if true %} {% comment %} this is blank {% endcomment %} {% endif %}\n      {% if true %} but this is not {% endif %}'))).toBe('\n       but this is not '.repeat(N + 1))
+  })
+  it('assigns are blank', async () => expect(await html(wrap(' {% assign foo = "bar" %} '))).toBe(''))
+  it('whitespace is blank', async () => {
+    expect(await html(wrap(' '))).toBe('')
+    expect(await html(wrap('\t'))).toBe('')
+  })
+  it('whitespace is not blank if other stuff is present', async () => expect(await html(wrap('     x '))).toBe('     x '.repeat(N + 1)))
+  it('increment is not blank', async () => expect(await html(wrap('{% assign foo = 0 %} {% increment foo %} {% decrement foo %}'))).toBe(' 0'.repeat(2 * (N + 1))))
+  it('cycle is not blank', async () => expect(await html(wrap("{% cycle ' ', ' ' %}"))).toBe('  '.repeat((N + 1) >> 1) + ' '))
+  it('raw is not blank', async () => expect(await html(wrap(' {% raw %} {% endraw %}'))).toBe('  '.repeat(N + 1)))
+  it('include is not blank', async () => expect(await html(wrap("{% include 'foobar' %}"), { 'snippets/foobar.liquid': 'foobar' })).toBe('foobar'.repeat(N + 1)))
+  it('case is blank', async () => {
+    expect(await html(wrap(" {% assign foo = 'bar' %} {% case foo %} {% when 'bar' %} {% when 'whatever' %} {% else %} {% endcase %} "))).toBe('')
+    expect(await html(wrap(" {% assign foo = 'else' %} {% case foo %} {% when 'bar' %} {% when 'whatever' %} {% else %} {% endcase %} "))).toBe('')
+    expect(await html(wrap(" {% assign foo = 'else' %} {% case foo %} {% when 'bar' %} {% when 'whatever' %} {% else %} x {% endcase %} "))).toBe('   x  '.repeat(N + 1))
+  })
+  // Ruby's `Doc#blank?` (lib/liquid/tags/doc.rb) is `@body.empty?`, so a doc with text in it keeps the whitespace around it
+  it('a doc tag with text is not blank', async () => expect(await html(wrap(' {% doc %}x{% enddoc %} '))).toBe('  '.repeat(N + 1)))
+})

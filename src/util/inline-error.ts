@@ -48,9 +48,10 @@ function isUndefinedLookup (err: LiquidError): boolean {
   return cause?.name === 'InternalUndefinedVariableError' || (cause?.name === 'AssertionError' && cause.message.startsWith('undefined filter: '))
 }
 
-function isBlank (tpl: Template): boolean {
+/** Ruby Liquid's `blank?`: text of only whitespace (Ruby's `\s`, ASCII only, so a no-break space is not blank), a tag that prints nothing, or a block whose every child is blank. */
+export function isBlank (tpl: Template): boolean {
   const { token } = tpl
-  if (token.kind === TokenKind.HTML) return /^\s*$/.test((token as HTMLToken).getContent())
+  if (token.kind === TokenKind.HTML) return /^[ \t\n\v\f\r]*$/.test((token as HTMLToken).getContent())
   if (token.kind !== TokenKind.Tag) return false
   // a tag can say for itself, with `blank` or `blank()`, before the name list is asked
   const { blank } = tpl as { blank?: unknown }

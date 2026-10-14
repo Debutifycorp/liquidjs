@@ -2,7 +2,7 @@ import { RawBodyTag } from '../../tags/raw-body'
 import type { Context } from '../../context'
 import { shopifyState, ShopifyState } from '../state'
 
-/** A raw-body tag that prints nothing where it stands, so its `blank()` is `true` (Ruby Liquid's `Raw#blank?` is `@body.empty?`, which the engine's `RawBodyTag` follows; these four tags never print the body, so a block that holds only one is blank too). Shopify does not document blankness. */
+/** A raw-body tag that prints nothing where it stands, so its `blank()` is `true`: a block that holds only one is blank too. Ruby Liquid's `Raw#blank?` is `@body.empty?`, which the engine's `RawBodyTag` follows; `schema`, `javascript` and `stylesheet` are Shopify's own, and Shopify does not document their blankness. `DocTag` follows Ruby's `Doc#blank?` instead. */
 abstract class SilentRawTag extends RawBodyTag {
   public get source (): string {
     return this.body
@@ -28,8 +28,12 @@ export class SchemaTag extends SilentRawTag {
   }
 }
 
-/** `{% doc %}`: LiquidDoc annotations, never output. https://shopify.dev/docs/api/liquid/tags/doc */
-export class DocTag extends SilentRawTag {}
+/** `{% doc %}`: LiquidDoc annotations, never output. https://shopify.dev/docs/api/liquid/tags/doc. Blank only when empty, as Ruby Liquid's `Doc#blank?` (`@body.empty?`, lib/liquid/tags/doc.rb), so whitespace around a doc with text stays in a block. */
+export class DocTag extends SilentRawTag {
+  public blank (): boolean {
+    return this.body === ''
+  }
+}
 
 /** A tag that renders nothing where it stands and records its body, once per file, in `state.assets`. `JavascriptTag` and `StylesheetTag` differ only in which map. */
 abstract class AssetTag extends SilentRawTag {

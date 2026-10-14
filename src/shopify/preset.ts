@@ -68,7 +68,7 @@ class ShopifyLiquid extends Liquid {
 }
 
 /**
- * A `Liquid` engine configured as Shopify renders themes: Ruby number semantics, raw `schema`/`javascript`/`stylesheet`/`doc` bodies, nesting comments, inline errors, theme files from memory, safe limits, and every Shopify tag and filter registered.
+ * A `Liquid` engine configured as Shopify renders themes: Ruby number semantics, text dropped from blank `if`, `unless`, `case` and `for` bodies, raw `schema`/`javascript`/`stylesheet`/`doc` bodies, nesting comments, inline errors, theme files from memory, safe limits, and every Shopify tag and filter registered.
  *
  * Ruby number semantics: https://shopify.dev/docs/api/liquid/filters/divided_by ("the result will be the same type as the divisor"). Inline errors: the `Liquid error (line N): …` text is not documented on shopify.dev; it follows liquid-spec `specs/basics/error-handling.yml` and `specs/shopify_production_recordings/recorded_specs.yml`. Limits and safe defaults: Debutify's, see `SHOPIFY_DEFAULT_LIMITS`.
  */

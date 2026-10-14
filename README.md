@@ -47,6 +47,8 @@ The `./shopify` entry of the package's `exports` map has `types`, `module` and `
 
 What each tag, filter and object prints follows its page in shopify.dev's [Liquid reference](https://shopify.dev/docs/api/liquid); where shopify.dev does not pin an output, the package follows the closest documented behaviour or Shopify Liquid's own tests, and the case is listed under [Behaviours still to confirm on Shopify](#behaviours-still-to-confirm-on-shopify).
 
+The preset parses templates as Shopify's storefront does. An `if`, `unless`, `case` or `for` whose every branch is blank, holding only whitespace and tags that print nothing (`assign`, `capture`, `comment`, an empty `raw` or `doc`, and blocks as blank as these), prints nothing at all, as Ruby Liquid drops the text of such a block (`remove_blank_strings` in Shopify/liquid's `if.rb`, `for.rb` and `case.rb`); a `tablerow` keeps its text, as in Ruby.
+
 ### Render a page
 
 Run this as an ES module (a `.mjs` file, or `"type": "module"` in `package.json`).
@@ -191,6 +193,7 @@ shopify.dev does not pin these outputs, or pins only part of the filter, tag or 
 **Tags**
 
 - [`form`](https://shopify.dev/docs/api/liquid/tags/form): the position of extra attributes beyond the documented example; the `customer_address` form for an existing address; `form.id` for form types other than `customer_address`.
+- Blankness of Shopify's own `schema`, `javascript` and `stylesheet` tags, which print nothing where they stand: they count as blank here, so an `if` holding only one of them and whitespace prints nothing. Ruby Liquid does not have these tags, and shopify.dev does not say.
 - [`form` object](https://shopify.dev/docs/api/liquid/objects/form): its example key is `password_needed?` while its property list says `password_needed`; only `password_needed` exists here.
 - `form` of type `localization` or `currency`: an explicit `return_to` replaces the default instead of adding a second input.
 - [`paginate`](https://shopify.dev/docs/api/liquid/tags/paginate) and [`default_pagination`](https://shopify.dev/docs/api/liquid/filters/default_pagination): the default `window_size` (3) and the markup for windows wider than the documented example.
