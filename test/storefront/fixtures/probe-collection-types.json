@@ -1,0 +1,433 @@
+{
+  "scenario": "probe-collection-types",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/collections/types?q=Hoodies&view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "handle": "types",
+        "title": "Hoodies",
+        "url": "/collections/types?q=Hoodies",
+        "template_suffix": null,
+        "template": {
+          "name": "collection",
+          "suffix": "probe"
+        },
+        "products": [
+          {
+            "handle": "hoodie-old",
+            "price": 9000,
+            "url": "/products/hoodie-old"
+          },
+          {
+            "handle": "hoodie",
+            "price": 9000,
+            "url": "/products/hoodie"
+          },
+          {
+            "handle": "soft-cotton-hoodie-in-clay",
+            "price": 9000,
+            "url": "/products/soft-cotton-hoodie-in-clay"
+          },
+          {
+            "handle": "soft-cotton-hoodie-in-green",
+            "price": 9000,
+            "url": "/products/soft-cotton-hoodie-in-green"
+          }
+        ],
+        "products_count": 7,
+        "all_products_count": 7,
+        "sort_by": "",
+        "default_sort_by": "title-ascending",
+        "sort_options": [
+          {
+            "name": "Featured",
+            "value": "manual"
+          },
+          {
+            "name": "Most relevant",
+            "value": "most-relevant"
+          },
+          {
+            "name": "Best selling",
+            "value": "best-selling"
+          },
+          {
+            "name": "Alphabetically, A-Z",
+            "value": "title-ascending"
+          },
+          {
+            "name": "Alphabetically, Z-A",
+            "value": "title-descending"
+          },
+          {
+            "name": "Price, low to high",
+            "value": "price-ascending"
+          },
+          {
+            "name": "Price, high to low",
+            "value": "price-descending"
+          },
+          {
+            "name": "Date, old to new",
+            "value": "created-ascending"
+          },
+          {
+            "name": "Date, new to old",
+            "value": "created-descending"
+          }
+        ],
+        "current_tags": null,
+        "tags": [
+          "men",
+          "tops",
+          "unisex"
+        ],
+        "all_tags": [
+          "men",
+          "tops",
+          "unisex"
+        ],
+        "all_types": [
+          "Hoodies"
+        ],
+        "all_vendors": [
+          "Mock.shop"
+        ],
+        "paginate": {
+          "current_page": 1,
+          "pages": 2,
+          "items": 7,
+          "page_size": 4,
+          "next": "/collections/types?page=2&q=Hoodies&view=probe",
+          "previous": null
+        },
+        "filters": [
+          {
+            "label": "Availability",
+            "type": "list",
+            "param_name": "filter.v.availability",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/types?q=Hoodies&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "In stock",
+                "value": "1",
+                "count": 6,
+                "active": false,
+                "param_name": "filter.v.availability",
+                "url_to_add": "/collections/types?filter.v.availability=1&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              },
+              {
+                "label": "Out of stock",
+                "value": "0",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.v.availability",
+                "url_to_add": "/collections/types?filter.v.availability=0&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Price",
+            "type": "price_range",
+            "param_name": "filter.v.price",
+            "operator": null,
+            "presentation": null,
+            "url_to_remove": "/collections/types?q=Hoodies&view=probe",
+            "range_max": 9000,
+            "min_value": {
+              "param_name": "filter.v.price.gte",
+              "value": null
+            },
+            "max_value": {
+              "param_name": "filter.v.price.lte",
+              "value": null
+            },
+            "active_values": [],
+            "values": []
+          },
+          {
+            "label": "Brand",
+            "type": "list",
+            "param_name": "filter.p.vendor",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/types?q=Hoodies&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Mock.shop",
+                "value": "Mock.shop",
+                "count": 7,
+                "active": false,
+                "param_name": "filter.p.vendor",
+                "url_to_add": "/collections/types?filter.p.vendor=Mock.shop&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Product type",
+            "type": "list",
+            "param_name": "filter.p.product_type",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/types?q=Hoodies&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Hoodies",
+                "value": "Hoodies",
+                "count": 7,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/types?filter.p.product_type=Hoodies&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "More filters",
+            "type": "list",
+            "param_name": "filter.p.tag",
+            "operator": "AND",
+            "presentation": "text",
+            "url_to_remove": "/collections/types?q=Hoodies&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "men",
+                "value": "men",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/types?filter.p.tag=men&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              },
+              {
+                "label": "tops",
+                "value": "tops",
+                "count": 6,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/types?filter.p.tag=tops&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              },
+              {
+                "label": "unisex",
+                "value": "unisex",
+                "count": 6,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/types?filter.p.tag=unisex&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Color",
+            "type": "list",
+            "param_name": "filter.v.option.color",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/types?q=Hoodies&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Clay",
+                "value": "Clay",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/types?filter.v.option.color=Clay&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              },
+              {
+                "label": "Green",
+                "value": "Green",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/types?filter.v.option.color=Green&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              },
+              {
+                "label": "Ocean",
+                "value": "Ocean",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/types?filter.v.option.color=Ocean&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              },
+              {
+                "label": "Olive",
+                "value": "Olive",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/types?filter.v.option.color=Olive&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              },
+              {
+                "label": "Purple",
+                "value": "Purple",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/types?filter.v.option.color=Purple&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              },
+              {
+                "label": "Red",
+                "value": "Red",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/types?filter.v.option.color=Red&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Size",
+            "type": "list",
+            "param_name": "filter.v.option.size",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/types?q=Hoodies&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Small",
+                "value": "Small",
+                "count": 7,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/types?filter.v.option.size=Small&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              },
+              {
+                "label": "Medium",
+                "value": "Medium",
+                "count": 7,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/types?filter.v.option.size=Medium&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              },
+              {
+                "label": "Large",
+                "value": "Large",
+                "count": 7,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/types?filter.v.option.size=Large&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              },
+              {
+                "label": "X-Large",
+                "value": "X-Large",
+                "count": 7,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/types?filter.v.option.size=X-Large&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Material",
+            "type": "list",
+            "param_name": "filter.p.m.custom.material",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/types?q=Hoodies&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Cotton",
+                "value": "Cotton",
+                "count": 7,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/types?filter.p.m.custom.material=Cotton&q=Hoodies&view=probe",
+                "url_to_remove": "/collections/types?q=Hoodies&view=probe"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

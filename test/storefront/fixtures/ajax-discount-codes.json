@@ -1,0 +1,4336 @@
+{
+  "scenario": "ajax-discount-codes",
+  "steps": [
+    {
+      "method": "POST",
+      "url": "/cart/add.js",
+      "json": {
+        "items": [
+          {
+            "id": 43696932126742,
+            "quantity": 2
+          },
+          {
+            "id": 43696963485718,
+            "quantity": 1
+          },
+          {
+            "id": 43696940613654,
+            "quantity": 1
+          },
+          {
+            "id": 43696949592086,
+            "quantity": 1
+          }
+        ]
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "items": [
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 2,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men's T-shirt - Small / Green",
+            "product_title": "Men's T-shirt",
+            "variant_title": "Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "discounted_price": 4000,
+            "line_price": 8000,
+            "original_line_price": 8000,
+            "presentment_price": 40,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 8000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "alt": "Men's T-shirt",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "untranslated_product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "untranslated_variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696963485718,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696963485718,
+            "key": "43696963485718:<hash>",
+            "title": "High Top Sneakers - 9",
+            "product_title": "High Top Sneakers",
+            "variant_title": "9",
+            "price": 18000,
+            "original_price": 18000,
+            "discounted_price": 18000,
+            "line_price": 18000,
+            "original_line_price": 18000,
+            "presentment_price": 180,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 900,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595487254,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 18000,
+            "final_line_price": 18000,
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "featured_image": {
+              "alt": "High Top Sneakers",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+            "handle": "high-top-sneakers",
+            "requires_shipping": true,
+            "product_type": "Shoes",
+            "untranslated_product_title": "High Top Sneakers",
+            "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+            "untranslated_variant_title": "9",
+            "variant_options": [
+              "9"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "9"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696940613654,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696940613654,
+            "key": "43696940613654:<hash>",
+            "title": "Black Sunnies",
+            "product_title": "Black Sunnies",
+            "variant_title": null,
+            "price": 5000,
+            "original_price": 5000,
+            "discounted_price": 5000,
+            "line_price": 5000,
+            "original_line_price": 5000,
+            "presentment_price": 50,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 50,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595290646,
+            "product_has_only_default_variant": true,
+            "gift_card": false,
+            "final_price": 5000,
+            "final_line_price": 5000,
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "featured_image": {
+              "alt": "Black Sunnies",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+            "handle": "black-sunnies",
+            "requires_shipping": true,
+            "product_type": "Sunglasses",
+            "untranslated_product_title": "Black Sunnies",
+            "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+            "untranslated_variant_title": null,
+            "variant_options": [
+              "Default Title"
+            ],
+            "options_with_values": [
+              {
+                "name": "Title",
+                "value": "Default Title"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696949592086,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696949592086,
+            "key": "43696949592086:<hash>",
+            "title": "Beanie - Green",
+            "product_title": "Beanie",
+            "variant_title": "Green",
+            "price": 10000,
+            "original_price": 10000,
+            "discounted_price": 8000,
+            "line_price": 8000,
+            "original_line_price": 10000,
+            "presentment_price": 100,
+            "total_discount": 2000,
+            "discounts": [
+              {
+                "amount": 2000,
+                "title": "Beanie week"
+              }
+            ],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983602040854,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 8000,
+            "final_line_price": 8000,
+            "url": "/products/beanie?variant=43696949592086",
+            "featured_image": {
+              "alt": "Beanie",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+            "handle": "beanie",
+            "requires_shipping": true,
+            "product_type": "Hats",
+            "untranslated_product_title": "Beanie",
+            "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+            "untranslated_variant_title": "Green",
+            "variant_options": [
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [
+              {
+                "amount": 2000,
+                "discount_application": {
+                  "allocation_method": "each",
+                  "created_at": "2026-10-15T18:27:43.344Z",
+                  "description": null,
+                  "key": "f33ac4e8-f4c6-44ff-93a5-4c0b256aaf3b",
+                  "target_selection": "entitled",
+                  "target_type": "line_item",
+                  "title": "Beanie week",
+                  "total_allocated_amount": 2000,
+                  "type": "automatic",
+                  "value": "20.0",
+                  "value_type": "percentage"
+                }
+              }
+            ],
+            "line_level_total_discount": 2000
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/update.js",
+      "json": {
+        "discount": "WELCOME10"
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 41000,
+        "total_price": 36900,
+        "total_discount": 4100,
+        "total_weight": 1850,
+        "item_count": 5,
+        "items": [
+          {
+            "id": 43696949592086,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696949592086,
+            "key": "43696949592086:<hash>",
+            "title": "Beanie - Green",
+            "product_title": "Beanie",
+            "variant_title": "Green",
+            "price": 10000,
+            "original_price": 10000,
+            "discounted_price": 9000,
+            "line_price": 9000,
+            "original_line_price": 10000,
+            "presentment_price": 100,
+            "total_discount": 1000,
+            "discounts": [
+              {
+                "amount": 1000,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983602040854,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 10000,
+            "final_line_price": 10000,
+            "url": "/products/beanie?variant=43696949592086",
+            "featured_image": {
+              "alt": "Beanie",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+            "handle": "beanie",
+            "requires_shipping": true,
+            "product_type": "Hats",
+            "untranslated_product_title": "Beanie",
+            "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+            "untranslated_variant_title": "Green",
+            "variant_options": [
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696940613654,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696940613654,
+            "key": "43696940613654:<hash>",
+            "title": "Black Sunnies",
+            "product_title": "Black Sunnies",
+            "variant_title": null,
+            "price": 5000,
+            "original_price": 5000,
+            "discounted_price": 4500,
+            "line_price": 4500,
+            "original_line_price": 5000,
+            "presentment_price": 50,
+            "total_discount": 500,
+            "discounts": [
+              {
+                "amount": 500,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": "",
+            "grams": 50,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595290646,
+            "product_has_only_default_variant": true,
+            "gift_card": false,
+            "final_price": 5000,
+            "final_line_price": 5000,
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "featured_image": {
+              "alt": "Black Sunnies",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+            "handle": "black-sunnies",
+            "requires_shipping": true,
+            "product_type": "Sunglasses",
+            "untranslated_product_title": "Black Sunnies",
+            "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+            "untranslated_variant_title": null,
+            "variant_options": [
+              "Default Title"
+            ],
+            "options_with_values": [
+              {
+                "name": "Title",
+                "value": "Default Title"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696963485718,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696963485718,
+            "key": "43696963485718:<hash>",
+            "title": "High Top Sneakers - 9",
+            "product_title": "High Top Sneakers",
+            "variant_title": "9",
+            "price": 18000,
+            "original_price": 18000,
+            "discounted_price": 16200,
+            "line_price": 16200,
+            "original_line_price": 18000,
+            "presentment_price": 180,
+            "total_discount": 1800,
+            "discounts": [
+              {
+                "amount": 1800,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": "",
+            "grams": 900,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595487254,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 18000,
+            "final_line_price": 18000,
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "featured_image": {
+              "alt": "High Top Sneakers",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+            "handle": "high-top-sneakers",
+            "requires_shipping": true,
+            "product_type": "Shoes",
+            "untranslated_product_title": "High Top Sneakers",
+            "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+            "untranslated_variant_title": "9",
+            "variant_options": [
+              "9"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "9"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 2,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men's T-shirt - Small / Green",
+            "product_title": "Men's T-shirt",
+            "variant_title": "Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "discounted_price": 3600,
+            "line_price": 7200,
+            "original_line_price": 8000,
+            "presentment_price": 40,
+            "total_discount": 800,
+            "discounts": [
+              {
+                "amount": 800,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 8000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "alt": "Men's T-shirt",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "untranslated_product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "untranslated_variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 41000,
+        "cart_level_discount_applications": [
+          {
+            "amount": 4100,
+            "discount_application": {
+              "allocation_method": "across",
+              "created_at": "2026-10-15T18:27:44.041Z",
+              "description": null,
+              "key": "27d6cc2c-193f-4095-bba9-c7b23c3fe772",
+              "target_selection": "all",
+              "target_type": "line_item",
+              "title": "WELCOME10",
+              "total_allocated_amount": 4100,
+              "type": "discount_code",
+              "value": "10.0",
+              "value_type": "percentage"
+            }
+          }
+        ],
+        "discount_codes": [
+          {
+            "code": "WELCOME10",
+            "applicable": true
+          }
+        ],
+        "items_changelog": {
+          "added": []
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart?view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "item_count": 5,
+        "total_price": 36900,
+        "items_subtotal_price": 41000,
+        "original_total_price": 41000,
+        "total_discount": 4100,
+        "total_weight": 1850,
+        "currency": "USD",
+        "note": "",
+        "attributes": {},
+        "requires_shipping": true,
+        "money": "$369.00",
+        "cart_level_discount_applications": [
+          {
+            "title": "WELCOME10",
+            "type": "discount_code",
+            "value": 10,
+            "value_type": "percentage",
+            "target_selection": "all",
+            "target_type": "line_item",
+            "allocation_method": null,
+            "total_allocated_amount": 4100
+          }
+        ],
+        "discount_applications": [
+          {
+            "title": "WELCOME10",
+            "type": "discount_code",
+            "target_type": "line_item",
+            "total_allocated_amount": 4100
+          }
+        ],
+        "items": [
+          {
+            "key": "43696949592086:<hash>",
+            "variant_id": 43696949592086,
+            "quantity": 1,
+            "title": "Beanie - Green",
+            "url": "/products/beanie?variant=43696949592086",
+            "url_to_remove": "/cart/change?id=43696949592086:<hash>&quantity=0",
+            "original_price": 10000,
+            "final_price": 10000,
+            "original_line_price": 10000,
+            "final_line_price": 10000,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [],
+            "discount_allocations": [
+              {
+                "amount": 1000,
+                "title": "WELCOME10"
+              }
+            ]
+          },
+          {
+            "key": "43696940613654:<hash>",
+            "variant_id": 43696940613654,
+            "quantity": 1,
+            "title": "Black Sunnies",
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "url_to_remove": "/cart/change?id=43696940613654:<hash>&quantity=0",
+            "original_price": 5000,
+            "final_price": 5000,
+            "original_line_price": 5000,
+            "final_line_price": 5000,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [],
+            "discount_allocations": [
+              {
+                "amount": 500,
+                "title": "WELCOME10"
+              }
+            ]
+          },
+          {
+            "key": "43696963485718:<hash>",
+            "variant_id": 43696963485718,
+            "quantity": 1,
+            "title": "High Top Sneakers - 9",
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "url_to_remove": "/cart/change?id=43696963485718:<hash>&quantity=0",
+            "original_price": 18000,
+            "final_price": 18000,
+            "original_line_price": 18000,
+            "final_line_price": 18000,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [],
+            "discount_allocations": [
+              {
+                "amount": 1800,
+                "title": "WELCOME10"
+              }
+            ]
+          },
+          {
+            "key": "43696932126742:<hash>",
+            "variant_id": 43696932126742,
+            "quantity": 2,
+            "title": "Men&#39;s T-shirt - Small / Green",
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "url_to_remove": "/cart/change?id=43696932126742:<hash>&quantity=0",
+            "original_price": 4000,
+            "final_price": 4000,
+            "original_line_price": 8000,
+            "final_line_price": 8000,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [],
+            "discount_allocations": [
+              {
+                "amount": 800,
+                "title": "WELCOME10"
+              }
+            ]
+          }
+        ],
+        "ajax": {
+          "note": "",
+          "attributes": {},
+          "original_total_price": 41000,
+          "total_price": 36900,
+          "total_discount": 4100,
+          "total_weight": 1850,
+          "item_count": 5,
+          "items": [
+            {
+              "id": 43696949592086,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43696949592086,
+              "key": "43696949592086:<hash>",
+              "title": "Beanie - Green",
+              "price": 10000,
+              "original_price": 10000,
+              "discounted_price": 9000,
+              "line_price": 9000,
+              "original_line_price": 10000,
+              "total_discount": 1000,
+              "discounts": [
+                {
+                  "amount": 1000,
+                  "title": "WELCOME10"
+                }
+              ],
+              "sku": null,
+              "grams": 300,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7983602040854,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 10000,
+              "final_line_price": 10000,
+              "url": "/products/beanie?variant=43696949592086",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Beanie",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "handle": "beanie",
+              "requires_shipping": true,
+              "product_type": "Hats",
+              "product_title": "Beanie",
+              "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+              "variant_title": "Green",
+              "variant_options": [
+                "Green"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Color",
+                  "value": "Green"
+                }
+              ],
+              "line_level_discount_allocations": [],
+              "line_level_total_discount": 0
+            },
+            {
+              "id": 43696940613654,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43696940613654,
+              "key": "43696940613654:<hash>",
+              "title": "Black Sunnies",
+              "price": 5000,
+              "original_price": 5000,
+              "discounted_price": 4500,
+              "line_price": 4500,
+              "original_line_price": 5000,
+              "total_discount": 500,
+              "discounts": [
+                {
+                  "amount": 500,
+                  "title": "WELCOME10"
+                }
+              ],
+              "sku": null,
+              "grams": 50,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7983595290646,
+              "product_has_only_default_variant": true,
+              "gift_card": false,
+              "final_price": 5000,
+              "final_line_price": 5000,
+              "url": "/products/black-sunnies?variant=43696940613654",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Black Sunnies",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "handle": "black-sunnies",
+              "requires_shipping": true,
+              "product_type": "Sunglasses",
+              "product_title": "Black Sunnies",
+              "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+              "variant_title": null,
+              "variant_options": [
+                "Default Title"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Title",
+                  "value": "Default Title"
+                }
+              ],
+              "line_level_discount_allocations": [],
+              "line_level_total_discount": 0
+            },
+            {
+              "id": 43696963485718,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43696963485718,
+              "key": "43696963485718:<hash>",
+              "title": "High Top Sneakers - 9",
+              "price": 18000,
+              "original_price": 18000,
+              "discounted_price": 16200,
+              "line_price": 16200,
+              "original_line_price": 18000,
+              "total_discount": 1800,
+              "discounts": [
+                {
+                  "amount": 1800,
+                  "title": "WELCOME10"
+                }
+              ],
+              "sku": null,
+              "grams": 900,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7983595487254,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 18000,
+              "final_line_price": 18000,
+              "url": "/products/high-top-sneakers?variant=43696963485718",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "High Top Sneakers",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "handle": "high-top-sneakers",
+              "requires_shipping": true,
+              "product_type": "Shoes",
+              "product_title": "High Top Sneakers",
+              "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+              "variant_title": "9",
+              "variant_options": [
+                "9"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Size",
+                  "value": "9"
+                }
+              ],
+              "line_level_discount_allocations": [],
+              "line_level_total_discount": 0
+            },
+            {
+              "id": 43696932126742,
+              "properties": {},
+              "quantity": 2,
+              "variant_id": 43696932126742,
+              "key": "43696932126742:<hash>",
+              "title": "Men&#39;s T-shirt - Small / Green",
+              "price": 4000,
+              "original_price": 4000,
+              "discounted_price": 3600,
+              "line_price": 7200,
+              "original_line_price": 8000,
+              "total_discount": 800,
+              "discounts": [
+                {
+                  "amount": 800,
+                  "title": "WELCOME10"
+                }
+              ],
+              "sku": null,
+              "grams": 300,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7982902771734,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 4000,
+              "final_line_price": 8000,
+              "url": "/products/men-t-shirt?variant=43696932126742",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Men's T-shirt",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "handle": "men-t-shirt",
+              "requires_shipping": true,
+              "product_type": "T-shirts",
+              "product_title": "Men's T-shirt",
+              "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+              "variant_title": "Small / Green",
+              "variant_options": [
+                "Small",
+                "Green"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Size",
+                  "value": "Small"
+                },
+                {
+                  "name": "Color",
+                  "value": "Green"
+                }
+              ],
+              "line_level_discount_allocations": [],
+              "line_level_total_discount": 0
+            }
+          ],
+          "requires_shipping": true,
+          "currency": "USD",
+          "items_subtotal_price": 41000,
+          "cart_level_discount_applications": [
+            {
+              "type": "discount_code",
+              "key": "27d6cc2c-193f-4095-bba9-c7b23c3fe772",
+              "title": "WELCOME10",
+              "description": null,
+              "value": "10.0",
+              "created_at": "2026-10-15T18:27:44.041Z",
+              "value_type": "percentage",
+              "allocation_method": "across",
+              "target_selection": "all",
+              "target_type": "line_item",
+              "total_allocated_amount": 4100
+            }
+          ],
+          "checkout_charge_amount": 36900
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/update.js",
+      "json": {
+        "discount": "SHOES5"
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 41000,
+        "total_price": 39000,
+        "total_discount": 2000,
+        "total_weight": 1850,
+        "item_count": 5,
+        "items": [
+          {
+            "id": 43696949592086,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696949592086,
+            "key": "43696949592086:<hash>",
+            "title": "Beanie - Green",
+            "product_title": "Beanie",
+            "variant_title": "Green",
+            "price": 10000,
+            "original_price": 10000,
+            "discounted_price": 8000,
+            "line_price": 8000,
+            "original_line_price": 10000,
+            "presentment_price": 100,
+            "total_discount": 2000,
+            "discounts": [
+              {
+                "amount": 2000,
+                "title": "Beanie week"
+              }
+            ],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983602040854,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 8000,
+            "final_line_price": 8000,
+            "url": "/products/beanie?variant=43696949592086",
+            "featured_image": {
+              "alt": "Beanie",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+            "handle": "beanie",
+            "requires_shipping": true,
+            "product_type": "Hats",
+            "untranslated_product_title": "Beanie",
+            "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+            "untranslated_variant_title": "Green",
+            "variant_options": [
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [
+              {
+                "amount": 2000,
+                "discount_application": {
+                  "allocation_method": "each",
+                  "created_at": "2026-10-15T18:27:44.895Z",
+                  "description": null,
+                  "key": "973f6dc4-60fa-4dba-aa7e-30ccfe4a4ddf",
+                  "target_selection": "entitled",
+                  "target_type": "line_item",
+                  "title": "Beanie week",
+                  "total_allocated_amount": 2000,
+                  "type": "automatic",
+                  "value": "20.0",
+                  "value_type": "percentage"
+                }
+              }
+            ],
+            "line_level_total_discount": 2000
+          },
+          {
+            "id": 43696940613654,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696940613654,
+            "key": "43696940613654:<hash>",
+            "title": "Black Sunnies",
+            "product_title": "Black Sunnies",
+            "variant_title": null,
+            "price": 5000,
+            "original_price": 5000,
+            "discounted_price": 5000,
+            "line_price": 5000,
+            "original_line_price": 5000,
+            "presentment_price": 50,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 50,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595290646,
+            "product_has_only_default_variant": true,
+            "gift_card": false,
+            "final_price": 5000,
+            "final_line_price": 5000,
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "featured_image": {
+              "alt": "Black Sunnies",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+            "handle": "black-sunnies",
+            "requires_shipping": true,
+            "product_type": "Sunglasses",
+            "untranslated_product_title": "Black Sunnies",
+            "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+            "untranslated_variant_title": null,
+            "variant_options": [
+              "Default Title"
+            ],
+            "options_with_values": [
+              {
+                "name": "Title",
+                "value": "Default Title"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696963485718,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696963485718,
+            "key": "43696963485718:<hash>",
+            "title": "High Top Sneakers - 9",
+            "product_title": "High Top Sneakers",
+            "variant_title": "9",
+            "price": 18000,
+            "original_price": 18000,
+            "discounted_price": 18000,
+            "line_price": 18000,
+            "original_line_price": 18000,
+            "presentment_price": 180,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 900,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595487254,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 18000,
+            "final_line_price": 18000,
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "featured_image": {
+              "alt": "High Top Sneakers",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+            "handle": "high-top-sneakers",
+            "requires_shipping": true,
+            "product_type": "Shoes",
+            "untranslated_product_title": "High Top Sneakers",
+            "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+            "untranslated_variant_title": "9",
+            "variant_options": [
+              "9"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "9"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 2,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men's T-shirt - Small / Green",
+            "product_title": "Men's T-shirt",
+            "variant_title": "Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "discounted_price": 4000,
+            "line_price": 8000,
+            "original_line_price": 8000,
+            "presentment_price": 40,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 8000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "alt": "Men's T-shirt",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "untranslated_product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "untranslated_variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 39000,
+        "cart_level_discount_applications": [],
+        "discount_codes": [
+          {
+            "code": "SHOES5",
+            "applicable": false
+          }
+        ],
+        "items_changelog": {
+          "added": []
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart?view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "item_count": 5,
+        "total_price": 39000,
+        "items_subtotal_price": 39000,
+        "original_total_price": 41000,
+        "total_discount": 2000,
+        "total_weight": 1850,
+        "currency": "USD",
+        "note": "",
+        "attributes": {},
+        "requires_shipping": true,
+        "money": "$390.00",
+        "cart_level_discount_applications": [],
+        "discount_applications": [
+          {
+            "title": "Beanie week",
+            "type": "",
+            "target_type": "line_item",
+            "total_allocated_amount": 2000
+          }
+        ],
+        "items": [
+          {
+            "key": "43696949592086:<hash>",
+            "variant_id": 43696949592086,
+            "quantity": 1,
+            "title": "Beanie - Green",
+            "url": "/products/beanie?variant=43696949592086",
+            "url_to_remove": "/cart/change?id=43696949592086:<hash>&quantity=0",
+            "original_price": 10000,
+            "final_price": 8000,
+            "original_line_price": 10000,
+            "final_line_price": 8000,
+            "line_level_total_discount": 2000,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [
+              {
+                "amount": 2000,
+                "title": "Beanie week"
+              }
+            ],
+            "discount_allocations": [
+              {
+                "amount": 2000,
+                "title": "Beanie week"
+              }
+            ]
+          },
+          {
+            "key": "43696940613654:<hash>",
+            "variant_id": 43696940613654,
+            "quantity": 1,
+            "title": "Black Sunnies",
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "url_to_remove": "/cart/change?id=43696940613654:<hash>&quantity=0",
+            "original_price": 5000,
+            "final_price": 5000,
+            "original_line_price": 5000,
+            "final_line_price": 5000,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [],
+            "discount_allocations": []
+          },
+          {
+            "key": "43696963485718:<hash>",
+            "variant_id": 43696963485718,
+            "quantity": 1,
+            "title": "High Top Sneakers - 9",
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "url_to_remove": "/cart/change?id=43696963485718:<hash>&quantity=0",
+            "original_price": 18000,
+            "final_price": 18000,
+            "original_line_price": 18000,
+            "final_line_price": 18000,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [],
+            "discount_allocations": []
+          },
+          {
+            "key": "43696932126742:<hash>",
+            "variant_id": 43696932126742,
+            "quantity": 2,
+            "title": "Men&#39;s T-shirt - Small / Green",
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "url_to_remove": "/cart/change?id=43696932126742:<hash>&quantity=0",
+            "original_price": 4000,
+            "final_price": 4000,
+            "original_line_price": 8000,
+            "final_line_price": 8000,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [],
+            "discount_allocations": []
+          }
+        ],
+        "ajax": {
+          "note": "",
+          "attributes": {},
+          "original_total_price": 41000,
+          "total_price": 39000,
+          "total_discount": 2000,
+          "total_weight": 1850,
+          "item_count": 5,
+          "items": [
+            {
+              "id": 43696949592086,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43696949592086,
+              "key": "43696949592086:<hash>",
+              "title": "Beanie - Green",
+              "price": 10000,
+              "original_price": 10000,
+              "discounted_price": 8000,
+              "line_price": 8000,
+              "original_line_price": 10000,
+              "total_discount": 2000,
+              "discounts": [
+                {
+                  "amount": 2000,
+                  "title": "Beanie week"
+                }
+              ],
+              "sku": null,
+              "grams": 300,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7983602040854,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 8000,
+              "final_line_price": 8000,
+              "url": "/products/beanie?variant=43696949592086",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Beanie",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "handle": "beanie",
+              "requires_shipping": true,
+              "product_type": "Hats",
+              "product_title": "Beanie",
+              "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+              "variant_title": "Green",
+              "variant_options": [
+                "Green"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Color",
+                  "value": "Green"
+                }
+              ],
+              "line_level_discount_allocations": [
+                {
+                  "amount": 2000,
+                  "discount_application": {
+                    "type": "",
+                    "key": "973f6dc4-60fa-4dba-aa7e-30ccfe4a4ddf",
+                    "title": "Beanie week",
+                    "description": null,
+                    "value": "20.0",
+                    "created_at": "2026-10-15T18:27:44.895Z",
+                    "value_type": "percentage",
+                    "allocation_method": "each",
+                    "target_selection": "entitled",
+                    "target_type": "line_item",
+                    "total_allocated_amount": 2000
+                  }
+                }
+              ],
+              "line_level_total_discount": 2000
+            },
+            {
+              "id": 43696940613654,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43696940613654,
+              "key": "43696940613654:<hash>",
+              "title": "Black Sunnies",
+              "price": 5000,
+              "original_price": 5000,
+              "discounted_price": 5000,
+              "line_price": 5000,
+              "original_line_price": 5000,
+              "total_discount": 0,
+              "discounts": [],
+              "sku": null,
+              "grams": 50,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7983595290646,
+              "product_has_only_default_variant": true,
+              "gift_card": false,
+              "final_price": 5000,
+              "final_line_price": 5000,
+              "url": "/products/black-sunnies?variant=43696940613654",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Black Sunnies",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "handle": "black-sunnies",
+              "requires_shipping": true,
+              "product_type": "Sunglasses",
+              "product_title": "Black Sunnies",
+              "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+              "variant_title": null,
+              "variant_options": [
+                "Default Title"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Title",
+                  "value": "Default Title"
+                }
+              ],
+              "line_level_discount_allocations": [],
+              "line_level_total_discount": 0
+            },
+            {
+              "id": 43696963485718,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43696963485718,
+              "key": "43696963485718:<hash>",
+              "title": "High Top Sneakers - 9",
+              "price": 18000,
+              "original_price": 18000,
+              "discounted_price": 18000,
+              "line_price": 18000,
+              "original_line_price": 18000,
+              "total_discount": 0,
+              "discounts": [],
+              "sku": null,
+              "grams": 900,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7983595487254,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 18000,
+              "final_line_price": 18000,
+              "url": "/products/high-top-sneakers?variant=43696963485718",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "High Top Sneakers",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "handle": "high-top-sneakers",
+              "requires_shipping": true,
+              "product_type": "Shoes",
+              "product_title": "High Top Sneakers",
+              "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+              "variant_title": "9",
+              "variant_options": [
+                "9"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Size",
+                  "value": "9"
+                }
+              ],
+              "line_level_discount_allocations": [],
+              "line_level_total_discount": 0
+            },
+            {
+              "id": 43696932126742,
+              "properties": {},
+              "quantity": 2,
+              "variant_id": 43696932126742,
+              "key": "43696932126742:<hash>",
+              "title": "Men&#39;s T-shirt - Small / Green",
+              "price": 4000,
+              "original_price": 4000,
+              "discounted_price": 4000,
+              "line_price": 8000,
+              "original_line_price": 8000,
+              "total_discount": 0,
+              "discounts": [],
+              "sku": null,
+              "grams": 300,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7982902771734,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 4000,
+              "final_line_price": 8000,
+              "url": "/products/men-t-shirt?variant=43696932126742",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Men's T-shirt",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "handle": "men-t-shirt",
+              "requires_shipping": true,
+              "product_type": "T-shirts",
+              "product_title": "Men's T-shirt",
+              "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+              "variant_title": "Small / Green",
+              "variant_options": [
+                "Small",
+                "Green"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Size",
+                  "value": "Small"
+                },
+                {
+                  "name": "Color",
+                  "value": "Green"
+                }
+              ],
+              "line_level_discount_allocations": [],
+              "line_level_total_discount": 0
+            }
+          ],
+          "requires_shipping": true,
+          "currency": "USD",
+          "items_subtotal_price": 39000,
+          "cart_level_discount_applications": [],
+          "checkout_charge_amount": 39000
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/update.js",
+      "json": {
+        "discount": "BUNDLE"
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 41000,
+        "total_price": 36000,
+        "total_discount": 5000,
+        "total_weight": 1850,
+        "item_count": 5,
+        "items": [
+          {
+            "id": 43696949592086,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696949592086,
+            "key": "43696949592086:<hash>",
+            "title": "Beanie - Green",
+            "product_title": "Beanie",
+            "variant_title": "Green",
+            "price": 10000,
+            "original_price": 10000,
+            "discounted_price": 10000,
+            "line_price": 10000,
+            "original_line_price": 10000,
+            "presentment_price": 100,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983602040854,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 10000,
+            "final_line_price": 10000,
+            "url": "/products/beanie?variant=43696949592086",
+            "featured_image": {
+              "alt": "Beanie",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+            "handle": "beanie",
+            "requires_shipping": true,
+            "product_type": "Hats",
+            "untranslated_product_title": "Beanie",
+            "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+            "untranslated_variant_title": "Green",
+            "variant_options": [
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696940613654,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696940613654,
+            "key": "43696940613654:<hash>",
+            "title": "Black Sunnies",
+            "product_title": "Black Sunnies",
+            "variant_title": null,
+            "price": 5000,
+            "original_price": 5000,
+            "discounted_price": 0,
+            "line_price": 0,
+            "original_line_price": 5000,
+            "presentment_price": 50,
+            "total_discount": 5000,
+            "discounts": [
+              {
+                "amount": 5000,
+                "title": "BUNDLE"
+              }
+            ],
+            "sku": "",
+            "grams": 50,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595290646,
+            "product_has_only_default_variant": true,
+            "gift_card": false,
+            "final_price": 0,
+            "final_line_price": 0,
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "featured_image": {
+              "alt": "Black Sunnies",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+            "handle": "black-sunnies",
+            "requires_shipping": true,
+            "product_type": "Sunglasses",
+            "untranslated_product_title": "Black Sunnies",
+            "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+            "untranslated_variant_title": null,
+            "variant_options": [
+              "Default Title"
+            ],
+            "options_with_values": [
+              {
+                "name": "Title",
+                "value": "Default Title"
+              }
+            ],
+            "line_level_discount_allocations": [
+              {
+                "amount": 5000,
+                "discount_application": {
+                  "allocation_method": "each",
+                  "created_at": "2026-10-15T18:27:45.712Z",
+                  "description": null,
+                  "key": "1187b446-f93d-4742-8333-316dee589422",
+                  "target_selection": "entitled",
+                  "target_type": "line_item",
+                  "title": "BUNDLE",
+                  "total_allocated_amount": 5000,
+                  "type": "discount_code",
+                  "value": "100.0",
+                  "value_type": "percentage"
+                }
+              }
+            ],
+            "line_level_total_discount": 5000
+          },
+          {
+            "id": 43696963485718,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696963485718,
+            "key": "43696963485718:<hash>",
+            "title": "High Top Sneakers - 9",
+            "product_title": "High Top Sneakers",
+            "variant_title": "9",
+            "price": 18000,
+            "original_price": 18000,
+            "discounted_price": 18000,
+            "line_price": 18000,
+            "original_line_price": 18000,
+            "presentment_price": 180,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 900,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595487254,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 18000,
+            "final_line_price": 18000,
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "featured_image": {
+              "alt": "High Top Sneakers",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+            "handle": "high-top-sneakers",
+            "requires_shipping": true,
+            "product_type": "Shoes",
+            "untranslated_product_title": "High Top Sneakers",
+            "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+            "untranslated_variant_title": "9",
+            "variant_options": [
+              "9"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "9"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 2,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men's T-shirt - Small / Green",
+            "product_title": "Men's T-shirt",
+            "variant_title": "Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "discounted_price": 4000,
+            "line_price": 8000,
+            "original_line_price": 8000,
+            "presentment_price": 40,
+            "total_discount": 0,
+            "discounts": [
+              {
+                "amount": 0,
+                "title": "BUNDLE"
+              }
+            ],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 8000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "alt": "Men's T-shirt",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "untranslated_product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "untranslated_variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [
+              {
+                "amount": 0,
+                "discount_application": {
+                  "allocation_method": "each",
+                  "created_at": "2026-10-15T18:27:45.712Z",
+                  "description": null,
+                  "key": "1187b446-f93d-4742-8333-316dee589422",
+                  "target_selection": "entitled",
+                  "target_type": "line_item",
+                  "title": "BUNDLE",
+                  "total_allocated_amount": 0,
+                  "type": "discount_code",
+                  "value": "100.0",
+                  "value_type": "percentage"
+                }
+              }
+            ],
+            "line_level_total_discount": 0
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 36000,
+        "cart_level_discount_applications": [],
+        "discount_codes": [
+          {
+            "code": "BUNDLE",
+            "applicable": true
+          }
+        ],
+        "items_changelog": {
+          "added": []
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart?view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "item_count": 5,
+        "total_price": 36000,
+        "items_subtotal_price": 36000,
+        "original_total_price": 41000,
+        "total_discount": 5000,
+        "total_weight": 1850,
+        "currency": "USD",
+        "note": "",
+        "attributes": {},
+        "requires_shipping": true,
+        "money": "$360.00",
+        "cart_level_discount_applications": [],
+        "discount_applications": [
+          {
+            "title": "BUNDLE",
+            "type": "discount_code",
+            "target_type": "line_item",
+            "total_allocated_amount": 5000
+          }
+        ],
+        "items": [
+          {
+            "key": "43696949592086:<hash>",
+            "variant_id": 43696949592086,
+            "quantity": 1,
+            "title": "Beanie - Green",
+            "url": "/products/beanie?variant=43696949592086",
+            "url_to_remove": "/cart/change?id=43696949592086:<hash>&quantity=0",
+            "original_price": 10000,
+            "final_price": 10000,
+            "original_line_price": 10000,
+            "final_line_price": 10000,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [],
+            "discount_allocations": []
+          },
+          {
+            "key": "43696940613654:<hash>",
+            "variant_id": 43696940613654,
+            "quantity": 1,
+            "title": "Black Sunnies",
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "url_to_remove": "/cart/change?id=43696940613654:<hash>&quantity=0",
+            "original_price": 5000,
+            "final_price": 0,
+            "original_line_price": 5000,
+            "final_line_price": 0,
+            "line_level_total_discount": 5000,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [
+              {
+                "amount": 5000,
+                "title": "BUNDLE"
+              }
+            ],
+            "discount_allocations": [
+              {
+                "amount": 5000,
+                "title": "BUNDLE"
+              }
+            ]
+          },
+          {
+            "key": "43696963485718:<hash>",
+            "variant_id": 43696963485718,
+            "quantity": 1,
+            "title": "High Top Sneakers - 9",
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "url_to_remove": "/cart/change?id=43696963485718:<hash>&quantity=0",
+            "original_price": 18000,
+            "final_price": 18000,
+            "original_line_price": 18000,
+            "final_line_price": 18000,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [],
+            "discount_allocations": []
+          },
+          {
+            "key": "43696932126742:<hash>",
+            "variant_id": 43696932126742,
+            "quantity": 2,
+            "title": "Men&#39;s T-shirt - Small / Green",
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "url_to_remove": "/cart/change?id=43696932126742:<hash>&quantity=0",
+            "original_price": 4000,
+            "final_price": 4000,
+            "original_line_price": 8000,
+            "final_line_price": 8000,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [
+              {
+                "amount": 0,
+                "title": "BUNDLE"
+              }
+            ],
+            "discount_allocations": [
+              {
+                "amount": 0,
+                "title": "BUNDLE"
+              }
+            ]
+          }
+        ],
+        "ajax": {
+          "note": "",
+          "attributes": {},
+          "original_total_price": 41000,
+          "total_price": 36000,
+          "total_discount": 5000,
+          "total_weight": 1850,
+          "item_count": 5,
+          "items": [
+            {
+              "id": 43696949592086,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43696949592086,
+              "key": "43696949592086:<hash>",
+              "title": "Beanie - Green",
+              "price": 10000,
+              "original_price": 10000,
+              "discounted_price": 10000,
+              "line_price": 10000,
+              "original_line_price": 10000,
+              "total_discount": 0,
+              "discounts": [],
+              "sku": null,
+              "grams": 300,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7983602040854,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 10000,
+              "final_line_price": 10000,
+              "url": "/products/beanie?variant=43696949592086",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Beanie",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "handle": "beanie",
+              "requires_shipping": true,
+              "product_type": "Hats",
+              "product_title": "Beanie",
+              "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+              "variant_title": "Green",
+              "variant_options": [
+                "Green"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Color",
+                  "value": "Green"
+                }
+              ],
+              "line_level_discount_allocations": [],
+              "line_level_total_discount": 0
+            },
+            {
+              "id": 43696940613654,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43696940613654,
+              "key": "43696940613654:<hash>",
+              "title": "Black Sunnies",
+              "price": 5000,
+              "original_price": 5000,
+              "discounted_price": 0,
+              "line_price": 0,
+              "original_line_price": 5000,
+              "total_discount": 5000,
+              "discounts": [
+                {
+                  "amount": 5000,
+                  "title": "BUNDLE"
+                }
+              ],
+              "sku": null,
+              "grams": 50,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7983595290646,
+              "product_has_only_default_variant": true,
+              "gift_card": false,
+              "final_price": 0,
+              "final_line_price": 0,
+              "url": "/products/black-sunnies?variant=43696940613654",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Black Sunnies",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "handle": "black-sunnies",
+              "requires_shipping": true,
+              "product_type": "Sunglasses",
+              "product_title": "Black Sunnies",
+              "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+              "variant_title": null,
+              "variant_options": [
+                "Default Title"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Title",
+                  "value": "Default Title"
+                }
+              ],
+              "line_level_discount_allocations": [
+                {
+                  "amount": 5000,
+                  "discount_application": {
+                    "type": "discount_code",
+                    "key": "1187b446-f93d-4742-8333-316dee589422",
+                    "title": "BUNDLE",
+                    "description": null,
+                    "value": "100.0",
+                    "created_at": "2026-10-15T18:27:45.712Z",
+                    "value_type": "percentage",
+                    "allocation_method": "each",
+                    "target_selection": "entitled",
+                    "target_type": "line_item",
+                    "total_allocated_amount": 5000
+                  }
+                }
+              ],
+              "line_level_total_discount": 5000
+            },
+            {
+              "id": 43696963485718,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43696963485718,
+              "key": "43696963485718:<hash>",
+              "title": "High Top Sneakers - 9",
+              "price": 18000,
+              "original_price": 18000,
+              "discounted_price": 18000,
+              "line_price": 18000,
+              "original_line_price": 18000,
+              "total_discount": 0,
+              "discounts": [],
+              "sku": null,
+              "grams": 900,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7983595487254,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 18000,
+              "final_line_price": 18000,
+              "url": "/products/high-top-sneakers?variant=43696963485718",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "High Top Sneakers",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "handle": "high-top-sneakers",
+              "requires_shipping": true,
+              "product_type": "Shoes",
+              "product_title": "High Top Sneakers",
+              "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+              "variant_title": "9",
+              "variant_options": [
+                "9"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Size",
+                  "value": "9"
+                }
+              ],
+              "line_level_discount_allocations": [],
+              "line_level_total_discount": 0
+            },
+            {
+              "id": 43696932126742,
+              "properties": {},
+              "quantity": 2,
+              "variant_id": 43696932126742,
+              "key": "43696932126742:<hash>",
+              "title": "Men&#39;s T-shirt - Small / Green",
+              "price": 4000,
+              "original_price": 4000,
+              "discounted_price": 4000,
+              "line_price": 8000,
+              "original_line_price": 8000,
+              "total_discount": 0,
+              "discounts": [
+                {
+                  "amount": 0,
+                  "title": "BUNDLE"
+                }
+              ],
+              "sku": null,
+              "grams": 300,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7982902771734,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 4000,
+              "final_line_price": 8000,
+              "url": "/products/men-t-shirt?variant=43696932126742",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Men's T-shirt",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "handle": "men-t-shirt",
+              "requires_shipping": true,
+              "product_type": "T-shirts",
+              "product_title": "Men's T-shirt",
+              "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+              "variant_title": "Small / Green",
+              "variant_options": [
+                "Small",
+                "Green"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Size",
+                  "value": "Small"
+                },
+                {
+                  "name": "Color",
+                  "value": "Green"
+                }
+              ],
+              "line_level_discount_allocations": [
+                {
+                  "amount": 0,
+                  "discount_application": {
+                    "type": "discount_code",
+                    "key": "1187b446-f93d-4742-8333-316dee589422",
+                    "title": "BUNDLE",
+                    "description": null,
+                    "value": "100.0",
+                    "created_at": "2026-10-15T18:27:45.712Z",
+                    "value_type": "percentage",
+                    "allocation_method": "each",
+                    "target_selection": "entitled",
+                    "target_type": "line_item",
+                    "total_allocated_amount": 5000
+                  }
+                }
+              ],
+              "line_level_total_discount": 0
+            }
+          ],
+          "requires_shipping": true,
+          "currency": "USD",
+          "items_subtotal_price": 36000,
+          "cart_level_discount_applications": [],
+          "checkout_charge_amount": 36000
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/update.js",
+      "json": {
+        "discount": "FREESHIP,WELCOME10"
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 41000,
+        "total_price": 36900,
+        "total_discount": 4100,
+        "total_weight": 1850,
+        "item_count": 5,
+        "items": [
+          {
+            "id": 43696949592086,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696949592086,
+            "key": "43696949592086:<hash>",
+            "title": "Beanie - Green",
+            "product_title": "Beanie",
+            "variant_title": "Green",
+            "price": 10000,
+            "original_price": 10000,
+            "discounted_price": 9000,
+            "line_price": 9000,
+            "original_line_price": 10000,
+            "presentment_price": 100,
+            "total_discount": 1000,
+            "discounts": [
+              {
+                "amount": 1000,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983602040854,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 10000,
+            "final_line_price": 10000,
+            "url": "/products/beanie?variant=43696949592086",
+            "featured_image": {
+              "alt": "Beanie",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+            "handle": "beanie",
+            "requires_shipping": true,
+            "product_type": "Hats",
+            "untranslated_product_title": "Beanie",
+            "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+            "untranslated_variant_title": "Green",
+            "variant_options": [
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696940613654,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696940613654,
+            "key": "43696940613654:<hash>",
+            "title": "Black Sunnies",
+            "product_title": "Black Sunnies",
+            "variant_title": null,
+            "price": 5000,
+            "original_price": 5000,
+            "discounted_price": 4500,
+            "line_price": 4500,
+            "original_line_price": 5000,
+            "presentment_price": 50,
+            "total_discount": 500,
+            "discounts": [
+              {
+                "amount": 500,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": "",
+            "grams": 50,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595290646,
+            "product_has_only_default_variant": true,
+            "gift_card": false,
+            "final_price": 5000,
+            "final_line_price": 5000,
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "featured_image": {
+              "alt": "Black Sunnies",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+            "handle": "black-sunnies",
+            "requires_shipping": true,
+            "product_type": "Sunglasses",
+            "untranslated_product_title": "Black Sunnies",
+            "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+            "untranslated_variant_title": null,
+            "variant_options": [
+              "Default Title"
+            ],
+            "options_with_values": [
+              {
+                "name": "Title",
+                "value": "Default Title"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696963485718,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696963485718,
+            "key": "43696963485718:<hash>",
+            "title": "High Top Sneakers - 9",
+            "product_title": "High Top Sneakers",
+            "variant_title": "9",
+            "price": 18000,
+            "original_price": 18000,
+            "discounted_price": 16200,
+            "line_price": 16200,
+            "original_line_price": 18000,
+            "presentment_price": 180,
+            "total_discount": 1800,
+            "discounts": [
+              {
+                "amount": 1800,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": "",
+            "grams": 900,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595487254,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 18000,
+            "final_line_price": 18000,
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "featured_image": {
+              "alt": "High Top Sneakers",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+            "handle": "high-top-sneakers",
+            "requires_shipping": true,
+            "product_type": "Shoes",
+            "untranslated_product_title": "High Top Sneakers",
+            "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+            "untranslated_variant_title": "9",
+            "variant_options": [
+              "9"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "9"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 2,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men's T-shirt - Small / Green",
+            "product_title": "Men's T-shirt",
+            "variant_title": "Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "discounted_price": 3600,
+            "line_price": 7200,
+            "original_line_price": 8000,
+            "presentment_price": 40,
+            "total_discount": 800,
+            "discounts": [
+              {
+                "amount": 800,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 8000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "alt": "Men's T-shirt",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "untranslated_product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "untranslated_variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 41000,
+        "cart_level_discount_applications": [
+          {
+            "amount": 4100,
+            "discount_application": {
+              "allocation_method": "across",
+              "created_at": "2026-10-15T18:27:46.499Z",
+              "description": null,
+              "key": "237c68a0-d04f-4886-b362-9564134b45b4",
+              "target_selection": "all",
+              "target_type": "line_item",
+              "title": "WELCOME10",
+              "total_allocated_amount": 4100,
+              "type": "discount_code",
+              "value": "10.0",
+              "value_type": "percentage"
+            }
+          }
+        ],
+        "discount_codes": [
+          {
+            "code": "WELCOME10",
+            "applicable": true
+          },
+          {
+            "code": "FREESHIP",
+            "applicable": false
+          }
+        ],
+        "items_changelog": {
+          "added": []
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 41000,
+        "total_price": 36900,
+        "total_discount": 4100,
+        "total_weight": 1850,
+        "item_count": 5,
+        "items": [
+          {
+            "id": 43696949592086,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696949592086,
+            "key": "43696949592086:<hash>",
+            "title": "Beanie - Green",
+            "price": 10000,
+            "original_price": 10000,
+            "presentment_price": 100,
+            "discounted_price": 9000,
+            "line_price": 9000,
+            "original_line_price": 10000,
+            "total_discount": 1000,
+            "discounts": [
+              {
+                "amount": 1000,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": null,
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983602040854,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 10000,
+            "final_line_price": 10000,
+            "url": "/products/beanie?variant=43696949592086",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Beanie",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+            "handle": "beanie",
+            "requires_shipping": true,
+            "product_type": "Hats",
+            "product_title": "Beanie",
+            "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+            "variant_title": "Green",
+            "variant_options": [
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          },
+          {
+            "id": 43696940613654,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696940613654,
+            "key": "43696940613654:<hash>",
+            "title": "Black Sunnies",
+            "price": 5000,
+            "original_price": 5000,
+            "presentment_price": 50,
+            "discounted_price": 4500,
+            "line_price": 4500,
+            "original_line_price": 5000,
+            "total_discount": 500,
+            "discounts": [
+              {
+                "amount": 500,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": null,
+            "grams": 50,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595290646,
+            "product_has_only_default_variant": true,
+            "gift_card": false,
+            "final_price": 5000,
+            "final_line_price": 5000,
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Black Sunnies",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+            "handle": "black-sunnies",
+            "requires_shipping": true,
+            "product_type": "Sunglasses",
+            "product_title": "Black Sunnies",
+            "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+            "variant_title": null,
+            "variant_options": [
+              "Default Title"
+            ],
+            "options_with_values": [
+              {
+                "name": "Title",
+                "value": "Default Title"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          },
+          {
+            "id": 43696963485718,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696963485718,
+            "key": "43696963485718:<hash>",
+            "title": "High Top Sneakers - 9",
+            "price": 18000,
+            "original_price": 18000,
+            "presentment_price": 180,
+            "discounted_price": 16200,
+            "line_price": 16200,
+            "original_line_price": 18000,
+            "total_discount": 1800,
+            "discounts": [
+              {
+                "amount": 1800,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": null,
+            "grams": 900,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595487254,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 18000,
+            "final_line_price": 18000,
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "High Top Sneakers",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+            "handle": "high-top-sneakers",
+            "requires_shipping": true,
+            "product_type": "Shoes",
+            "product_title": "High Top Sneakers",
+            "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+            "variant_title": "9",
+            "variant_options": [
+              "9"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "9"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          },
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 2,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men&#39;s T-shirt - Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "presentment_price": 40,
+            "discounted_price": 3600,
+            "line_price": 7200,
+            "original_line_price": 8000,
+            "total_discount": 800,
+            "discounts": [
+              {
+                "amount": 800,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": null,
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 8000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Men's T-shirt",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 41000,
+        "cart_level_discount_applications": [
+          {
+            "type": "discount_code",
+            "key": "237c68a0-d04f-4886-b362-9564134b45b4",
+            "title": "WELCOME10",
+            "description": null,
+            "value": "10.0",
+            "created_at": "2026-10-15T18:27:46.499Z",
+            "value_type": "percentage",
+            "allocation_method": "across",
+            "target_selection": "all",
+            "target_type": "line_item",
+            "total_allocated_amount": 4100
+          }
+        ],
+        "discount_codes": [
+          {
+            "code": "WELCOME10",
+            "applicable": true
+          },
+          {
+            "code": "FREESHIP",
+            "applicable": false
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/update.js",
+      "json": {
+        "discount": "NOPE"
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 41000,
+        "total_price": 39000,
+        "total_discount": 2000,
+        "total_weight": 1850,
+        "item_count": 5,
+        "items": [
+          {
+            "id": 43696949592086,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696949592086,
+            "key": "43696949592086:<hash>",
+            "title": "Beanie - Green",
+            "product_title": "Beanie",
+            "variant_title": "Green",
+            "price": 10000,
+            "original_price": 10000,
+            "discounted_price": 8000,
+            "line_price": 8000,
+            "original_line_price": 10000,
+            "presentment_price": 100,
+            "total_discount": 2000,
+            "discounts": [
+              {
+                "amount": 2000,
+                "title": "Beanie week"
+              }
+            ],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983602040854,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 8000,
+            "final_line_price": 8000,
+            "url": "/products/beanie?variant=43696949592086",
+            "featured_image": {
+              "alt": "Beanie",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+            "handle": "beanie",
+            "requires_shipping": true,
+            "product_type": "Hats",
+            "untranslated_product_title": "Beanie",
+            "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+            "untranslated_variant_title": "Green",
+            "variant_options": [
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [
+              {
+                "amount": 2000,
+                "discount_application": {
+                  "allocation_method": "each",
+                  "created_at": "2026-10-15T18:27:47.263Z",
+                  "description": null,
+                  "key": "fcdb77ad-fdaa-45bd-87a9-28e30776a939",
+                  "target_selection": "entitled",
+                  "target_type": "line_item",
+                  "title": "Beanie week",
+                  "total_allocated_amount": 2000,
+                  "type": "automatic",
+                  "value": "20.0",
+                  "value_type": "percentage"
+                }
+              }
+            ],
+            "line_level_total_discount": 2000
+          },
+          {
+            "id": 43696940613654,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696940613654,
+            "key": "43696940613654:<hash>",
+            "title": "Black Sunnies",
+            "product_title": "Black Sunnies",
+            "variant_title": null,
+            "price": 5000,
+            "original_price": 5000,
+            "discounted_price": 5000,
+            "line_price": 5000,
+            "original_line_price": 5000,
+            "presentment_price": 50,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 50,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595290646,
+            "product_has_only_default_variant": true,
+            "gift_card": false,
+            "final_price": 5000,
+            "final_line_price": 5000,
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "featured_image": {
+              "alt": "Black Sunnies",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+            "handle": "black-sunnies",
+            "requires_shipping": true,
+            "product_type": "Sunglasses",
+            "untranslated_product_title": "Black Sunnies",
+            "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+            "untranslated_variant_title": null,
+            "variant_options": [
+              "Default Title"
+            ],
+            "options_with_values": [
+              {
+                "name": "Title",
+                "value": "Default Title"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696963485718,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696963485718,
+            "key": "43696963485718:<hash>",
+            "title": "High Top Sneakers - 9",
+            "product_title": "High Top Sneakers",
+            "variant_title": "9",
+            "price": 18000,
+            "original_price": 18000,
+            "discounted_price": 18000,
+            "line_price": 18000,
+            "original_line_price": 18000,
+            "presentment_price": 180,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 900,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595487254,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 18000,
+            "final_line_price": 18000,
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "featured_image": {
+              "alt": "High Top Sneakers",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+            "handle": "high-top-sneakers",
+            "requires_shipping": true,
+            "product_type": "Shoes",
+            "untranslated_product_title": "High Top Sneakers",
+            "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+            "untranslated_variant_title": "9",
+            "variant_options": [
+              "9"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "9"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 2,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men's T-shirt - Small / Green",
+            "product_title": "Men's T-shirt",
+            "variant_title": "Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "discounted_price": 4000,
+            "line_price": 8000,
+            "original_line_price": 8000,
+            "presentment_price": 40,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 8000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "alt": "Men's T-shirt",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "untranslated_product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "untranslated_variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 39000,
+        "cart_level_discount_applications": [],
+        "discount_codes": [
+          {
+            "code": "NOPE",
+            "applicable": false
+          }
+        ],
+        "items_changelog": {
+          "added": []
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 41000,
+        "total_price": 39000,
+        "total_discount": 2000,
+        "total_weight": 1850,
+        "item_count": 5,
+        "items": [
+          {
+            "id": 43696949592086,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696949592086,
+            "key": "43696949592086:<hash>",
+            "title": "Beanie - Green",
+            "price": 10000,
+            "original_price": 10000,
+            "presentment_price": 100,
+            "discounted_price": 8000,
+            "line_price": 8000,
+            "original_line_price": 10000,
+            "total_discount": 2000,
+            "discounts": [
+              {
+                "amount": 2000,
+                "title": "Beanie week"
+              }
+            ],
+            "sku": null,
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983602040854,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 8000,
+            "final_line_price": 8000,
+            "url": "/products/beanie?variant=43696949592086",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Beanie",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+            "handle": "beanie",
+            "requires_shipping": true,
+            "product_type": "Hats",
+            "product_title": "Beanie",
+            "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+            "variant_title": "Green",
+            "variant_options": [
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [
+              {
+                "amount": 2000,
+                "discount_application": {
+                  "type": "",
+                  "key": "fcdb77ad-fdaa-45bd-87a9-28e30776a939",
+                  "title": "Beanie week",
+                  "description": null,
+                  "value": "20.0",
+                  "created_at": "2026-10-15T18:27:47.263Z",
+                  "value_type": "percentage",
+                  "allocation_method": "each",
+                  "target_selection": "entitled",
+                  "target_type": "line_item",
+                  "total_allocated_amount": 2000
+                }
+              }
+            ],
+            "line_level_total_discount": 2000,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          },
+          {
+            "id": 43696940613654,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696940613654,
+            "key": "43696940613654:<hash>",
+            "title": "Black Sunnies",
+            "price": 5000,
+            "original_price": 5000,
+            "presentment_price": 50,
+            "discounted_price": 5000,
+            "line_price": 5000,
+            "original_line_price": 5000,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": null,
+            "grams": 50,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595290646,
+            "product_has_only_default_variant": true,
+            "gift_card": false,
+            "final_price": 5000,
+            "final_line_price": 5000,
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Black Sunnies",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+            "handle": "black-sunnies",
+            "requires_shipping": true,
+            "product_type": "Sunglasses",
+            "product_title": "Black Sunnies",
+            "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+            "variant_title": null,
+            "variant_options": [
+              "Default Title"
+            ],
+            "options_with_values": [
+              {
+                "name": "Title",
+                "value": "Default Title"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          },
+          {
+            "id": 43696963485718,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696963485718,
+            "key": "43696963485718:<hash>",
+            "title": "High Top Sneakers - 9",
+            "price": 18000,
+            "original_price": 18000,
+            "presentment_price": 180,
+            "discounted_price": 18000,
+            "line_price": 18000,
+            "original_line_price": 18000,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": null,
+            "grams": 900,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595487254,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 18000,
+            "final_line_price": 18000,
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "High Top Sneakers",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+            "handle": "high-top-sneakers",
+            "requires_shipping": true,
+            "product_type": "Shoes",
+            "product_title": "High Top Sneakers",
+            "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+            "variant_title": "9",
+            "variant_options": [
+              "9"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "9"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          },
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 2,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men&#39;s T-shirt - Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "presentment_price": 40,
+            "discounted_price": 4000,
+            "line_price": 8000,
+            "original_line_price": 8000,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": null,
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 8000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Men's T-shirt",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 39000,
+        "cart_level_discount_applications": [],
+        "discount_codes": [
+          {
+            "code": "NOPE",
+            "applicable": false
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/update.js",
+      "json": {
+        "discount": ""
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 41000,
+        "total_price": 39000,
+        "total_discount": 2000,
+        "total_weight": 1850,
+        "item_count": 5,
+        "items": [
+          {
+            "id": 43696949592086,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696949592086,
+            "key": "43696949592086:<hash>",
+            "title": "Beanie - Green",
+            "product_title": "Beanie",
+            "variant_title": "Green",
+            "price": 10000,
+            "original_price": 10000,
+            "discounted_price": 8000,
+            "line_price": 8000,
+            "original_line_price": 10000,
+            "presentment_price": 100,
+            "total_discount": 2000,
+            "discounts": [
+              {
+                "amount": 2000,
+                "title": "Beanie week"
+              }
+            ],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983602040854,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 8000,
+            "final_line_price": 8000,
+            "url": "/products/beanie?variant=43696949592086",
+            "featured_image": {
+              "alt": "Beanie",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+            "handle": "beanie",
+            "requires_shipping": true,
+            "product_type": "Hats",
+            "untranslated_product_title": "Beanie",
+            "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+            "untranslated_variant_title": "Green",
+            "variant_options": [
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [
+              {
+                "amount": 2000,
+                "discount_application": {
+                  "allocation_method": "each",
+                  "created_at": "2026-10-15T18:27:47.987Z",
+                  "description": null,
+                  "key": "e5ece63c-223b-4fb1-ab65-a76646b710e4",
+                  "target_selection": "entitled",
+                  "target_type": "line_item",
+                  "title": "Beanie week",
+                  "total_allocated_amount": 2000,
+                  "type": "automatic",
+                  "value": "20.0",
+                  "value_type": "percentage"
+                }
+              }
+            ],
+            "line_level_total_discount": 2000
+          },
+          {
+            "id": 43696940613654,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696940613654,
+            "key": "43696940613654:<hash>",
+            "title": "Black Sunnies",
+            "product_title": "Black Sunnies",
+            "variant_title": null,
+            "price": 5000,
+            "original_price": 5000,
+            "discounted_price": 5000,
+            "line_price": 5000,
+            "original_line_price": 5000,
+            "presentment_price": 50,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 50,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595290646,
+            "product_has_only_default_variant": true,
+            "gift_card": false,
+            "final_price": 5000,
+            "final_line_price": 5000,
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "featured_image": {
+              "alt": "Black Sunnies",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+            "handle": "black-sunnies",
+            "requires_shipping": true,
+            "product_type": "Sunglasses",
+            "untranslated_product_title": "Black Sunnies",
+            "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+            "untranslated_variant_title": null,
+            "variant_options": [
+              "Default Title"
+            ],
+            "options_with_values": [
+              {
+                "name": "Title",
+                "value": "Default Title"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696963485718,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696963485718,
+            "key": "43696963485718:<hash>",
+            "title": "High Top Sneakers - 9",
+            "product_title": "High Top Sneakers",
+            "variant_title": "9",
+            "price": 18000,
+            "original_price": 18000,
+            "discounted_price": 18000,
+            "line_price": 18000,
+            "original_line_price": 18000,
+            "presentment_price": 180,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 900,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595487254,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 18000,
+            "final_line_price": 18000,
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "featured_image": {
+              "alt": "High Top Sneakers",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+            "handle": "high-top-sneakers",
+            "requires_shipping": true,
+            "product_type": "Shoes",
+            "untranslated_product_title": "High Top Sneakers",
+            "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+            "untranslated_variant_title": "9",
+            "variant_options": [
+              "9"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "9"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          },
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 2,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men's T-shirt - Small / Green",
+            "product_title": "Men's T-shirt",
+            "variant_title": "Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "discounted_price": 4000,
+            "line_price": 8000,
+            "original_line_price": 8000,
+            "presentment_price": 40,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 8000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "alt": "Men's T-shirt",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "untranslated_product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "untranslated_variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 39000,
+        "cart_level_discount_applications": [],
+        "discount_codes": [],
+        "items_changelog": {
+          "added": []
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart?view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "item_count": 5,
+        "total_price": 39000,
+        "items_subtotal_price": 39000,
+        "original_total_price": 41000,
+        "total_discount": 2000,
+        "total_weight": 1850,
+        "currency": "USD",
+        "note": "",
+        "attributes": {},
+        "requires_shipping": true,
+        "money": "$390.00",
+        "cart_level_discount_applications": [],
+        "discount_applications": [
+          {
+            "title": "Beanie week",
+            "type": "",
+            "target_type": "line_item",
+            "total_allocated_amount": 2000
+          }
+        ],
+        "items": [
+          {
+            "key": "43696949592086:<hash>",
+            "variant_id": 43696949592086,
+            "quantity": 1,
+            "title": "Beanie - Green",
+            "url": "/products/beanie?variant=43696949592086",
+            "url_to_remove": "/cart/change?id=43696949592086:<hash>&quantity=0",
+            "original_price": 10000,
+            "final_price": 8000,
+            "original_line_price": 10000,
+            "final_line_price": 8000,
+            "line_level_total_discount": 2000,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [
+              {
+                "amount": 2000,
+                "title": "Beanie week"
+              }
+            ],
+            "discount_allocations": [
+              {
+                "amount": 2000,
+                "title": "Beanie week"
+              }
+            ]
+          },
+          {
+            "key": "43696940613654:<hash>",
+            "variant_id": 43696940613654,
+            "quantity": 1,
+            "title": "Black Sunnies",
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "url_to_remove": "/cart/change?id=43696940613654:<hash>&quantity=0",
+            "original_price": 5000,
+            "final_price": 5000,
+            "original_line_price": 5000,
+            "final_line_price": 5000,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [],
+            "discount_allocations": []
+          },
+          {
+            "key": "43696963485718:<hash>",
+            "variant_id": 43696963485718,
+            "quantity": 1,
+            "title": "High Top Sneakers - 9",
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "url_to_remove": "/cart/change?id=43696963485718:<hash>&quantity=0",
+            "original_price": 18000,
+            "final_price": 18000,
+            "original_line_price": 18000,
+            "final_line_price": 18000,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [],
+            "discount_allocations": []
+          },
+          {
+            "key": "43696932126742:<hash>",
+            "variant_id": 43696932126742,
+            "quantity": 2,
+            "title": "Men&#39;s T-shirt - Small / Green",
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "url_to_remove": "/cart/change?id=43696932126742:<hash>&quantity=0",
+            "original_price": 4000,
+            "final_price": 4000,
+            "original_line_price": 8000,
+            "final_line_price": 8000,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [],
+            "discount_allocations": []
+          }
+        ],
+        "ajax": {
+          "note": "",
+          "attributes": {},
+          "original_total_price": 41000,
+          "total_price": 39000,
+          "total_discount": 2000,
+          "total_weight": 1850,
+          "item_count": 5,
+          "items": [
+            {
+              "id": 43696949592086,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43696949592086,
+              "key": "43696949592086:<hash>",
+              "title": "Beanie - Green",
+              "price": 10000,
+              "original_price": 10000,
+              "discounted_price": 8000,
+              "line_price": 8000,
+              "original_line_price": 10000,
+              "total_discount": 2000,
+              "discounts": [
+                {
+                  "amount": 2000,
+                  "title": "Beanie week"
+                }
+              ],
+              "sku": null,
+              "grams": 300,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7983602040854,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 8000,
+              "final_line_price": 8000,
+              "url": "/products/beanie?variant=43696949592086",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Beanie",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "handle": "beanie",
+              "requires_shipping": true,
+              "product_type": "Hats",
+              "product_title": "Beanie",
+              "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+              "variant_title": "Green",
+              "variant_options": [
+                "Green"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Color",
+                  "value": "Green"
+                }
+              ],
+              "line_level_discount_allocations": [
+                {
+                  "amount": 2000,
+                  "discount_application": {
+                    "type": "",
+                    "key": "e5ece63c-223b-4fb1-ab65-a76646b710e4",
+                    "title": "Beanie week",
+                    "description": null,
+                    "value": "20.0",
+                    "created_at": "2026-10-15T18:27:47.987Z",
+                    "value_type": "percentage",
+                    "allocation_method": "each",
+                    "target_selection": "entitled",
+                    "target_type": "line_item",
+                    "total_allocated_amount": 2000
+                  }
+                }
+              ],
+              "line_level_total_discount": 2000
+            },
+            {
+              "id": 43696940613654,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43696940613654,
+              "key": "43696940613654:<hash>",
+              "title": "Black Sunnies",
+              "price": 5000,
+              "original_price": 5000,
+              "discounted_price": 5000,
+              "line_price": 5000,
+              "original_line_price": 5000,
+              "total_discount": 0,
+              "discounts": [],
+              "sku": null,
+              "grams": 50,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7983595290646,
+              "product_has_only_default_variant": true,
+              "gift_card": false,
+              "final_price": 5000,
+              "final_line_price": 5000,
+              "url": "/products/black-sunnies?variant=43696940613654",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Black Sunnies",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "handle": "black-sunnies",
+              "requires_shipping": true,
+              "product_type": "Sunglasses",
+              "product_title": "Black Sunnies",
+              "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+              "variant_title": null,
+              "variant_options": [
+                "Default Title"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Title",
+                  "value": "Default Title"
+                }
+              ],
+              "line_level_discount_allocations": [],
+              "line_level_total_discount": 0
+            },
+            {
+              "id": 43696963485718,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43696963485718,
+              "key": "43696963485718:<hash>",
+              "title": "High Top Sneakers - 9",
+              "price": 18000,
+              "original_price": 18000,
+              "discounted_price": 18000,
+              "line_price": 18000,
+              "original_line_price": 18000,
+              "total_discount": 0,
+              "discounts": [],
+              "sku": null,
+              "grams": 900,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7983595487254,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 18000,
+              "final_line_price": 18000,
+              "url": "/products/high-top-sneakers?variant=43696963485718",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "High Top Sneakers",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "handle": "high-top-sneakers",
+              "requires_shipping": true,
+              "product_type": "Shoes",
+              "product_title": "High Top Sneakers",
+              "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+              "variant_title": "9",
+              "variant_options": [
+                "9"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Size",
+                  "value": "9"
+                }
+              ],
+              "line_level_discount_allocations": [],
+              "line_level_total_discount": 0
+            },
+            {
+              "id": 43696932126742,
+              "properties": {},
+              "quantity": 2,
+              "variant_id": 43696932126742,
+              "key": "43696932126742:<hash>",
+              "title": "Men&#39;s T-shirt - Small / Green",
+              "price": 4000,
+              "original_price": 4000,
+              "discounted_price": 4000,
+              "line_price": 8000,
+              "original_line_price": 8000,
+              "total_discount": 0,
+              "discounts": [],
+              "sku": null,
+              "grams": 300,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7982902771734,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 4000,
+              "final_line_price": 8000,
+              "url": "/products/men-t-shirt?variant=43696932126742",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Men's T-shirt",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "handle": "men-t-shirt",
+              "requires_shipping": true,
+              "product_type": "T-shirts",
+              "product_title": "Men's T-shirt",
+              "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+              "variant_title": "Small / Green",
+              "variant_options": [
+                "Small",
+                "Green"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Size",
+                  "value": "Small"
+                },
+                {
+                  "name": "Color",
+                  "value": "Green"
+                }
+              ],
+              "line_level_discount_allocations": [],
+              "line_level_total_discount": 0
+            }
+          ],
+          "requires_shipping": true,
+          "currency": "USD",
+          "items_subtotal_price": 39000,
+          "cart_level_discount_applications": [],
+          "checkout_charge_amount": 39000
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/discount/WELCOME10?redirect=/cart.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 41000,
+        "total_price": 36900,
+        "total_discount": 4100,
+        "total_weight": 1850,
+        "item_count": 5,
+        "items": [
+          {
+            "id": 43696949592086,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696949592086,
+            "key": "43696949592086:<hash>",
+            "title": "Beanie - Green",
+            "price": 10000,
+            "original_price": 10000,
+            "presentment_price": 100,
+            "discounted_price": 9000,
+            "line_price": 9000,
+            "original_line_price": 10000,
+            "total_discount": 1000,
+            "discounts": [
+              {
+                "amount": 1000,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": null,
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983602040854,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 10000,
+            "final_line_price": 10000,
+            "url": "/products/beanie?variant=43696949592086",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Beanie",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+            "handle": "beanie",
+            "requires_shipping": true,
+            "product_type": "Hats",
+            "product_title": "Beanie",
+            "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+            "variant_title": "Green",
+            "variant_options": [
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          },
+          {
+            "id": 43696940613654,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696940613654,
+            "key": "43696940613654:<hash>",
+            "title": "Black Sunnies",
+            "price": 5000,
+            "original_price": 5000,
+            "presentment_price": 50,
+            "discounted_price": 4500,
+            "line_price": 4500,
+            "original_line_price": 5000,
+            "total_discount": 500,
+            "discounts": [
+              {
+                "amount": 500,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": null,
+            "grams": 50,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595290646,
+            "product_has_only_default_variant": true,
+            "gift_card": false,
+            "final_price": 5000,
+            "final_line_price": 5000,
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Black Sunnies",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+            "handle": "black-sunnies",
+            "requires_shipping": true,
+            "product_type": "Sunglasses",
+            "product_title": "Black Sunnies",
+            "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+            "variant_title": null,
+            "variant_options": [
+              "Default Title"
+            ],
+            "options_with_values": [
+              {
+                "name": "Title",
+                "value": "Default Title"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          },
+          {
+            "id": 43696963485718,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696963485718,
+            "key": "43696963485718:<hash>",
+            "title": "High Top Sneakers - 9",
+            "price": 18000,
+            "original_price": 18000,
+            "presentment_price": 180,
+            "discounted_price": 16200,
+            "line_price": 16200,
+            "original_line_price": 18000,
+            "total_discount": 1800,
+            "discounts": [
+              {
+                "amount": 1800,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": null,
+            "grams": 900,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595487254,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 18000,
+            "final_line_price": 18000,
+            "url": "/products/high-top-sneakers?variant=43696963485718",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "High Top Sneakers",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bb74594d8c235ffbf67f512fa1a7583df84595d7320e5145b35f169b7a7f2f6c.jpg",
+            "handle": "high-top-sneakers",
+            "requires_shipping": true,
+            "product_type": "Shoes",
+            "product_title": "High Top Sneakers",
+            "product_description": "These stylish and durable high top sneakers are perfect for any casual look, offering superior comfort and protection with their foam cushioning and reinforced heel support.",
+            "variant_title": "9",
+            "variant_options": [
+              "9"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "9"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          },
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 2,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men&#39;s T-shirt - Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "presentment_price": 40,
+            "discounted_price": 3600,
+            "line_price": 7200,
+            "original_line_price": 8000,
+            "total_discount": 800,
+            "discounts": [
+              {
+                "amount": 800,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": null,
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 8000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Men's T-shirt",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 41000,
+        "cart_level_discount_applications": [
+          {
+            "type": "discount_code",
+            "key": "fad92c28-0c6b-45a5-a4e4-6f3dd09d0e5e",
+            "title": "WELCOME10",
+            "description": null,
+            "value": "10.0",
+            "created_at": "2026-10-15T18:27:49.079Z",
+            "value_type": "percentage",
+            "allocation_method": "across",
+            "target_selection": "all",
+            "target_type": "line_item",
+            "total_allocated_amount": 4100
+          }
+        ],
+        "discount_codes": [
+          {
+            "code": "WELCOME10",
+            "applicable": true
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/clear.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 0,
+        "total_price": 0,
+        "total_discount": 0,
+        "total_weight": 0,
+        "item_count": 0,
+        "items": [],
+        "requires_shipping": false,
+        "currency": "USD",
+        "items_subtotal_price": 0,
+        "cart_level_discount_applications": [],
+        "discount_codes": [
+          {
+            "code": "WELCOME10",
+            "applicable": false
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,711 @@
+{
+  "scenario": "probe-collection-filter-types-or",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/collections/all?view=probe&filter.p.product_type=Shoes&filter.p.product_type=Hats",
+      "status": 200,
+      "location": null,
+      "body": {
+        "handle": "all",
+        "title": "Products",
+        "url": "/collections/all",
+        "template_suffix": null,
+        "template": {
+          "name": "collection",
+          "suffix": "probe"
+        },
+        "products": [
+          {
+            "handle": "beanie",
+            "price": 10000,
+            "url": "/products/beanie"
+          },
+          {
+            "handle": "canvas-sneakers",
+            "price": 4000,
+            "url": "/products/canvas-sneakers"
+          },
+          {
+            "handle": "gray-leather-sneakers",
+            "price": 100000,
+            "url": "/products/gray-leather-sneakers"
+          },
+          {
+            "handle": "gray-runners",
+            "price": 3000,
+            "url": "/products/gray-runners"
+          }
+        ],
+        "products_count": 6,
+        "all_products_count": 29,
+        "sort_by": "",
+        "default_sort_by": "title-ascending",
+        "sort_options": [
+          {
+            "name": "Featured",
+            "value": "manual"
+          },
+          {
+            "name": "Most relevant",
+            "value": "most-relevant"
+          },
+          {
+            "name": "Best selling",
+            "value": "best-selling"
+          },
+          {
+            "name": "Alphabetically, A-Z",
+            "value": "title-ascending"
+          },
+          {
+            "name": "Alphabetically, Z-A",
+            "value": "title-descending"
+          },
+          {
+            "name": "Price, low to high",
+            "value": "price-ascending"
+          },
+          {
+            "name": "Price, high to low",
+            "value": "price-descending"
+          },
+          {
+            "name": "Date, old to new",
+            "value": "created-ascending"
+          },
+          {
+            "name": "Date, new to old",
+            "value": "created-descending"
+          }
+        ],
+        "current_tags": null,
+        "tags": [
+          "accessories",
+          "men",
+          "shoes"
+        ],
+        "all_tags": [
+          "accessories",
+          "bottoms",
+          "men",
+          "shoes",
+          "tops",
+          "unisex",
+          "women"
+        ],
+        "all_types": [
+          "Bags",
+          "Hats",
+          "Hoodies",
+          "Jackets",
+          "Pants",
+          "Sandals",
+          "Shoes",
+          "Shorts",
+          "Sunglasses",
+          "Sweaters",
+          "T-shirts"
+        ],
+        "all_vendors": [
+          "Mock.shop"
+        ],
+        "paginate": {
+          "current_page": 1,
+          "pages": 2,
+          "items": 6,
+          "page_size": 4,
+          "next": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&page=2&view=probe",
+          "previous": null
+        },
+        "filters": [
+          {
+            "label": "Availability",
+            "type": "list",
+            "param_name": "filter.v.availability",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "In stock",
+                "value": "1",
+                "count": 6,
+                "active": false,
+                "param_name": "filter.v.availability",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.availability=1&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Out of stock",
+                "value": "0",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.v.availability",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.availability=0&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Price",
+            "type": "price_range",
+            "param_name": "filter.v.price",
+            "operator": null,
+            "presentation": null,
+            "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+            "range_max": 100000,
+            "min_value": {
+              "param_name": "filter.v.price.gte",
+              "value": null
+            },
+            "max_value": {
+              "param_name": "filter.v.price.lte",
+              "value": null
+            },
+            "active_values": [],
+            "values": []
+          },
+          {
+            "label": "Brand",
+            "type": "list",
+            "param_name": "filter.p.vendor",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Mock.shop",
+                "value": "Mock.shop",
+                "count": 6,
+                "active": false,
+                "param_name": "filter.p.vendor",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.vendor=Mock.shop&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Product type",
+            "type": "list",
+            "param_name": "filter.p.product_type",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [
+              "Hats",
+              "Shoes"
+            ],
+            "values": [
+              {
+                "label": "Bags",
+                "value": "Bags",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.product_type=Bags&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Hats",
+                "value": "Hats",
+                "count": 1,
+                "active": true,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&view=probe"
+              },
+              {
+                "label": "Hoodies",
+                "value": "Hoodies",
+                "count": 7,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.product_type=Hoodies&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Jackets",
+                "value": "Jackets",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.product_type=Jackets&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Pants",
+                "value": "Pants",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.product_type=Pants&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Sandals",
+                "value": "Sandals",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.product_type=Sandals&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Shoes",
+                "value": "Shoes",
+                "count": 5,
+                "active": true,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Shorts",
+                "value": "Shorts",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.product_type=Shorts&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Sunglasses",
+                "value": "Sunglasses",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.product_type=Sunglasses&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Sweaters",
+                "value": "Sweaters",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.product_type=Sweaters&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "T-shirts",
+                "value": "T-shirts",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.product_type=T-shirts&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "More filters",
+            "type": "list",
+            "param_name": "filter.p.tag",
+            "operator": "AND",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "accessories",
+                "value": "accessories",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.tag=accessories&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "men",
+                "value": "men",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.tag=men&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "shoes",
+                "value": "shoes",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.tag=shoes&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "bottoms",
+                "value": "bottoms",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.tag=bottoms&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "tops",
+                "value": "tops",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.tag=tops&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "unisex",
+                "value": "unisex",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.tag=unisex&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "women",
+                "value": "women",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.p.tag=women&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Color",
+            "type": "list",
+            "param_name": "filter.v.option.color",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Green",
+                "value": "Green",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.color=Green&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Ocean",
+                "value": "Ocean",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.color=Ocean&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Olive",
+                "value": "Olive",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.color=Olive&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Purple",
+                "value": "Purple",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.color=Purple&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Red",
+                "value": "Red",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.color=Red&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Clay",
+                "value": "Clay",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.color=Clay&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Size",
+            "type": "list",
+            "param_name": "filter.v.option.size",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "4",
+                "value": "4",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=4&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "5",
+                "value": "5",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=5&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "6",
+                "value": "6",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=6&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "7",
+                "value": "7",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=7&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "8",
+                "value": "8",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=8&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "9",
+                "value": "9",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=9&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "10",
+                "value": "10",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=10&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "11",
+                "value": "11",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=11&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "12",
+                "value": "12",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=12&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "13",
+                "value": "13",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=13&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "14",
+                "value": "14",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=14&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Small",
+                "value": "Small",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=Small&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Medium",
+                "value": "Medium",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=Medium&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Large",
+                "value": "Large",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=Large&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "X-Large",
+                "value": "X-Large",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&filter.v.option.size=X-Large&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Material",
+            "type": "list",
+            "param_name": "filter.p.m.custom.material",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Canvas",
+                "value": "Canvas",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/all?filter.p.m.custom.material=Canvas&filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Leather",
+                "value": "Leather",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/all?filter.p.m.custom.material=Leather&filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Wool",
+                "value": "Wool",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/all?filter.p.m.custom.material=Wool&filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Cotton",
+                "value": "Cotton",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/all?filter.p.m.custom.material=Cotton&filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              },
+              {
+                "label": "Nylon",
+                "value": "Nylon",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/all?filter.p.m.custom.material=Nylon&filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe",
+                "url_to_remove": "/collections/all?filter.p.product_type=Shoes&filter.p.product_type=Hats&view=probe"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

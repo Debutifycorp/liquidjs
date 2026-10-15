@@ -1,0 +1,166 @@
+{
+  "scenario": "probe-page-fr-ca",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/fr-ca/pages/about?view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "localization": {
+          "country": {
+            "iso_code": "CA",
+            "name": "Canada",
+            "currency": "CAD",
+            "symbol": "$"
+          },
+          "language": {
+            "iso_code": "fr",
+            "name": "français",
+            "endonym_name": "français",
+            "root_url": "/fr-ca",
+            "primary": false
+          },
+          "market": {
+            "handle": "ca"
+          },
+          "available_countries": [
+            {
+              "iso_code": "DE",
+              "name": "Allemagne",
+              "currency": "EUR"
+            },
+            {
+              "iso_code": "CA",
+              "name": "Canada",
+              "currency": "CAD"
+            },
+            {
+              "iso_code": "ES",
+              "name": "Espagne",
+              "currency": "EUR"
+            },
+            {
+              "iso_code": "US",
+              "name": "États-Unis",
+              "currency": "USD"
+            },
+            {
+              "iso_code": "FR",
+              "name": "France",
+              "currency": "EUR"
+            },
+            {
+              "iso_code": "IT",
+              "name": "Italie",
+              "currency": "EUR"
+            },
+            {
+              "iso_code": "NL",
+              "name": "Pays-Bas",
+              "currency": "EUR"
+            }
+          ],
+          "available_languages": [
+            {
+              "iso_code": "en",
+              "root_url": "/en-ca"
+            },
+            {
+              "iso_code": "fr",
+              "root_url": "/fr-ca"
+            }
+          ]
+        },
+        "routes": {
+          "root_url": "/fr-ca",
+          "cart_url": "/fr-ca/cart",
+          "cart_add_url": "/fr-ca/cart/add",
+          "cart_change_url": "/fr-ca/cart/change",
+          "cart_update_url": "/fr-ca/cart/update",
+          "cart_clear_url": "/fr-ca/cart/clear",
+          "collections_url": "/fr-ca/collections",
+          "all_products_collection_url": "/fr-ca/collections/all",
+          "search_url": "/fr-ca/search",
+          "predictive_search_url": "/fr-ca/search/suggest",
+          "product_recommendations_url": "/fr-ca/recommendations/products",
+          "account_url": "/fr-ca/account",
+          "account_login_url": "https://medzreferralai2.myshopify.com/customer_authentication/redirect?locale=fr&region_country=CA"
+        },
+        "request": {
+          "path": "/fr-ca/pages/about",
+          "host": "medzreferralai2.myshopify.com",
+          "page_type": "page",
+          "locale": "fr",
+          "locale_root_url": "/fr-ca"
+        },
+        "shop": {
+          "name": "Debutify Parity",
+          "description": "Des vêtements du quotidien, bien faits.",
+          "currency": "USD",
+          "enabled_currencies": [
+            "CAD",
+            "EUR",
+            "USD"
+          ],
+          "published_locales": [
+            {
+              "iso_code": "en",
+              "root_url": "/en-ca"
+            },
+            {
+              "iso_code": "fr",
+              "root_url": "/fr-ca"
+            }
+          ]
+        },
+        "cart_currency": "CAD",
+        "money": "$19.99",
+        "money_with_currency": "$19.99 CAD",
+        "product": {
+          "title": "Sweat à capuche",
+          "url": "/fr-ca/products/hoodie",
+          "price": 12200
+        },
+        "collection": {
+          "title": "Hauts",
+          "url": "/fr-ca/collections/tops"
+        },
+        "page": {
+          "title": "À propos",
+          "content": "<p>Nous fabriquons des vêtements du quotidien.</p>",
+          "template_suffix": null
+        },
+        "menu": [
+          {
+            "title": "Hommes",
+            "url": "/fr-ca/collections/men"
+          },
+          {
+            "title": "Femmes",
+            "url": "/fr-ca/collections/women"
+          },
+          {
+            "title": "Unisexe",
+            "url": "/fr-ca/collections/unisex"
+          },
+          {
+            "title": "Collections",
+            "url": "/fr-ca/collections"
+          },
+          {
+            "title": "Actualités",
+            "url": "/fr-ca/blogs/news"
+          }
+        ],
+        "canonical_url": "https://medzreferralai2.myshopify.com/fr-ca/pages/about",
+        "template": {
+          "name": "page",
+          "suffix": "probe"
+        },
+        "localization_form": "<form method=\"post\" action=\"/fr-ca/localization\" id=\"localization_form\" accept-charset=\"UTF-8\" class=\"shopify-localization-form\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"form_type\" value=\"localization\" /><input type=\"hidden\" name=\"utf8\" value=\"✓\" /><input type=\"hidden\" name=\"_method\" value=\"put\" /><input type=\"hidden\" name=\"return_to\" value=\"/fr-ca/pages/about?view=probe\" /></form>",
+        "product_form": ""
+      }
+    }
+  ]
+}

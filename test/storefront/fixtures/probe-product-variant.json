@@ -1,0 +1,1677 @@
+{
+  "scenario": "probe-product-variant",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/products/hoodie?view=probe&variant=43695846653974",
+      "status": 200,
+      "location": null,
+      "body": {
+        "id": 10489561382934,
+        "title": "Hoodie",
+        "description": "<p>This hoodie is the perfect choice for comfort and warmth. Meticulously crafted from 100% cotton, the hoodie features a soft, plush fleece interior and a unisex sizing design. Soft and lightweight, it's sure to be your go-to for chilly days.</p>",
+        "url": "/products/hoodie",
+        "template_suffix": null,
+        "template": {
+          "name": "product",
+          "suffix": "probe"
+        },
+        "price": 9000,
+        "price_min": 9000,
+        "price_max": 9000,
+        "compare_at_price": 11000,
+        "money": "$90.00",
+        "money_with_currency": "$90.00 USD",
+        "selected_variant": 43695846653974,
+        "selected_or_first_available_variant": 43695846653974,
+        "first_available_variant": 43695846621206,
+        "requires_selling_plan": false,
+        "selected_selling_plan": null,
+        "selected_or_first_available_selling_plan_allocation": null,
+        "options_with_values": [
+          {
+            "name": "Color",
+            "selected_value": "Red"
+          },
+          {
+            "name": "Size",
+            "selected_value": "Medium"
+          }
+        ],
+        "variants": [
+          {
+            "id": 43695846621206,
+            "title": "Red / Small",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 48,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695846621206",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847145494,
+            "title": "Clay / Small",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847145494",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847276566,
+            "title": "Ocean / Small",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 49,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847276566",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847407638,
+            "title": "Purple / Small",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847407638",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847538710,
+            "title": "Green / Small",
+            "price": 9000,
+            "compare_at_price": 11000,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 42,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847538710",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695846653974,
+            "title": "Red / Medium",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": true,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695846653974",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847178262,
+            "title": "Clay / Medium",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847178262",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847309334,
+            "title": "Ocean / Medium",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847309334",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847440406,
+            "title": "Purple / Medium",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847440406",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847571478,
+            "title": "Green / Medium",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 49,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847571478",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695846686742,
+            "title": "Red / Large",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695846686742",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847211030,
+            "title": "Clay / Large",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847211030",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847342102,
+            "title": "Ocean / Large",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847342102",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847473174,
+            "title": "Purple / Large",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847473174",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847604246,
+            "title": "Green / Large",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847604246",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695846719510,
+            "title": "Red / X-Large",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695846719510",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847243798,
+            "title": "Clay / X-Large",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847243798",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847374870,
+            "title": "Ocean / X-Large",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847374870",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847505942,
+            "title": "Purple / X-Large",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847505942",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43695847637014,
+            "title": "Green / X-Large",
+            "price": 9000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 600,
+            "requires_selling_plan": false,
+            "url": "/products/hoodie?variant=43695847637014",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          }
+        ],
+        "selling_plan_groups": [],
+        "ajax": {
+          "id": 10489561382934,
+          "title": "Hoodie",
+          "handle": "hoodie",
+          "description": "<p>This hoodie is the perfect choice for comfort and warmth. Meticulously crafted from 100% cotton, the hoodie features a soft, plush fleece interior and a unisex sizing design. Soft and lightweight, it's sure to be your go-to for chilly days.</p>",
+          "published_at": "2026-10-15T13:04:49-04:00",
+          "created_at": "2026-10-15T13:04:43-04:00",
+          "vendor": "Mock.shop",
+          "type": "Hoodies",
+          "tags": [],
+          "price": 9000,
+          "price_min": 9000,
+          "price_max": 9000,
+          "available": true,
+          "price_varies": false,
+          "compare_at_price": 11000,
+          "compare_at_price_min": 11000,
+          "compare_at_price_max": 11000,
+          "compare_at_price_varies": false,
+          "variants": [
+            {
+              "id": 43695846621206,
+              "title": "Red / Small",
+              "option1": "Red",
+              "option2": "Small",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234996011,
+                "product_id": 10489561382934,
+                "position": 6,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:57-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg",
+                "variant_ids": [
+                  43695846621206,
+                  43695846653974,
+                  43695846686742,
+                  43695846719510
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Red / Small",
+              "public_title": "Red / Small",
+              "options": [
+                "Red",
+                "Small"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774600364054,
+                "position": 6,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847145494,
+              "title": "Clay / Small",
+              "option1": "Clay",
+              "option2": "Small",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234832171,
+                "product_id": 10489561382934,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:58-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg",
+                "variant_ids": [
+                  43695847145494,
+                  43695847178262,
+                  43695847211030,
+                  43695847243798
+                ]
+              },
+              "available": false,
+              "name": "Hoodie - Clay / Small",
+              "public_title": "Clay / Small",
+              "options": [
+                "Clay",
+                "Small"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774599970838,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847276566,
+              "title": "Ocean / Small",
+              "option1": "Ocean",
+              "option2": "Small",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234963243,
+                "product_id": 10489561382934,
+                "position": 5,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:58-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/24a9b0cb7f9bdd0ffd858cd2c6f588a15923c8456e0d975ed7a0fc9382a4dabf.jpg",
+                "variant_ids": [
+                  43695847276566,
+                  43695847309334,
+                  43695847342102,
+                  43695847374870
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Ocean / Small",
+              "public_title": "Ocean / Small",
+              "options": [
+                "Ocean",
+                "Small"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774600167446,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/24a9b0cb7f9bdd0ffd858cd2c6f588a15923c8456e0d975ed7a0fc9382a4dabf.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847407638,
+              "title": "Purple / Small",
+              "option1": "Purple",
+              "option2": "Small",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776235028779,
+                "product_id": 10489561382934,
+                "position": 7,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:57-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c914b503fa965192c1b48ba70285736f8ff2c7482992ce17cda3a8bfb343a1c9.jpg",
+                "variant_ids": [
+                  43695847407638,
+                  43695847440406,
+                  43695847473174,
+                  43695847505942
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Purple / Small",
+              "public_title": "Purple / Small",
+              "options": [
+                "Purple",
+                "Small"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774600232982,
+                "position": 7,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c914b503fa965192c1b48ba70285736f8ff2c7482992ce17cda3a8bfb343a1c9.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847538710,
+              "title": "Green / Small",
+              "option1": "Green",
+              "option2": "Small",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234864939,
+                "product_id": 10489561382934,
+                "position": 2,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:59-04:00",
+                "alt": null,
+                "width": 2048,
+                "height": 2048,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+                "variant_ids": [
+                  43695847538710,
+                  43695847571478,
+                  43695847604246,
+                  43695847637014
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Green / Small",
+              "public_title": "Green / Small",
+              "options": [
+                "Green",
+                "Small"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": 11000,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774335074326,
+                "position": 2,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 2048,
+                  "width": 2048,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695846653974,
+              "title": "Red / Medium",
+              "option1": "Red",
+              "option2": "Medium",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234996011,
+                "product_id": 10489561382934,
+                "position": 6,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:57-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg",
+                "variant_ids": [
+                  43695846621206,
+                  43695846653974,
+                  43695846686742,
+                  43695846719510
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Red / Medium",
+              "public_title": "Red / Medium",
+              "options": [
+                "Red",
+                "Medium"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774600364054,
+                "position": 6,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847178262,
+              "title": "Clay / Medium",
+              "option1": "Clay",
+              "option2": "Medium",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234832171,
+                "product_id": 10489561382934,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:58-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg",
+                "variant_ids": [
+                  43695847145494,
+                  43695847178262,
+                  43695847211030,
+                  43695847243798
+                ]
+              },
+              "available": false,
+              "name": "Hoodie - Clay / Medium",
+              "public_title": "Clay / Medium",
+              "options": [
+                "Clay",
+                "Medium"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774599970838,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847309334,
+              "title": "Ocean / Medium",
+              "option1": "Ocean",
+              "option2": "Medium",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234963243,
+                "product_id": 10489561382934,
+                "position": 5,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:58-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/24a9b0cb7f9bdd0ffd858cd2c6f588a15923c8456e0d975ed7a0fc9382a4dabf.jpg",
+                "variant_ids": [
+                  43695847276566,
+                  43695847309334,
+                  43695847342102,
+                  43695847374870
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Ocean / Medium",
+              "public_title": "Ocean / Medium",
+              "options": [
+                "Ocean",
+                "Medium"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774600167446,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/24a9b0cb7f9bdd0ffd858cd2c6f588a15923c8456e0d975ed7a0fc9382a4dabf.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847440406,
+              "title": "Purple / Medium",
+              "option1": "Purple",
+              "option2": "Medium",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776235028779,
+                "product_id": 10489561382934,
+                "position": 7,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:57-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c914b503fa965192c1b48ba70285736f8ff2c7482992ce17cda3a8bfb343a1c9.jpg",
+                "variant_ids": [
+                  43695847407638,
+                  43695847440406,
+                  43695847473174,
+                  43695847505942
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Purple / Medium",
+              "public_title": "Purple / Medium",
+              "options": [
+                "Purple",
+                "Medium"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774600232982,
+                "position": 7,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c914b503fa965192c1b48ba70285736f8ff2c7482992ce17cda3a8bfb343a1c9.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847571478,
+              "title": "Green / Medium",
+              "option1": "Green",
+              "option2": "Medium",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234864939,
+                "product_id": 10489561382934,
+                "position": 2,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:59-04:00",
+                "alt": null,
+                "width": 2048,
+                "height": 2048,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+                "variant_ids": [
+                  43695847538710,
+                  43695847571478,
+                  43695847604246,
+                  43695847637014
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Green / Medium",
+              "public_title": "Green / Medium",
+              "options": [
+                "Green",
+                "Medium"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774335074326,
+                "position": 2,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 2048,
+                  "width": 2048,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695846686742,
+              "title": "Red / Large",
+              "option1": "Red",
+              "option2": "Large",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234996011,
+                "product_id": 10489561382934,
+                "position": 6,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:57-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg",
+                "variant_ids": [
+                  43695846621206,
+                  43695846653974,
+                  43695846686742,
+                  43695846719510
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Red / Large",
+              "public_title": "Red / Large",
+              "options": [
+                "Red",
+                "Large"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774600364054,
+                "position": 6,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847211030,
+              "title": "Clay / Large",
+              "option1": "Clay",
+              "option2": "Large",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234832171,
+                "product_id": 10489561382934,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:58-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg",
+                "variant_ids": [
+                  43695847145494,
+                  43695847178262,
+                  43695847211030,
+                  43695847243798
+                ]
+              },
+              "available": false,
+              "name": "Hoodie - Clay / Large",
+              "public_title": "Clay / Large",
+              "options": [
+                "Clay",
+                "Large"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774599970838,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847342102,
+              "title": "Ocean / Large",
+              "option1": "Ocean",
+              "option2": "Large",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234963243,
+                "product_id": 10489561382934,
+                "position": 5,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:58-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/24a9b0cb7f9bdd0ffd858cd2c6f588a15923c8456e0d975ed7a0fc9382a4dabf.jpg",
+                "variant_ids": [
+                  43695847276566,
+                  43695847309334,
+                  43695847342102,
+                  43695847374870
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Ocean / Large",
+              "public_title": "Ocean / Large",
+              "options": [
+                "Ocean",
+                "Large"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774600167446,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/24a9b0cb7f9bdd0ffd858cd2c6f588a15923c8456e0d975ed7a0fc9382a4dabf.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847473174,
+              "title": "Purple / Large",
+              "option1": "Purple",
+              "option2": "Large",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776235028779,
+                "product_id": 10489561382934,
+                "position": 7,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:57-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c914b503fa965192c1b48ba70285736f8ff2c7482992ce17cda3a8bfb343a1c9.jpg",
+                "variant_ids": [
+                  43695847407638,
+                  43695847440406,
+                  43695847473174,
+                  43695847505942
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Purple / Large",
+              "public_title": "Purple / Large",
+              "options": [
+                "Purple",
+                "Large"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774600232982,
+                "position": 7,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c914b503fa965192c1b48ba70285736f8ff2c7482992ce17cda3a8bfb343a1c9.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847604246,
+              "title": "Green / Large",
+              "option1": "Green",
+              "option2": "Large",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234864939,
+                "product_id": 10489561382934,
+                "position": 2,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:59-04:00",
+                "alt": null,
+                "width": 2048,
+                "height": 2048,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+                "variant_ids": [
+                  43695847538710,
+                  43695847571478,
+                  43695847604246,
+                  43695847637014
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Green / Large",
+              "public_title": "Green / Large",
+              "options": [
+                "Green",
+                "Large"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774335074326,
+                "position": 2,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 2048,
+                  "width": 2048,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695846719510,
+              "title": "Red / X-Large",
+              "option1": "Red",
+              "option2": "X-Large",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234996011,
+                "product_id": 10489561382934,
+                "position": 6,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:57-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg",
+                "variant_ids": [
+                  43695846621206,
+                  43695846653974,
+                  43695846686742,
+                  43695846719510
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Red / X-Large",
+              "public_title": "Red / X-Large",
+              "options": [
+                "Red",
+                "X-Large"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774600364054,
+                "position": 6,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847243798,
+              "title": "Clay / X-Large",
+              "option1": "Clay",
+              "option2": "X-Large",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234832171,
+                "product_id": 10489561382934,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:58-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg",
+                "variant_ids": [
+                  43695847145494,
+                  43695847178262,
+                  43695847211030,
+                  43695847243798
+                ]
+              },
+              "available": false,
+              "name": "Hoodie - Clay / X-Large",
+              "public_title": "Clay / X-Large",
+              "options": [
+                "Clay",
+                "X-Large"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774599970838,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847374870,
+              "title": "Ocean / X-Large",
+              "option1": "Ocean",
+              "option2": "X-Large",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234963243,
+                "product_id": 10489561382934,
+                "position": 5,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:58-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/24a9b0cb7f9bdd0ffd858cd2c6f588a15923c8456e0d975ed7a0fc9382a4dabf.jpg",
+                "variant_ids": [
+                  43695847276566,
+                  43695847309334,
+                  43695847342102,
+                  43695847374870
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Ocean / X-Large",
+              "public_title": "Ocean / X-Large",
+              "options": [
+                "Ocean",
+                "X-Large"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774600167446,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/24a9b0cb7f9bdd0ffd858cd2c6f588a15923c8456e0d975ed7a0fc9382a4dabf.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847505942,
+              "title": "Purple / X-Large",
+              "option1": "Purple",
+              "option2": "X-Large",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776235028779,
+                "product_id": 10489561382934,
+                "position": 7,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:57-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c914b503fa965192c1b48ba70285736f8ff2c7482992ce17cda3a8bfb343a1c9.jpg",
+                "variant_ids": [
+                  43695847407638,
+                  43695847440406,
+                  43695847473174,
+                  43695847505942
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Purple / X-Large",
+              "public_title": "Purple / X-Large",
+              "options": [
+                "Purple",
+                "X-Large"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774600232982,
+                "position": 7,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c914b503fa965192c1b48ba70285736f8ff2c7482992ce17cda3a8bfb343a1c9.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695847637014,
+              "title": "Green / X-Large",
+              "option1": "Green",
+              "option2": "X-Large",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234864939,
+                "product_id": 10489561382934,
+                "position": 2,
+                "created_at": "2026-10-15T13:46:55-04:00",
+                "updated_at": "2026-10-15T13:46:59-04:00",
+                "alt": null,
+                "width": 2048,
+                "height": 2048,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+                "variant_ids": [
+                  43695847538710,
+                  43695847571478,
+                  43695847604246,
+                  43695847637014
+                ]
+              },
+              "available": true,
+              "name": "Hoodie - Green / X-Large",
+              "public_title": "Green / X-Large",
+              "options": [
+                "Green",
+                "X-Large"
+              ],
+              "price": 9000,
+              "weight": 600,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774335074326,
+                "position": 2,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 2048,
+                  "width": 2048,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            }
+          ],
+          "images": [
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3d4d46da1bdbda2bf52f92987e6d4108770eb0a8f233f63a279849fce731f5af.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/886264a1a7a672cb1437d24935187531bc627143d63d66737f312b251a669aa3.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/24a9b0cb7f9bdd0ffd858cd2c6f588a15923c8456e0d975ed7a0fc9382a4dabf.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c914b503fa965192c1b48ba70285736f8ff2c7482992ce17cda3a8bfb343a1c9.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3e444a67d893becff259451c24f3e2a88d42b5e755bcafb52785bd1b400c4f5f.jpg"
+          ],
+          "featured_image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg",
+          "options": [
+            "Color",
+            "Size"
+          ],
+          "media": [
+            {
+              "alt": null,
+              "id": 39774599970838,
+              "position": 1,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774335074326,
+              "position": 2,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 2048,
+                "width": 2048,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png"
+              },
+              "aspect_ratio": 1,
+              "height": 2048,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+              "width": 2048
+            },
+            {
+              "alt": null,
+              "id": 39774600036374,
+              "position": 3,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3d4d46da1bdbda2bf52f92987e6d4108770eb0a8f233f63a279849fce731f5af.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3d4d46da1bdbda2bf52f92987e6d4108770eb0a8f233f63a279849fce731f5af.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774600101910,
+              "position": 4,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/886264a1a7a672cb1437d24935187531bc627143d63d66737f312b251a669aa3.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/886264a1a7a672cb1437d24935187531bc627143d63d66737f312b251a669aa3.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774600167446,
+              "position": 5,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/24a9b0cb7f9bdd0ffd858cd2c6f588a15923c8456e0d975ed7a0fc9382a4dabf.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/24a9b0cb7f9bdd0ffd858cd2c6f588a15923c8456e0d975ed7a0fc9382a4dabf.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774600364054,
+              "position": 6,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774600232982,
+              "position": 7,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c914b503fa965192c1b48ba70285736f8ff2c7482992ce17cda3a8bfb343a1c9.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c914b503fa965192c1b48ba70285736f8ff2c7482992ce17cda3a8bfb343a1c9.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774600069142,
+              "position": 8,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3e444a67d893becff259451c24f3e2a88d42b5e755bcafb52785bd1b400c4f5f.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3e444a67d893becff259451c24f3e2a88d42b5e755bcafb52785bd1b400c4f5f.jpg",
+              "width": 4096
+            }
+          ],
+          "requires_selling_plan": false,
+          "selling_plan_groups": [],
+          "content": "<p>This hoodie is the perfect choice for comfort and warmth. Meticulously crafted from 100% cotton, the hoodie features a soft, plush fleece interior and a unisex sizing design. Soft and lightweight, it's sure to be your go-to for chilly days.</p>"
+        }
+      }
+    }
+  ]
+}

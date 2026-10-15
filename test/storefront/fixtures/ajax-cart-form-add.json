@@ -1,0 +1,58 @@
+{
+  "scenario": "ajax-cart-form-add",
+  "steps": [
+    {
+      "method": "POST",
+      "url": "/cart/add",
+      "form": {
+        "id": "43696940613654",
+        "quantity": "1",
+        "form_type": "product",
+        "utf8": "✓"
+      },
+      "status": 302,
+      "location": "/cart",
+      "body": {}
+    },
+    {
+      "method": "POST",
+      "url": "/cart",
+      "form": {
+        "updates[]": "3",
+        "checkout": ""
+      },
+      "status": 302,
+      "location": "/checkouts/cn/<token>/en-us?_r=<token>",
+      "body": {}
+    },
+    {
+      "method": "GET",
+      "url": "/cart/change?line=1&quantity=0",
+      "status": 302,
+      "location": "/cart",
+      "body": {}
+    },
+    {
+      "method": "GET",
+      "url": "/cart.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 0,
+        "total_price": 0,
+        "total_discount": 0,
+        "total_weight": 0,
+        "item_count": 0,
+        "items": [],
+        "requires_shipping": false,
+        "currency": "USD",
+        "items_subtotal_price": 0,
+        "cart_level_discount_applications": [],
+        "discount_codes": []
+      }
+    }
+  ]
+}

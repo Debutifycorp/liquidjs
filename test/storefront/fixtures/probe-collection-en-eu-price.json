@@ -1,0 +1,690 @@
+{
+  "scenario": "probe-collection-en-eu-price",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/en-eu/collections/all?view=probe&filter.v.price.gte=20",
+      "status": 200,
+      "location": null,
+      "body": {
+        "handle": "all",
+        "title": "Products",
+        "url": "/en-eu/collections/all",
+        "template_suffix": null,
+        "template": {
+          "name": "collection",
+          "suffix": "probe"
+        },
+        "products": [
+          {
+            "handle": "beanie",
+            "price": 9295,
+            "url": "/en-eu/products/beanie"
+          },
+          {
+            "handle": "black-sunnies",
+            "price": 4695,
+            "url": "/en-eu/products/black-sunnies"
+          },
+          {
+            "handle": "canvas-sneakers",
+            "price": 3695,
+            "url": "/en-eu/products/canvas-sneakers"
+          },
+          {
+            "handle": "clear-sunnies",
+            "price": 2395,
+            "url": "/en-eu/products/clear-sunnies"
+          }
+        ],
+        "products_count": 29,
+        "all_products_count": 29,
+        "sort_by": "",
+        "default_sort_by": "title-ascending",
+        "sort_options": [
+          {
+            "name": "Featured",
+            "value": "manual"
+          },
+          {
+            "name": "Most relevant",
+            "value": "most-relevant"
+          },
+          {
+            "name": "Best selling",
+            "value": "best-selling"
+          },
+          {
+            "name": "Alphabetically, A-Z",
+            "value": "title-ascending"
+          },
+          {
+            "name": "Alphabetically, Z-A",
+            "value": "title-descending"
+          },
+          {
+            "name": "Price, low to high",
+            "value": "price-ascending"
+          },
+          {
+            "name": "Price, high to low",
+            "value": "price-descending"
+          },
+          {
+            "name": "Date, old to new",
+            "value": "created-ascending"
+          },
+          {
+            "name": "Date, new to old",
+            "value": "created-descending"
+          }
+        ],
+        "current_tags": null,
+        "tags": [
+          "accessories",
+          "men",
+          "shoes",
+          "unisex"
+        ],
+        "all_tags": [
+          "accessories",
+          "bottoms",
+          "men",
+          "shoes",
+          "tops",
+          "unisex",
+          "women"
+        ],
+        "all_types": [
+          "Bags",
+          "Hats",
+          "Hoodies",
+          "Jackets",
+          "Pants",
+          "Sandals",
+          "Shoes",
+          "Shorts",
+          "Sunglasses",
+          "Sweaters",
+          "T-shirts"
+        ],
+        "all_vendors": [
+          "Mock.shop"
+        ],
+        "paginate": {
+          "current_page": 1,
+          "pages": 8,
+          "items": 29,
+          "page_size": 4,
+          "next": "/en-eu/collections/all?filter.v.price.gte=20&page=2&view=probe",
+          "previous": null
+        },
+        "filters": [
+          {
+            "label": "Availability",
+            "type": "list",
+            "param_name": "filter.v.availability",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "In stock",
+                "value": "1",
+                "count": 26,
+                "active": false,
+                "param_name": "filter.v.availability",
+                "url_to_add": "/en-eu/collections/all?filter.v.availability=1&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Out of stock",
+                "value": "0",
+                "count": 6,
+                "active": false,
+                "param_name": "filter.v.availability",
+                "url_to_add": "/en-eu/collections/all?filter.v.availability=0&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Brand",
+            "type": "list",
+            "param_name": "filter.p.vendor",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Mock.shop",
+                "value": "Mock.shop",
+                "count": 29,
+                "active": false,
+                "param_name": "filter.p.vendor",
+                "url_to_add": "/en-eu/collections/all?filter.p.vendor=Mock.shop&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Product type",
+            "type": "list",
+            "param_name": "filter.p.product_type",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Bags",
+                "value": "Bags",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/en-eu/collections/all?filter.p.product_type=Bags&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Hats",
+                "value": "Hats",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/en-eu/collections/all?filter.p.product_type=Hats&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Hoodies",
+                "value": "Hoodies",
+                "count": 7,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/en-eu/collections/all?filter.p.product_type=Hoodies&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Jackets",
+                "value": "Jackets",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/en-eu/collections/all?filter.p.product_type=Jackets&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Pants",
+                "value": "Pants",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/en-eu/collections/all?filter.p.product_type=Pants&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Sandals",
+                "value": "Sandals",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/en-eu/collections/all?filter.p.product_type=Sandals&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Shoes",
+                "value": "Shoes",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/en-eu/collections/all?filter.p.product_type=Shoes&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Shorts",
+                "value": "Shorts",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/en-eu/collections/all?filter.p.product_type=Shorts&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Sunglasses",
+                "value": "Sunglasses",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/en-eu/collections/all?filter.p.product_type=Sunglasses&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Sweaters",
+                "value": "Sweaters",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/en-eu/collections/all?filter.p.product_type=Sweaters&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "T-shirts",
+                "value": "T-shirts",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/en-eu/collections/all?filter.p.product_type=T-shirts&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "More filters",
+            "type": "list",
+            "param_name": "filter.p.tag",
+            "operator": "AND",
+            "presentation": "text",
+            "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "accessories",
+                "value": "accessories",
+                "count": 9,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/en-eu/collections/all?filter.p.tag=accessories&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "bottoms",
+                "value": "bottoms",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/en-eu/collections/all?filter.p.tag=bottoms&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "men",
+                "value": "men",
+                "count": 10,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/en-eu/collections/all?filter.p.tag=men&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "shoes",
+                "value": "shoes",
+                "count": 6,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/en-eu/collections/all?filter.p.tag=shoes&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "tops",
+                "value": "tops",
+                "count": 15,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/en-eu/collections/all?filter.p.tag=tops&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "unisex",
+                "value": "unisex",
+                "count": 15,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/en-eu/collections/all?filter.p.tag=unisex&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "women",
+                "value": "women",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/en-eu/collections/all?filter.p.tag=women&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Color",
+            "type": "list",
+            "param_name": "filter.v.option.color",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Clay",
+                "value": "Clay",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.color=Clay&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Green",
+                "value": "Green",
+                "count": 18,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.color=Green&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Ocean",
+                "value": "Ocean",
+                "count": 18,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.color=Ocean&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Olive",
+                "value": "Olive",
+                "count": 16,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.color=Olive&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Purple",
+                "value": "Purple",
+                "count": 18,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.color=Purple&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Red",
+                "value": "Red",
+                "count": 18,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.color=Red&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Size",
+            "type": "list",
+            "param_name": "filter.v.option.size",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Small",
+                "value": "Small",
+                "count": 20,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=Small&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Medium",
+                "value": "Medium",
+                "count": 19,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=Medium&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Large",
+                "value": "Large",
+                "count": 20,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=Large&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "X-Large",
+                "value": "X-Large",
+                "count": 9,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=X-Large&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "4",
+                "value": "4",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=4&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "5",
+                "value": "5",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=5&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "6",
+                "value": "6",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=6&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "7",
+                "value": "7",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=7&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "8",
+                "value": "8",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=8&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "9",
+                "value": "9",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=9&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "10",
+                "value": "10",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=10&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "11",
+                "value": "11",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=11&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "12",
+                "value": "12",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=12&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "13",
+                "value": "13",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=13&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "14",
+                "value": "14",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/en-eu/collections/all?filter.v.option.size=14&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Material",
+            "type": "list",
+            "param_name": "filter.p.m.custom.material",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Canvas",
+                "value": "Canvas",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/en-eu/collections/all?filter.p.m.custom.material=Canvas&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Cotton",
+                "value": "Cotton",
+                "count": 13,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/en-eu/collections/all?filter.p.m.custom.material=Cotton&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Leather",
+                "value": "Leather",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/en-eu/collections/all?filter.p.m.custom.material=Leather&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Nylon",
+                "value": "Nylon",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/en-eu/collections/all?filter.p.m.custom.material=Nylon&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              },
+              {
+                "label": "Wool",
+                "value": "Wool",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/en-eu/collections/all?filter.p.m.custom.material=Wool&filter.v.price.gte=20&view=probe",
+                "url_to_remove": "/en-eu/collections/all?filter.v.price.gte=20&view=probe"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

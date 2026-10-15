@@ -1,0 +1,31 @@
+{
+  "scenario": "probe-predictive-shirt",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/search/suggest?q=shirt&resources%5Btype%5D=product,collection,page,article,query&resources%5Blimit%5D=8&section_id=probe-predictive",
+      "status": 200,
+      "location": null,
+      "body": {
+        "performed": true,
+        "terms": "shirt",
+        "types": [
+          "article",
+          "collection",
+          "page",
+          "product",
+          "query"
+        ],
+        "products": [
+          "men-t-shirt",
+          "women-t-shirt",
+          "workout-shirt"
+        ],
+        "collections": [],
+        "pages": [],
+        "articles": [],
+        "queries": []
+      }
+    }
+  ]
+}

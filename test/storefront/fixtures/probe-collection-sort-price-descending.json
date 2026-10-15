@@ -1,0 +1,711 @@
+{
+  "scenario": "probe-collection-sort-price-descending",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/collections/all?view=probe&sort_by=price-descending",
+      "status": 200,
+      "location": null,
+      "body": {
+        "handle": "all",
+        "title": "Products",
+        "url": "/collections/all",
+        "template_suffix": null,
+        "template": {
+          "name": "collection",
+          "suffix": "probe"
+        },
+        "products": [
+          {
+            "handle": "gray-leather-sneakers",
+            "price": 100000,
+            "url": "/products/gray-leather-sneakers"
+          },
+          {
+            "handle": "frontpack",
+            "price": 20000,
+            "url": "/products/frontpack"
+          },
+          {
+            "handle": "high-top-sneakers",
+            "price": 18000,
+            "url": "/products/high-top-sneakers"
+          },
+          {
+            "handle": "women-crewneck",
+            "price": 12000,
+            "url": "/products/women-crewneck"
+          }
+        ],
+        "products_count": 29,
+        "all_products_count": 29,
+        "sort_by": "price-descending",
+        "default_sort_by": "title-ascending",
+        "sort_options": [
+          {
+            "name": "Featured",
+            "value": "manual"
+          },
+          {
+            "name": "Most relevant",
+            "value": "most-relevant"
+          },
+          {
+            "name": "Best selling",
+            "value": "best-selling"
+          },
+          {
+            "name": "Alphabetically, A-Z",
+            "value": "title-ascending"
+          },
+          {
+            "name": "Alphabetically, Z-A",
+            "value": "title-descending"
+          },
+          {
+            "name": "Price, low to high",
+            "value": "price-ascending"
+          },
+          {
+            "name": "Price, high to low",
+            "value": "price-descending"
+          },
+          {
+            "name": "Date, old to new",
+            "value": "created-ascending"
+          },
+          {
+            "name": "Date, new to old",
+            "value": "created-descending"
+          }
+        ],
+        "current_tags": null,
+        "tags": [
+          "accessories",
+          "men",
+          "shoes",
+          "tops",
+          "unisex",
+          "women"
+        ],
+        "all_tags": [
+          "accessories",
+          "bottoms",
+          "men",
+          "shoes",
+          "tops",
+          "unisex",
+          "women"
+        ],
+        "all_types": [
+          "Bags",
+          "Hats",
+          "Hoodies",
+          "Jackets",
+          "Pants",
+          "Sandals",
+          "Shoes",
+          "Shorts",
+          "Sunglasses",
+          "Sweaters",
+          "T-shirts"
+        ],
+        "all_vendors": [
+          "Mock.shop"
+        ],
+        "paginate": {
+          "current_page": 1,
+          "pages": 8,
+          "items": 29,
+          "page_size": 4,
+          "next": "/collections/all?page=2&sort_by=price-descending&view=probe",
+          "previous": null
+        },
+        "filters": [
+          {
+            "label": "Availability",
+            "type": "list",
+            "param_name": "filter.v.availability",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?sort_by=price-descending&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "In stock",
+                "value": "1",
+                "count": 26,
+                "active": false,
+                "param_name": "filter.v.availability",
+                "url_to_add": "/collections/all?filter.v.availability=1&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Out of stock",
+                "value": "0",
+                "count": 6,
+                "active": false,
+                "param_name": "filter.v.availability",
+                "url_to_add": "/collections/all?filter.v.availability=0&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Price",
+            "type": "price_range",
+            "param_name": "filter.v.price",
+            "operator": null,
+            "presentation": null,
+            "url_to_remove": "/collections/all?sort_by=price-descending&view=probe",
+            "range_max": 100000,
+            "min_value": {
+              "param_name": "filter.v.price.gte",
+              "value": null
+            },
+            "max_value": {
+              "param_name": "filter.v.price.lte",
+              "value": null
+            },
+            "active_values": [],
+            "values": []
+          },
+          {
+            "label": "Brand",
+            "type": "list",
+            "param_name": "filter.p.vendor",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?sort_by=price-descending&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Mock.shop",
+                "value": "Mock.shop",
+                "count": 29,
+                "active": false,
+                "param_name": "filter.p.vendor",
+                "url_to_add": "/collections/all?filter.p.vendor=Mock.shop&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Product type",
+            "type": "list",
+            "param_name": "filter.p.product_type",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?sort_by=price-descending&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Bags",
+                "value": "Bags",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Bags&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Hats",
+                "value": "Hats",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Hats&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Hoodies",
+                "value": "Hoodies",
+                "count": 7,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Hoodies&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Jackets",
+                "value": "Jackets",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Jackets&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Pants",
+                "value": "Pants",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Pants&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Sandals",
+                "value": "Sandals",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Sandals&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Shoes",
+                "value": "Shoes",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Shoes&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Shorts",
+                "value": "Shorts",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Shorts&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Sunglasses",
+                "value": "Sunglasses",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Sunglasses&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Sweaters",
+                "value": "Sweaters",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=Sweaters&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "T-shirts",
+                "value": "T-shirts",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/all?filter.p.product_type=T-shirts&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "More filters",
+            "type": "list",
+            "param_name": "filter.p.tag",
+            "operator": "AND",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?sort_by=price-descending&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "accessories",
+                "value": "accessories",
+                "count": 9,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.tag=accessories&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "bottoms",
+                "value": "bottoms",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.tag=bottoms&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "men",
+                "value": "men",
+                "count": 10,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.tag=men&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "shoes",
+                "value": "shoes",
+                "count": 6,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.tag=shoes&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "tops",
+                "value": "tops",
+                "count": 15,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.tag=tops&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "unisex",
+                "value": "unisex",
+                "count": 15,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.tag=unisex&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "women",
+                "value": "women",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/all?filter.p.tag=women&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Color",
+            "type": "list",
+            "param_name": "filter.v.option.color",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?sort_by=price-descending&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Clay",
+                "value": "Clay",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/all?filter.v.option.color=Clay&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Green",
+                "value": "Green",
+                "count": 18,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/all?filter.v.option.color=Green&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Ocean",
+                "value": "Ocean",
+                "count": 18,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/all?filter.v.option.color=Ocean&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Olive",
+                "value": "Olive",
+                "count": 16,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/all?filter.v.option.color=Olive&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Purple",
+                "value": "Purple",
+                "count": 18,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/all?filter.v.option.color=Purple&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Red",
+                "value": "Red",
+                "count": 18,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/all?filter.v.option.color=Red&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Size",
+            "type": "list",
+            "param_name": "filter.v.option.size",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?sort_by=price-descending&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Small",
+                "value": "Small",
+                "count": 20,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=Small&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Medium",
+                "value": "Medium",
+                "count": 19,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=Medium&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Large",
+                "value": "Large",
+                "count": 20,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=Large&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "X-Large",
+                "value": "X-Large",
+                "count": 9,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=X-Large&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "4",
+                "value": "4",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=4&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "5",
+                "value": "5",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=5&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "6",
+                "value": "6",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=6&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "7",
+                "value": "7",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=7&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "8",
+                "value": "8",
+                "count": 5,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=8&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "9",
+                "value": "9",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=9&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "10",
+                "value": "10",
+                "count": 4,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=10&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "11",
+                "value": "11",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=11&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "12",
+                "value": "12",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=12&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "13",
+                "value": "13",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=13&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "14",
+                "value": "14",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/all?filter.v.option.size=14&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Material",
+            "type": "list",
+            "param_name": "filter.p.m.custom.material",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/all?sort_by=price-descending&view=probe",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Canvas",
+                "value": "Canvas",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/all?filter.p.m.custom.material=Canvas&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Cotton",
+                "value": "Cotton",
+                "count": 13,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/all?filter.p.m.custom.material=Cotton&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Leather",
+                "value": "Leather",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/all?filter.p.m.custom.material=Leather&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Nylon",
+                "value": "Nylon",
+                "count": 3,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/all?filter.p.m.custom.material=Nylon&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              },
+              {
+                "label": "Wool",
+                "value": "Wool",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/all?filter.p.m.custom.material=Wool&sort_by=price-descending&view=probe",
+                "url_to_remove": "/collections/all?sort_by=price-descending&view=probe"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

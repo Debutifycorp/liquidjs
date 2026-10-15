@@ -1,0 +1,12 @@
+{
+  "scenario": "flow-variant-route",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/variants/43695846653974",
+      "status": 302,
+      "location": "/products/hoodie?variant=43695846653974",
+      "body": null
+    }
+  ]
+}

@@ -1,0 +1,394 @@
+{
+  "scenario": "ajax-shipping-rates",
+  "steps": [
+    {
+      "method": "POST",
+      "url": "/cart/add.js",
+      "json": {
+        "items": [
+          {
+            "id": 43695847538710,
+            "quantity": 1
+          }
+        ]
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "items": [
+          {
+            "id": 43695847538710,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43695847538710,
+            "key": "43695847538710:<hash>",
+            "title": "Hoodie - Green / Small",
+            "product_title": "Hoodie",
+            "variant_title": "Green / Small",
+            "price": 9000,
+            "original_price": 9000,
+            "discounted_price": 9000,
+            "line_price": 9000,
+            "original_line_price": 9000,
+            "presentment_price": 90,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 600,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 10489561382934,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 9000,
+            "final_line_price": 9000,
+            "url": "/products/hoodie?variant=43695847538710",
+            "featured_image": {
+              "alt": "Hoodie",
+              "aspect_ratio": 1,
+              "height": 2048,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+              "width": 2048
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+            "handle": "hoodie",
+            "requires_shipping": true,
+            "product_type": "Hoodies",
+            "untranslated_product_title": "Hoodie",
+            "product_description": "This hoodie is the perfect choice for comfort and warmth. Meticulously crafted from 100% cotton, the hoodie features a soft, plush fleece interior and a unisex sizing design. Soft and lightweight, it's sure to be your go-to for chilly days.",
+            "untranslated_variant_title": "Green / Small",
+            "variant_options": [
+              "Green",
+              "Small"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              },
+              {
+                "name": "Size",
+                "value": "Small"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/prepare_shipping_rates.json?shipping_address%5Bcountry%5D=United%20States&shipping_address%5Bprovince%5D=CA&shipping_address%5Bzip%5D=90210",
+      "status": 202,
+      "location": null,
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/cart/async_shipping_rates.json?shipping_address%5Bcountry%5D=United%20States&shipping_address%5Bprovince%5D=CA&shipping_address%5Bzip%5D=90210",
+      "status": 200,
+      "location": null,
+      "body": {
+        "shipping_rates": [
+          {
+            "name": "Standard",
+            "presentment_name": "Standard",
+            "code": "Standard",
+            "price": "5.00",
+            "markup": "0.00",
+            "source": "shopify",
+            "delivery_date": null,
+            "delivery_range": null,
+            "delivery_days": [],
+            "compare_price": null,
+            "phone_required": false,
+            "currency": "USD",
+            "carrier_identifier": null,
+            "delivery_category": null,
+            "using_merchant_account": null,
+            "carrier_service_id": null,
+            "description": null,
+            "additional_data": null,
+            "incoterm": null,
+            "api_client_id": null,
+            "requested_fulfillment_service_id": null,
+            "shipment_options": null,
+            "charge_items": null,
+            "has_restrictions": null,
+            "rating_classification": null,
+            "accepts_instructions": false,
+            "metafields": null
+          },
+          {
+            "name": "Express",
+            "presentment_name": "Express",
+            "code": "Express",
+            "price": "15.00",
+            "markup": "0.00",
+            "source": "shopify",
+            "delivery_date": null,
+            "delivery_range": null,
+            "delivery_days": [],
+            "compare_price": null,
+            "phone_required": false,
+            "currency": "USD",
+            "carrier_identifier": null,
+            "delivery_category": null,
+            "using_merchant_account": null,
+            "carrier_service_id": null,
+            "description": null,
+            "additional_data": null,
+            "incoterm": null,
+            "api_client_id": null,
+            "requested_fulfillment_service_id": null,
+            "shipment_options": null,
+            "charge_items": null,
+            "has_restrictions": null,
+            "rating_classification": null,
+            "accepts_instructions": false,
+            "metafields": null
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/prepare_shipping_rates.json?shipping_address%5Bcountry%5D=Canada&shipping_address%5Bprovince%5D=ON&shipping_address%5Bzip%5D=K1A%200B1",
+      "status": 202,
+      "location": null,
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/cart/async_shipping_rates.json?shipping_address%5Bcountry%5D=Canada&shipping_address%5Bprovince%5D=ON&shipping_address%5Bzip%5D=K1A%200B1",
+      "status": 200,
+      "location": null,
+      "body": {
+        "shipping_rates": [
+          {
+            "name": "Standard",
+            "presentment_name": "Standard",
+            "code": "Standard",
+            "price": "10.00",
+            "markup": "0.00",
+            "source": "shopify",
+            "delivery_date": null,
+            "delivery_range": null,
+            "delivery_days": [],
+            "compare_price": null,
+            "phone_required": false,
+            "currency": "USD",
+            "carrier_identifier": null,
+            "delivery_category": null,
+            "using_merchant_account": null,
+            "carrier_service_id": null,
+            "description": null,
+            "additional_data": null,
+            "incoterm": null,
+            "api_client_id": null,
+            "requested_fulfillment_service_id": null,
+            "shipment_options": null,
+            "charge_items": null,
+            "has_restrictions": null,
+            "rating_classification": null,
+            "accepts_instructions": false,
+            "metafields": null
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/prepare_shipping_rates.json?shipping_address%5Bcountry%5D=France&shipping_address%5Bprovince%5D=&shipping_address%5Bzip%5D=75001",
+      "status": 202,
+      "location": null,
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/cart/async_shipping_rates.json?shipping_address%5Bcountry%5D=France&shipping_address%5Bprovince%5D=&shipping_address%5Bzip%5D=75001",
+      "status": 200,
+      "location": null,
+      "body": {
+        "shipping_rates": [
+          {
+            "name": "International",
+            "presentment_name": "International",
+            "code": "International",
+            "price": "20.00",
+            "markup": "0.00",
+            "source": "shopify",
+            "delivery_date": null,
+            "delivery_range": null,
+            "delivery_days": [],
+            "compare_price": null,
+            "phone_required": false,
+            "currency": "USD",
+            "carrier_identifier": null,
+            "delivery_category": null,
+            "using_merchant_account": null,
+            "carrier_service_id": null,
+            "description": null,
+            "additional_data": null,
+            "incoterm": null,
+            "api_client_id": null,
+            "requested_fulfillment_service_id": null,
+            "shipment_options": null,
+            "charge_items": null,
+            "has_restrictions": null,
+            "rating_classification": null,
+            "accepts_instructions": false,
+            "metafields": null
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/add.js",
+      "json": {
+        "items": [
+          {
+            "id": 43696961355798,
+            "quantity": 1
+          }
+        ]
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "items": [
+          {
+            "id": 43696961355798,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696961355798,
+            "key": "43696961355798:<hash>",
+            "title": "Gray Leather Sneakers - 4",
+            "product_title": "Gray Leather Sneakers",
+            "variant_title": "4",
+            "price": 100000,
+            "original_price": 100000,
+            "discounted_price": 100000,
+            "line_price": 100000,
+            "original_line_price": 100000,
+            "presentment_price": 1000,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 3000,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595356182,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 100000,
+            "final_line_price": 100000,
+            "url": "/products/gray-leather-sneakers?variant=43696961355798",
+            "featured_image": {
+              "alt": "Gray Leather Sneakers",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a70ad4a5100e25be731159d1c6ec53517c407cf93a48ed3ca0184a879276d9c2.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a70ad4a5100e25be731159d1c6ec53517c407cf93a48ed3ca0184a879276d9c2.jpg",
+            "handle": "gray-leather-sneakers",
+            "requires_shipping": true,
+            "product_type": "Shoes",
+            "untranslated_product_title": "Gray Leather Sneakers",
+            "product_description": "These gray leather sneakers combine comfort and style for the perfect professional look. The breathable leather material ensures breathability and provides a comfortable fit, perfect for the office and other formal occasions. The handmade design is stylish and guaranteed to last.",
+            "untranslated_variant_title": "4",
+            "variant_options": [
+              "4"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "4"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart/shipping_rates.json?shipping_address%5Bcountry%5D=France&shipping_address%5Bzip%5D=75001",
+      "status": 200,
+      "location": null,
+      "body": {
+        "shipping_rates": [
+          {
+            "name": "International heavy",
+            "presentment_name": "International heavy",
+            "code": "International heavy",
+            "price": "40.00",
+            "markup": "0.00",
+            "source": "shopify",
+            "delivery_date": null,
+            "delivery_range": null,
+            "delivery_days": [],
+            "compare_price": null,
+            "phone_required": false,
+            "currency": "USD",
+            "carrier_identifier": null,
+            "delivery_category": null,
+            "using_merchant_account": null,
+            "carrier_service_id": null,
+            "description": null,
+            "additional_data": null,
+            "incoterm": null,
+            "api_client_id": null,
+            "requested_fulfillment_service_id": null,
+            "shipment_options": null,
+            "charge_items": null,
+            "has_restrictions": null,
+            "rating_classification": null,
+            "accepts_instructions": false,
+            "metafields": null
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart/shipping_rates.json?shipping_address%5Bcountry%5D=Atlantis",
+      "status": 422,
+      "location": null,
+      "body": {
+        "country": [
+          "Country/region not supported"
+        ],
+        "zip": [
+          "Enter a postal code"
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/clear.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 0,
+        "total_price": 0,
+        "total_discount": 0,
+        "total_weight": 0,
+        "item_count": 0,
+        "items": [],
+        "requires_shipping": false,
+        "currency": "USD",
+        "items_subtotal_price": 0,
+        "cart_level_discount_applications": [],
+        "discount_codes": []
+      }
+    }
+  ]
+}

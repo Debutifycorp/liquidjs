@@ -1,0 +1,733 @@
+{
+  "scenario": "probe-product-requires-plan",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/products/frontpack?view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "id": 7983593357334,
+        "title": "Frontpack",
+        "description": "<p data-mce-fragment=\"1\">This frontpack is the perfect combination of form and function, with a modern, sporty design and patented technology that enables you to easily carry numerous items on the go. It's light, comfortable and has adjustable straps to fit all body types. Plus, its water-resistant outer shell ensures your items stay dry and secure.</p>",
+        "url": "/products/frontpack",
+        "template_suffix": null,
+        "template": {
+          "name": "product",
+          "suffix": "probe"
+        },
+        "price": 20000,
+        "price_min": 20000,
+        "price_max": 20000,
+        "compare_at_price": null,
+        "money": "$200.00",
+        "money_with_currency": "$200.00 USD",
+        "selected_variant": null,
+        "selected_or_first_available_variant": 43696935600150,
+        "first_available_variant": 43696935600150,
+        "requires_selling_plan": true,
+        "selected_selling_plan": null,
+        "selected_or_first_available_selling_plan_allocation": 71003,
+        "options_with_values": [
+          {
+            "name": "Color",
+            "selected_value": "Green"
+          }
+        ],
+        "variants": [
+          {
+            "id": 43696935600150,
+            "title": "Green",
+            "price": 20000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 47,
+            "weight": 800,
+            "requires_selling_plan": true,
+            "url": "/products/frontpack?variant=43696935600150",
+            "selected_selling_plan_allocation": null,
+            "allocations": [
+              {
+                "selling_plan": 71003,
+                "group": "9f332869e39a305e7a1dc9804b2935791c8cecd3",
+                "price": 2500,
+                "compare_at_price": 20000,
+                "per_delivery_price": 2500,
+                "price_adjustments": [
+                  {
+                    "position": 1,
+                    "price": 2500
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": 43696935567382,
+            "title": "Olive",
+            "price": 20000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 800,
+            "requires_selling_plan": true,
+            "url": "/products/frontpack?variant=43696935567382",
+            "selected_selling_plan_allocation": null,
+            "allocations": [
+              {
+                "selling_plan": 71003,
+                "group": "9f332869e39a305e7a1dc9804b2935791c8cecd3",
+                "price": 2500,
+                "compare_at_price": 20000,
+                "per_delivery_price": 2500,
+                "price_adjustments": [
+                  {
+                    "position": 1,
+                    "price": 2500
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": 43696935632918,
+            "title": "Ocean",
+            "price": 20000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 49,
+            "weight": 800,
+            "requires_selling_plan": true,
+            "url": "/products/frontpack?variant=43696935632918",
+            "selected_selling_plan_allocation": null,
+            "allocations": [
+              {
+                "selling_plan": 71003,
+                "group": "9f332869e39a305e7a1dc9804b2935791c8cecd3",
+                "price": 2500,
+                "compare_at_price": 20000,
+                "per_delivery_price": 2500,
+                "price_adjustments": [
+                  {
+                    "position": 1,
+                    "price": 2500
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": 43696935665686,
+            "title": "Purple",
+            "price": 20000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 800,
+            "requires_selling_plan": true,
+            "url": "/products/frontpack?variant=43696935665686",
+            "selected_selling_plan_allocation": null,
+            "allocations": [
+              {
+                "selling_plan": 71003,
+                "group": "9f332869e39a305e7a1dc9804b2935791c8cecd3",
+                "price": 2500,
+                "compare_at_price": 20000,
+                "per_delivery_price": 2500,
+                "price_adjustments": [
+                  {
+                    "position": 1,
+                    "price": 2500
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": 43696935698454,
+            "title": "Red",
+            "price": 20000,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 49,
+            "weight": 800,
+            "requires_selling_plan": true,
+            "url": "/products/frontpack?variant=43696935698454",
+            "selected_selling_plan_allocation": null,
+            "allocations": [
+              {
+                "selling_plan": 71003,
+                "group": "9f332869e39a305e7a1dc9804b2935791c8cecd3",
+                "price": 2500,
+                "compare_at_price": 20000,
+                "per_delivery_price": 2500,
+                "price_adjustments": [
+                  {
+                    "position": 1,
+                    "price": 2500
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "selling_plan_groups": [
+          {
+            "id": "9f332869e39a305e7a1dc9804b2935791c8cecd3",
+            "name": "Frontpack rental",
+            "app_id": null,
+            "selected": null,
+            "options": [
+              {
+                "name": "Plan",
+                "position": 1,
+                "values": [
+                  "Monthly rental"
+                ],
+                "selected_value": null
+              }
+            ],
+            "selling_plans": [
+              {
+                "id": 71003,
+                "name": "Monthly rental",
+                "description": null,
+                "recurring_deliveries": true,
+                "selected": false,
+                "group_id": "9f332869e39a305e7a1dc9804b2935791c8cecd3",
+                "options": [
+                  {
+                    "name": "Plan",
+                    "position": 1,
+                    "value": "Monthly rental"
+                  }
+                ],
+                "price_adjustments": [
+                  {
+                    "order_count": null,
+                    "position": 1,
+                    "value": 2500,
+                    "value_type": "price"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "ajax": {
+          "id": 7983593357334,
+          "title": "Frontpack",
+          "handle": "frontpack",
+          "description": "<p data-mce-fragment=\"1\">This frontpack is the perfect combination of form and function, with a modern, sporty design and patented technology that enables you to easily carry numerous items on the go. It's light, comfortable and has adjustable straps to fit all body types. Plus, its water-resistant outer shell ensures your items stay dry and secure.</p>",
+          "published_at": "2026-10-15T13:03:24-04:00",
+          "created_at": "2026-10-15T13:03:21-04:00",
+          "vendor": "Mock.shop",
+          "type": "Bags",
+          "tags": [
+            "accessories",
+            "unisex"
+          ],
+          "price": 20000,
+          "price_min": 20000,
+          "price_max": 20000,
+          "available": true,
+          "price_varies": false,
+          "compare_at_price": null,
+          "compare_at_price_min": 0,
+          "compare_at_price_max": 0,
+          "compare_at_price_varies": false,
+          "variants": [
+            {
+              "id": 43696935600150,
+              "title": "Green",
+              "option1": "Green",
+              "option2": null,
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776231653675,
+                "product_id": 7983593357334,
+                "position": 1,
+                "created_at": "2026-10-15T13:45:51-04:00",
+                "updated_at": "2026-10-15T13:45:53-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/9a91ba812237969c5b8c51d586ac4206548f27d88756ac96619790c461eb988c.jpg",
+                "variant_ids": [
+                  43696935600150
+                ]
+              },
+              "available": true,
+              "name": "Frontpack - Green",
+              "public_title": "Green",
+              "options": [
+                "Green"
+              ],
+              "price": 20000,
+              "weight": 800,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604361750,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/9a91ba812237969c5b8c51d586ac4206548f27d88756ac96619790c461eb988c.jpg"
+                }
+              },
+              "requires_selling_plan": true,
+              "selling_plan_allocations": [
+                {
+                  "price_adjustments": [
+                    {
+                      "position": 1,
+                      "price": 2500
+                    }
+                  ],
+                  "price": 2500,
+                  "compare_at_price": 20000,
+                  "per_delivery_price": 2500,
+                  "selling_plan_id": 71003,
+                  "selling_plan_group_id": "9f332869e39a305e7a1dc9804b2935791c8cecd3"
+                }
+              ],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696935567382,
+              "title": "Olive",
+              "option1": "Olive",
+              "option2": null,
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776231686443,
+                "product_id": 7983593357334,
+                "position": 2,
+                "created_at": "2026-10-15T13:45:51-04:00",
+                "updated_at": "2026-10-15T13:45:53-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/995d380fe71f15355304a3332ae4fcc31741c2bf29c068f151a0e70019511cbd.jpg",
+                "variant_ids": [
+                  43696935567382
+                ]
+              },
+              "available": true,
+              "name": "Frontpack - Olive",
+              "public_title": "Olive",
+              "options": [
+                "Olive"
+              ],
+              "price": 20000,
+              "weight": 800,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604427286,
+                "position": 2,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/995d380fe71f15355304a3332ae4fcc31741c2bf29c068f151a0e70019511cbd.jpg"
+                }
+              },
+              "requires_selling_plan": true,
+              "selling_plan_allocations": [
+                {
+                  "price_adjustments": [
+                    {
+                      "position": 1,
+                      "price": 2500
+                    }
+                  ],
+                  "price": 2500,
+                  "compare_at_price": 20000,
+                  "per_delivery_price": 2500,
+                  "selling_plan_id": 71003,
+                  "selling_plan_group_id": "9f332869e39a305e7a1dc9804b2935791c8cecd3"
+                }
+              ],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696935632918,
+              "title": "Ocean",
+              "option1": "Ocean",
+              "option2": null,
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776231719211,
+                "product_id": 7983593357334,
+                "position": 3,
+                "created_at": "2026-10-15T13:45:51-04:00",
+                "updated_at": "2026-10-15T13:45:53-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b56d3a5218412a307437a493f92810a50d01aedd3490cf18b6a2a2b0abc03e26.jpg",
+                "variant_ids": [
+                  43696935632918
+                ]
+              },
+              "available": true,
+              "name": "Frontpack - Ocean",
+              "public_title": "Ocean",
+              "options": [
+                "Ocean"
+              ],
+              "price": 20000,
+              "weight": 800,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604296214,
+                "position": 3,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b56d3a5218412a307437a493f92810a50d01aedd3490cf18b6a2a2b0abc03e26.jpg"
+                }
+              },
+              "requires_selling_plan": true,
+              "selling_plan_allocations": [
+                {
+                  "price_adjustments": [
+                    {
+                      "position": 1,
+                      "price": 2500
+                    }
+                  ],
+                  "price": 2500,
+                  "compare_at_price": 20000,
+                  "per_delivery_price": 2500,
+                  "selling_plan_id": 71003,
+                  "selling_plan_group_id": "9f332869e39a305e7a1dc9804b2935791c8cecd3"
+                }
+              ],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696935665686,
+              "title": "Purple",
+              "option1": "Purple",
+              "option2": null,
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776231751979,
+                "product_id": 7983593357334,
+                "position": 4,
+                "created_at": "2026-10-15T13:45:51-04:00",
+                "updated_at": "2026-10-15T13:45:53-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2a6100549e1556a742944f6ad31f775f631d3acda5de08f32c7fe5f0c08b3d12.jpg",
+                "variant_ids": [
+                  43696935665686
+                ]
+              },
+              "available": true,
+              "name": "Frontpack - Purple",
+              "public_title": "Purple",
+              "options": [
+                "Purple"
+              ],
+              "price": 20000,
+              "weight": 800,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604328982,
+                "position": 4,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2a6100549e1556a742944f6ad31f775f631d3acda5de08f32c7fe5f0c08b3d12.jpg"
+                }
+              },
+              "requires_selling_plan": true,
+              "selling_plan_allocations": [
+                {
+                  "price_adjustments": [
+                    {
+                      "position": 1,
+                      "price": 2500
+                    }
+                  ],
+                  "price": 2500,
+                  "compare_at_price": 20000,
+                  "per_delivery_price": 2500,
+                  "selling_plan_id": 71003,
+                  "selling_plan_group_id": "9f332869e39a305e7a1dc9804b2935791c8cecd3"
+                }
+              ],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696935698454,
+              "title": "Red",
+              "option1": "Red",
+              "option2": null,
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776231784747,
+                "product_id": 7983593357334,
+                "position": 5,
+                "created_at": "2026-10-15T13:45:51-04:00",
+                "updated_at": "2026-10-15T13:45:53-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23035cd0a2ca9070876dde6370131ac991c103fdf4d7c59865a2fa6025ef6897.jpg",
+                "variant_ids": [
+                  43696935698454
+                ]
+              },
+              "available": true,
+              "name": "Frontpack - Red",
+              "public_title": "Red",
+              "options": [
+                "Red"
+              ],
+              "price": 20000,
+              "weight": 800,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604394518,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23035cd0a2ca9070876dde6370131ac991c103fdf4d7c59865a2fa6025ef6897.jpg"
+                }
+              },
+              "requires_selling_plan": true,
+              "selling_plan_allocations": [
+                {
+                  "price_adjustments": [
+                    {
+                      "position": 1,
+                      "price": 2500
+                    }
+                  ],
+                  "price": 2500,
+                  "compare_at_price": 20000,
+                  "per_delivery_price": 2500,
+                  "selling_plan_id": 71003,
+                  "selling_plan_group_id": "9f332869e39a305e7a1dc9804b2935791c8cecd3"
+                }
+              ],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            }
+          ],
+          "images": [
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/9a91ba812237969c5b8c51d586ac4206548f27d88756ac96619790c461eb988c.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/995d380fe71f15355304a3332ae4fcc31741c2bf29c068f151a0e70019511cbd.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b56d3a5218412a307437a493f92810a50d01aedd3490cf18b6a2a2b0abc03e26.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2a6100549e1556a742944f6ad31f775f631d3acda5de08f32c7fe5f0c08b3d12.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23035cd0a2ca9070876dde6370131ac991c103fdf4d7c59865a2fa6025ef6897.jpg"
+          ],
+          "featured_image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/9a91ba812237969c5b8c51d586ac4206548f27d88756ac96619790c461eb988c.jpg",
+          "options": [
+            "Color"
+          ],
+          "media": [
+            {
+              "alt": null,
+              "id": 39774604361750,
+              "position": 1,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/9a91ba812237969c5b8c51d586ac4206548f27d88756ac96619790c461eb988c.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/9a91ba812237969c5b8c51d586ac4206548f27d88756ac96619790c461eb988c.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774604427286,
+              "position": 2,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/995d380fe71f15355304a3332ae4fcc31741c2bf29c068f151a0e70019511cbd.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/995d380fe71f15355304a3332ae4fcc31741c2bf29c068f151a0e70019511cbd.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774604296214,
+              "position": 3,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b56d3a5218412a307437a493f92810a50d01aedd3490cf18b6a2a2b0abc03e26.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b56d3a5218412a307437a493f92810a50d01aedd3490cf18b6a2a2b0abc03e26.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774604328982,
+              "position": 4,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2a6100549e1556a742944f6ad31f775f631d3acda5de08f32c7fe5f0c08b3d12.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2a6100549e1556a742944f6ad31f775f631d3acda5de08f32c7fe5f0c08b3d12.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774604394518,
+              "position": 5,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23035cd0a2ca9070876dde6370131ac991c103fdf4d7c59865a2fa6025ef6897.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23035cd0a2ca9070876dde6370131ac991c103fdf4d7c59865a2fa6025ef6897.jpg",
+              "width": 4096
+            }
+          ],
+          "requires_selling_plan": true,
+          "selling_plan_groups": [
+            {
+              "id": "9f332869e39a305e7a1dc9804b2935791c8cecd3",
+              "name": "Frontpack rental",
+              "options": [
+                {
+                  "name": "Plan",
+                  "position": 1,
+                  "values": [
+                    "Monthly rental"
+                  ]
+                }
+              ],
+              "selling_plans": [
+                {
+                  "id": 71003,
+                  "name": "Monthly rental",
+                  "description": null,
+                  "options": [
+                    {
+                      "name": "Plan",
+                      "position": 1,
+                      "value": "Monthly rental"
+                    }
+                  ],
+                  "recurring_deliveries": true,
+                  "price_adjustments": [
+                    {
+                      "order_count": null,
+                      "position": 1,
+                      "value_type": "price",
+                      "value": 2500
+                    }
+                  ],
+                  "checkout_charge": {
+                    "value_type": "percentage",
+                    "value": 100
+                  }
+                }
+              ],
+              "app_id": null
+            }
+          ],
+          "content": "<p data-mce-fragment=\"1\">This frontpack is the perfect combination of form and function, with a modern, sporty design and patented technology that enables you to easily carry numerous items on the go. It's light, comfortable and has adjustable straps to fit all body types. Plus, its water-resistant outer shell ensures your items stay dry and secure.</p>"
+        }
+      }
+    }
+  ]
+}

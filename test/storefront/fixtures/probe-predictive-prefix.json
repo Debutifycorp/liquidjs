@@ -1,0 +1,30 @@
+{
+  "scenario": "probe-predictive-prefix",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/search/suggest?q=ca&resources%5Btype%5D=product,collection,page,article,query&section_id=probe-predictive",
+      "status": 200,
+      "location": null,
+      "body": {
+        "performed": true,
+        "terms": "ca",
+        "types": [
+          "article",
+          "collection",
+          "page",
+          "product",
+          "query"
+        ],
+        "products": [
+          "hoodie",
+          "canvas-sneakers"
+        ],
+        "collections": [],
+        "pages": [],
+        "articles": [],
+        "queries": []
+      }
+    }
+  ]
+}

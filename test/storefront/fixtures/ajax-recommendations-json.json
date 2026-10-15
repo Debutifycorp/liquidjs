@@ -1,0 +1,3897 @@
+{
+  "scenario": "ajax-recommendations-json",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/recommendations/products.json?product_id=10489561382934&limit=4&intent=related",
+      "status": 200,
+      "location": null,
+      "body": {
+        "products": [
+          {
+            "id": 7982904705046,
+            "title": "Soft Cotton Hoodie in Jam",
+            "handle": "soft-cotton-hoodie-in-jam",
+            "description": "<p data-mce-fragment=\"1\">This hoodie is the perfect choice for comfort and warmth. Meticulously crafted from 100% cotton, the hoodie features a soft, plush fleece interior and a unisex sizing design. Soft and lightweight, it's sure to be your go-to for chilly days.</p>",
+            "published_at": "2026-10-15T13:02:32-04:00",
+            "created_at": "2026-10-15T13:02:28-04:00",
+            "vendor": "Mock.shop",
+            "type": "Hoodies",
+            "tags": [
+              "tops",
+              "unisex"
+            ],
+            "price": 9000,
+            "price_min": 9000,
+            "price_max": 9000,
+            "available": true,
+            "price_varies": false,
+            "compare_at_price": null,
+            "compare_at_price_min": 0,
+            "compare_at_price_max": 0,
+            "compare_at_price_varies": false,
+            "variants": [
+              {
+                "id": 43695846621207,
+                "title": "Red / Small",
+                "option1": "Red",
+                "option2": "Small",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776229228843,
+                  "product_id": 7982904705046,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:45:06-04:00",
+                  "updated_at": "2026-10-15T13:45:08-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg",
+                  "variant_ids": [
+                    43695846621207,
+                    43695846653975,
+                    43695846686743,
+                    43695846719511
+                  ]
+                },
+                "available": true,
+                "name": "Soft Cotton Hoodie in Jam - Red / Small",
+                "public_title": "Red / Small",
+                "options": [
+                  "Red",
+                  "Small"
+                ],
+                "price": 9000,
+                "weight": 600,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774600364054,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43695846653975,
+                "title": "Red / Medium",
+                "option1": "Red",
+                "option2": "Medium",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776229228843,
+                  "product_id": 7982904705046,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:45:06-04:00",
+                  "updated_at": "2026-10-15T13:45:08-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg",
+                  "variant_ids": [
+                    43695846621207,
+                    43695846653975,
+                    43695846686743,
+                    43695846719511
+                  ]
+                },
+                "available": true,
+                "name": "Soft Cotton Hoodie in Jam - Red / Medium",
+                "public_title": "Red / Medium",
+                "options": [
+                  "Red",
+                  "Medium"
+                ],
+                "price": 9000,
+                "weight": 600,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774600364054,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43695846686743,
+                "title": "Red / Large",
+                "option1": "Red",
+                "option2": "Large",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776229228843,
+                  "product_id": 7982904705046,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:45:06-04:00",
+                  "updated_at": "2026-10-15T13:45:08-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg",
+                  "variant_ids": [
+                    43695846621207,
+                    43695846653975,
+                    43695846686743,
+                    43695846719511
+                  ]
+                },
+                "available": true,
+                "name": "Soft Cotton Hoodie in Jam - Red / Large",
+                "public_title": "Red / Large",
+                "options": [
+                  "Red",
+                  "Large"
+                ],
+                "price": 9000,
+                "weight": 600,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774600364054,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43695846719511,
+                "title": "Red / X-Large",
+                "option1": "Red",
+                "option2": "X-Large",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776229228843,
+                  "product_id": 7982904705046,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:45:06-04:00",
+                  "updated_at": "2026-10-15T13:45:08-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg",
+                  "variant_ids": [
+                    43695846621207,
+                    43695846653975,
+                    43695846686743,
+                    43695846719511
+                  ]
+                },
+                "available": true,
+                "name": "Soft Cotton Hoodie in Jam - Red / X-Large",
+                "public_title": "Red / X-Large",
+                "options": [
+                  "Red",
+                  "X-Large"
+                ],
+                "price": 9000,
+                "weight": 600,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774600364054,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              }
+            ],
+            "images": [
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e67d2aad33af7b32f945c74941d56638cbbc8a348109279a501b16ac5e096f2a.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/352a0868ed64e85523e9cc2e753ce944816203644f2d641eb141c80afd404264.jpg"
+            ],
+            "featured_image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg",
+            "options": [
+              {
+                "name": "Color",
+                "position": 1,
+                "values": [
+                  "Red"
+                ]
+              },
+              {
+                "name": "Size",
+                "position": 2,
+                "values": [
+                  "Small",
+                  "Medium",
+                  "Large",
+                  "X-Large"
+                ]
+              }
+            ],
+            "url": "/products/soft-cotton-hoodie-in-jam?pr_prod_strat=collection_fallback&pr_rec_id=a7fe89065&pr_rec_pid=7982904705046&pr_ref_pid=10489561382934&pr_seq=uniform",
+            "media": [
+              {
+                "alt": null,
+                "id": 39774600364054,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0d11d66a08324cfd45030ac274df2cf84d2006e14ee29dc6c32d16b4be8b9e4.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774600396822,
+                "position": 2,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e67d2aad33af7b32f945c74941d56638cbbc8a348109279a501b16ac5e096f2a.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e67d2aad33af7b32f945c74941d56638cbbc8a348109279a501b16ac5e096f2a.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774600331286,
+                "position": 3,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/352a0868ed64e85523e9cc2e753ce944816203644f2d641eb141c80afd404264.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/352a0868ed64e85523e9cc2e753ce944816203644f2d641eb141c80afd404264.jpg",
+                "width": 4096
+              }
+            ],
+            "requires_selling_plan": false,
+            "selling_plan_groups": []
+          },
+          {
+            "id": 7983594176534,
+            "title": "Puffer",
+            "handle": "puffer",
+            "description": "<meta charset=\"utf-8\"><span data-mce-fragment=\"1\">This light puffer vest is made from durable nylon and will keep you dry and comfortable in all weather. Its light coating provides reliable protection from wind and rain, and its versatile fit offers maximum mobility. Perfect for moderate temperatures and varied conditions.</span>",
+            "published_at": "2026-10-15T13:03:49-04:00",
+            "created_at": "2026-10-15T13:03:44-04:00",
+            "vendor": "Mock.shop",
+            "type": "Jackets",
+            "tags": [
+              "tops",
+              "unisex"
+            ],
+            "price": 8000,
+            "price_min": 8000,
+            "price_max": 8000,
+            "available": true,
+            "price_varies": false,
+            "compare_at_price": null,
+            "compare_at_price_min": 0,
+            "compare_at_price_max": 0,
+            "compare_at_price_varies": false,
+            "variants": [
+              {
+                "id": 43696936943638,
+                "title": "Small / Green",
+                "option1": "Small",
+                "option2": "Green",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233161003,
+                  "product_id": 7983594176534,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:12-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/20834f7f1039586bb547d0f28f94c37a2be2976705274de37ac424539c9046dd.jpg",
+                  "variant_ids": [
+                    43696936943638,
+                    43696967057430,
+                    43696967221270
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Small / Green",
+                "public_title": "Small / Green",
+                "options": [
+                  "Small",
+                  "Green"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605279254,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/20834f7f1039586bb547d0f28f94c37a2be2976705274de37ac424539c9046dd.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696936910870,
+                "title": "Small / Olive",
+                "option1": "Small",
+                "option2": "Olive",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233193771,
+                  "product_id": 7983594176534,
+                  "position": 2,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:12-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a8954211f696bf980e4cda69e288b442d2e187d753cc1185a179c44ca83e518a.jpg",
+                  "variant_ids": [
+                    43696936910870,
+                    43696967090198,
+                    43696967254038
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Small / Olive",
+                "public_title": "Small / Olive",
+                "options": [
+                  "Small",
+                  "Olive"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605377558,
+                  "position": 2,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a8954211f696bf980e4cda69e288b442d2e187d753cc1185a179c44ca83e518a.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696936976406,
+                "title": "Small / Ocean",
+                "option1": "Small",
+                "option2": "Ocean",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233226539,
+                  "product_id": 7983594176534,
+                  "position": 3,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:12-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/fe4e7c3235fcb437fda9fea661f7b8a6ba25fff73771eddf930bc2a7c81c4be2.jpg",
+                  "variant_ids": [
+                    43696936976406,
+                    43696967122966,
+                    43696967286806
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Small / Ocean",
+                "public_title": "Small / Ocean",
+                "options": [
+                  "Small",
+                  "Ocean"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605410326,
+                  "position": 3,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/fe4e7c3235fcb437fda9fea661f7b8a6ba25fff73771eddf930bc2a7c81c4be2.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696937009174,
+                "title": "Small / Purple",
+                "option1": "Small",
+                "option2": "Purple",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233259307,
+                  "product_id": 7983594176534,
+                  "position": 4,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:11-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/ed4b7f6c0a2ad973ce58ecac49bec2b9e32e83a8d2b1667df55b68f03ade8535.jpg",
+                  "variant_ids": [
+                    43696937009174,
+                    43696967155734,
+                    43696967319574
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Small / Purple",
+                "public_title": "Small / Purple",
+                "options": [
+                  "Small",
+                  "Purple"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605344790,
+                  "position": 4,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/ed4b7f6c0a2ad973ce58ecac49bec2b9e32e83a8d2b1667df55b68f03ade8535.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696937041942,
+                "title": "Small / Red",
+                "option1": "Small",
+                "option2": "Red",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233292075,
+                  "product_id": 7983594176534,
+                  "position": 5,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:12-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/6c5054273a1ca2739d021b9ba2fb28034d5bedd18d76fe1f5ae73dddd5dee97a.jpg",
+                  "variant_ids": [
+                    43696937041942,
+                    43696967188502,
+                    43696967352342
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Small / Red",
+                "public_title": "Small / Red",
+                "options": [
+                  "Small",
+                  "Red"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605312022,
+                  "position": 5,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/6c5054273a1ca2739d021b9ba2fb28034d5bedd18d76fe1f5ae73dddd5dee97a.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696967057430,
+                "title": "Medium / Green",
+                "option1": "Medium",
+                "option2": "Green",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233161003,
+                  "product_id": 7983594176534,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:12-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/20834f7f1039586bb547d0f28f94c37a2be2976705274de37ac424539c9046dd.jpg",
+                  "variant_ids": [
+                    43696936943638,
+                    43696967057430,
+                    43696967221270
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Medium / Green",
+                "public_title": "Medium / Green",
+                "options": [
+                  "Medium",
+                  "Green"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605279254,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/20834f7f1039586bb547d0f28f94c37a2be2976705274de37ac424539c9046dd.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696967090198,
+                "title": "Medium / Olive",
+                "option1": "Medium",
+                "option2": "Olive",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233193771,
+                  "product_id": 7983594176534,
+                  "position": 2,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:12-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a8954211f696bf980e4cda69e288b442d2e187d753cc1185a179c44ca83e518a.jpg",
+                  "variant_ids": [
+                    43696936910870,
+                    43696967090198,
+                    43696967254038
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Medium / Olive",
+                "public_title": "Medium / Olive",
+                "options": [
+                  "Medium",
+                  "Olive"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605377558,
+                  "position": 2,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a8954211f696bf980e4cda69e288b442d2e187d753cc1185a179c44ca83e518a.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696967122966,
+                "title": "Medium / Ocean",
+                "option1": "Medium",
+                "option2": "Ocean",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233226539,
+                  "product_id": 7983594176534,
+                  "position": 3,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:12-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/fe4e7c3235fcb437fda9fea661f7b8a6ba25fff73771eddf930bc2a7c81c4be2.jpg",
+                  "variant_ids": [
+                    43696936976406,
+                    43696967122966,
+                    43696967286806
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Medium / Ocean",
+                "public_title": "Medium / Ocean",
+                "options": [
+                  "Medium",
+                  "Ocean"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605410326,
+                  "position": 3,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/fe4e7c3235fcb437fda9fea661f7b8a6ba25fff73771eddf930bc2a7c81c4be2.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696967155734,
+                "title": "Medium / Purple",
+                "option1": "Medium",
+                "option2": "Purple",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233259307,
+                  "product_id": 7983594176534,
+                  "position": 4,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:11-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/ed4b7f6c0a2ad973ce58ecac49bec2b9e32e83a8d2b1667df55b68f03ade8535.jpg",
+                  "variant_ids": [
+                    43696937009174,
+                    43696967155734,
+                    43696967319574
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Medium / Purple",
+                "public_title": "Medium / Purple",
+                "options": [
+                  "Medium",
+                  "Purple"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605344790,
+                  "position": 4,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/ed4b7f6c0a2ad973ce58ecac49bec2b9e32e83a8d2b1667df55b68f03ade8535.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696967188502,
+                "title": "Medium / Red",
+                "option1": "Medium",
+                "option2": "Red",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233292075,
+                  "product_id": 7983594176534,
+                  "position": 5,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:12-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/6c5054273a1ca2739d021b9ba2fb28034d5bedd18d76fe1f5ae73dddd5dee97a.jpg",
+                  "variant_ids": [
+                    43696937041942,
+                    43696967188502,
+                    43696967352342
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Medium / Red",
+                "public_title": "Medium / Red",
+                "options": [
+                  "Medium",
+                  "Red"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605312022,
+                  "position": 5,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/6c5054273a1ca2739d021b9ba2fb28034d5bedd18d76fe1f5ae73dddd5dee97a.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696967221270,
+                "title": "Large / Green",
+                "option1": "Large",
+                "option2": "Green",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233161003,
+                  "product_id": 7983594176534,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:12-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/20834f7f1039586bb547d0f28f94c37a2be2976705274de37ac424539c9046dd.jpg",
+                  "variant_ids": [
+                    43696936943638,
+                    43696967057430,
+                    43696967221270
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Large / Green",
+                "public_title": "Large / Green",
+                "options": [
+                  "Large",
+                  "Green"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605279254,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/20834f7f1039586bb547d0f28f94c37a2be2976705274de37ac424539c9046dd.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696967254038,
+                "title": "Large / Olive",
+                "option1": "Large",
+                "option2": "Olive",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233193771,
+                  "product_id": 7983594176534,
+                  "position": 2,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:12-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a8954211f696bf980e4cda69e288b442d2e187d753cc1185a179c44ca83e518a.jpg",
+                  "variant_ids": [
+                    43696936910870,
+                    43696967090198,
+                    43696967254038
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Large / Olive",
+                "public_title": "Large / Olive",
+                "options": [
+                  "Large",
+                  "Olive"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605377558,
+                  "position": 2,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a8954211f696bf980e4cda69e288b442d2e187d753cc1185a179c44ca83e518a.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696967286806,
+                "title": "Large / Ocean",
+                "option1": "Large",
+                "option2": "Ocean",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233226539,
+                  "product_id": 7983594176534,
+                  "position": 3,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:12-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/fe4e7c3235fcb437fda9fea661f7b8a6ba25fff73771eddf930bc2a7c81c4be2.jpg",
+                  "variant_ids": [
+                    43696936976406,
+                    43696967122966,
+                    43696967286806
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Large / Ocean",
+                "public_title": "Large / Ocean",
+                "options": [
+                  "Large",
+                  "Ocean"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605410326,
+                  "position": 3,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/fe4e7c3235fcb437fda9fea661f7b8a6ba25fff73771eddf930bc2a7c81c4be2.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696967319574,
+                "title": "Large / Purple",
+                "option1": "Large",
+                "option2": "Purple",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233259307,
+                  "product_id": 7983594176534,
+                  "position": 4,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:11-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/ed4b7f6c0a2ad973ce58ecac49bec2b9e32e83a8d2b1667df55b68f03ade8535.jpg",
+                  "variant_ids": [
+                    43696937009174,
+                    43696967155734,
+                    43696967319574
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Large / Purple",
+                "public_title": "Large / Purple",
+                "options": [
+                  "Large",
+                  "Purple"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605344790,
+                  "position": 4,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/ed4b7f6c0a2ad973ce58ecac49bec2b9e32e83a8d2b1667df55b68f03ade8535.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696967352342,
+                "title": "Large / Red",
+                "option1": "Large",
+                "option2": "Red",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776233292075,
+                  "product_id": 7983594176534,
+                  "position": 5,
+                  "created_at": "2026-10-15T13:46:09-04:00",
+                  "updated_at": "2026-10-15T13:46:12-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/6c5054273a1ca2739d021b9ba2fb28034d5bedd18d76fe1f5ae73dddd5dee97a.jpg",
+                  "variant_ids": [
+                    43696937041942,
+                    43696967188502,
+                    43696967352342
+                  ]
+                },
+                "available": true,
+                "name": "Puffer - Large / Red",
+                "public_title": "Large / Red",
+                "options": [
+                  "Large",
+                  "Red"
+                ],
+                "price": 8000,
+                "weight": 700,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774605312022,
+                  "position": 5,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/6c5054273a1ca2739d021b9ba2fb28034d5bedd18d76fe1f5ae73dddd5dee97a.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              }
+            ],
+            "images": [
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/20834f7f1039586bb547d0f28f94c37a2be2976705274de37ac424539c9046dd.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a8954211f696bf980e4cda69e288b442d2e187d753cc1185a179c44ca83e518a.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/fe4e7c3235fcb437fda9fea661f7b8a6ba25fff73771eddf930bc2a7c81c4be2.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/ed4b7f6c0a2ad973ce58ecac49bec2b9e32e83a8d2b1667df55b68f03ade8535.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/6c5054273a1ca2739d021b9ba2fb28034d5bedd18d76fe1f5ae73dddd5dee97a.jpg"
+            ],
+            "featured_image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/20834f7f1039586bb547d0f28f94c37a2be2976705274de37ac424539c9046dd.jpg",
+            "options": [
+              {
+                "name": "Size",
+                "position": 1,
+                "values": [
+                  "Small",
+                  "Medium",
+                  "Large"
+                ]
+              },
+              {
+                "name": "Color",
+                "position": 2,
+                "values": [
+                  "Green",
+                  "Olive",
+                  "Ocean",
+                  "Purple",
+                  "Red"
+                ]
+              }
+            ],
+            "url": "/products/puffer?pr_prod_strat=collection_fallback&pr_rec_id=a7fe89065&pr_rec_pid=7983594176534&pr_ref_pid=10489561382934&pr_seq=uniform",
+            "media": [
+              {
+                "alt": null,
+                "id": 39774605279254,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/20834f7f1039586bb547d0f28f94c37a2be2976705274de37ac424539c9046dd.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/20834f7f1039586bb547d0f28f94c37a2be2976705274de37ac424539c9046dd.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774605377558,
+                "position": 2,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a8954211f696bf980e4cda69e288b442d2e187d753cc1185a179c44ca83e518a.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a8954211f696bf980e4cda69e288b442d2e187d753cc1185a179c44ca83e518a.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774605410326,
+                "position": 3,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/fe4e7c3235fcb437fda9fea661f7b8a6ba25fff73771eddf930bc2a7c81c4be2.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/fe4e7c3235fcb437fda9fea661f7b8a6ba25fff73771eddf930bc2a7c81c4be2.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774605344790,
+                "position": 4,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/ed4b7f6c0a2ad973ce58ecac49bec2b9e32e83a8d2b1667df55b68f03ade8535.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/ed4b7f6c0a2ad973ce58ecac49bec2b9e32e83a8d2b1667df55b68f03ade8535.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774605312022,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/6c5054273a1ca2739d021b9ba2fb28034d5bedd18d76fe1f5ae73dddd5dee97a.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/6c5054273a1ca2739d021b9ba2fb28034d5bedd18d76fe1f5ae73dddd5dee97a.jpg",
+                "width": 4096
+              }
+            ],
+            "requires_selling_plan": false,
+            "selling_plan_groups": []
+          },
+          {
+            "id": 7982905098262,
+            "title": "Men's Crewneck",
+            "handle": "men-crewneck",
+            "description": "<meta charset=\"utf-8\"><span data-mce-fragment=\"1\">This high-quality crewneck is perfect for your everyday look. Made with 100% cotton, it's soft, comfortable, and undeniably stylish. Full sleeved for a classic look and effortlessly versatile, this cotton crewneck is a must-have in any wardrobe.</span>",
+            "published_at": "2026-10-15T13:03:00-04:00",
+            "created_at": "2026-10-15T13:02:55-04:00",
+            "vendor": "Mock.shop",
+            "type": "Sweaters",
+            "tags": [
+              "men",
+              "tops"
+            ],
+            "price": 12000,
+            "price_min": 12000,
+            "price_max": 12000,
+            "available": true,
+            "price_varies": false,
+            "compare_at_price": null,
+            "compare_at_price_min": 0,
+            "compare_at_price_max": 0,
+            "compare_at_price_varies": false,
+            "variants": [
+              {
+                "id": 43696905224214,
+                "title": "Small / Green",
+                "option1": "Small",
+                "option2": "Green",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230080811,
+                  "product_id": 7982905098262,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:31-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/4ecbbab490d5a90c04074428b4b0e09358c6895050db590ffbb84e1f8e05fbbc.jpg",
+                  "variant_ids": [
+                    43696905224214,
+                    43696905355286,
+                    43696905486358
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Small / Green",
+                "public_title": "Small / Green",
+                "options": [
+                  "Small",
+                  "Green"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774600855574,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/4ecbbab490d5a90c04074428b4b0e09358c6895050db590ffbb84e1f8e05fbbc.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43695848128534,
+                "title": "Small / Olive",
+                "option1": "Small",
+                "option2": "Olive",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230211883,
+                  "product_id": 7982905098262,
+                  "position": 5,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:31-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/abfd7d077c7abc327f813be0bc0dd94a2ebd72e29bda800b4d05bf4de11c758b.jpg",
+                  "variant_ids": [
+                    43695848128534,
+                    43695848161302,
+                    43695848194070
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Small / Olive",
+                "public_title": "Small / Olive",
+                "options": [
+                  "Small",
+                  "Olive"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774600724502,
+                  "position": 5,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/abfd7d077c7abc327f813be0bc0dd94a2ebd72e29bda800b4d05bf4de11c758b.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696905256982,
+                "title": "Small / Ocean",
+                "option1": "Small",
+                "option2": "Ocean",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230342955,
+                  "product_id": 7982905098262,
+                  "position": 9,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:31-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dd509c581991e643deb9363ef0ab918efb693abc9cbf43cdfbf8f1a85409eacb.jpg",
+                  "variant_ids": [
+                    43696905256982,
+                    43696905388054,
+                    43696905519126
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Small / Ocean",
+                "public_title": "Small / Ocean",
+                "options": [
+                  "Small",
+                  "Ocean"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774600986646,
+                  "position": 9,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dd509c581991e643deb9363ef0ab918efb693abc9cbf43cdfbf8f1a85409eacb.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696905289750,
+                "title": "Small / Purple",
+                "option1": "Small",
+                "option2": "Purple",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230474027,
+                  "product_id": 7982905098262,
+                  "position": 13,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:31-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3d7c2d3cae7893f869a318d7e6d12834b808e03779c845ef25878529103aee88.jpg",
+                  "variant_ids": [
+                    43696905289750,
+                    43696905420822,
+                    43696905551894
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Small / Purple",
+                "public_title": "Small / Purple",
+                "options": [
+                  "Small",
+                  "Purple"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774601084950,
+                  "position": 13,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3d7c2d3cae7893f869a318d7e6d12834b808e03779c845ef25878529103aee88.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696905322518,
+                "title": "Small / Red",
+                "option1": "Small",
+                "option2": "Red",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230605099,
+                  "product_id": 7982905098262,
+                  "position": 17,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:32-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dfe6fa49317d241f5dc7295e8eff79027fd51b512d04f2441aa4b7060f7e35f7.jpg",
+                  "variant_ids": [
+                    43696905322518,
+                    43696905453590,
+                    43696905584662
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Small / Red",
+                "public_title": "Small / Red",
+                "options": [
+                  "Small",
+                  "Red"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774601281558,
+                  "position": 17,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dfe6fa49317d241f5dc7295e8eff79027fd51b512d04f2441aa4b7060f7e35f7.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696905355286,
+                "title": "Medium / Green",
+                "option1": "Medium",
+                "option2": "Green",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230080811,
+                  "product_id": 7982905098262,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:31-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/4ecbbab490d5a90c04074428b4b0e09358c6895050db590ffbb84e1f8e05fbbc.jpg",
+                  "variant_ids": [
+                    43696905224214,
+                    43696905355286,
+                    43696905486358
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Medium / Green",
+                "public_title": "Medium / Green",
+                "options": [
+                  "Medium",
+                  "Green"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774600855574,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/4ecbbab490d5a90c04074428b4b0e09358c6895050db590ffbb84e1f8e05fbbc.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43695848161302,
+                "title": "Medium / Olive",
+                "option1": "Medium",
+                "option2": "Olive",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230211883,
+                  "product_id": 7982905098262,
+                  "position": 5,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:31-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/abfd7d077c7abc327f813be0bc0dd94a2ebd72e29bda800b4d05bf4de11c758b.jpg",
+                  "variant_ids": [
+                    43695848128534,
+                    43695848161302,
+                    43695848194070
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Medium / Olive",
+                "public_title": "Medium / Olive",
+                "options": [
+                  "Medium",
+                  "Olive"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774600724502,
+                  "position": 5,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/abfd7d077c7abc327f813be0bc0dd94a2ebd72e29bda800b4d05bf4de11c758b.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696905388054,
+                "title": "Medium / Ocean",
+                "option1": "Medium",
+                "option2": "Ocean",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230342955,
+                  "product_id": 7982905098262,
+                  "position": 9,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:31-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dd509c581991e643deb9363ef0ab918efb693abc9cbf43cdfbf8f1a85409eacb.jpg",
+                  "variant_ids": [
+                    43696905256982,
+                    43696905388054,
+                    43696905519126
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Medium / Ocean",
+                "public_title": "Medium / Ocean",
+                "options": [
+                  "Medium",
+                  "Ocean"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774600986646,
+                  "position": 9,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dd509c581991e643deb9363ef0ab918efb693abc9cbf43cdfbf8f1a85409eacb.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696905420822,
+                "title": "Medium / Purple",
+                "option1": "Medium",
+                "option2": "Purple",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230474027,
+                  "product_id": 7982905098262,
+                  "position": 13,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:31-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3d7c2d3cae7893f869a318d7e6d12834b808e03779c845ef25878529103aee88.jpg",
+                  "variant_ids": [
+                    43696905289750,
+                    43696905420822,
+                    43696905551894
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Medium / Purple",
+                "public_title": "Medium / Purple",
+                "options": [
+                  "Medium",
+                  "Purple"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774601084950,
+                  "position": 13,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3d7c2d3cae7893f869a318d7e6d12834b808e03779c845ef25878529103aee88.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696905453590,
+                "title": "Medium / Red",
+                "option1": "Medium",
+                "option2": "Red",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230605099,
+                  "product_id": 7982905098262,
+                  "position": 17,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:32-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dfe6fa49317d241f5dc7295e8eff79027fd51b512d04f2441aa4b7060f7e35f7.jpg",
+                  "variant_ids": [
+                    43696905322518,
+                    43696905453590,
+                    43696905584662
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Medium / Red",
+                "public_title": "Medium / Red",
+                "options": [
+                  "Medium",
+                  "Red"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774601281558,
+                  "position": 17,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dfe6fa49317d241f5dc7295e8eff79027fd51b512d04f2441aa4b7060f7e35f7.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696905486358,
+                "title": "Large / Green",
+                "option1": "Large",
+                "option2": "Green",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230080811,
+                  "product_id": 7982905098262,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:31-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/4ecbbab490d5a90c04074428b4b0e09358c6895050db590ffbb84e1f8e05fbbc.jpg",
+                  "variant_ids": [
+                    43696905224214,
+                    43696905355286,
+                    43696905486358
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Large / Green",
+                "public_title": "Large / Green",
+                "options": [
+                  "Large",
+                  "Green"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774600855574,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/4ecbbab490d5a90c04074428b4b0e09358c6895050db590ffbb84e1f8e05fbbc.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43695848194070,
+                "title": "Large / Olive",
+                "option1": "Large",
+                "option2": "Olive",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230211883,
+                  "product_id": 7982905098262,
+                  "position": 5,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:31-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/abfd7d077c7abc327f813be0bc0dd94a2ebd72e29bda800b4d05bf4de11c758b.jpg",
+                  "variant_ids": [
+                    43695848128534,
+                    43695848161302,
+                    43695848194070
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Large / Olive",
+                "public_title": "Large / Olive",
+                "options": [
+                  "Large",
+                  "Olive"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774600724502,
+                  "position": 5,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/abfd7d077c7abc327f813be0bc0dd94a2ebd72e29bda800b4d05bf4de11c758b.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696905519126,
+                "title": "Large / Ocean",
+                "option1": "Large",
+                "option2": "Ocean",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230342955,
+                  "product_id": 7982905098262,
+                  "position": 9,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:31-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dd509c581991e643deb9363ef0ab918efb693abc9cbf43cdfbf8f1a85409eacb.jpg",
+                  "variant_ids": [
+                    43696905256982,
+                    43696905388054,
+                    43696905519126
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Large / Ocean",
+                "public_title": "Large / Ocean",
+                "options": [
+                  "Large",
+                  "Ocean"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774600986646,
+                  "position": 9,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dd509c581991e643deb9363ef0ab918efb693abc9cbf43cdfbf8f1a85409eacb.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696905551894,
+                "title": "Large / Purple",
+                "option1": "Large",
+                "option2": "Purple",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230474027,
+                  "product_id": 7982905098262,
+                  "position": 13,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:31-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3d7c2d3cae7893f869a318d7e6d12834b808e03779c845ef25878529103aee88.jpg",
+                  "variant_ids": [
+                    43696905289750,
+                    43696905420822,
+                    43696905551894
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Large / Purple",
+                "public_title": "Large / Purple",
+                "options": [
+                  "Large",
+                  "Purple"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774601084950,
+                  "position": 13,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3d7c2d3cae7893f869a318d7e6d12834b808e03779c845ef25878529103aee88.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696905584662,
+                "title": "Large / Red",
+                "option1": "Large",
+                "option2": "Red",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776230605099,
+                  "product_id": 7982905098262,
+                  "position": 17,
+                  "created_at": "2026-10-15T13:45:29-04:00",
+                  "updated_at": "2026-10-15T13:45:32-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dfe6fa49317d241f5dc7295e8eff79027fd51b512d04f2441aa4b7060f7e35f7.jpg",
+                  "variant_ids": [
+                    43696905322518,
+                    43696905453590,
+                    43696905584662
+                  ]
+                },
+                "available": true,
+                "name": "Men's Crewneck - Large / Red",
+                "public_title": "Large / Red",
+                "options": [
+                  "Large",
+                  "Red"
+                ],
+                "price": 12000,
+                "weight": 500,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774601281558,
+                  "position": 17,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dfe6fa49317d241f5dc7295e8eff79027fd51b512d04f2441aa4b7060f7e35f7.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              }
+            ],
+            "images": [
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/4ecbbab490d5a90c04074428b4b0e09358c6895050db590ffbb84e1f8e05fbbc.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/40ce9bd47f075358b03a1e2925188aefb019989b849aedd76e158a98f3f461e7.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0331582a67fd3442181f54e27cea68320185f5ee497aaabb0f0ec9b2af3b590.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/06b97d2c6838b53fc0e9487f57c921f573feb8d064cb825efedc9ab43f5fca9e.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/abfd7d077c7abc327f813be0bc0dd94a2ebd72e29bda800b4d05bf4de11c758b.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/931375c347d3043b658ca2cf1bff1f43d5bd3c6e3216580af9d3b8649cdf245e.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/ca3e78bf5c0a70130c3da4a3cd2f153c26e884c76a37e2fb66815d68e2f2f5a2.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b9f1041e21d89a55776ad7e9a355b9d289b63b3d9ef3cc020c2f5a77b3f0bfcc.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dd509c581991e643deb9363ef0ab918efb693abc9cbf43cdfbf8f1a85409eacb.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b919f0fcd781ecee1867f7c1cbc6ee57664456af220d40e45c01c2e5a780d71.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b6740923e84a7d2301e8a6a46b152cc8ae9d5c54f6df0c5032bb2b39547bf254.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/8b61b00896087a0383a9e323a555cf79654f12d8f6420e2ffc18f287089339d0.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3d7c2d3cae7893f869a318d7e6d12834b808e03779c845ef25878529103aee88.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/72f65448f3791485ee0ee05184c3bf19f1b5b8f2480019f559d6afe0a89ed630.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/df1296193c3e8b4fad9e246a826afc44bf1b21df536914c845b256b3cbeee108.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/638990fc441e9b4b749d5759658ae9f26bf197e1219ef35daefe449a3cbca1e9.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dfe6fa49317d241f5dc7295e8eff79027fd51b512d04f2441aa4b7060f7e35f7.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b90eec71dbe4bbcd501de2d40bc72b61416040b83d8a61309dccab07a2a8775e.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/5da0bd0f04213a88abc743e280893372239a0c5ce189ff9112a888113f525070.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b4d0258192c8e4423a9be2283c73c5ef2a0ad9c7e898bd73cbc689561a18f211.jpg"
+            ],
+            "featured_image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/4ecbbab490d5a90c04074428b4b0e09358c6895050db590ffbb84e1f8e05fbbc.jpg",
+            "options": [
+              {
+                "name": "Size",
+                "position": 1,
+                "values": [
+                  "Small",
+                  "Medium",
+                  "Large"
+                ]
+              },
+              {
+                "name": "Color",
+                "position": 2,
+                "values": [
+                  "Green",
+                  "Olive",
+                  "Ocean",
+                  "Purple",
+                  "Red"
+                ]
+              }
+            ],
+            "url": "/products/men-crewneck?pr_prod_strat=collection_fallback&pr_rec_id=a7fe89065&pr_rec_pid=7982905098262&pr_ref_pid=10489561382934&pr_seq=uniform",
+            "media": [
+              {
+                "alt": null,
+                "id": 39774600855574,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/4ecbbab490d5a90c04074428b4b0e09358c6895050db590ffbb84e1f8e05fbbc.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/4ecbbab490d5a90c04074428b4b0e09358c6895050db590ffbb84e1f8e05fbbc.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774600822806,
+                "position": 2,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/40ce9bd47f075358b03a1e2925188aefb019989b849aedd76e158a98f3f461e7.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/40ce9bd47f075358b03a1e2925188aefb019989b849aedd76e158a98f3f461e7.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774600888342,
+                "position": 3,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0331582a67fd3442181f54e27cea68320185f5ee497aaabb0f0ec9b2af3b590.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d0331582a67fd3442181f54e27cea68320185f5ee497aaabb0f0ec9b2af3b590.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774600790038,
+                "position": 4,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/06b97d2c6838b53fc0e9487f57c921f573feb8d064cb825efedc9ab43f5fca9e.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/06b97d2c6838b53fc0e9487f57c921f573feb8d064cb825efedc9ab43f5fca9e.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774600724502,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/abfd7d077c7abc327f813be0bc0dd94a2ebd72e29bda800b4d05bf4de11c758b.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/abfd7d077c7abc327f813be0bc0dd94a2ebd72e29bda800b4d05bf4de11c758b.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774600658966,
+                "position": 6,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/931375c347d3043b658ca2cf1bff1f43d5bd3c6e3216580af9d3b8649cdf245e.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/931375c347d3043b658ca2cf1bff1f43d5bd3c6e3216580af9d3b8649cdf245e.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774600691734,
+                "position": 7,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/ca3e78bf5c0a70130c3da4a3cd2f153c26e884c76a37e2fb66815d68e2f2f5a2.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/ca3e78bf5c0a70130c3da4a3cd2f153c26e884c76a37e2fb66815d68e2f2f5a2.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774600757270,
+                "position": 8,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b9f1041e21d89a55776ad7e9a355b9d289b63b3d9ef3cc020c2f5a77b3f0bfcc.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b9f1041e21d89a55776ad7e9a355b9d289b63b3d9ef3cc020c2f5a77b3f0bfcc.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774600986646,
+                "position": 9,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dd509c581991e643deb9363ef0ab918efb693abc9cbf43cdfbf8f1a85409eacb.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dd509c581991e643deb9363ef0ab918efb693abc9cbf43cdfbf8f1a85409eacb.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774601019414,
+                "position": 10,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b919f0fcd781ecee1867f7c1cbc6ee57664456af220d40e45c01c2e5a780d71.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b919f0fcd781ecee1867f7c1cbc6ee57664456af220d40e45c01c2e5a780d71.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774600921110,
+                "position": 11,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b6740923e84a7d2301e8a6a46b152cc8ae9d5c54f6df0c5032bb2b39547bf254.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b6740923e84a7d2301e8a6a46b152cc8ae9d5c54f6df0c5032bb2b39547bf254.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774600953878,
+                "position": 12,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/8b61b00896087a0383a9e323a555cf79654f12d8f6420e2ffc18f287089339d0.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/8b61b00896087a0383a9e323a555cf79654f12d8f6420e2ffc18f287089339d0.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774601084950,
+                "position": 13,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3d7c2d3cae7893f869a318d7e6d12834b808e03779c845ef25878529103aee88.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/3d7c2d3cae7893f869a318d7e6d12834b808e03779c845ef25878529103aee88.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774601052182,
+                "position": 14,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/72f65448f3791485ee0ee05184c3bf19f1b5b8f2480019f559d6afe0a89ed630.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/72f65448f3791485ee0ee05184c3bf19f1b5b8f2480019f559d6afe0a89ed630.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774601117718,
+                "position": 15,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/df1296193c3e8b4fad9e246a826afc44bf1b21df536914c845b256b3cbeee108.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/df1296193c3e8b4fad9e246a826afc44bf1b21df536914c845b256b3cbeee108.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774601150486,
+                "position": 16,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/638990fc441e9b4b749d5759658ae9f26bf197e1219ef35daefe449a3cbca1e9.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/638990fc441e9b4b749d5759658ae9f26bf197e1219ef35daefe449a3cbca1e9.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774601281558,
+                "position": 17,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dfe6fa49317d241f5dc7295e8eff79027fd51b512d04f2441aa4b7060f7e35f7.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/dfe6fa49317d241f5dc7295e8eff79027fd51b512d04f2441aa4b7060f7e35f7.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774601183254,
+                "position": 18,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b90eec71dbe4bbcd501de2d40bc72b61416040b83d8a61309dccab07a2a8775e.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b90eec71dbe4bbcd501de2d40bc72b61416040b83d8a61309dccab07a2a8775e.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774601248790,
+                "position": 19,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/5da0bd0f04213a88abc743e280893372239a0c5ce189ff9112a888113f525070.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/5da0bd0f04213a88abc743e280893372239a0c5ce189ff9112a888113f525070.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774601216022,
+                "position": 20,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b4d0258192c8e4423a9be2283c73c5ef2a0ad9c7e898bd73cbc689561a18f211.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/b4d0258192c8e4423a9be2283c73c5ef2a0ad9c7e898bd73cbc689561a18f211.jpg",
+                "width": 4096
+              }
+            ],
+            "requires_selling_plan": false,
+            "selling_plan_groups": []
+          },
+          {
+            "id": 7983592374294,
+            "title": "Women's T-shirt",
+            "handle": "women-t-shirt",
+            "description": "<p data-mce-fragment=\"1\">Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.</p>",
+            "published_at": "2026-10-15T13:03:14-04:00",
+            "created_at": "2026-10-15T13:03:10-04:00",
+            "vendor": "Mock.shop",
+            "type": "T-shirts",
+            "tags": [
+              "tops",
+              "women"
+            ],
+            "price": 4000,
+            "price_min": 4000,
+            "price_max": 4000,
+            "available": true,
+            "price_varies": false,
+            "compare_at_price": null,
+            "compare_at_price_min": 0,
+            "compare_at_price_max": 0,
+            "compare_at_price_varies": false,
+            "variants": [
+              {
+                "id": 43696933273622,
+                "title": "Small / Green",
+                "option1": "Small",
+                "option2": "Green",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231293227,
+                  "product_id": 7983592374294,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg",
+                  "variant_ids": [
+                    43696933273622,
+                    43696933437462,
+                    43696933601302,
+                    43696933765142
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Small / Green",
+                "public_title": "Small / Green",
+                "options": [
+                  "Small",
+                  "Green"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603477014,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933240854,
+                "title": "Small / Olive",
+                "option1": "Small",
+                "option2": "Olive",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231325995,
+                  "product_id": 7983592374294,
+                  "position": 2,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c8e4d1229bc33def0077b50f53b2d1df5585deb32d8972052cbe80fae5eee01a.jpg",
+                  "variant_ids": [
+                    43696933240854,
+                    43696933404694,
+                    43696933568534,
+                    43696933732374
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Small / Olive",
+                "public_title": "Small / Olive",
+                "options": [
+                  "Small",
+                  "Olive"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603444246,
+                  "position": 2,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c8e4d1229bc33def0077b50f53b2d1df5585deb32d8972052cbe80fae5eee01a.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933306390,
+                "title": "Small / Ocean",
+                "option1": "Small",
+                "option2": "Ocean",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231358763,
+                  "product_id": 7983592374294,
+                  "position": 3,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e9c21d1c8570d618b06a685d8bb609788cfc03cc2a60e8b1682a922f805f9434.jpg",
+                  "variant_ids": [
+                    43696933306390,
+                    43696933470230,
+                    43696933634070,
+                    43696933797910
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Small / Ocean",
+                "public_title": "Small / Ocean",
+                "options": [
+                  "Small",
+                  "Ocean"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603509782,
+                  "position": 3,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e9c21d1c8570d618b06a685d8bb609788cfc03cc2a60e8b1682a922f805f9434.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933339158,
+                "title": "Small / Purple",
+                "option1": "Small",
+                "option2": "Purple",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231391531,
+                  "product_id": 7983592374294,
+                  "position": 4,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/42ef69f089228481cb2b440a315b195636db3048e15c0c21dc9e46ad6ec179de.jpg",
+                  "variant_ids": [
+                    43696933339158,
+                    43696933502998,
+                    43696933666838,
+                    43696933830678
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Small / Purple",
+                "public_title": "Small / Purple",
+                "options": [
+                  "Small",
+                  "Purple"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603542550,
+                  "position": 4,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/42ef69f089228481cb2b440a315b195636db3048e15c0c21dc9e46ad6ec179de.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933371926,
+                "title": "Small / Red",
+                "option1": "Small",
+                "option2": "Red",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231424299,
+                  "product_id": 7983592374294,
+                  "position": 5,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7fc2db0125dcfff77dc903c9cecaf31ae7a4f6b08961a8be3aa311822b6102ab.jpg",
+                  "variant_ids": [
+                    43696933371926,
+                    43696933535766,
+                    43696933699606,
+                    43696933863446
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Small / Red",
+                "public_title": "Small / Red",
+                "options": [
+                  "Small",
+                  "Red"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603575318,
+                  "position": 5,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7fc2db0125dcfff77dc903c9cecaf31ae7a4f6b08961a8be3aa311822b6102ab.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933437462,
+                "title": "Medium / Green",
+                "option1": "Medium",
+                "option2": "Green",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231293227,
+                  "product_id": 7983592374294,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg",
+                  "variant_ids": [
+                    43696933273622,
+                    43696933437462,
+                    43696933601302,
+                    43696933765142
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Medium / Green",
+                "public_title": "Medium / Green",
+                "options": [
+                  "Medium",
+                  "Green"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603477014,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933404694,
+                "title": "Medium / Olive",
+                "option1": "Medium",
+                "option2": "Olive",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231325995,
+                  "product_id": 7983592374294,
+                  "position": 2,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c8e4d1229bc33def0077b50f53b2d1df5585deb32d8972052cbe80fae5eee01a.jpg",
+                  "variant_ids": [
+                    43696933240854,
+                    43696933404694,
+                    43696933568534,
+                    43696933732374
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Medium / Olive",
+                "public_title": "Medium / Olive",
+                "options": [
+                  "Medium",
+                  "Olive"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603444246,
+                  "position": 2,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c8e4d1229bc33def0077b50f53b2d1df5585deb32d8972052cbe80fae5eee01a.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933470230,
+                "title": "Medium / Ocean",
+                "option1": "Medium",
+                "option2": "Ocean",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231358763,
+                  "product_id": 7983592374294,
+                  "position": 3,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e9c21d1c8570d618b06a685d8bb609788cfc03cc2a60e8b1682a922f805f9434.jpg",
+                  "variant_ids": [
+                    43696933306390,
+                    43696933470230,
+                    43696933634070,
+                    43696933797910
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Medium / Ocean",
+                "public_title": "Medium / Ocean",
+                "options": [
+                  "Medium",
+                  "Ocean"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603509782,
+                  "position": 3,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e9c21d1c8570d618b06a685d8bb609788cfc03cc2a60e8b1682a922f805f9434.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933502998,
+                "title": "Medium / Purple",
+                "option1": "Medium",
+                "option2": "Purple",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231391531,
+                  "product_id": 7983592374294,
+                  "position": 4,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/42ef69f089228481cb2b440a315b195636db3048e15c0c21dc9e46ad6ec179de.jpg",
+                  "variant_ids": [
+                    43696933339158,
+                    43696933502998,
+                    43696933666838,
+                    43696933830678
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Medium / Purple",
+                "public_title": "Medium / Purple",
+                "options": [
+                  "Medium",
+                  "Purple"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603542550,
+                  "position": 4,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/42ef69f089228481cb2b440a315b195636db3048e15c0c21dc9e46ad6ec179de.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933535766,
+                "title": "Medium / Red",
+                "option1": "Medium",
+                "option2": "Red",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231424299,
+                  "product_id": 7983592374294,
+                  "position": 5,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7fc2db0125dcfff77dc903c9cecaf31ae7a4f6b08961a8be3aa311822b6102ab.jpg",
+                  "variant_ids": [
+                    43696933371926,
+                    43696933535766,
+                    43696933699606,
+                    43696933863446
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Medium / Red",
+                "public_title": "Medium / Red",
+                "options": [
+                  "Medium",
+                  "Red"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603575318,
+                  "position": 5,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7fc2db0125dcfff77dc903c9cecaf31ae7a4f6b08961a8be3aa311822b6102ab.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933601302,
+                "title": "Large / Green",
+                "option1": "Large",
+                "option2": "Green",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231293227,
+                  "product_id": 7983592374294,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg",
+                  "variant_ids": [
+                    43696933273622,
+                    43696933437462,
+                    43696933601302,
+                    43696933765142
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Large / Green",
+                "public_title": "Large / Green",
+                "options": [
+                  "Large",
+                  "Green"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603477014,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933568534,
+                "title": "Large / Olive",
+                "option1": "Large",
+                "option2": "Olive",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231325995,
+                  "product_id": 7983592374294,
+                  "position": 2,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c8e4d1229bc33def0077b50f53b2d1df5585deb32d8972052cbe80fae5eee01a.jpg",
+                  "variant_ids": [
+                    43696933240854,
+                    43696933404694,
+                    43696933568534,
+                    43696933732374
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Large / Olive",
+                "public_title": "Large / Olive",
+                "options": [
+                  "Large",
+                  "Olive"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603444246,
+                  "position": 2,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c8e4d1229bc33def0077b50f53b2d1df5585deb32d8972052cbe80fae5eee01a.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933634070,
+                "title": "Large / Ocean",
+                "option1": "Large",
+                "option2": "Ocean",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231358763,
+                  "product_id": 7983592374294,
+                  "position": 3,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e9c21d1c8570d618b06a685d8bb609788cfc03cc2a60e8b1682a922f805f9434.jpg",
+                  "variant_ids": [
+                    43696933306390,
+                    43696933470230,
+                    43696933634070,
+                    43696933797910
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Large / Ocean",
+                "public_title": "Large / Ocean",
+                "options": [
+                  "Large",
+                  "Ocean"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603509782,
+                  "position": 3,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e9c21d1c8570d618b06a685d8bb609788cfc03cc2a60e8b1682a922f805f9434.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933666838,
+                "title": "Large / Purple",
+                "option1": "Large",
+                "option2": "Purple",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231391531,
+                  "product_id": 7983592374294,
+                  "position": 4,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/42ef69f089228481cb2b440a315b195636db3048e15c0c21dc9e46ad6ec179de.jpg",
+                  "variant_ids": [
+                    43696933339158,
+                    43696933502998,
+                    43696933666838,
+                    43696933830678
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Large / Purple",
+                "public_title": "Large / Purple",
+                "options": [
+                  "Large",
+                  "Purple"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603542550,
+                  "position": 4,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/42ef69f089228481cb2b440a315b195636db3048e15c0c21dc9e46ad6ec179de.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933699606,
+                "title": "Large / Red",
+                "option1": "Large",
+                "option2": "Red",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231424299,
+                  "product_id": 7983592374294,
+                  "position": 5,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7fc2db0125dcfff77dc903c9cecaf31ae7a4f6b08961a8be3aa311822b6102ab.jpg",
+                  "variant_ids": [
+                    43696933371926,
+                    43696933535766,
+                    43696933699606,
+                    43696933863446
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - Large / Red",
+                "public_title": "Large / Red",
+                "options": [
+                  "Large",
+                  "Red"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603575318,
+                  "position": 5,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7fc2db0125dcfff77dc903c9cecaf31ae7a4f6b08961a8be3aa311822b6102ab.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933765142,
+                "title": "X-Large / Green",
+                "option1": "X-Large",
+                "option2": "Green",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231293227,
+                  "product_id": 7983592374294,
+                  "position": 1,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg",
+                  "variant_ids": [
+                    43696933273622,
+                    43696933437462,
+                    43696933601302,
+                    43696933765142
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - X-Large / Green",
+                "public_title": "X-Large / Green",
+                "options": [
+                  "X-Large",
+                  "Green"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603477014,
+                  "position": 1,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933732374,
+                "title": "X-Large / Olive",
+                "option1": "X-Large",
+                "option2": "Olive",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231325995,
+                  "product_id": 7983592374294,
+                  "position": 2,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c8e4d1229bc33def0077b50f53b2d1df5585deb32d8972052cbe80fae5eee01a.jpg",
+                  "variant_ids": [
+                    43696933240854,
+                    43696933404694,
+                    43696933568534,
+                    43696933732374
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - X-Large / Olive",
+                "public_title": "X-Large / Olive",
+                "options": [
+                  "X-Large",
+                  "Olive"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603444246,
+                  "position": 2,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c8e4d1229bc33def0077b50f53b2d1df5585deb32d8972052cbe80fae5eee01a.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933797910,
+                "title": "X-Large / Ocean",
+                "option1": "X-Large",
+                "option2": "Ocean",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231358763,
+                  "product_id": 7983592374294,
+                  "position": 3,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e9c21d1c8570d618b06a685d8bb609788cfc03cc2a60e8b1682a922f805f9434.jpg",
+                  "variant_ids": [
+                    43696933306390,
+                    43696933470230,
+                    43696933634070,
+                    43696933797910
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - X-Large / Ocean",
+                "public_title": "X-Large / Ocean",
+                "options": [
+                  "X-Large",
+                  "Ocean"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603509782,
+                  "position": 3,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e9c21d1c8570d618b06a685d8bb609788cfc03cc2a60e8b1682a922f805f9434.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933830678,
+                "title": "X-Large / Purple",
+                "option1": "X-Large",
+                "option2": "Purple",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231391531,
+                  "product_id": 7983592374294,
+                  "position": 4,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/42ef69f089228481cb2b440a315b195636db3048e15c0c21dc9e46ad6ec179de.jpg",
+                  "variant_ids": [
+                    43696933339158,
+                    43696933502998,
+                    43696933666838,
+                    43696933830678
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - X-Large / Purple",
+                "public_title": "X-Large / Purple",
+                "options": [
+                  "X-Large",
+                  "Purple"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603542550,
+                  "position": 4,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/42ef69f089228481cb2b440a315b195636db3048e15c0c21dc9e46ad6ec179de.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              },
+              {
+                "id": 43696933863446,
+                "title": "X-Large / Red",
+                "option1": "X-Large",
+                "option2": "Red",
+                "option3": null,
+                "sku": null,
+                "requires_shipping": true,
+                "taxable": true,
+                "featured_image": {
+                  "id": 55776231424299,
+                  "product_id": 7983592374294,
+                  "position": 5,
+                  "created_at": "2026-10-15T13:45:41-04:00",
+                  "updated_at": "2026-10-15T13:45:43-04:00",
+                  "alt": null,
+                  "width": 4096,
+                  "height": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7fc2db0125dcfff77dc903c9cecaf31ae7a4f6b08961a8be3aa311822b6102ab.jpg",
+                  "variant_ids": [
+                    43696933371926,
+                    43696933535766,
+                    43696933699606,
+                    43696933863446
+                  ]
+                },
+                "available": true,
+                "name": "Women's T-shirt - X-Large / Red",
+                "public_title": "X-Large / Red",
+                "options": [
+                  "X-Large",
+                  "Red"
+                ],
+                "price": 4000,
+                "weight": 300,
+                "compare_at_price": null,
+                "inventory_management": "shopify",
+                "barcode": null,
+                "featured_media": {
+                  "alt": null,
+                  "id": 39774603575318,
+                  "position": 5,
+                  "preview_image": {
+                    "aspect_ratio": 1,
+                    "height": 4096,
+                    "width": 4096,
+                    "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7fc2db0125dcfff77dc903c9cecaf31ae7a4f6b08961a8be3aa311822b6102ab.jpg"
+                  }
+                },
+                "quantity_rule": {
+                  "min": 1,
+                  "max": null,
+                  "increment": 1
+                },
+                "quantity_price_breaks": [],
+                "requires_selling_plan": false,
+                "selling_plan_allocations": []
+              }
+            ],
+            "images": [
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c8e4d1229bc33def0077b50f53b2d1df5585deb32d8972052cbe80fae5eee01a.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e9c21d1c8570d618b06a685d8bb609788cfc03cc2a60e8b1682a922f805f9434.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/42ef69f089228481cb2b440a315b195636db3048e15c0c21dc9e46ad6ec179de.jpg",
+              "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7fc2db0125dcfff77dc903c9cecaf31ae7a4f6b08961a8be3aa311822b6102ab.jpg"
+            ],
+            "featured_image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg",
+            "options": [
+              {
+                "name": "Size",
+                "position": 1,
+                "values": [
+                  "Small",
+                  "Medium",
+                  "Large",
+                  "X-Large"
+                ]
+              },
+              {
+                "name": "Color",
+                "position": 2,
+                "values": [
+                  "Green",
+                  "Olive",
+                  "Ocean",
+                  "Purple",
+                  "Red"
+                ]
+              }
+            ],
+            "url": "/products/women-t-shirt?pr_prod_strat=collection_fallback&pr_rec_id=a7fe89065&pr_rec_pid=7983592374294&pr_ref_pid=10489561382934&pr_seq=uniform",
+            "media": [
+              {
+                "alt": null,
+                "id": 39774603477014,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774603444246,
+                "position": 2,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c8e4d1229bc33def0077b50f53b2d1df5585deb32d8972052cbe80fae5eee01a.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c8e4d1229bc33def0077b50f53b2d1df5585deb32d8972052cbe80fae5eee01a.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774603509782,
+                "position": 3,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e9c21d1c8570d618b06a685d8bb609788cfc03cc2a60e8b1682a922f805f9434.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e9c21d1c8570d618b06a685d8bb609788cfc03cc2a60e8b1682a922f805f9434.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774603542550,
+                "position": 4,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/42ef69f089228481cb2b440a315b195636db3048e15c0c21dc9e46ad6ec179de.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/42ef69f089228481cb2b440a315b195636db3048e15c0c21dc9e46ad6ec179de.jpg",
+                "width": 4096
+              },
+              {
+                "alt": null,
+                "id": 39774603575318,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7fc2db0125dcfff77dc903c9cecaf31ae7a4f6b08961a8be3aa311822b6102ab.jpg"
+                },
+                "aspect_ratio": 1,
+                "height": 4096,
+                "media_type": "image",
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7fc2db0125dcfff77dc903c9cecaf31ae7a4f6b08961a8be3aa311822b6102ab.jpg",
+                "width": 4096
+              }
+            ],
+            "requires_selling_plan": false,
+            "selling_plan_groups": []
+          }
+        ],
+        "intent": "related"
+      }
+    }
+  ]
+}

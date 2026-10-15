@@ -1,0 +1,17 @@
+{
+  "scenario": "probe-recommendations-complementary",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/recommendations/products?product_id=10489561382934&limit=4&intent=complementary&section_id=probe-recommendations",
+      "status": 200,
+      "location": null,
+      "body": {
+        "performed": true,
+        "intent": "complementary",
+        "products_count": 0,
+        "products": []
+      }
+    }
+  ]
+}

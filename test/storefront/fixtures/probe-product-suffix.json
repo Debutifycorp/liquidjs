@@ -1,0 +1,462 @@
+{
+  "scenario": "probe-product-suffix",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/products/white-leather-sneakers",
+      "status": 200,
+      "location": null,
+      "body": {
+        "id": 7983595323414,
+        "title": "White Leather Sneakers",
+        "description": "",
+        "url": "/products/white-leather-sneakers",
+        "template_suffix": "probe",
+        "template": {
+          "name": "product",
+          "suffix": "probe"
+        },
+        "price": 9000,
+        "price_min": 9000,
+        "price_max": 9000,
+        "compare_at_price": 11000,
+        "money": "$90.00",
+        "money_with_currency": "$90.00 USD",
+        "selected_variant": null,
+        "selected_or_first_available_variant": 43696969777174,
+        "first_available_variant": 43696969777174,
+        "requires_selling_plan": false,
+        "selected_selling_plan": null,
+        "selected_or_first_available_selling_plan_allocation": null,
+        "options_with_values": [
+          {
+            "name": "Size",
+            "selected_value": "4"
+          }
+        ],
+        "variants": [
+          {
+            "id": 43696969777174,
+            "title": "4",
+            "price": 9000,
+            "compare_at_price": 11000,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 46,
+            "weight": 900,
+            "requires_selling_plan": false,
+            "url": "/products/white-leather-sneakers?variant=43696969777174",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696969809942,
+            "title": "5",
+            "price": 9000,
+            "compare_at_price": 11000,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 900,
+            "requires_selling_plan": false,
+            "url": "/products/white-leather-sneakers?variant=43696969809942",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696969842710,
+            "title": "6",
+            "price": 9000,
+            "compare_at_price": 11000,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 900,
+            "requires_selling_plan": false,
+            "url": "/products/white-leather-sneakers?variant=43696969842710",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696969875478,
+            "title": "7",
+            "price": 9000,
+            "compare_at_price": 11000,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 900,
+            "requires_selling_plan": false,
+            "url": "/products/white-leather-sneakers?variant=43696969875478",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696969908246,
+            "title": "8",
+            "price": 9000,
+            "compare_at_price": 11000,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 900,
+            "requires_selling_plan": false,
+            "url": "/products/white-leather-sneakers?variant=43696969908246",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          }
+        ],
+        "selling_plan_groups": [],
+        "ajax": {
+          "id": 7983595323414,
+          "title": "White Leather Sneakers",
+          "handle": "white-leather-sneakers",
+          "description": "",
+          "published_at": "2026-10-15T13:04:15-04:00",
+          "created_at": "2026-10-15T13:04:12-04:00",
+          "vendor": "Mock.shop",
+          "type": "Shoes",
+          "tags": [
+            "accessories",
+            "men",
+            "shoes"
+          ],
+          "price": 9000,
+          "price_min": 9000,
+          "price_max": 9000,
+          "available": true,
+          "price_varies": false,
+          "compare_at_price": 11000,
+          "compare_at_price_min": 11000,
+          "compare_at_price_max": 11000,
+          "compare_at_price_varies": false,
+          "variants": [
+            {
+              "id": 43696969777174,
+              "title": "4",
+              "option1": "4",
+              "option2": null,
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234275115,
+                "product_id": 7983595323414,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:32-04:00",
+                "updated_at": "2026-10-15T13:46:34-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg",
+                "variant_ids": [
+                  43696969777174,
+                  43696969809942,
+                  43696969842710,
+                  43696969875478,
+                  43696969908246
+                ]
+              },
+              "available": true,
+              "name": "White Leather Sneakers - 4",
+              "public_title": "4",
+              "options": [
+                "4"
+              ],
+              "price": 9000,
+              "weight": 900,
+              "compare_at_price": 11000,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774608752662,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696969809942,
+              "title": "5",
+              "option1": "5",
+              "option2": null,
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234275115,
+                "product_id": 7983595323414,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:32-04:00",
+                "updated_at": "2026-10-15T13:46:34-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg",
+                "variant_ids": [
+                  43696969777174,
+                  43696969809942,
+                  43696969842710,
+                  43696969875478,
+                  43696969908246
+                ]
+              },
+              "available": true,
+              "name": "White Leather Sneakers - 5",
+              "public_title": "5",
+              "options": [
+                "5"
+              ],
+              "price": 9000,
+              "weight": 900,
+              "compare_at_price": 11000,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774608752662,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696969842710,
+              "title": "6",
+              "option1": "6",
+              "option2": null,
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234275115,
+                "product_id": 7983595323414,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:32-04:00",
+                "updated_at": "2026-10-15T13:46:34-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg",
+                "variant_ids": [
+                  43696969777174,
+                  43696969809942,
+                  43696969842710,
+                  43696969875478,
+                  43696969908246
+                ]
+              },
+              "available": true,
+              "name": "White Leather Sneakers - 6",
+              "public_title": "6",
+              "options": [
+                "6"
+              ],
+              "price": 9000,
+              "weight": 900,
+              "compare_at_price": 11000,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774608752662,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696969875478,
+              "title": "7",
+              "option1": "7",
+              "option2": null,
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234275115,
+                "product_id": 7983595323414,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:32-04:00",
+                "updated_at": "2026-10-15T13:46:34-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg",
+                "variant_ids": [
+                  43696969777174,
+                  43696969809942,
+                  43696969842710,
+                  43696969875478,
+                  43696969908246
+                ]
+              },
+              "available": true,
+              "name": "White Leather Sneakers - 7",
+              "public_title": "7",
+              "options": [
+                "7"
+              ],
+              "price": 9000,
+              "weight": 900,
+              "compare_at_price": 11000,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774608752662,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696969908246,
+              "title": "8",
+              "option1": "8",
+              "option2": null,
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 55776234275115,
+                "product_id": 7983595323414,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:32-04:00",
+                "updated_at": "2026-10-15T13:46:34-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg",
+                "variant_ids": [
+                  43696969777174,
+                  43696969809942,
+                  43696969842710,
+                  43696969875478,
+                  43696969908246
+                ]
+              },
+              "available": true,
+              "name": "White Leather Sneakers - 8",
+              "public_title": "8",
+              "options": [
+                "8"
+              ],
+              "price": 9000,
+              "weight": 900,
+              "compare_at_price": 11000,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774608752662,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            }
+          ],
+          "images": [
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg"
+          ],
+          "featured_image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg",
+          "options": [
+            "Size"
+          ],
+          "media": [
+            {
+              "alt": null,
+              "id": 39774608752662,
+              "position": 1,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f29f7c2c49dfed5f080884f85ffcfd562294da2c83646d0a2c007e00fb2deeb1.jpg",
+              "width": 4096
+            }
+          ],
+          "requires_selling_plan": false,
+          "selling_plan_groups": [],
+          "content": ""
+        }
+      }
+    }
+  ]
+}

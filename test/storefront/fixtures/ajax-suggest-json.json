@@ -1,0 +1,123 @@
+{
+  "scenario": "ajax-suggest-json",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/search/suggest.json?q=shirt&resources%5Btype%5D=product,collection,page,article,query&resources%5Blimit%5D=8",
+      "status": 200,
+      "location": null,
+      "body": {
+        "resources": {
+          "results": {
+            "products": [
+              {
+                "available": true,
+                "body": "<p data-mce-fragment=\"1\">Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.</p>",
+                "compare_at_price_max": "0.00",
+                "compare_at_price_min": "0.00",
+                "handle": "men-t-shirt",
+                "id": 7982902771734,
+                "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+                "price": "40.00",
+                "price_max": "40.00",
+                "price_min": "40.00",
+                "tags": [
+                  "men",
+                  "tops"
+                ],
+                "title": "Men's T-shirt",
+                "type": "T-shirts",
+                "url": "/products/men-t-shirt?_pos=1&_psq=shirt&_psid=ec7c5a390&_ss=e",
+                "variants": [],
+                "vendor": "Mock.shop",
+                "featured_image": {
+                  "alt": "Men's T-shirt",
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+                  "width": 4096
+                }
+              },
+              {
+                "available": true,
+                "body": "<p data-mce-fragment=\"1\">Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.</p>",
+                "compare_at_price_max": "0.00",
+                "compare_at_price_min": "0.00",
+                "handle": "women-t-shirt",
+                "id": 7983592374294,
+                "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg",
+                "price": "40.00",
+                "price_max": "40.00",
+                "price_min": "40.00",
+                "tags": [
+                  "tops",
+                  "women"
+                ],
+                "title": "Women's T-shirt",
+                "type": "T-shirts",
+                "url": "/products/women-t-shirt?_pos=2&_psq=shirt&_psid=ec7c5a390&_ss=e",
+                "variants": [],
+                "vendor": "Mock.shop",
+                "featured_image": {
+                  "alt": "Women's T-shirt",
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/313a2bf49d67db5a50828cfac7f1466cba32f48bbb0223148ecaeb8fe5e157d6.jpg",
+                  "width": 4096
+                }
+              },
+              {
+                "available": true,
+                "body": "<p data-mce-fragment=\"1\">This high-performance workout shirt made from high-quality <strong>Nylon</strong> is designed with comfort and durability in mind. Its breathable mesh construction keeps your body temperature regulated while you exercise, while the antistatic and antibacterial finish ensures it will remain light and soft to the touch, wash after wash. With its lightweight design and adjustable straps, it's sure to stay in place during even the toughest workouts.</p>",
+                "compare_at_price_max": "0.00",
+                "compare_at_price_min": "0.00",
+                "handle": "workout-shirt",
+                "id": 7983594962966,
+                "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23e2d44fd51df6adb548fd353a5bd9388a96d0c8352cec564e13c4c089b252e2.jpg",
+                "price": "10.00",
+                "price_max": "10.00",
+                "price_min": "10.00",
+                "tags": [
+                  "tops",
+                  "women"
+                ],
+                "title": "Workout Shirt",
+                "type": "T-shirts",
+                "url": "/products/workout-shirt?_pos=3&_psq=shirt&_psid=ec7c5a390&_ss=e",
+                "variants": [],
+                "vendor": "Mock.shop",
+                "featured_image": {
+                  "alt": "Workout Shirt",
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23e2d44fd51df6adb548fd353a5bd9388a96d0c8352cec564e13c4c089b252e2.jpg",
+                  "width": 4096
+                }
+              }
+            ],
+            "collections": [],
+            "pages": [],
+            "articles": [],
+            "queries": []
+          }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/search/suggest.json?q=zzz",
+      "status": 200,
+      "location": null,
+      "body": {
+        "resources": {
+          "results": {
+            "collections": [],
+            "pages": [],
+            "products": [],
+            "queries": []
+          }
+        }
+      }
+    }
+  ]
+}

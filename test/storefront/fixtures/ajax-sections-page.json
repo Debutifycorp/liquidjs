@@ -1,0 +1,50 @@
+{
+  "scenario": "ajax-sections-page",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/?section_id=probe-predictive",
+      "status": 200,
+      "location": null,
+      "body": {
+        "performed": null,
+        "terms": null,
+        "types": null,
+        "products": [],
+        "collections": [],
+        "pages": [],
+        "articles": [],
+        "queries": []
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/products/hoodie?sections=probe-recommendations,missing",
+      "status": 200,
+      "location": null,
+      "body": {
+        "probe-recommendations": {
+          "performed": false,
+          "intent": null,
+          "products_count": 0,
+          "products": []
+        },
+        "missing": null
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/?sections=a,b,c,d,e,f",
+      "status": 400,
+      "location": null,
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/?section_id=missing",
+      "status": 404,
+      "location": null,
+      "body": null
+    }
+  ]
+}

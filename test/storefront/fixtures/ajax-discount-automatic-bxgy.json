@@ -1,0 +1,545 @@
+{
+  "scenario": "ajax-discount-automatic-bxgy",
+  "steps": [
+    {
+      "method": "POST",
+      "url": "/cart/add.js",
+      "json": {
+        "items": [
+          {
+            "id": 43695710371862,
+            "quantity": 2
+          }
+        ]
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "items": [
+          {
+            "id": 43695710371862,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43695710371862,
+            "key": "43695710371862:<hash>",
+            "title": "Slides - Small",
+            "product_title": "Slides",
+            "variant_title": "Small",
+            "price": 2500,
+            "original_price": 2500,
+            "discounted_price": 1250,
+            "line_price": 1250,
+            "original_line_price": 2500,
+            "presentment_price": 25,
+            "total_discount": 1250,
+            "discounts": [
+              {
+                "amount": 1250,
+                "title": "Second pair of slides half off"
+              }
+            ],
+            "sku": "",
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982853619734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 1250,
+            "final_line_price": 1250,
+            "url": "/products/slides?variant=43695710371862",
+            "featured_image": {
+              "alt": "Slides",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+            "handle": "slides",
+            "requires_shipping": true,
+            "product_type": "Sandals",
+            "untranslated_product_title": "Slides",
+            "product_description": "Simple, minimal and comfortable, these slides feature a classic design in the perfect shade of iron. Whether you're just lounging around the house or running errands, these slides will offer all-day comfort.",
+            "untranslated_variant_title": "Small",
+            "variant_options": [
+              "Small"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              }
+            ],
+            "line_level_discount_allocations": [
+              {
+                "amount": 1250,
+                "discount_application": {
+                  "allocation_method": "each",
+                  "created_at": "2026-10-15T18:27:50.700Z",
+                  "description": null,
+                  "key": "6d8b2db3-31f5-40e9-88e5-9caa2117db67",
+                  "target_selection": "entitled",
+                  "target_type": "line_item",
+                  "title": "Second pair of slides half off",
+                  "total_allocated_amount": 1250,
+                  "type": "automatic",
+                  "value": "50.0",
+                  "value_type": "percentage"
+                }
+              }
+            ],
+            "line_level_total_discount": 1250
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart?view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "item_count": 2,
+        "total_price": 3750,
+        "items_subtotal_price": 3750,
+        "original_total_price": 5000,
+        "total_discount": 1250,
+        "total_weight": 600,
+        "currency": "USD",
+        "note": "",
+        "attributes": {},
+        "requires_shipping": true,
+        "money": "$37.50",
+        "cart_level_discount_applications": [],
+        "discount_applications": [
+          {
+            "title": "Second pair of slides half off",
+            "type": "",
+            "target_type": "line_item",
+            "total_allocated_amount": 1250
+          }
+        ],
+        "items": [
+          {
+            "key": "43695710371862:<hash>",
+            "variant_id": 43695710371862,
+            "quantity": 1,
+            "title": "Slides - Small",
+            "url": "/products/slides?variant=43695710371862",
+            "url_to_remove": "/cart/change?id=43695710371862:<hash>&quantity=0",
+            "original_price": 2500,
+            "final_price": 2500,
+            "original_line_price": 2500,
+            "final_line_price": 2500,
+            "line_level_total_discount": 0,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [
+              {
+                "amount": 0,
+                "title": "Second pair of slides half off"
+              }
+            ],
+            "discount_allocations": [
+              {
+                "amount": 0,
+                "title": "Second pair of slides half off"
+              }
+            ]
+          },
+          {
+            "key": "43695710371862:<hash>",
+            "variant_id": 43695710371862,
+            "quantity": 1,
+            "title": "Slides - Small",
+            "url": "/products/slides?variant=43695710371862",
+            "url_to_remove": "/cart/change?id=43695710371862:<hash>&quantity=0",
+            "original_price": 2500,
+            "final_price": 1250,
+            "original_line_price": 2500,
+            "final_line_price": 1250,
+            "line_level_total_discount": 1250,
+            "properties": [],
+            "selling_plan": null,
+            "line_level_discount_allocations": [
+              {
+                "amount": 1250,
+                "title": "Second pair of slides half off"
+              }
+            ],
+            "discount_allocations": [
+              {
+                "amount": 1250,
+                "title": "Second pair of slides half off"
+              }
+            ]
+          }
+        ],
+        "ajax": {
+          "note": "",
+          "attributes": {},
+          "original_total_price": 5000,
+          "total_price": 3750,
+          "total_discount": 1250,
+          "total_weight": 600,
+          "item_count": 2,
+          "items": [
+            {
+              "id": 43695710371862,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43695710371862,
+              "key": "43695710371862:<hash>",
+              "title": "Slides - Small",
+              "price": 2500,
+              "original_price": 2500,
+              "discounted_price": 2500,
+              "line_price": 2500,
+              "original_line_price": 2500,
+              "total_discount": 0,
+              "discounts": [
+                {
+                  "amount": 0,
+                  "title": "Second pair of slides half off"
+                }
+              ],
+              "sku": null,
+              "grams": 300,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7982853619734,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 2500,
+              "final_line_price": 2500,
+              "url": "/products/slides?variant=43695710371862",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Slides",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+              "handle": "slides",
+              "requires_shipping": true,
+              "product_type": "Sandals",
+              "product_title": "Slides",
+              "product_description": "Simple, minimal and comfortable, these slides feature a classic design in the perfect shade of iron. Whether you're just lounging around the house or running errands, these slides will offer all-day comfort.",
+              "variant_title": "Small",
+              "variant_options": [
+                "Small"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Size",
+                  "value": "Small"
+                }
+              ],
+              "line_level_discount_allocations": [
+                {
+                  "amount": 0,
+                  "discount_application": {
+                    "type": "",
+                    "key": "6d8b2db3-31f5-40e9-88e5-9caa2117db67",
+                    "title": "Second pair of slides half off",
+                    "description": null,
+                    "value": "50.0",
+                    "created_at": "2026-10-15T18:27:50.700Z",
+                    "value_type": "percentage",
+                    "allocation_method": "each",
+                    "target_selection": "entitled",
+                    "target_type": "line_item",
+                    "total_allocated_amount": 1250
+                  }
+                }
+              ],
+              "line_level_total_discount": 0
+            },
+            {
+              "id": 43695710371862,
+              "properties": {},
+              "quantity": 1,
+              "variant_id": 43695710371862,
+              "key": "43695710371862:<hash>",
+              "title": "Slides - Small",
+              "price": 2500,
+              "original_price": 2500,
+              "discounted_price": 1250,
+              "line_price": 1250,
+              "original_line_price": 2500,
+              "total_discount": 1250,
+              "discounts": [
+                {
+                  "amount": 1250,
+                  "title": "Second pair of slides half off"
+                }
+              ],
+              "sku": null,
+              "grams": 300,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 7982853619734,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 1250,
+              "final_line_price": 1250,
+              "url": "/products/slides?variant=43695710371862",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Slides",
+                "height": 4096,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+                "width": 4096
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+              "handle": "slides",
+              "requires_shipping": true,
+              "product_type": "Sandals",
+              "product_title": "Slides",
+              "product_description": "Simple, minimal and comfortable, these slides feature a classic design in the perfect shade of iron. Whether you're just lounging around the house or running errands, these slides will offer all-day comfort.",
+              "variant_title": "Small",
+              "variant_options": [
+                "Small"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Size",
+                  "value": "Small"
+                }
+              ],
+              "line_level_discount_allocations": [
+                {
+                  "amount": 1250,
+                  "discount_application": {
+                    "type": "",
+                    "key": "6d8b2db3-31f5-40e9-88e5-9caa2117db67",
+                    "title": "Second pair of slides half off",
+                    "description": null,
+                    "value": "50.0",
+                    "created_at": "2026-10-15T18:27:50.700Z",
+                    "value_type": "percentage",
+                    "allocation_method": "each",
+                    "target_selection": "entitled",
+                    "target_type": "line_item",
+                    "total_allocated_amount": 1250
+                  }
+                }
+              ],
+              "line_level_total_discount": 1250
+            }
+          ],
+          "requires_shipping": true,
+          "currency": "USD",
+          "items_subtotal_price": 3750,
+          "cart_level_discount_applications": [],
+          "checkout_charge_amount": 3750
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 5000,
+        "total_price": 3750,
+        "total_discount": 1250,
+        "total_weight": 600,
+        "item_count": 2,
+        "items": [
+          {
+            "id": 43695710371862,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43695710371862,
+            "key": "43695710371862:<hash>",
+            "title": "Slides - Small",
+            "price": 2500,
+            "original_price": 2500,
+            "presentment_price": 25,
+            "discounted_price": 2500,
+            "line_price": 2500,
+            "original_line_price": 2500,
+            "total_discount": 0,
+            "discounts": [
+              {
+                "amount": 0,
+                "title": "Second pair of slides half off"
+              }
+            ],
+            "sku": null,
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982853619734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 2500,
+            "final_line_price": 2500,
+            "url": "/products/slides?variant=43695710371862",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Slides",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+            "handle": "slides",
+            "requires_shipping": true,
+            "product_type": "Sandals",
+            "product_title": "Slides",
+            "product_description": "Simple, minimal and comfortable, these slides feature a classic design in the perfect shade of iron. Whether you're just lounging around the house or running errands, these slides will offer all-day comfort.",
+            "variant_title": "Small",
+            "variant_options": [
+              "Small"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              }
+            ],
+            "line_level_discount_allocations": [
+              {
+                "amount": 0,
+                "discount_application": {
+                  "type": "",
+                  "key": "6d8b2db3-31f5-40e9-88e5-9caa2117db67",
+                  "title": "Second pair of slides half off",
+                  "description": null,
+                  "value": "50.0",
+                  "created_at": "2026-10-15T18:27:50.700Z",
+                  "value_type": "percentage",
+                  "allocation_method": "each",
+                  "target_selection": "entitled",
+                  "target_type": "line_item",
+                  "total_allocated_amount": 1250
+                }
+              }
+            ],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          },
+          {
+            "id": 43695710371862,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43695710371862,
+            "key": "43695710371862:<hash>",
+            "title": "Slides - Small",
+            "price": 2500,
+            "original_price": 2500,
+            "presentment_price": 25,
+            "discounted_price": 1250,
+            "line_price": 1250,
+            "original_line_price": 2500,
+            "total_discount": 1250,
+            "discounts": [
+              {
+                "amount": 1250,
+                "title": "Second pair of slides half off"
+              }
+            ],
+            "sku": null,
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982853619734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 1250,
+            "final_line_price": 1250,
+            "url": "/products/slides?variant=43695710371862",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Slides",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+            "handle": "slides",
+            "requires_shipping": true,
+            "product_type": "Sandals",
+            "product_title": "Slides",
+            "product_description": "Simple, minimal and comfortable, these slides feature a classic design in the perfect shade of iron. Whether you're just lounging around the house or running errands, these slides will offer all-day comfort.",
+            "variant_title": "Small",
+            "variant_options": [
+              "Small"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              }
+            ],
+            "line_level_discount_allocations": [
+              {
+                "amount": 1250,
+                "discount_application": {
+                  "type": "",
+                  "key": "6d8b2db3-31f5-40e9-88e5-9caa2117db67",
+                  "title": "Second pair of slides half off",
+                  "description": null,
+                  "value": "50.0",
+                  "created_at": "2026-10-15T18:27:50.700Z",
+                  "value_type": "percentage",
+                  "allocation_method": "each",
+                  "target_selection": "entitled",
+                  "target_type": "line_item",
+                  "total_allocated_amount": 1250
+                }
+              }
+            ],
+            "line_level_total_discount": 1250,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 3750,
+        "cart_level_discount_applications": [],
+        "discount_codes": []
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/clear.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 0,
+        "total_price": 0,
+        "total_discount": 0,
+        "total_weight": 0,
+        "item_count": 0,
+        "items": [],
+        "requires_shipping": false,
+        "currency": "USD",
+        "items_subtotal_price": 0,
+        "cart_level_discount_applications": [],
+        "discount_codes": []
+      }
+    }
+  ]
+}

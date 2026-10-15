@@ -1,0 +1,22 @@
+{
+  "scenario": "probe-recommendations-related",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/recommendations/products?product_id=10489561382934&limit=4&intent=related&section_id=probe-recommendations",
+      "status": 200,
+      "location": null,
+      "body": {
+        "performed": true,
+        "intent": "related",
+        "products_count": 4,
+        "products": [
+          "soft-cotton-hoodie-in-jam",
+          "workout-shirt",
+          "women-t-shirt",
+          "half-zip"
+        ]
+      }
+    }
+  ]
+}

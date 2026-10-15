@@ -1,0 +1,226 @@
+{
+  "scenario": "probe-search-prefix",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/search?q=shi&options%5Bprefix%5D=last&view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "performed": true,
+        "terms": "shi",
+        "types": [
+          "article",
+          "page",
+          "product"
+        ],
+        "results_count": 5,
+        "results": [
+          {
+            "object_type": "product",
+            "handle": "men-t-shirt"
+          },
+          {
+            "object_type": "product",
+            "handle": "women-t-shirt"
+          },
+          {
+            "object_type": "product",
+            "handle": "workout-shirt"
+          },
+          {
+            "object_type": "article",
+            "handle": "news/new-line-of-tennis-products"
+          },
+          {
+            "object_type": "article",
+            "handle": "news/liquidpeak-450"
+          }
+        ],
+        "sort_by": "relevance",
+        "default_sort_by": "relevance",
+        "sort_options": [
+          {
+            "name": "Relevance",
+            "value": "relevance"
+          },
+          {
+            "name": "Price, low to high",
+            "value": "price-ascending"
+          },
+          {
+            "name": "Price, high to low",
+            "value": "price-descending"
+          }
+        ],
+        "filters": [
+          {
+            "label": "Availability",
+            "type": "list",
+            "param_name": "filter.v.availability",
+            "active_values": [],
+            "values": [
+              {
+                "value": "1",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.availability=1&options%5Bprefix%5D=last&q=shi&view=probe"
+              },
+              {
+                "value": "0",
+                "count": 0,
+                "active": false,
+                "url_to_add": "/search?filter.v.availability=0&options%5Bprefix%5D=last&q=shi&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Price",
+            "type": "price_range",
+            "param_name": "filter.v.price",
+            "active_values": [],
+            "values": []
+          },
+          {
+            "label": "Brand",
+            "type": "list",
+            "param_name": "filter.p.vendor",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Mock.shop",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.vendor=Mock.shop&options%5Bprefix%5D=last&q=shi&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Product type",
+            "type": "list",
+            "param_name": "filter.p.product_type",
+            "active_values": [],
+            "values": [
+              {
+                "value": "T-shirts",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=T-shirts&options%5Bprefix%5D=last&q=shi&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "More filters",
+            "type": "list",
+            "param_name": "filter.p.tag",
+            "active_values": [],
+            "values": [
+              {
+                "value": "men",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=men&options%5Bprefix%5D=last&q=shi&view=probe"
+              },
+              {
+                "value": "tops",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=tops&options%5Bprefix%5D=last&q=shi&view=probe"
+              },
+              {
+                "value": "women",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=women&options%5Bprefix%5D=last&q=shi&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Color",
+            "type": "list",
+            "param_name": "filter.v.option.color",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Green",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Green&options%5Bprefix%5D=last&q=shi&view=probe"
+              },
+              {
+                "value": "Ocean",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Ocean&options%5Bprefix%5D=last&q=shi&view=probe"
+              },
+              {
+                "value": "Olive",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Olive&options%5Bprefix%5D=last&q=shi&view=probe"
+              },
+              {
+                "value": "Purple",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Purple&options%5Bprefix%5D=last&q=shi&view=probe"
+              },
+              {
+                "value": "Red",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Red&options%5Bprefix%5D=last&q=shi&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Size",
+            "type": "list",
+            "param_name": "filter.v.option.size",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Small",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=Small&options%5Bprefix%5D=last&q=shi&view=probe"
+              },
+              {
+                "value": "Medium",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=Medium&options%5Bprefix%5D=last&q=shi&view=probe"
+              },
+              {
+                "value": "Large",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=Large&options%5Bprefix%5D=last&q=shi&view=probe"
+              },
+              {
+                "value": "X-Large",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=X-Large&options%5Bprefix%5D=last&q=shi&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Material",
+            "type": "list",
+            "param_name": "filter.p.m.custom.material",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Cotton",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.m.custom.material=Cotton&options%5Bprefix%5D=last&q=shi&view=probe"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

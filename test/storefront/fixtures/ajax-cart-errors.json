@@ -1,0 +1,227 @@
+{
+  "scenario": "ajax-cart-errors",
+  "steps": [
+    {
+      "method": "POST",
+      "url": "/cart/add.js",
+      "json": {
+        "items": [
+          {
+            "id": 43695847145494,
+            "quantity": 1
+          }
+        ]
+      },
+      "status": 422,
+      "location": null,
+      "body": {
+        "status": 422,
+        "message": "The product 'Hoodie - Clay / Small' is already sold out.",
+        "description": "The product 'Hoodie - Clay / Small' is already sold out."
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/add.js",
+      "json": {
+        "items": [
+          {
+            "id": 43696926949398,
+            "quantity": 9
+          }
+        ]
+      },
+      "status": 422,
+      "location": null,
+      "body": {
+        "status": 422,
+        "message": "Only 3 items were added to your cart due to availability.",
+        "description": "Only 3 items were added to your cart due to availability."
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/add.js",
+      "json": {
+        "items": [
+          {
+            "id": 1,
+            "quantity": 1
+          }
+        ]
+      },
+      "status": 422,
+      "location": null,
+      "body": {
+        "status": 422,
+        "message": "Cart Error",
+        "description": "Cannot find variant"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/add.js",
+      "json": {
+        "items": [
+          {
+            "id": 43696935600150,
+            "quantity": 1
+          }
+        ]
+      },
+      "status": 422,
+      "location": null,
+      "body": {
+        "status": 422,
+        "message": "Cart Error",
+        "description": "Variant can only be purchased with a selling plan."
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/change.js",
+      "json": {
+        "line": 9,
+        "quantity": 1
+      },
+      "status": 422,
+      "location": null,
+      "body": {
+        "status": "unprocessable_entity",
+        "message": "line parameter is invalid.",
+        "description": "line parameter is invalid."
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/update.js",
+      "json": {
+        "updates": {
+          "1": 1
+        }
+      },
+      "status": 422,
+      "location": null,
+      "body": {
+        "status": 422,
+        "message": "Cart Error",
+        "description": "Cannot find variant"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/add.js",
+      "json": {
+        "items": [
+          {
+            "id": 43695847538710,
+            "quantity": 1
+          }
+        ],
+        "sections": "a,b,c,d,e,f"
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "items": [
+          {
+            "id": 43695847538710,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43695847538710,
+            "key": "43695847538710:<hash>",
+            "title": "Hoodie - Green / Small",
+            "product_title": "Hoodie",
+            "variant_title": "Green / Small",
+            "price": 9000,
+            "original_price": 9000,
+            "discounted_price": 9000,
+            "line_price": 9000,
+            "original_line_price": 9000,
+            "presentment_price": 90,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 600,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 10489561382934,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 9000,
+            "final_line_price": 9000,
+            "url": "/products/hoodie?variant=43695847538710",
+            "featured_image": {
+              "alt": "Hoodie",
+              "aspect_ratio": 1,
+              "height": 2048,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+              "width": 2048
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+            "handle": "hoodie",
+            "requires_shipping": true,
+            "product_type": "Hoodies",
+            "untranslated_product_title": "Hoodie",
+            "product_description": "This hoodie is the perfect choice for comfort and warmth. Meticulously crafted from 100% cotton, the hoodie features a soft, plush fleece interior and a unisex sizing design. Soft and lightweight, it's sure to be your go-to for chilly days.",
+            "untranslated_variant_title": "Green / Small",
+            "variant_options": [
+              "Green",
+              "Small"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              },
+              {
+                "name": "Size",
+                "value": "Small"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          }
+        ],
+        "sections": null
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/clear.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 0,
+        "total_price": 0,
+        "total_discount": 0,
+        "total_weight": 0,
+        "item_count": 0,
+        "items": [],
+        "requires_shipping": false,
+        "currency": "USD",
+        "items_subtotal_price": 0,
+        "cart_level_discount_applications": [],
+        "discount_codes": []
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/change.js",
+      "json": {
+        "id": 43695847538710,
+        "quantity": 4
+      },
+      "status": 400,
+      "location": null,
+      "body": {
+        "status": "bad_request",
+        "message": "expected Integer to be a (?-mix:(?-mix:\\A\\d+\\z)|(?-mix:\\A\\d+:[a-f0-9]{32}\\z)): id",
+        "description": "expected Integer to be a (?-mix:(?-mix:\\A\\d+\\z)|(?-mix:\\A\\d+:[a-f0-9]{32}\\z)): id"
+      }
+    }
+  ]
+}

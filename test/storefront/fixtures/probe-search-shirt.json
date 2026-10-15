@@ -1,0 +1,226 @@
+{
+  "scenario": "probe-search-shirt",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/search?q=shirt&view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "performed": true,
+        "terms": "shirt",
+        "types": [
+          "article",
+          "page",
+          "product"
+        ],
+        "results_count": 5,
+        "results": [
+          {
+            "object_type": "product",
+            "handle": "men-t-shirt"
+          },
+          {
+            "object_type": "product",
+            "handle": "women-t-shirt"
+          },
+          {
+            "object_type": "product",
+            "handle": "workout-shirt"
+          },
+          {
+            "object_type": "article",
+            "handle": "news/liquidpeak-450"
+          },
+          {
+            "object_type": "article",
+            "handle": "news/new-line-of-tennis-products"
+          }
+        ],
+        "sort_by": "relevance",
+        "default_sort_by": "relevance",
+        "sort_options": [
+          {
+            "name": "Relevance",
+            "value": "relevance"
+          },
+          {
+            "name": "Price, low to high",
+            "value": "price-ascending"
+          },
+          {
+            "name": "Price, high to low",
+            "value": "price-descending"
+          }
+        ],
+        "filters": [
+          {
+            "label": "Availability",
+            "type": "list",
+            "param_name": "filter.v.availability",
+            "active_values": [],
+            "values": [
+              {
+                "value": "1",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.availability=1&q=shirt&view=probe"
+              },
+              {
+                "value": "0",
+                "count": 0,
+                "active": false,
+                "url_to_add": "/search?filter.v.availability=0&q=shirt&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Price",
+            "type": "price_range",
+            "param_name": "filter.v.price",
+            "active_values": [],
+            "values": []
+          },
+          {
+            "label": "Brand",
+            "type": "list",
+            "param_name": "filter.p.vendor",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Mock.shop",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.vendor=Mock.shop&q=shirt&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Product type",
+            "type": "list",
+            "param_name": "filter.p.product_type",
+            "active_values": [],
+            "values": [
+              {
+                "value": "T-shirts",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=T-shirts&q=shirt&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "More filters",
+            "type": "list",
+            "param_name": "filter.p.tag",
+            "active_values": [],
+            "values": [
+              {
+                "value": "men",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=men&q=shirt&view=probe"
+              },
+              {
+                "value": "tops",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=tops&q=shirt&view=probe"
+              },
+              {
+                "value": "women",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=women&q=shirt&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Color",
+            "type": "list",
+            "param_name": "filter.v.option.color",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Green",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Green&q=shirt&view=probe"
+              },
+              {
+                "value": "Ocean",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Ocean&q=shirt&view=probe"
+              },
+              {
+                "value": "Olive",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Olive&q=shirt&view=probe"
+              },
+              {
+                "value": "Purple",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Purple&q=shirt&view=probe"
+              },
+              {
+                "value": "Red",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Red&q=shirt&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Size",
+            "type": "list",
+            "param_name": "filter.v.option.size",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Small",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=Small&q=shirt&view=probe"
+              },
+              {
+                "value": "Medium",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=Medium&q=shirt&view=probe"
+              },
+              {
+                "value": "Large",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=Large&q=shirt&view=probe"
+              },
+              {
+                "value": "X-Large",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=X-Large&q=shirt&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Material",
+            "type": "list",
+            "param_name": "filter.p.m.custom.material",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Cotton",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.m.custom.material=Cotton&q=shirt&view=probe"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
