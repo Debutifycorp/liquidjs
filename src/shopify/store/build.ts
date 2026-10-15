@@ -6,6 +6,7 @@ import { escapeHtml } from '../util/html'
 import { buildFilters } from './filters'
 import { buildLocalization, currencyOf, enabledCurrencies } from './markets'
 import type { ViewCurrency } from './markets'
+import { convert } from './pricing'
 import { resolveView, viewKey, withoutPrefix, withPrefix } from './view'
 import type { StoreView } from './view'
 import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, ProductData, StoreData, TransactionData, VariantData } from './types'
@@ -70,15 +71,15 @@ function positionIn (list: Array<ImageData | { media_type: string }>, target: Im
   return index < 0 ? null : index + 1
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/variant. `url` carries `?variant=<id>` as that page documents. `unit_price_measurement` and `selling_plan_allocations` are left empty and `quantity_rule` holds Shopify's defaults; shopify.dev documents the fields but this layer has no data for them. `featured_image` and `featured_media` are the product's own image, so they carry the `position` of the matching entry in `product.images` and `product.media` (nil when the product does not list that image); shopify.dev does not say so, and it goes on the confirm-on-a-development-store list with the counting base. */
-function buildVariant (variant: VariantData, productUrl: string, productImages: ImageData[], productMedia: MediaData[]): LiquidObject {
+/** https://shopify.dev/docs/api/liquid/objects/variant. `url` carries `?variant=<id>` as that page documents. `unit_price_measurement` and `selling_plan_allocations` are left empty and `quantity_rule` holds Shopify's defaults; shopify.dev documents the fields but this layer has no data for them. `featured_image` and `featured_media` are the product's own image, so they carry the `position` of the matching entry in `product.images` and `product.media` (nil when the product does not list that image); shopify.dev does not say so, and it goes on the confirm-on-a-development-store list with the counting base. `price` and `compare_at_price` are in the view's currency when `currency` is given (`convert`: the market's rate, price adjustment and rounding, https://help.shopify.com/en/manual/international/pricing/exchange-rates), the dataset's shop-currency amounts otherwise; a variant without a compare-at price keeps nil. */
+function buildVariant (variant: VariantData, productUrl: string, productImages: ImageData[], productMedia: MediaData[], currency?: ViewCurrency): LiquidObject {
   const options = [variant.option1, variant.option2, variant.option3].filter((option): option is string => typeof option === 'string')
   const featured = variant.image ? new ImageDrop(variant.image, false, positionIn(productImages, variant.image)) : null
   return {
     id: variant.id,
     title: variant.title,
-    price: variant.price,
-    compare_at_price: variant.compare_at_price ?? null,
+    price: currency ? convert(variant.price, currency) : variant.price,
+    compare_at_price: variant.compare_at_price == null ? null : currency ? convert(variant.compare_at_price, currency) : variant.compare_at_price,
     available: variant.available,
     sku: variant.sku ?? '',
     option1: variant.option1 ?? null,
@@ -102,15 +103,15 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
 }
 
 /**
- * https://shopify.dev/docs/api/liquid/objects/product. The product's and its variants' URLs sit under `prefix` (the view's base path and locale prefix, as the parity store prints them, fixture `probe-page-fr-ca`). `price` is the lowest variant price and `compare_at_price` the lowest variant compare-at price, as that page documents them; `compare_at_price` is nil when no variant has one (shopify.dev does not pin that case, so dividing by it raises "divided by 0" as Ruby does). `first_available_variant`, `selected_or_first_available_variant` (no `?variant=` is known here, so the first available one), `options_with_values` and `has_only_default_variant` follow the same page. Selling plans are left out.
+ * https://shopify.dev/docs/api/liquid/objects/product. The product's and its variants' URLs sit under `prefix` (the view's base path and locale prefix, as the parity store prints them, fixture `probe-page-fr-ca`). `price` is the lowest variant price and `compare_at_price` the lowest variant compare-at price, as that page documents them; `compare_at_price` is nil when no variant has one (shopify.dev does not pin that case, so dividing by it raises "divided by 0" as Ruby does). `first_available_variant`, `selected_or_first_available_variant` (no `?variant=` is known here, so the first available one), `options_with_values` and `has_only_default_variant` follow the same page. Selling plans are left out. Every price field is in the view's currency when `currency` is given, because the variants' are (`buildVariant`) and the product's are the lowest and highest of them; the parity store's product-level `compare_at_price` is the lowest converted variant compare-at price (fixtures `probe-product-default` and `probe-product-en-ca`: 110.00 USD and 149.00 CAD, with one variant on sale).
  */
-export function buildProduct (data: ProductData, prefix = ''): LiquidObject {
+export function buildProduct (data: ProductData, prefix = '', currency?: ViewCurrency): LiquidObject {
   const url = withPrefix(prefix, `/products/${data.handle}`)
   // The image `position` counts from 1, which shopify.dev's image page does not state (its example shows 1 for the first image): unpinned, on the confirm-on-a-development-store list.
   const images = (data.images ?? []).map((img, i) => new ImageDrop(img, false, i + 1))
   const mediaData: MediaData[] = data.media ?? (data.images ?? []).map(img => ({ ...img, media_type: 'image' as const }))
   const media = mediaData.map(buildMedia)
-  const variants = data.variants.map(variant => buildVariant(variant, url, data.images ?? [], mediaData))
+  const variants = data.variants.map(variant => buildVariant(variant, url, data.images ?? [], mediaData, currency))
   const options = data.options ?? ['Title']
   const prices = variants.map(variant => variant.price as number)
   const compares = variants.map(variant => variant.compare_at_price as number | null).filter((price): price is number => typeof price === 'number')
@@ -636,13 +637,13 @@ export function buildStore (data: StoreData, view?: StoreView): StoreObjects {
 
 function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   const { prefix } = view
-  const products = new HandleMap((data.products ?? []).map(product => [product.handle, buildProduct(product, prefix)]))
+  const currency = currencyOf(data, view)
+  const products = new HandleMap((data.products ?? []).map(product => [product.handle, buildProduct(product, prefix, currency)]))
   // Every shop answers `collections.all` with all its products. https://shopify.dev/docs/api/liquid/objects/collections
   const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (data.products ?? []).map(product => product.handle) }, products, data.filters, prefix)
   const collections = new HandleMap((data.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters, prefix)]), [['all', all]])
   const blogs = new HandleMap((data.blogs ?? []).map(blog => [blog.handle, buildBlog(blog, prefix)]))
   const localization = buildLocalization(data, view)
-  const currency = currencyOf(data, view)
   const shippingCountries = data.country_option_tags ?? [{ name: String((localization.country as LiquidObject | null)?.name ?? '') }]
   const articles = new HandleMap(HandleMap.values(blogs).flatMap(blog => (blog.articles as LiquidObject[]).map(article => [`${blog.handle}/${article.handle}`, article] as [string, LiquidObject])))
   const objects: StoreObjects = {

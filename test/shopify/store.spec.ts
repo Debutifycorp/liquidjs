@@ -799,7 +799,7 @@ describe('shopify/filters/json', () => {
   })
   it('passes the space argument and plain values through', async () => {
     expect(await render('{{ v | json: 2 }}', { v: { a: '<' } })).toBe('{\n  "a": "\\u003c"\n}')
-    expect(await render('{{ 5 | json }}|{{ true | json }}|{{ "x" | json }}|{{ nothing | json }}', {})).toBe('5|true|"x"|')
+    expect(await render('{{ 5 | json }}|{{ true | json }}|{{ "x" | json }}|{{ nothing | json }}', {})).toBe('5|true|"x"|null')
     expect(await render('{{ v | inspect }}', { v: { a: 1 } })).toBe('{"a":1}')
   })
   it('charges the longer, escaped output to the memory limit', async () => {

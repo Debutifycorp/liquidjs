@@ -39,10 +39,16 @@ describe('storefrontSampleData', () => {
   it('renders every probe with today\'s engine', async () => {
     const templates = readdirSync(join(PROBE_DIR, 'templates')).map(f => f.replace(/\.liquid$/, ''))
     expect(templates.sort()).toEqual(['cart.probe', 'collection.probe', 'page.probe', 'page.probe-form', 'product.probe', 'search.probe'])
-    for (const t of templates) expect((await renderProbeHtml(t)).trim()).toMatch(/^\{[\s\S]*\}$/)
+    for (const t of templates) {
+      const html = await renderProbeHtml(t)
+      expect(() => JSON.parse(html)).not.toThrow()
+    }
     const form = JSON.parse(await renderProbeHtml('page.probe-form'))
     expect(Object.keys(form)).toEqual(['contact', 'customer', 'contact_form', 'customer_form'])
     expect(form.contact.posted_successfully).toBe(false)
-    for (const s of ['probe-predictive', 'probe-recommendations']) expect((await renderProbeHtml(s, { section: true })).trim()).toMatch(/\}$/)
+    for (const s of ['probe-predictive', 'probe-recommendations']) {
+      const html = await renderProbeHtml(s, { section: true })
+      expect(() => JSON.parse(html)).not.toThrow()
+    }
   })
 })
