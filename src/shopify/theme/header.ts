@@ -1,4 +1,5 @@
 import type { ShopifyState } from '../state'
+import { escapeHtml } from '../util/html'
 
 /** Where `content_for_header` goes while the layout renders; replaced once the whole page has rendered, so it can include every section's `{% stylesheet %}` and `{% javascript %}`. A render swaps in `newHeaderMarker()`, not this constant. */
 export const HEADER_MARKER = '\u0000content_for_header\u0000'
@@ -16,8 +17,11 @@ function scriptJson (value: unknown): string {
   return JSON.stringify(value ?? null).replace(/</g, '\\u003c')
 }
 
+/** A currency rate as Ruby prints a float, which is how the parity store writes `Shopify.currency`'s `rate` (`"1.0"`, `"1.35"`, `"0.92"`, recordings `page-home`, `page-home-fr-ca` and `page-product-en-eu`). */
+const rateText = (rate: number) => Number.isInteger(rate) ? rate.toFixed(1) : String(rate)
+
 /**
- * A minimal `content_for_header`: the `window.Shopify` globals themes read (shop, locale, currency, country, routes, design mode, and the customer events API `Shopify.analytics`), then the bodies of the `{% stylesheet %}` tags rendered on the page in one `<style>`, then the `{% javascript %}` bodies, each in its own function, run on `DOMContentLoaded`.
+ * A minimal `content_for_header`: the `hreflang` links of the page in every market and language (https://shopify.dev/docs/storefronts/themes/seo/hreflang, which says Shopify adds them through `content_for_header`; `state.request.alternates` holds them and the parity store prints them first, one a line, before its scripts), then the `window.Shopify` globals themes read (shop, locale, currency, country, routes, design mode, and the customer events API `Shopify.analytics`), then the bodies of the `{% stylesheet %}` tags rendered on the page in one `<style>`, then the `{% javascript %}` bodies, each in its own function, run on `DOMContentLoaded`.
  *
  * https://shopify.dev/docs/api/liquid/objects/content_for_header says only that it "dynamically returns all scripts required by Shopify" and that themes must not modify or parse it, and https://shopify.dev/docs/storefronts/themes/architecture/layouts says it goes in the `<head>`. Its content is therefore Debutify's: Shopify serves the stylesheet and javascript bodies as files and adds analytics and app scripts, which a preview leaves out, and the `Shopify` globals here are the ones themes are known to read, not a list from shopify.dev.
  */
@@ -25,10 +29,12 @@ export function contentForHeader (state: ShopifyState, globals: Record<string | 
   const shop = globals.shop as Record<string, unknown>
   const localization = globals.localization as { country?: { iso_code?: string } }
   const request = globals.request as { locale?: { iso_code?: string } }
-  let header = '<script>var Shopify = Shopify || {};' +
+  const links = (state.request.alternates ?? []).map(({ hreflang, path }) => `<link rel="alternate" hreflang="${escapeHtml(hreflang)}" href="${escapeHtml(`${state.request.origin}${path}`)}">\n`).join('')
+  let header = links + '<script>var Shopify = Shopify || {};' +
     `Shopify.shop = ${scriptJson(shop.permanent_domain)};` +
     `Shopify.locale = ${scriptJson(request.locale?.iso_code)};` +
-    `Shopify.currency = ${scriptJson({ active: shop.currency, rate: '1.0' })};` +
+    // the currency and country of the shopper's market: `{"active":"CAD","rate":"1.35"}` and `"CA"` on the parity store's recorded Canadian French home page (recording `page-home-fr-ca`), the rate a string
+    `Shopify.currency = ${scriptJson({ active: state.currency?.iso_code ?? shop.currency, rate: rateText(state.currency?.rate ?? 1) })};` +
     `Shopify.country = ${scriptJson(localization.country?.iso_code)};` +
     'Shopify.designMode = false;Shopify.routes = Shopify.routes || {};' +
     // the root route of the view, with a trailing slash: `"/"` unprefixed and `"/fr-ca/"` under `/fr-ca`, as the parity store's header writes it (its recorded home pages, recordings `page-home` and `page-home-fr-ca`, which are not among the fork's fixtures)

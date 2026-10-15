@@ -118,9 +118,9 @@ describe('requestFromUrl', () => {
     const form = { type: 'contact', posted: false, errors: { email: ['is invalid'] } }
     expect(requestFromUrl('/pages/about?contact_posted=true', data, { form }).request.form).toEqual(form)
   })
-  it('gives the market\'s first country when the visitor chose none', () => {
+  it('gives the market\'s default country, the lowest ISO code, when the visitor chose none', () => {
     expect(requestFromUrl('/', data).request.country).toBe('US')
-    expect(requestFromUrl('/en-eu', data).request.country).toBe('FR')
+    expect(requestFromUrl('/en-eu', data).request.country).toBe('DE')
   })
   it('reads every recorded probe address without throwing, to the page its recorded body names', () => {
     const templates = new Set(['index', 'product', 'collection', 'list-collections', 'page', 'blog', 'article', 'search', 'cart', 'password', '404'])

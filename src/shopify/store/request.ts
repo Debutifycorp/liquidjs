@@ -1,5 +1,6 @@
 import type { FormOutcome, PredictiveRequest, RequestInput } from './globals'
 import type { MarketData, StoreData } from './types'
+import { defaultCountry } from './view'
 
 export interface PageRequest {
   templateName: string
@@ -160,9 +161,9 @@ function postedForm (params: URLSearchParams): { form?: FormOutcome } {
   return {}
 }
 
-/** The shopper's country: the one they chose when it belongs to the market, otherwise the market's first country. */
+/** The shopper's country: the one they chose when it belongs to the market, otherwise the market's default country (`defaultCountry`). */
 function countryFor (data: StoreData, market: string, chosen: string | undefined): string | undefined {
   const entry = data.markets?.find(m => m.handle === market)
   if (!entry) return chosen
-  return chosen && entry.countries.some(c => c.iso_code === chosen) ? chosen : entry.countries[0]?.iso_code
+  return chosen && entry.countries.some(c => c.iso_code === chosen) ? chosen : defaultCountry(entry)
 }

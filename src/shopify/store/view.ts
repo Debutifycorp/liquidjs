@@ -1,5 +1,5 @@
 import type { RequestInput } from './globals'
-import type { StoreData } from './types'
+import type { MarketData, StoreData } from './types'
 
 /** What a store's objects depend on beyond its data: the market (currency, prices), the language (translations) and the URL prefix (the base path, then the locale prefix). */
 export interface StoreView {
@@ -23,6 +23,9 @@ export function resolveView (data: StoreData, request: RequestInput): StoreView 
     prefix: `${cleanPrefix(request.basePath)}${cleanPrefix(request.localePrefix)}`
   }
 }
+
+/** The country a market shows a shopper who has chosen none: the one with the lowest ISO code. The parity store's visitor to the Europe market (France, Germany, Italy, Spain and the Netherlands) is in Germany, `DE`, on its recorded French and English pages (fixture `probe-page-fr-eu`, and the `Shopify.country` of its recorded `/en-eu/products/hoodie`), though the dataset lists France first; shopify.dev does not say how it picks. */
+export const defaultCountry = (market: MarketData): string | undefined => market.countries.map(c => c.iso_code).sort()[0]
 
 /** A prefix of whole segments: one leading slash, none trailing or doubled; empty for none. */
 function cleanPrefix (path = ''): string {

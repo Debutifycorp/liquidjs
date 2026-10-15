@@ -1,0 +1,183 @@
+import { renderPage, requestFromUrl, resolveView, sampleStoreData, storefrontSampleData as data } from '../../src/shopify'
+import type { StoreData } from '../../src/shopify'
+import { buildStore } from '../../src/shopify/store/build'
+import { ReportCollector } from '../../src/shopify/report'
+import { buildGlobals } from '../../src/shopify/store/globals'
+import { buildLocalization, currencyOf, marketOf } from '../../src/shopify/store/markets'
+import type { StoreView } from '../../src/shopify/store/view'
+import { probeMatches } from './expect-probe'
+
+// `shop.description` is left out of the pick: the parity store prints "" in English (its English meta description was never set) and the French translation in `probe-page-fr-ca`, and the translation of a shop's description belongs to the translations task.
+const pick = (b: any) => ({
+  localization: b.localization,
+  shop: { name: b.shop.name, currency: b.shop.currency, enabled_currencies: b.shop.enabled_currencies, published_locales: b.shop.published_locales },
+  cart_currency: b.cart_currency,
+  money: b.money,
+  money_with_currency: b.money_with_currency,
+  request_locale: b.request.locale
+})
+
+const EMPTY = '{"sections":{},"order":[]}'
+
+/** A theme of empty templates around a layout, to read what the layout prints. */
+const layoutTheme = (layout: string) => ({ files: { 'config/settings_schema.json': '[]', 'config/settings_data.json': '{"current":{}}', 'layout/theme.liquid': layout, 'templates/index.json': EMPTY, 'templates/404.json': EMPTY, 'templates/search.json': EMPTY, 'templates/product.json': EMPTY, 'templates/collection.json': EMPTY } })
+
+async function renderUrl (url: string, layout: string, store: StoreData = data, options: { basePath?: string, country?: string } = {}): Promise<string> {
+  const page = requestFromUrl(url, store, options)
+  return (await renderPage({ theme: layoutTheme(layout), templateName: page.templateName, data: store, request: page.request, locale: page.locale })).html
+}
+
+const HEADER = '{{ content_for_header }}'
+
+/** The `hreflang` links of a header as `[hreflang, path]` pairs (the host taken off), in the order printed. */
+const hreflangs = (html: string) => [...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="https:\/\/medzreferralai2\.myshopify\.com([^"]*)">/g)].map(m => [m[1], m[2]])
+
+// The hreflang links of the parity store's home pages (its recordings `page-home` and `page-home-fr-ca`, which are not among the fork's fixtures: both print these 14 links, hreflang and path). The primary market has one tag per language, every other market one per country and language, countries in ISO order.
+const HOME_LINKS = [
+  ['x-default', '/'], ['en', '/'], ['en-CA', '/en-ca'], ['fr-CA', '/fr-ca'],
+  ['en-DE', '/en-eu'], ['fr-DE', '/fr-eu'], ['en-ES', '/en-eu'], ['fr-ES', '/fr-eu'], ['en-FR', '/en-eu'], ['fr-FR', '/fr-eu'], ['en-IT', '/en-eu'], ['fr-IT', '/fr-eu'], ['en-NL', '/en-eu'], ['fr-NL', '/fr-eu']
+]
+
+/** A store that is not the sample one: a pound shop with two markets and two languages. */
+const other: StoreData = {
+  shop: { name: 'Other', domain: 'other.example', currency: 'GBP', locale: 'en', money_format: '£{{amount}}', money_with_currency_format: '£{{amount}} GBP' },
+  markets: [
+    { handle: 'uk', name: 'United Kingdom', primary: true, countries: [{ iso_code: 'GB', name: 'United Kingdom' }], currency: { iso_code: 'GBP', symbol: '£', rate: 1 }, languages: ['en'] },
+    { handle: 'de', name: 'Germany', countries: [{ iso_code: 'DE', name: 'Germany' }, { iso_code: 'AT', name: 'Austria' }], currency: { iso_code: 'EUR', symbol: '€', rate: 1.17 }, languages: ['de', 'en'], subfolder: 'de' }
+  ],
+  languages: [{ iso_code: 'en', name: 'English', endonym_name: 'English' }, { iso_code: 'de', name: 'German', endonym_name: 'Deutsch' }]
+}
+
+describe('markets and localization', () => {
+  for (const name of ['probe-page-home', 'probe-page-en-ca', 'probe-page-fr-ca', 'probe-page-fr-eu']) {
+    it(`matches ${name}`, async () => {
+      const { actual, expected } = await probeMatches(name, pick)
+      expect(actual).toEqual(expected)
+    })
+  }
+
+  it('puts the view\'s base path before every language root', () => {
+    const roots = (view: StoreView) => (buildLocalization(data, view) as any).available_languages.map((l: any) => l.root_url)
+    expect(roots({ market: 'ca', language: 'fr', prefix: '/p/tok/fr-ca' })).toEqual(['/p/tok/en-ca', '/p/tok/fr-ca'])
+    expect(roots({ market: 'ca', language: 'fr', prefix: '/fr-ca' })).toEqual(['/en-ca', '/fr-ca'])
+    expect(roots({ market: 'us', language: 'en', prefix: '/p/tok' })).toEqual(['/p/tok'])
+    expect(roots({ market: 'us', language: 'en', prefix: '' })).toEqual(['/'])
+  })
+
+  it('names the countries and languages in the language of the view', () => {
+    const fr = buildLocalization(data, { market: 'eu', language: 'fr', prefix: '/fr-eu' }) as any
+    expect(fr.available_countries.map((c: any) => c.name)).toEqual(['Allemagne', 'Canada', 'Espagne', 'États-Unis', 'France', 'Italie', 'Pays-Bas'])
+    expect(fr.language).toMatchObject({ iso_code: 'fr', name: 'français', endonym_name: 'français', primary: false, root_url: '/fr-eu' })
+    expect(fr.available_languages.map((l: any) => [l.iso_code, l.name, l.endonym_name, l.primary])).toEqual([['en', 'anglais', 'English', true], ['fr', 'français', 'français', false]])
+    const en = buildLocalization(data, { market: 'eu', language: 'en', prefix: '/en-eu' }) as any
+    expect(en.available_countries.map((c: any) => c.name)).toEqual(['Canada', 'France', 'Germany', 'Italy', 'Netherlands', 'Spain', 'United States'])
+    expect(en.available_languages.map((l: any) => [l.iso_code, l.name])).toEqual([['en', 'English'], ['fr', 'French']])
+  })
+
+  it('gives each country its own market and currency, and the shopper\'s country when it is in the market', () => {
+    const view = { market: 'eu', language: 'en', prefix: '/en-eu' }
+    const byCode = (l: any) => Object.fromEntries(l.available_countries.map((c: any) => [c.iso_code, [c.currency.iso_code, c.currency.symbol, c.market.handle]]))
+    expect(byCode(buildLocalization(data, view))).toEqual({ CA: ['CAD', '$', 'ca'], DE: ['EUR', '€', 'eu'], ES: ['EUR', '€', 'eu'], FR: ['EUR', '€', 'eu'], IT: ['EUR', '€', 'eu'], NL: ['EUR', '€', 'eu'], US: ['USD', '$', 'us'] })
+    expect((buildLocalization(data, view) as any).country.iso_code).toBe('DE')
+    expect((buildLocalization(data, view, 'IT') as any).country.iso_code).toBe('IT')
+    // a country of another market is not the shopper's in this one
+    expect((buildLocalization(data, view, 'US') as any).country.iso_code).toBe('DE')
+    expect((buildLocalization(data, view) as any).market).toMatchObject({ handle: 'eu' })
+  })
+
+  it('takes the money formats of a market\'s currency', () => {
+    const format = (market: string) => { const c = currencyOf(data, { market, language: 'en', prefix: '' }); return [c.iso_code, c.symbol, c.rate, c.money_format, c.money_with_currency_format] }
+    expect(format('us')).toEqual(['USD', '$', 1, '${{amount}}', '${{amount}} USD']) // eslint-disable-line no-template-curly-in-string
+    expect(format('ca')).toEqual(['CAD', '$', 1.35, '${{amount}}', '${{amount}} CAD']) // eslint-disable-line no-template-curly-in-string
+    expect(format('eu')).toEqual(['EUR', '€', 0.92, '€{{amount_with_comma_separator}}', '€{{amount_with_comma_separator}} EUR'])
+    expect(currencyOf(data, { market: 'ca', language: 'en', prefix: '' })).toMatchObject({ rounding: true, adjustment: 0 })
+    // the formats a market gives win
+    const own = { ...data, markets: [{ ...data.markets![0], currency: { ...data.markets![0].currency, money_format: 'US${{amount}}', money_with_currency_format: 'US${{amount}} USD' } }] } // eslint-disable-line no-template-curly-in-string
+    expect(currencyOf(own, { market: 'us', language: 'en', prefix: '' })).toMatchObject({ money_format: 'US${{amount}}', money_with_currency_format: 'US${{amount}} USD' }) // eslint-disable-line no-template-curly-in-string
+    expect(marketOf(data, 'ca')?.handle).toBe('ca')
+    expect(marketOf(data, 'nowhere')?.handle).toBe('us')
+  })
+
+  it('lists the market\'s languages as the shop\'s published locales and each distinct currency once, by code', async () => {
+    const html = await renderUrl('/en-ca', '{{ shop.published_locales | map: "iso_code" | join: "," }}|{{ shop.published_locales | map: "root_url" | join: "," }}|{{ shop.enabled_currencies | map: "iso_code" | join: "," }}|{{ shop.enabled_currencies[0].symbol }}')
+    expect(html).toBe('en,fr|/en-ca,/fr-ca|CAD,EUR,USD|$')
+  })
+
+  it('prints the shopper\'s currency, country and language in the header, as the parity store does', async () => {
+    // recordings `page-home`, `page-home-fr-ca` and `page-product-en-eu`: the currency's rate is a string
+    const globals = (html: string) => html.match(/Shopify\.locale = .*?Shopify\.country = "[A-Z]+";/)![0]
+    expect(globals(await renderUrl('/', HEADER))).toBe('Shopify.locale = "en";Shopify.currency = {"active":"USD","rate":"1.0"};Shopify.country = "US";')
+    expect(globals(await renderUrl('/fr-ca', HEADER))).toBe('Shopify.locale = "fr";Shopify.currency = {"active":"CAD","rate":"1.35"};Shopify.country = "CA";')
+    expect(globals(await renderUrl('/en-eu/products/hoodie', HEADER))).toBe('Shopify.locale = "en";Shopify.currency = {"active":"EUR","rate":"0.92"};Shopify.country = "DE";')
+    expect(globals(await renderUrl('/en-eu/products/hoodie', HEADER, data, { country: 'IT' }))).toContain('Shopify.country = "IT";')
+  })
+
+  it('prints the market formats through the money filters', async () => {
+    const layout = '{{ 123456 | money }}|{{ 123456 | money_with_currency }}|{{ 123456 | money_without_currency }}|{{ shop.money_format }}|{{ cart.currency.iso_code }}'
+    expect(await renderUrl('/', layout)).toBe('$1,234.56|$1,234.56 USD|1,234.56|${{amount}}|USD') // eslint-disable-line no-template-curly-in-string
+    expect(await renderUrl('/fr-eu', layout)).toBe('€1.234,56|€1.234,56 EUR|1.234,56|${{amount}}|EUR') // eslint-disable-line no-template-curly-in-string
+  })
+
+  describe('hreflang links', () => {
+    it('lists every market and language, as the parity store\'s home pages do', async () => {
+      expect(hreflangs(await renderUrl('/', HEADER))).toEqual(HOME_LINKS)
+      expect(hreflangs(await renderUrl('/fr-ca', HEADER))).toEqual(HOME_LINKS)
+      const html = await renderUrl('/', HEADER)
+      expect(html).toContain('<link rel="alternate" hreflang="x-default" href="https://medzreferralai2.myshopify.com/">\n<link rel="alternate" hreflang="en" href="https://medzreferralai2.myshopify.com/">\n<link rel="alternate" hreflang="en-CA" href="https://medzreferralai2.myshopify.com/en-ca">\n')
+      expect(html.indexOf('hreflang="x-default"')).toBeLessThan(html.indexOf('<script>var Shopify'))
+    })
+
+    it('points each link at the same page in that market and language, without the query but a search\'s', async () => {
+      // recordings `page-product-en-eu`, `page-product-variant`, `page-collection-filtered` and `page-search`: a variant, a filter or a sort is not in the link, the search term is (they follow the page's canonical URL)
+      const home = Object.fromEntries(HOME_LINKS)
+      const at = (path: string) => HOME_LINKS.map(([lang, root]) => [lang, `${root === '/' ? '' : root}${path}`])
+      expect(hreflangs(await renderUrl('/en-eu/products/hoodie', HEADER))).toEqual(at('/products/hoodie'))
+      expect(hreflangs(await renderUrl('/products/hoodie?variant=67774841192747', HEADER))).toEqual(at('/products/hoodie'))
+      expect(hreflangs(await renderUrl('/fr-ca/collections/all?filter.v.availability=1&sort_by=price-ascending', HEADER))).toEqual(at('/collections/all'))
+      expect(hreflangs(await renderUrl('/search?q=shirt', HEADER))).toEqual(at('/search?q=shirt'))
+      expect(home['x-default']).toBe('/')
+    })
+
+    it('puts the base path before every link', async () => {
+      const links = hreflangs(await renderUrl('/p/tok/fr-ca/products/hoodie', HEADER, data, { basePath: '/p/tok' }))
+      expect(links.slice(0, 4)).toEqual([['x-default', '/p/tok/products/hoodie'], ['en', '/p/tok/products/hoodie'], ['en-CA', '/p/tok/en-ca/products/hoodie'], ['fr-CA', '/p/tok/fr-ca/products/hoodie']])
+      expect(hreflangs(await renderUrl('/p/tok', HEADER, data, { basePath: '/p/tok' }))[0]).toEqual(['x-default', '/p/tok'])
+    })
+
+    it('prints none on the 404 page, and none for a store of one market and one language', async () => {
+      expect(hreflangs(await renderUrl('/nowhere', HEADER))).toEqual([])
+      expect(await renderUrl('/', HEADER, sampleStoreData)).not.toContain('hreflang')
+      expect(await renderUrl('/', HEADER, { shop: { name: 'One', domain: 'one.example', currency: 'USD' } })).not.toContain('hreflang')
+    })
+
+    it('escapes the search term', async () => {
+      const html = await renderUrl('/search?q=a"b%3Cc\'d+e', HEADER)
+      expect(html).toContain('hreflang="x-default" href="https://medzreferralai2.myshopify.com/search?q=a%22b%3Cc%27d+e">')
+    })
+  })
+
+  describe('a store of its own', () => {
+    it('resolves the localization of the store being rendered, not the sample store\'s', async () => {
+      const layout = '{{ localization.market.handle }}|{{ localization.country.iso_code }}|{{ localization.country.name }}|{{ localization.language.iso_code }}|{{ localization.language.name }}|{{ localization.language.root_url }}|{{ localization.available_languages | map: "root_url" | join: "," }}|{{ localization.available_countries | map: "iso_code" | join: "," }}|{{ 1999 | money_with_currency }}|{{ cart.currency.iso_code }}|{{ request.locale.iso_code }}|{{ request.locale.name }}|{{ request.locale.primary }}'
+      expect(await renderUrl('/', layout, other)).toBe('uk|GB|United Kingdom|en|English|/|/|AT,DE,GB|£19.99 GBP|GBP|en|English|true')
+      expect(await renderUrl('/de-de', layout, other)).toBe('de|AT|Österreich|de|Deutsch|/de-de|/de-de,/en-de|DE,AT,GB|€19,99 EUR|EUR|de|Deutsch|false')
+      expect(await renderUrl('/en-de', layout, other)).toBe('de|AT|Austria|en|English|/en-de|/de-de,/en-de|AT,DE,GB|€19,99 EUR|EUR|en|English|true')
+      const header = await renderUrl('/de-de', HEADER, other)
+      expect(header).toContain('Shopify.locale = "de";Shopify.currency = {"active":"EUR","rate":"1.17"};Shopify.country = "AT";')
+    })
+
+    it('reads the data it is given where the page globals are built', () => {
+      const request = requestFromUrl('/de-de/pages/about', other).request
+      const view = resolveView(other, request)
+      const { globals } = buildGlobals({ store: buildStore(other, view), data: other, templateName: 'page', request, locale: 'de', report: new ReportCollector() })
+      expect((globals.localization as any).market).toMatchObject({ handle: 'de' })
+      expect((globals.localization as any).country.iso_code).toBe('AT')
+      expect((globals.cart as any).currency.iso_code).toBe('EUR')
+    })
+
+    it('keeps the sample store as it was', async () => {
+      const layout = '{{ localization.market.handle }}|{{ localization.country.iso_code }}|{{ localization.country.name }}|{{ localization.country.unit_system }}|{{ localization.country.currency.iso_code }}|{{ localization.language.iso_code }}|{{ localization.language.root_url }}|{{ localization.language.primary }}|{{ localization.available_countries.size }}|{{ localization.available_languages.size }}|{{ 1999 | money_with_currency }}|{{ cart.currency.iso_code }}'
+      expect(await renderUrl('/', layout, sampleStoreData)).toBe('default|US|United States|metric|USD|en|/|true|1|1|$19.99 USD|USD')
+    })
+  })
+})

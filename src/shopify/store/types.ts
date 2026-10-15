@@ -419,7 +419,7 @@ export interface MarketData {
   name: string
   primary?: boolean
   countries: Array<{ iso_code: string, name: string }>
-  currency: { iso_code: string, symbol: string, rate: number, rounding?: boolean | number, money_format?: string, money_with_currency_format?: string }
+  currency: { iso_code: string, symbol: string, /** The currency's name (`Canadian Dollar`, https://shopify.dev/docs/api/liquid/objects/currency); its ISO code when omitted. */ name?: string, rate: number, rounding?: boolean | number, money_format?: string, money_with_currency_format?: string }
   price_adjustment?: number
   /** ISO codes, the market's default language first. */
   languages: string[]

@@ -36,8 +36,10 @@ export interface ShopifyState {
   report: ReportCollector
   /** The shop's money formats (`shop.money_format`, `shop.money_with_currency_format`). */
   money: { format: string, withCurrencyFormat: string }
-  /** The request being rendered: its path (for pagination links), origin (for video embeds) and `?page=`, https://shopify.dev/docs/api/liquid/objects/request, and the prefix every URL of its view starts with (the base path, then the locale prefix; empty for none), which the `form` tag puts before its actions and `content_for_header` before the routes root. */
-  request: { path: string, origin: string, page: number, prefix: string }
+  /** The request being rendered: its path (for pagination links), origin (for video embeds) and `?page=`, https://shopify.dev/docs/api/liquid/objects/request, and the prefix every URL of its view starts with (the base path, then the locale prefix; empty for none), which the `form` tag puts before its actions and `content_for_header` before the routes root; `alternates` are the `hreflang` links `content_for_header` prints, each a tag and the path of the page there. */
+  request: { path: string, origin: string, page: number, prefix: string, alternates?: Array<{ hreflang: string, path: string }> }
+  /** The currency of the view's market and its rate against the shop's (`Shopify.currency` in `content_for_header`); the shop's currency at rate 1 when unset. */
+  currency?: { iso_code: string, rate: number }
   frames: Frame[]
   /** `{% stylesheet %}` and `{% javascript %}` bodies met while rendering, by file, in the order first rendered; `content_for_header` inlines them. https://shopify.dev/docs/api/liquid/tags/stylesheet and https://shopify.dev/docs/api/liquid/tags/javascript say how the bodies are loaded only by reference, and https://shopify.dev/docs/api/liquid/objects/content_for_header says only that it returns the scripts Shopify requires, so inlining the bodies there is Debutify's choice. */
   assets: { stylesheets: Map<string, string>, javascripts: Map<string, string> }

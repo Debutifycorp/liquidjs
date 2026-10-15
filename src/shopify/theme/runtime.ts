@@ -311,10 +311,11 @@ class PageRender implements ThemeHooks {
     this.state = createState({
       services: options.services,
       translator,
-      moneyFormat: String(store.shop.money_format),
-      moneyWithCurrencyFormat: String(store.shop.money_with_currency_format),
+      moneyFormat: store.currency.money_format,
+      moneyWithCurrencyFormat: store.currency.money_with_currency_format,
       runtime: this
     })
+    this.state.currency = { iso_code: store.currency.iso_code, rate: store.currency.rate }
     const page = buildGlobals({ store, data, templateName: options.templateName, request: options.request ?? {}, locale, report: this.state.report })
     this.state.request = page.request
     const env: SettingsEnv = { store, linklists: page.linklists, services: this.state.services, translator, report: this.state.report, trust: this.trust }

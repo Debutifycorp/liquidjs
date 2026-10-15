@@ -4,6 +4,8 @@ import { DEFAULT_MONEY_FORMAT, DEFAULT_MONEY_WITH_CURRENCY_FORMAT } from '../sta
 import type { ImageData } from '../types'
 import { escapeHtml } from '../util/html'
 import { buildFilters } from './filters'
+import { buildLocalization, currencyOf, enabledCurrencies } from './markets'
+import type { ViewCurrency } from './markets'
 import { resolveView, viewKey, withoutPrefix, withPrefix } from './view'
 import type { StoreView } from './view'
 import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, ProductData, StoreData, TransactionData, VariantData } from './types'
@@ -27,6 +29,8 @@ export interface StoreObjects {
   cart: LiquidObject
   customer: LiquidObject | null
   localization: LiquidObject
+  /** The currency of the view's market, in which prices print (`state.money`) and the cart is held. */
+  currency: ViewCurrency
   country_option_tags: string
   all_country_option_tags: string
   gift_card: LiquidObject | null
@@ -353,7 +357,7 @@ function buildLineItems (lines: Array<{ product_handle: string, variant_id: numb
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/cart, with its line items (`buildLineItems`). */
-function buildCart (data: StoreData, products: HandleMap<LiquidObject>): LiquidObject {
+function buildCart (data: StoreData, products: HandleMap<LiquidObject>, currency: string): LiquidObject {
   const items = buildLineItems(data.cart?.items ?? [], products)
   const total = items.reduce((sum, item) => sum + (item.final_line_price as number), 0)
   return {
@@ -365,7 +369,7 @@ function buildCart (data: StoreData, products: HandleMap<LiquidObject>): LiquidO
     checkout_charge_amount: total,
     total_discount: 0,
     total_weight: 0,
-    currency: { iso_code: data.shop.currency },
+    currency: { iso_code: currency },
     note: data.cart?.note ?? null,
     attributes: {},
     requires_shipping: items.length > 0,
@@ -374,20 +378,6 @@ function buildCart (data: StoreData, products: HandleMap<LiquidObject>): LiquidO
     taxes_included: false,
     duties_included: false,
     'empty?': items.length === 0
-  }
-}
-
-/** https://shopify.dev/docs/api/liquid/objects/localization, with its `country` (https://shopify.dev/docs/api/liquid/objects/country), `language` (https://shopify.dev/docs/api/liquid/objects/language) and `market` (https://shopify.dev/docs/api/liquid/objects/market). A store has one country and one language here. */
-function buildLocalization (data: StoreData): LiquidObject {
-  const locale = data.shop.locale ?? 'en'
-  const country = data.localization?.country ?? { iso_code: 'US', name: 'United States', currency: { iso_code: data.shop.currency, symbol: '$', name: data.shop.currency } }
-  const language = { endonym_name: data.localization?.language.name ?? locale, primary: true, root_url: '/', ...(data.localization?.language ?? { iso_code: locale, name: locale }) }
-  return {
-    country: { unit_system: 'metric', ...country },
-    language,
-    available_countries: [country],
-    available_languages: [language],
-    market: { id: 1, handle: 'default' }
   }
 }
 
@@ -651,8 +641,9 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (data.products ?? []).map(product => product.handle) }, products, data.filters, prefix)
   const collections = new HandleMap((data.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters, prefix)]), [['all', all]])
   const blogs = new HandleMap((data.blogs ?? []).map(blog => [blog.handle, buildBlog(blog, prefix)]))
-  const localization = buildLocalization(data)
-  const shippingCountries = data.country_option_tags ?? [{ name: String((localization.country as LiquidObject).name) }]
+  const localization = buildLocalization(data, view)
+  const currency = currencyOf(data, view)
+  const shippingCountries = data.country_option_tags ?? [{ name: String((localization.country as LiquidObject | null)?.name ?? '') }]
   const articles = new HandleMap(HandleMap.values(blogs).flatMap(blog => (blog.articles as LiquidObject[]).map(article => [`${blog.handle}/${article.handle}`, article] as [string, LiquidObject])))
   const objects: StoreObjects = {
     shop: {
@@ -667,6 +658,9 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
       money_format: data.shop.money_format ?? DEFAULT_MONEY_FORMAT,
       money_with_currency_format: data.shop.money_with_currency_format ?? DEFAULT_MONEY_WITH_CURRENCY_FORMAT,
       locale: data.shop.locale ?? 'en',
+      // https://shopify.dev/docs/api/liquid/objects/shop lists both: the currencies of the store's markets and its published locales. The parity store prints the currencies by ISO code and, as `published_locales`, the languages of the market the page is in with their URLs there (fixtures `probe-page-home` and `probe-page-en-ca`), not every language the store is published in.
+      enabled_currencies: enabledCurrencies(data),
+      published_locales: localization.available_languages,
       enabled_payment_types: data.shop.enabled_payment_types ?? [],
       customer_accounts_enabled: true,
       customer_accounts_optional: true,
@@ -685,9 +679,10 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
     images: new HandleMap(Object.entries(data.images ?? {}).map(([name, img]) => [name, new ImageDrop(img)])),
     videos: Object.fromEntries(Object.entries(data.videos ?? {}).map(([name, video]) => [name, buildMedia(video) as LiquidObject])),
     linklists: data.linklists ?? [],
-    cart: buildCart(data, products),
+    cart: buildCart(data, products, currency.iso_code),
     customer: data.customer ? buildCustomer(data.customer, products, prefix) : null,
     localization,
+    currency,
     country_option_tags: countryOptionTags(shippingCountries),
     all_country_option_tags: countryOptionTags(data.all_country_option_tags ?? shippingCountries),
     gift_card: data.gift_card ? buildGiftCard(data.gift_card, products, data.shop.currency) : null,

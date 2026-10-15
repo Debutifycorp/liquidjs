@@ -3,10 +3,12 @@ import { TemplateDrop } from '../objects/template'
 import { own } from '../util/own'
 import type { ReportCollector } from '../report'
 import { buildLinklists, LiquidObject, StoreObjects } from './build'
+import { alternatesOf, buildLocalization, languageIn } from './markets'
 import { buildRecommendations, RecommendationsRequest } from './recommendations'
 import { buildSearch } from './search'
 import type { StoreData } from './types'
-import { resolveView, withPrefix } from './view'
+import { resolveView, withoutPrefix, withPrefix } from './view'
+import type { StoreView } from './view'
 import { sampleStoreData } from '../sample/sample-data'
 
 export interface PredictiveRequest {
@@ -151,8 +153,8 @@ export interface PageGlobals {
   globals: Record<string, unknown>
   /** The request's menus, with `active` and `current` set for its path. */
   linklists: HandleMap<LiquidObject>
-  /** The resolved request: path, origin and page, for the Shopify state. */
-  request: { path: string, origin: string, page: number, prefix: string }
+  /** The resolved request: path, origin and page, for the Shopify state, with the `hreflang` links of its page (`content_for_header`). */
+  request: { path: string, origin: string, page: number, prefix: string, alternates: Array<{ hreflang: string, path: string }> }
 }
 
 /**
@@ -177,17 +179,19 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   const resource = kind ? resources[template.name] : null
   const host = request.host ?? String(store.shop.domain)
   const origin = request.origin ?? `https://${host}`
-  const view = resolveView(input.data ?? sampleStoreData, request)
+  const data = input.data ?? sampleStoreData
+  const view = resolveView(data, request)
   const path = request.path ?? defaultPath(pageType, template, resource, view.prefix)
   const page = request.page ?? 1
   const linklists = buildLinklists(store.linklists, path, view.prefix)
-  const language = (store.localization.language ?? {}) as LiquidObject
+  // the shopper's country is per request, so a request that names another country than the view's default gets its own localization
+  const localization = request.country && request.country !== (store.localization.country as LiquidObject | null)?.iso_code ? buildLocalization(data, view, request.country) : store.localization
   const globals: Record<string, unknown> = {
     shop: store.shop,
     settings: null,
     cart: store.cart,
     customer: store.customer,
-    localization: store.localization,
+    localization,
     collections: store.collections,
     all_products: store.products,
     pages: store.pages,
@@ -202,7 +206,8 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
       path,
       host,
       origin,
-      locale: { iso_code: input.locale, name: language.name ?? input.locale, endonym_name: language.endonym_name ?? input.locale, primary: input.locale === language.iso_code, root_url: view.prefix || '/' },
+      // https://shopify.dev/docs/api/liquid/objects/request: `locale` is the language the page is shown in, a shop_locale (https://shopify.dev/docs/api/liquid/objects/shop_locale), with the view's root as its `root_url` (fixtures `probe-page-home`, `probe-page-en-ca` and `probe-page-fr-ca`)
+      locale: { ...languageIn(data, view, input.locale), root_url: view.prefix || '/' },
       design_mode: false,
       visual_preview_mode: false
     },
@@ -224,5 +229,14 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     ...(pageType === 'customers/order' ? { order: orderFor(store.customer, request.resource, report) } : {}),
     ...resources
   }
-  return { globals, linklists, request: { path, origin, page, prefix: view.prefix } }
+  return { globals, linklists, request: { path, origin, page, prefix: view.prefix, alternates: pageType === '404' ? [] : alternates(data, view, path, request.searchTerms, pageType) } }
+}
+
+/**
+ * The `hreflang` links of the page at `path` (`content_for_header`): the page in each market and language of `alternatesOf`, with its path taken from the view's prefix and put under that one's. https://shopify.dev/docs/storefronts/themes/seo/hreflang says they "stay in sync with each page's canonical URL", and the parity store's recorded pages have them without the query of a variant (`?variant=`), a filter or a sort, with a search's `?q=` (its recordings `page-product-variant`, `page-collection-filtered` and `page-search`, which are not among the fork's fixtures), and none on the 404 page (recording `page-not-found`).
+ */
+function alternates (data: StoreData, view: StoreView, path: string, searchTerms: string | undefined, pageType: string): Array<{ hreflang: string, path: string }> {
+  const bare = withoutPrefix(view.prefix, path).split(/[?#]/)[0]
+  const query = pageType === 'search' && searchTerms ? `?${new URLSearchParams({ q: searchTerms })}` : ''
+  return alternatesOf(data, view).map(({ hreflang, prefix }) => ({ hreflang, path: `${withPrefix(prefix, bare)}${query}` }))
 }
