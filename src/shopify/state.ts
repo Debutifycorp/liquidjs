@@ -36,8 +36,8 @@ export interface ShopifyState {
   report: ReportCollector
   /** The shop's money formats (`shop.money_format`, `shop.money_with_currency_format`). */
   money: { format: string, withCurrencyFormat: string }
-  /** The request being rendered: its path (for pagination links), origin (for video embeds) and `?page=`, https://shopify.dev/docs/api/liquid/objects/request. */
-  request: { path: string, origin: string, page: number }
+  /** The request being rendered: its path (for pagination links), origin (for video embeds) and `?page=`, https://shopify.dev/docs/api/liquid/objects/request, and the prefix every URL of its view starts with (the base path, then the locale prefix; empty for none), which the `form` tag puts before its actions and `content_for_header` before the routes root. */
+  request: { path: string, origin: string, page: number, prefix: string }
   frames: Frame[]
   /** `{% stylesheet %}` and `{% javascript %}` bodies met while rendering, by file, in the order first rendered; `content_for_header` inlines them. https://shopify.dev/docs/api/liquid/tags/stylesheet and https://shopify.dev/docs/api/liquid/tags/javascript say how the bodies are loaded only by reference, and https://shopify.dev/docs/api/liquid/objects/content_for_header says only that it returns the scripts Shopify requires, so inlining the bodies there is Debutify's choice. */
   assets: { stylesheets: Map<string, string>, javascripts: Map<string, string> }
@@ -67,7 +67,7 @@ export function createState (init: StateInit = {}): ShopifyState {
     translator: init.translator ?? emptyTranslator(),
     report: new ReportCollector(),
     money: { format: init.moneyFormat ?? DEFAULT_MONEY_FORMAT, withCurrencyFormat: init.moneyWithCurrencyFormat ?? DEFAULT_MONEY_WITH_CURRENCY_FORMAT },
-    request: { path: '/', origin: '', page: 1, ...init.request },
+    request: { path: '/', origin: '', page: 1, prefix: '', ...init.request },
     frames: [...(init.frames ?? [])],
     assets: { stylesheets: new Map(), javascripts: new Map() },
     runtime: init.runtime

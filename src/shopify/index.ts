@@ -19,6 +19,8 @@ export type { StoreData, ShopData, ProductData, VariantData, MediaData, ImageMed
 export type { RequestInput, PredictiveRequest, FormOutcome } from './store/globals'
 export { requestFromUrl, localePrefixes } from './store/request'
 export type { PageRequest, LocalePrefix } from './store/request'
+export { resolveView } from './store/view'
+export type { StoreView } from './store/view'
 export type { RecommendationsRequest } from './store/recommendations'
 export { shopifyFilterRegistry } from './filters'
 export type { FilterStatus, ShopifyFilterEntry } from './filters/types'

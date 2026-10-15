@@ -9,6 +9,7 @@ import type { TagToken, TopLevelToken, ValueToken } from '../../tokens'
 import { Drop } from '../../drop'
 import { evalToken } from '../../render'
 import { isTagToken, stringify, toValue } from '../../util'
+import { withPrefix } from '../store/view'
 import { attribute, escapeHtml } from '../util/html'
 import { plainValue } from '../util/args'
 import { currentFrame, shopifyState } from '../state'
@@ -17,6 +18,8 @@ type Resource = Record<string, unknown> | undefined
 
 interface FormType {
   action: (resource: Resource) => string
+  /** The action is built from a resource URL that already sits under the view's prefix (`new_comment`), so the prefix is not put before it again. */
+  prefixed?: boolean
   id?: (resource: Resource) => string
   /** What `form.id` returns when it is not the markup's `id`. */
   formId?: (resource: Resource) => string
@@ -32,7 +35,7 @@ interface FormType {
 
 const prop = (resource: Resource, key: string) => (resource ? stringify(toValue(resource[key])) : '')
 
-/** The form types and their markup, from the examples on https://shopify.dev/docs/api/liquid/tags/form. `customer_address` for an existing address is not documented there and is approximate. */
+/** The form types and their markup, from the examples on https://shopify.dev/docs/api/liquid/tags/form. `customer_address` for an existing address is not documented there and is approximate. An action is the unprefixed path; `render` puts the view's prefix before it (the base path and locale prefix: the parity store posts its localization form to `/fr-ca/localization` under `/fr-ca`, fixture `probe-page-fr-ca`, and shopify.dev's examples show only the unprefixed actions), except for an action built from an article's URL, which carries it already (`prefixed`). */
 const FORM_TYPES: Record<string, FormType> = {
   activate_customer_password: { action: () => '/account/activate' },
   cart: { action: () => '/cart', id: () => 'cart_form', className: 'shopify-cart-form', multipart: true },
@@ -49,7 +52,7 @@ const FORM_TYPES: Record<string, FormType> = {
   customer_login: { action: () => '/account/login', id: () => 'customer_login', extra: [['data-login-with-shop-sign-in', 'true']] },
   guest_login: { action: () => '/account/login', id: () => 'customer_login_guest', after: () => [['guest', 'true']] },
   localization: { action: () => '/localization', id: () => 'localization_form', className: 'shopify-localization-form', multipart: true, before: request => [['_method', 'put'], ['return_to', request.path]] },
-  new_comment: { action: article => `${prop(article, 'url')}/comments#comment_form`, id: () => 'comment_form', className: 'comment-form' },
+  new_comment: { action: article => `${prop(article, 'url')}/comments#comment_form`, prefixed: true, id: () => 'comment_form', className: 'comment-form' },
   // `section-id` is not on shopify.dev, whose example renders outside a section; Shopify's Dawn demo store prints it after `product-id` in a product form inside a section, and no Dawn file prints it
   product: { action: () => '/cart/add', id: product => `product_form_${prop(product, 'id')}`, className: 'shopify-product-form', multipart: true, after: (product, section) => [['product-id', prop(product, 'id')], ...(section === undefined ? [] : [['section-id', section] as [string, string]])] },
   recover_customer_password: { action: () => '/account/recover' },
@@ -123,7 +126,8 @@ export class FormTag extends Tag {
     const attributes = (yield this.hash.render(ctx)) as Record<string, unknown>
     const id = 'id' in attributes ? stringify(plainValue(attributes.id)) : spec.id?.(resource)
     const className = 'class' in attributes ? stringify(plainValue(attributes.class)) : spec.className
-    let open = `<form method="post" action="${escapeHtml(spec.action(resource))}"`
+    const action = spec.prefixed ? spec.action(resource) : withPrefix(state.request.prefix, spec.action(resource))
+    let open = `<form method="post" action="${escapeHtml(action)}"`
     if (id !== undefined) open += attribute('id', id)
     open += ' accept-charset="UTF-8"'
     if (className !== undefined) open += attribute('class', className)

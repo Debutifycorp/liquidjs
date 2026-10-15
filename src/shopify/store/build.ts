@@ -4,6 +4,8 @@ import { DEFAULT_MONEY_FORMAT, DEFAULT_MONEY_WITH_CURRENCY_FORMAT } from '../sta
 import type { ImageData } from '../types'
 import { escapeHtml } from '../util/html'
 import { buildFilters } from './filters'
+import { resolveView, viewKey, withPrefix } from './view'
+import type { StoreView } from './view'
 import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, ProductData, StoreData, TransactionData, VariantData } from './types'
 
 /**
@@ -96,10 +98,10 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
 }
 
 /**
- * https://shopify.dev/docs/api/liquid/objects/product. `price` is the lowest variant price and `compare_at_price` the lowest variant compare-at price, as that page documents them; `compare_at_price` is nil when no variant has one (shopify.dev does not pin that case, so dividing by it raises "divided by 0" as Ruby does). `first_available_variant`, `selected_or_first_available_variant` (no `?variant=` is known here, so the first available one), `options_with_values` and `has_only_default_variant` follow the same page. Selling plans are left out.
+ * https://shopify.dev/docs/api/liquid/objects/product. The product's and its variants' URLs sit under `prefix` (the view's base path and locale prefix, as the parity store prints them, fixture `probe-page-fr-ca`). `price` is the lowest variant price and `compare_at_price` the lowest variant compare-at price, as that page documents them; `compare_at_price` is nil when no variant has one (shopify.dev does not pin that case, so dividing by it raises "divided by 0" as Ruby does). `first_available_variant`, `selected_or_first_available_variant` (no `?variant=` is known here, so the first available one), `options_with_values` and `has_only_default_variant` follow the same page. Selling plans are left out.
  */
-export function buildProduct (data: ProductData): LiquidObject {
-  const url = `/products/${data.handle}`
+export function buildProduct (data: ProductData, prefix = ''): LiquidObject {
+  const url = withPrefix(prefix, `/products/${data.handle}`)
   // The image `position` counts from 1, which shopify.dev's image page does not state (its example shows 1 for the first image): unpinned, on the confirm-on-a-development-store list.
   const images = (data.images ?? []).map((img, i) => new ImageDrop(img, false, i + 1))
   const mediaData: MediaData[] = data.media ?? (data.images ?? []).map(img => ({ ...img, media_type: 'image' as const }))
@@ -159,12 +161,12 @@ export function buildProduct (data: ProductData): LiquidObject {
   return printsHandle(product)
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/collection. Filtering, tags and sorting are not applied: `products` is the collection's product list as given, `filters` are the store's storefront filters over those products (`buildFilters`), `tags` is empty and `sort_options` lists Shopify's standard options. */
-function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>, filters: FilterData[] | undefined): LiquidObject {
+/** https://shopify.dev/docs/api/liquid/objects/collection, at its URL under `prefix`. Filtering, tags and sorting are not applied: `products` is the collection's product list as given, `filters` are the store's storefront filters over those products (`buildFilters`), `tags` is empty and `sort_options` lists Shopify's standard options. */
+function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>, filters: FilterData[] | undefined, prefix: string): LiquidObject {
   const items = data.products.map(handle => HandleMap.get(products, handle)).filter((product): product is LiquidObject => !!product)
   const collect = (key: string) => unique(items.flatMap(product => product[key] as string | string[]).filter(Boolean)).sort()
   const own = image(data.image)
-  const url = `/collections/${data.handle}`
+  const url = withPrefix(prefix, `/collections/${data.handle}`)
   return printsHandle({
     id: data.id,
     handle: data.handle,
@@ -198,13 +200,13 @@ function buildCollection (data: CollectionData, products: HandleMap<LiquidObject
   })
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/page. */
-function buildPage (data: PageData): LiquidObject {
-  return printsHandle({ ...data, url: `/pages/${data.handle}`, template_suffix: null, published_at: data.published_at ?? null, metafields: data.metafields ?? {} })
+/** https://shopify.dev/docs/api/liquid/objects/page, at its URL under `prefix`. */
+function buildPage (data: PageData, prefix: string): LiquidObject {
+  return printsHandle({ ...data, url: withPrefix(prefix, `/pages/${data.handle}`), template_suffix: null, published_at: data.published_at ?? null, metafields: data.metafields ?? {} })
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/article. Comments are not modelled: `comments` is empty and `comments_enabled?` false. */
-function buildArticle (data: ArticleData, blogHandle: string): LiquidObject {
+/** https://shopify.dev/docs/api/liquid/objects/article, at its URL under `prefix`. Comments are not modelled: `comments` is empty and `comments_enabled?` false. */
+function buildArticle (data: ArticleData, blogHandle: string, prefix: string): LiquidObject {
   const author = data.author ?? ''
   return printsHandle({
     id: data.id,
@@ -213,7 +215,7 @@ function buildArticle (data: ArticleData, blogHandle: string): LiquidObject {
     content: data.content,
     excerpt: data.excerpt ?? '',
     excerpt_or_content: data.excerpt || data.content,
-    url: `/blogs/${blogHandle}/${data.handle}`,
+    url: withPrefix(prefix, `/blogs/${blogHandle}/${data.handle}`),
     author,
     user: { name: author, first_name: author.split(' ')[0] ?? '', last_name: author.split(' ').slice(1).join(' ') },
     published_at: data.published_at,
@@ -227,14 +229,14 @@ function buildArticle (data: ArticleData, blogHandle: string): LiquidObject {
   })
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/blog. Comments are not modelled: `comments_enabled?` and `moderated?` are false. */
-function buildBlog (data: BlogData): LiquidObject {
-  const articles = data.articles.map(article => buildArticle(article, data.handle))
+/** https://shopify.dev/docs/api/liquid/objects/blog, at its URL under `prefix`. Comments are not modelled: `comments_enabled?` and `moderated?` are false. */
+function buildBlog (data: BlogData, prefix: string): LiquidObject {
+  const articles = data.articles.map(article => buildArticle(article, data.handle, prefix))
   return printsHandle({
     id: data.id,
     handle: data.handle,
     title: data.title,
-    url: `/blogs/${data.handle}`,
+    url: withPrefix(prefix, `/blogs/${data.handle}`),
     articles,
     articles_count: articles.length,
     all_tags: unique(data.articles.flatMap(article => article.tags ?? [])).sort(),
@@ -275,17 +277,26 @@ function linkType (url: string): string {
   return 'http_link'
 }
 
+/** `url` without `prefix` (a path of whole segments, the view's base path and locale prefix), so a link and the request path compare as the store's own paths whatever the view; a URL that does not start with `prefix` stays as it is. */
+function unprefixed (url: string, prefix: string): string {
+  if (!prefix || !url.startsWith(prefix)) return url
+  const rest = url.slice(prefix.length)
+  if (rest === '' || rest.startsWith('/')) return rest || '/'
+  return /^[?#]/.test(rest) ? `/${rest}` : url
+}
+
 /**
- * One menu link, https://shopify.dev/docs/api/liquid/objects/link. `current` is true when the link's path is the request path and `active` when it is the path or a parent of it ("matches, or contains, the link's url"); both ignore query strings, `current` also reads a product in a collection as the product, and `child_active` and `child_current` look at the children. `levels` counts the nested levels below the link. `object` is always nil: the page says it is the article, blog, collection, metaobject, page, policy or product the link points at, which this layer does not resolve from a URL. `handle` and `data_sharing_opt_out_icon` are not built.
+ * One menu link, https://shopify.dev/docs/api/liquid/objects/link. Its `url` sits under `prefix` (`withPrefix`), as a link of the parity store's menu does under a locale prefix (fixture `probe-page-fr-ca`); `type` and the comparisons below read the store's own path, without the prefix, and so does the request `path`, which carries it. `current` is true when the link's path is the request path and `active` when it is the path or a parent of it ("matches, or contains, the link's url"); both ignore query strings, `current` also reads a product in a collection as the product, and `child_active` and `child_current` look at the children. `levels` counts the nested levels below the link. `object` is always nil: the page says it is the article, blog, collection, metaobject, page, policy or product the link points at, which this layer does not resolve from a URL. `handle` and `data_sharing_opt_out_icon` are not built.
  */
-function buildLink (data: LinkData, path: string): LiquidObject {
-  const links = (data.links ?? []).map(child => buildLink(child, path))
-  const current = linkPath(data.url) === linkPath(path)
+function buildLink (data: LinkData, path: string, prefix: string): LiquidObject {
+  const links = (data.links ?? []).map(child => buildLink(child, path, prefix))
+  const here = unprefixed(path, prefix)
+  const current = linkPath(data.url) === linkPath(here)
   const target = stripQuery(data.url)
-  const active = current || (target !== '/' && stripQuery(path).startsWith(`${target}/`))
+  const active = current || (target !== '/' && stripQuery(here).startsWith(`${target}/`))
   return {
     title: data.title,
-    url: data.url,
+    url: withPrefix(prefix, data.url),
     type: linkType(data.url),
     active,
     current,
@@ -297,10 +308,10 @@ function buildLink (data: LinkData, path: string): LiquidObject {
   }
 }
 
-/** The `linklists` object for one request path, https://shopify.dev/docs/api/liquid/objects/linklists (each menu is https://shopify.dev/docs/api/liquid/objects/linklist). */
-export function buildLinklists (lists: LinkListData[], path: string): HandleMap<LiquidObject> {
+/** The `linklists` object for one request path, https://shopify.dev/docs/api/liquid/objects/linklists (each menu is https://shopify.dev/docs/api/liquid/objects/linklist), with its links under `prefix`. */
+export function buildLinklists (lists: LinkListData[], path: string, prefix = ''): HandleMap<LiquidObject> {
   return new HandleMap(lists.map(list => {
-    const links = list.links.map(link => buildLink(link, path))
+    const links = list.links.map(link => buildLink(link, path, prefix))
     return [list.handle, { handle: list.handle, title: list.title, links, levels: links.length ? 1 + Math.max(...links.map(link => link.levels as number)) : 0 }]
   }))
 }
@@ -427,8 +438,8 @@ const statusLabel = (value: string) => value ? value.charAt(0).toUpperCase() + v
 /** The `cancel_reason_label` of each `cancel_reason`: the description the order page gives each value. https://shopify.dev/docs/api/liquid/objects/order#order-cancel_reason */
 const CANCEL_REASON_LABELS: Record<string, string> = { customer: 'Customer changed/cancelled order', declined: 'Payment declined', fraud: 'Fraudulent order', inventory: 'Items unavailable', staff: 'Staff error', other: 'Other' }
 
-/** https://shopify.dev/docs/api/liquid/objects/address. `name` joins the first and last names, `street` the two lines, and `summary` the name, lines, city, province and country, as the page lists them (its example joins them with `, `). `country` is a country object (https://shopify.dev/docs/api/liquid/objects/country) that prints its name, as that page says a country does when referenced directly. `url` is `/account/addresses/<id>` for a customer address, as the page's example shows, and nil for an order's address ("This only applies to customer addresses"). */
-function buildAddress (data: AddressData, ofCustomer: boolean): LiquidObject {
+/** https://shopify.dev/docs/api/liquid/objects/address. `name` joins the first and last names, `street` the two lines, and `summary` the name, lines, city, province and country, as the page lists them (its example joins them with `, `). `country` is a country object (https://shopify.dev/docs/api/liquid/objects/country) that prints its name, as that page says a country does when referenced directly. `url` is `/account/addresses/<id>` for a customer address, as the page's example shows, under `prefix` like the account routes, and nil for an order's address ("This only applies to customer addresses"). */
+function buildAddress (data: AddressData, ofCustomer: boolean, prefix: string): LiquidObject {
   const name = [data.first_name, data.last_name].filter(Boolean).join(' ')
   const street = [data.address1, data.address2].filter(Boolean).join(', ')
   const country: LiquidObject = { iso_code: data.country_code, name: data.country }
@@ -450,7 +461,7 @@ function buildAddress (data: AddressData, ofCustomer: boolean): LiquidObject {
     zip: data.zip,
     phone: data.phone ?? null,
     summary: [name, street, data.city, data.province, data.country].filter(Boolean).join(', '),
-    url: ofCustomer && data.id !== undefined ? `/account/addresses/${data.id}` : null
+    url: ofCustomer && data.id !== undefined ? withPrefix(prefix, `/account/addresses/${data.id}`) : null
   }
 }
 
@@ -475,9 +486,9 @@ function buildTransaction (data: TransactionData): LiquidObject {
 }
 
 /**
- * https://shopify.dev/docs/api/liquid/objects/order, with its line items (https://shopify.dev/docs/api/liquid/objects/line_item), addresses, shipping methods (https://shopify.dev/docs/api/liquid/objects/shipping_method), tax lines (https://shopify.dev/docs/api/liquid/objects/tax_line), fulfillments (https://shopify.dev/docs/api/liquid/objects/fulfillment) and transactions. No discounts or duties are modelled: `line_items_subtotal_price` and `subtotal_price` are the sum of the lines, `total_price` adds the shipping and tax prices to it, `total_net_amount` is `total_price` minus `total_refunded_amount`, as the page defines it, and `total_duties` is nil ("If there are no duties"). Each line item carries the `fulfillment` that ships it (the first one that lists it) and its `successfully_fulfilled_quantity`. `tags` are sorted, as the page says. `customer_url` is `/account/orders/<id>`, and `order_status_url` and `customer_order_url` are nil: the page's examples are URLs with tokens a store issues.
+ * https://shopify.dev/docs/api/liquid/objects/order, with its line items (https://shopify.dev/docs/api/liquid/objects/line_item), addresses, shipping methods (https://shopify.dev/docs/api/liquid/objects/shipping_method), tax lines (https://shopify.dev/docs/api/liquid/objects/tax_line), fulfillments (https://shopify.dev/docs/api/liquid/objects/fulfillment) and transactions. No discounts or duties are modelled: `line_items_subtotal_price` and `subtotal_price` are the sum of the lines, `total_price` adds the shipping and tax prices to it, `total_net_amount` is `total_price` minus `total_refunded_amount`, as the page defines it, and `total_duties` is nil ("If there are no duties"). Each line item carries the `fulfillment` that ships it (the first one that lists it) and its `successfully_fulfilled_quantity`. `tags` are sorted, as the page says. `customer_url` is `/account/orders/<id>` under `prefix`, and `order_status_url` and `customer_order_url` are nil: the page's examples are URLs with tokens a store issues.
  */
-function buildOrder (data: OrderData, products: HandleMap<LiquidObject>): LiquidObject {
+function buildOrder (data: OrderData, products: HandleMap<LiquidObject>, prefix: string): LiquidObject {
   const lineItems = buildLineItems(data.line_items, products)
   const fulfilled = new Map<LiquidObject, number>()
   const fulfillments = (data.fulfillments ?? []).map(entry => {
@@ -530,14 +541,14 @@ function buildOrder (data: OrderData, products: HandleMap<LiquidObject>): Liquid
     created_at: data.created_at,
     email: data.email ?? null,
     phone: data.phone ?? null,
-    customer_url: `/account/orders/${data.id}`,
+    customer_url: withPrefix(prefix, `/account/orders/${data.id}`),
     customer_order_url: null,
     order_status_url: null,
     line_items: lineItems,
     subtotal_line_items: lineItems,
     item_count: itemCount,
-    billing_address: data.billing_address ? buildAddress(data.billing_address, false) : null,
-    shipping_address: data.shipping_address ? buildAddress(data.shipping_address, false) : null,
+    billing_address: data.billing_address ? buildAddress(data.billing_address, false, prefix) : null,
+    shipping_address: data.shipping_address ? buildAddress(data.shipping_address, false, prefix) : null,
     'pickup_in_store?': false,
     shipping_methods: shippingMethods,
     shipping_price: shippingPrice,
@@ -572,10 +583,10 @@ function buildOrder (data: OrderData, products: HandleMap<LiquidObject>): Liquid
 /**
  * https://shopify.dev/docs/api/liquid/objects/customer, built from `data`, whose other fields are kept as given. `name` joins the first and last names; `addresses` are address objects (`buildAddress`) with `addresses_count`, and `default_address` is the one `default_address_id` names, the first address without it, or nil without addresses; `orders` are order objects (`buildOrder`) in the order the data gives them, each with this customer as its `customer`, with `orders_count`, `last_order` (the order created last) and `total_spent` (the sum of the orders' `total_net_amount`). The customer is not B2B, has an account, has no avatar, saved payment methods, store credit or company locations, and accepts marketing and is tax exempt only when the data says so.
  */
-function buildCustomer (data: CustomerData, products: HandleMap<LiquidObject>): LiquidObject {
+function buildCustomer (data: CustomerData, products: HandleMap<LiquidObject>, prefix: string): LiquidObject {
   const { addresses: addressData, orders: orderData, default_address_id: defaultId, ...rest } = data
-  const addresses = (addressData ?? []).map(address => buildAddress(address, true))
-  const orders = (orderData ?? []).map(order => buildOrder(order, products))
+  const addresses = (addressData ?? []).map(address => buildAddress(address, true, prefix))
+  const orders = (orderData ?? []).map(order => buildOrder(order, products, prefix))
   const created = (order: LiquidObject) => Date.parse(String(order.created_at)) || 0
   const firstName = data.first_name ?? ''
   const lastName = data.last_name ?? ''
@@ -612,19 +623,42 @@ function buildCustomer (data: CustomerData, products: HandleMap<LiquidObject>): 
   return customer
 }
 
-const built = new WeakMap<StoreData, StoreObjects>()
+const built = new WeakMap<StoreData, Map<string, StoreObjects>>()
+
+/** The most views kept for one `data` object; the least recently used one is dropped past it. A store served under many base paths (one a preview session) would otherwise grow without bound. */
+const MAX_VIEWS = 64
 
 /**
- * The Liquid objects for `data`, built once per `data` object and reused. `shop` follows https://shopify.dev/docs/api/liquid/objects/shop; `shop.url` and `shop.secure_url` are `https://<domain>`, as shopify.dev gives no other form for a store without its own scheme.
+ * The Liquid objects for `data` in `view`, built once per `data` object and view and reused, the 64 most recently used views of a `data` object kept. Without a view it is the one a request that says nothing renders in (`resolveView`): the primary market and language, no prefix. Every resource URL sits under the view's prefix (the base path, then the locale prefix), as the parity store prints them under a locale prefix (fixture `probe-page-fr-ca`). `shop` follows https://shopify.dev/docs/api/liquid/objects/shop; `shop.url` and `shop.secure_url` are `https://<domain>`, as shopify.dev gives no other form for a store without its own scheme.
  */
-export function buildStore (data: StoreData): StoreObjects {
-  const cached = built.get(data)
-  if (cached) return cached
-  const products = new HandleMap((data.products ?? []).map(product => [product.handle, buildProduct(product)]))
+export function buildStore (data: StoreData, view?: StoreView): StoreObjects {
+  const resolved = view ?? resolveView(data, {})
+  const key = viewKey(resolved)
+  let views = built.get(data)
+  if (!views) {
+    views = new Map()
+    built.set(data, views)
+  }
+  const cached = views.get(key)
+  if (cached) {
+    // read again, so it is now the most recently used
+    views.delete(key)
+    views.set(key, cached)
+    return cached
+  }
+  const objects = buildObjects(data, resolved)
+  views.set(key, objects)
+  if (views.size > MAX_VIEWS) views.delete(views.keys().next().value as string)
+  return objects
+}
+
+function buildObjects (data: StoreData, view: StoreView): StoreObjects {
+  const { prefix } = view
+  const products = new HandleMap((data.products ?? []).map(product => [product.handle, buildProduct(product, prefix)]))
   // Every shop answers `collections.all` with all its products. https://shopify.dev/docs/api/liquid/objects/collections
-  const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (data.products ?? []).map(product => product.handle) }, products, data.filters)
-  const collections = new HandleMap((data.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters)]), [['all', all]])
-  const blogs = new HandleMap((data.blogs ?? []).map(blog => [blog.handle, buildBlog(blog)]))
+  const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (data.products ?? []).map(product => product.handle) }, products, data.filters, prefix)
+  const collections = new HandleMap((data.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters, prefix)]), [['all', all]])
+  const blogs = new HandleMap((data.blogs ?? []).map(blog => [blog.handle, buildBlog(blog, prefix)]))
   const localization = buildLocalization(data)
   const shippingCountries = data.country_option_tags ?? [{ name: String((localization.country as LiquidObject).name) }]
   const articles = new HandleMap(HandleMap.values(blogs).flatMap(blog => (blog.articles as LiquidObject[]).map(article => [`${blog.handle}/${article.handle}`, article] as [string, LiquidObject])))
@@ -653,20 +687,19 @@ export function buildStore (data: StoreData): StoreObjects {
     },
     products,
     collections,
-    pages: new HandleMap((data.pages ?? []).map(page => [page.handle, buildPage(page)])),
+    pages: new HandleMap((data.pages ?? []).map(page => [page.handle, buildPage(page, prefix)])),
     blogs,
     articles,
     images: new HandleMap(Object.entries(data.images ?? {}).map(([name, img]) => [name, new ImageDrop(img)])),
     videos: Object.fromEntries(Object.entries(data.videos ?? {}).map(([name, video]) => [name, buildMedia(video) as LiquidObject])),
     linklists: data.linklists ?? [],
     cart: buildCart(data, products),
-    customer: data.customer ? buildCustomer(data.customer, products) : null,
+    customer: data.customer ? buildCustomer(data.customer, products, prefix) : null,
     localization,
     country_option_tags: countryOptionTags(shippingCountries),
     all_country_option_tags: countryOptionTags(data.all_country_option_tags ?? shippingCountries),
     gift_card: data.gift_card ? buildGiftCard(data.gift_card, products, data.shop.currency) : null,
     storefrontFilters: data.filters ?? []
   }
-  built.set(data, objects)
   return objects
 }

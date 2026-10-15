@@ -17,7 +17,7 @@ function scriptJson (value: unknown): string {
 }
 
 /**
- * A minimal `content_for_header`: the `window.Shopify` globals themes read (shop, locale, currency, country, routes, design mode), then the bodies of the `{% stylesheet %}` tags rendered on the page in one `<style>`, then the `{% javascript %}` bodies, each in its own function, run on `DOMContentLoaded`.
+ * A minimal `content_for_header`: the `window.Shopify` globals themes read (shop, locale, currency, country, routes, design mode, and the customer events API `Shopify.analytics`), then the bodies of the `{% stylesheet %}` tags rendered on the page in one `<style>`, then the `{% javascript %}` bodies, each in its own function, run on `DOMContentLoaded`.
  *
  * https://shopify.dev/docs/api/liquid/objects/content_for_header says only that it "dynamically returns all scripts required by Shopify" and that themes must not modify or parse it, and https://shopify.dev/docs/storefronts/themes/architecture/layouts says it goes in the `<head>`. Its content is therefore Debutify's: Shopify serves the stylesheet and javascript bodies as files and adds analytics and app scripts, which a preview leaves out, and the `Shopify` globals here are the ones themes are known to read, not a list from shopify.dev.
  */
@@ -30,7 +30,12 @@ export function contentForHeader (state: ShopifyState, globals: Record<string | 
     `Shopify.locale = ${scriptJson(request.locale?.iso_code)};` +
     `Shopify.currency = ${scriptJson({ active: shop.currency, rate: '1.0' })};` +
     `Shopify.country = ${scriptJson(localization.country?.iso_code)};` +
-    'Shopify.designMode = false;Shopify.routes = Shopify.routes || {};Shopify.routes.root = "/";</script>'
+    'Shopify.designMode = false;Shopify.routes = Shopify.routes || {};' +
+    // the root route of the view, with a trailing slash: `"/"` unprefixed and `"/fr-ca/"` under `/fr-ca`, as the parity store's header writes it (its recorded home pages, recordings `page-home` and `page-home-fr-ca`, which are not among the fork's fixtures)
+    `Shopify.routes.root = ${scriptJson(`${state.request.prefix}/`)};` +
+    // The customer events API, https://shopify.dev/docs/api/web-pixels-api/emitting-data: on the online store `Shopify.analytics.publish(name, data)` publishes a custom event and `Shopify.analytics.visitor(info, options)` hands over the visitor's email or phone and "Returns `true` if the visitor method was successful, and returns `false` if the payload was rejected". Shopify's header defines both on every storefront, `publish` answering true as it queues (the parity store's recorded home page, recording `page-home`, in its web pixels manager script); with no pixels loaded here nothing is delivered, so `publish` keeps the event in `events` (which the storefront's sandbox mode reads) and answers true, and `visitor` answers whether it was given data. The page does not say what `publish` returns; `true` is the parity store's.
+    'Shopify.analytics = Shopify.analytics || { events: [], publish: function (name, data) { this.events.push({ name: String(name), data: data }); return true; }, visitor: function (data, options) { return !!data; } };' +
+    '</script>'
   const css = [...state.assets.stylesheets.values()].join('\n')
   if (css) header += `<style data-shopify="stylesheet-tags">${css.replace(/<\/style/gi, '<\\/style')}</style>`
   const scripts = [...state.assets.javascripts.values()].map(body => `(function () {\n${body}\n})();`).join('\n')

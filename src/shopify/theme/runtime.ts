@@ -13,6 +13,7 @@ import { SettingDefinition, SettingsDrop, SettingsEnv } from '../settings'
 import { createState, currentFrame, Frame, ShopifyState, STATE, ThemeHooks } from '../state'
 import { buildStore, LiquidObject } from '../store/build'
 import { buildGlobals, RequestInput } from '../store/globals'
+import { resolveView } from '../store/view'
 import type { StoreData } from '../store/types'
 import { SchemaTag } from '../tags/raw'
 import { Translator } from '../translations'
@@ -302,7 +303,8 @@ class PageRender implements ThemeHooks {
   private readonly blockObjects = new WeakMap<object, { id: string, data: BlockData }>()
 
   public constructor (private readonly theme: CompiledTheme, private readonly options: RenderPageOptions) {
-    const store = buildStore(options.data ?? sampleStoreData)
+    const data = options.data ?? sampleStoreData
+    const store = buildStore(data, resolveView(data, options.request ?? {}))
     const locale = options.locale ?? String(store.shop.locale)
     const translator = theme.translator(locale, message => this.state.report.unsupported('locale_file', message))
     this.trust = { liquidSettings: !!options.trustLiquidSettings, htmlSettings: !!options.trustHtmlSettings }
@@ -313,7 +315,7 @@ class PageRender implements ThemeHooks {
       moneyWithCurrencyFormat: String(store.shop.money_with_currency_format),
       runtime: this
     })
-    const page = buildGlobals({ store, templateName: options.templateName, request: options.request ?? {}, locale, report: this.state.report })
+    const page = buildGlobals({ store, data, templateName: options.templateName, request: options.request ?? {}, locale, report: this.state.report })
     this.state.request = page.request
     const env: SettingsEnv = { store, linklists: page.linklists, services: this.state.services, translator, report: this.state.report, trust: this.trust }
     const settingsData = theme.json('config/settings_data.json') ?? {}

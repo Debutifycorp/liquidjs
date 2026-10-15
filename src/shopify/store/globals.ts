@@ -5,6 +5,9 @@ import type { ReportCollector } from '../report'
 import { buildLinklists, LiquidObject, StoreObjects } from './build'
 import { buildRecommendations, RecommendationsRequest } from './recommendations'
 import { buildSearch } from './search'
+import type { StoreData } from './types'
+import { resolveView, withPrefix } from './view'
+import { sampleStoreData } from '../sample/sample-data'
 
 export interface PredictiveRequest {
   q: string
@@ -74,8 +77,8 @@ export interface RequestInput {
   collection?: string
 }
 
-/** Shopify's storefront routes for the primary locale, https://shopify.dev/docs/api/liquid/objects/routes. The paths are the ones that page lists for the default locale; a market's locale prefix is not applied. */
-export const ROUTES: Readonly<Record<string, string>> = Object.freeze({
+/** The route paths of the primary locale, https://shopify.dev/docs/api/liquid/objects/routes lists them for the default locale. */
+const BASE_ROUTES: Readonly<Record<string, string>> = {
   root_url: '/',
   account_url: '/account',
   account_login_url: '/account/login',
@@ -95,19 +98,33 @@ export const ROUTES: Readonly<Record<string, string>> = Object.freeze({
   cart_update_url: '/cart/update',
   product_recommendations_url: '/recommendations/products',
   storefront_login_url: '/account/login'
-})
+}
+
+/**
+ * Shopify's storefront routes under `prefix` (the view's base path, then its locale prefix), https://shopify.dev/docs/api/liquid/objects/routes. Under a locale prefix the parity store prints every route with the prefix before it (fixtures `probe-page-en-ca`, `probe-page-fr-ca` and `probe-page-fr-eu`, where shopify.dev lists only the default locale's paths), and its `root_url` as the bare prefix with no trailing slash (`/fr-ca`), or `/` with no prefix (fixtures `probe-page-fr-ca` and `probe-page-home`).
+ *
+ * The fixtures print `account_login_url` as an address on the store's own domain (`customer_authentication/redirect`, new customer accounts); customer accounts are out of scope for item 22, so it stays `<prefix>/account/login`, which is where the engine's customer templates are.
+ */
+export function buildRoutes (prefix: string): Readonly<Record<string, string>> {
+  const out: Record<string, string> = {}
+  for (const [name, path] of Object.entries(BASE_ROUTES)) out[name] = withPrefix(prefix, path)
+  return Object.freeze(out)
+}
+
+/** The routes of an unprefixed store (`buildRoutes('')`). */
+export const ROUTES: Readonly<Record<string, string>> = buildRoutes('')
 
 const RESOURCE_TYPES: Record<string, keyof StoreObjects> = { product: 'products', collection: 'collections', page: 'pages', blog: 'blogs', article: 'articles' }
 
 const PATHS: Record<string, string> = { index: '/', cart: '/cart', search: '/search', 'list-collections': '/collections', 404: '/404', password: '/password', gift_card: '/gift_cards/sample' }
 
-/** The path a template is served from when the caller gives none: the resource's own URL, or the storefront path of the template. shopify.dev's request page (https://shopify.dev/docs/api/liquid/objects/request) documents `path` as the page's path but not the path of each template, so the account and gift card paths here are the conventional ones and are not pinned. */
-function defaultPath (pageType: string, template: TemplateDrop, resource: LiquidObject | null): string {
+/** The path a template is served from when the caller gives none: the resource's own URL (already under the view's prefix), or the storefront path of the template under `prefix`. shopify.dev's request page (https://shopify.dev/docs/api/liquid/objects/request) documents `path` as the page's path but not the path of each template, so the account and gift card paths here are the conventional ones and are not pinned. */
+function defaultPath (pageType: string, template: TemplateDrop, resource: LiquidObject | null, prefix: string): string {
   if (resource) return String(resource.url)
   const known = own(PATHS, pageType)
-  if (known) return known
-  if (template.directory === 'customers') return template.name === 'account' ? '/account' : `/account/${template.name}`
-  return `/${pageType}`
+  if (known) return withPrefix(prefix, known)
+  if (template.directory === 'customers') return withPrefix(prefix, template.name === 'account' ? '/account' : `/account/${template.name}`)
+  return withPrefix(prefix, `/${pageType}`)
 }
 
 /** The customer's order the `customers/order` template shows: the one `resource` names by its name, number or id, or the first one; nil when the customer has none, and nil and reported when `resource` names none of them. https://shopify.dev/docs/api/liquid/objects/order */
@@ -121,6 +138,8 @@ function orderFor (customer: LiquidObject | null, resource: string | undefined, 
 
 export interface GlobalsInput {
   store: StoreObjects
+  /** The data `store` was built from, which the view (market, language and prefix) is resolved against with the request; the sample store's when omitted, as the runtime does. */
+  data?: StoreData
   templateName: string
   request: RequestInput
   locale: string
@@ -133,7 +152,7 @@ export interface PageGlobals {
   /** The request's menus, with `active` and `current` set for its path. */
   linklists: HandleMap<LiquidObject>
   /** The resolved request: path, origin and page, for the Shopify state. */
-  request: { path: string, origin: string, page: number }
+  request: { path: string, origin: string, page: number, prefix: string }
 }
 
 /**
@@ -157,9 +176,10 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   const resource = kind ? resources[template.name] : null
   const host = request.host ?? String(store.shop.domain)
   const origin = request.origin ?? `https://${host}`
-  const path = request.path ?? defaultPath(pageType, template, resource)
+  const view = resolveView(input.data ?? sampleStoreData, request)
+  const path = request.path ?? defaultPath(pageType, template, resource, view.prefix)
   const page = request.page ?? 1
-  const linklists = buildLinklists(store.linklists, path)
+  const linklists = buildLinklists(store.linklists, path, view.prefix)
   const language = (store.localization.language ?? {}) as LiquidObject
   const globals: Record<string, unknown> = {
     shop: store.shop,
@@ -174,14 +194,14 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     articles: store.articles,
     linklists,
     images: store.images,
-    routes: ROUTES,
+    routes: view.prefix ? buildRoutes(view.prefix) : ROUTES,
     template,
     request: {
       page_type: pageType,
       path,
       host,
       origin,
-      locale: { iso_code: input.locale, name: language.name ?? input.locale, endonym_name: language.endonym_name ?? input.locale, primary: input.locale === language.iso_code, root_url: '/' },
+      locale: { iso_code: input.locale, name: language.name ?? input.locale, endonym_name: language.endonym_name ?? input.locale, primary: input.locale === language.iso_code, root_url: view.prefix || '/' },
       design_mode: false,
       visual_preview_mode: false
     },
@@ -191,7 +211,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     handle: resource?.handle ?? '',
     current_page: page,
     current_tags: null,
-    search: buildSearch(store, request.searchTerms),
+    search: buildSearch(store, request.searchTerms, view.prefix),
     recommendations: buildRecommendations(store, request.recommendations, report),
     powered_by_link: '',
     additional_checkout_buttons: false,
@@ -203,5 +223,5 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     ...(pageType === 'customers/order' ? { order: orderFor(store.customer, request.resource, report) } : {}),
     ...resources
   }
-  return { globals, linklists, request: { path, origin, page } }
+  return { globals, linklists, request: { path, origin, page, prefix: view.prefix } }
 }
