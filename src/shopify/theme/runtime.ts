@@ -34,7 +34,7 @@ export interface RenderPageOptions {
   templateName: string
   /** Defaults to the package's public sample store. */
   data?: StoreData
-  /** Defaults to the shop's locale. */
+  /** The locale of the translations; defaults to the shop's locale. `request.locale` and `Shopify.locale` are the language `request.language` names when it names one, and this locale otherwise. */
   locale?: string
   request?: RequestInput
   services?: Partial<ShopifyServices>

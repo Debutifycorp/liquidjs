@@ -19,8 +19,13 @@ export interface ViewCurrency {
 
 const defaults = new WeakMap<StoreData, MarketData[]>()
 
-/** The language the store's names (countries, languages) are written in, and its primary language: the first published language, otherwise the shop's locale. */
-export const primaryLanguage = (data: StoreData): string => data.languages?.[0]?.iso_code ?? data.shop.locale ?? 'en'
+/**
+ * The legacy `localization` of a store with neither markets nor languages: `StoreData.localization` was the whole of what the engine knew of a store's country and language (one of each), and such a store renders as it did then, with the country and language the data names whatever the shop's locale or currency say. Undefined for any other store.
+ */
+const legacyLocalization = (data: StoreData) => data.markets?.length || data.languages?.length ? undefined : data.localization
+
+/** The language the store's names (countries, languages) are written in, and its primary language: the first published language, otherwise the language of the legacy `localization` (`legacyLocalization`) or the shop's locale. */
+export const primaryLanguage = (data: StoreData): string => data.languages?.[0]?.iso_code ?? legacyLocalization(data)?.language.iso_code ?? data.shop.locale ?? 'en'
 
 /**
  * The store's markets, https://shopify.dev/docs/api/liquid/objects/market. A store whose data names none has one market, `default`, of the shop's country (`localization.country` or the United States), currency and languages (`languages` or the shop's locale), which is what the engine rendered before it had markets.
@@ -35,7 +40,8 @@ export function marketsOf (data: StoreData): MarketData[] {
       name: 'Default',
       primary: true,
       countries: [{ iso_code: country?.iso_code ?? 'US', name: country?.name ?? 'United States' }],
-      currency: { iso_code: country?.currency.iso_code ?? data.shop.currency, symbol: country?.currency.symbol ?? '$', name: country?.currency.name, rate: 1 },
+      // the shop's own currency, whatever currency the legacy country shows (`buildLocalization`): prices, the cart and `Shopify.currency` stay in the shop's currency, as before
+      currency: { iso_code: data.shop.currency, symbol: country?.currency.symbol ?? '$', name: country?.currency.name, rate: 1 },
       languages: data.languages?.length ? data.languages.map(l => l.iso_code) : [primaryLanguage(data)]
     }]
     defaults.set(data, market)
@@ -78,10 +84,13 @@ export function enabledCurrencies (data: StoreData): LiquidObject[] {
 }
 
 /** `Intl.DisplayNames` is not in the TypeScript `lib` this package builds with, and a runtime may lack it or a locale. */
-interface DisplayNames { of: (code: string) => string | undefined }
+interface DisplayNames { of: (code: string) => string | undefined, resolvedOptions: () => { locale: string } }
 type DisplayNamesConstructor = new (locales: string[], options: { type: string }) => DisplayNames
 
 const displayNames = new Map<string, DisplayNames | undefined>()
+
+/** Whether `resolved`, the locale a `Intl` object settled on, is `locale`'s language: for a language the runtime does not know (`zz`) it settles on its default (`en-US`) without saying so. */
+const sameLanguage = (resolved: string, locale: string) => resolved.split('-')[0].toLowerCase() === locale.split('-')[0].toLowerCase()
 
 function namesIn (locale: string, type: 'region' | 'language'): DisplayNames | undefined {
   const key = `${locale}|${type}`
@@ -90,26 +99,31 @@ function namesIn (locale: string, type: 'region' | 'language'): DisplayNames | u
     let names: DisplayNames | undefined
     try {
       names = Names && new Names([locale], { type })
+      // a language the runtime has no names for would be named in English
+      if (names && !sameLanguage(names.resolvedOptions().locale, locale)) names = undefined
     } catch {
       // not a locale this runtime knows
+      names = undefined
     }
     displayNames.set(key, names)
   }
   return displayNames.get(key)
 }
 
-/** The ISO 639 (`fr`) and ISO 3166 (`CA`) codes mean the same in any language; a name `Intl` gives back as the code itself is not a name. */
+/** The name `Intl.DisplayNames` gives `code` in `locale`; none when the runtime has no names for the locale, no name for the code, or the code is malformed (`of` throws on it): the ISO 639 (`fr`) and ISO 3166 (`CA`) codes mean the same in any language, and a name `Intl` gives back as the code itself is not a name. */
 function nameIn (locale: string, type: 'region' | 'language', code: string): string | undefined {
-  const name = namesIn(locale, type)?.of(code)
-  return name && name !== code ? name : undefined
+  try {
+    const name = namesIn(locale, type)?.of(code)
+    return name && name !== code ? name : undefined
+  } catch {
+    return undefined
+  }
 }
 
 /** The language of `iso` as the store's data names it; a language the data does not list is named by its code. */
 function languageData (data: StoreData, iso: string): LanguageData {
   const listed = data.languages?.find(l => l.iso_code === iso)
   if (listed) return listed
-  const legacy = data.localization?.language
-  if (legacy?.iso_code === iso) return { iso_code: iso, name: legacy.name, endonym_name: legacy.endonym_name ?? legacy.name }
   return { iso_code: iso, name: iso, endonym_name: iso }
 }
 
@@ -117,8 +131,11 @@ function languageData (data: StoreData, iso: string): LanguageData {
  * The language `iso` as https://shopify.dev/docs/api/liquid/objects/shop_locale describes it, in the view: `endonym_name` is its name in itself, `primary` is whether it is the store's primary language, and `name` is "the name of the locale in the store's primary locale" by that page, so `French` on a store whose primary language is English. On the French pages the parity store prints `français`, not `French`, for the French language (fixture `probe-page-fr-ca`), so there the fixture wins: a view in another language than the store's primary one names its own language by its endonym and any other by `Intl.DisplayNames` in the view's language (`anglais`; no fixture shows one, so it is the same idea applied, with the dataset's name when the runtime has none).
  */
 export function languageIn (data: StoreData, view: StoreView, iso: string): { iso_code: string, name: string, endonym_name: string, primary: boolean } {
-  const language = languageData(data, iso)
   const primary = primaryLanguage(data)
+  // the legacy `localization` names the store's one language, and the page's locale is named after it whatever its code (`request.locale.name` was that language's name, `endonym_name` its endonym or name)
+  const legacy = legacyLocalization(data)?.language
+  if (legacy) return { iso_code: iso, name: legacy.name, endonym_name: legacy.endonym_name ?? legacy.name, primary: iso === primary }
+  const language = languageData(data, iso)
   const name = view.language === primary ? language.name : iso === view.language ? language.endonym_name : nameIn(view.language, 'language', iso) ?? language.name
   return { iso_code: iso, name, endonym_name: language.endonym_name, primary: iso === primary }
 }
@@ -133,14 +150,16 @@ export function basePathOf (data: StoreData, view: StoreView): string {
 const prefixOf = (prefixes: ReturnType<typeof localePrefixes>, basePath: string, market: MarketData, language: string) => `${basePath}${prefixes.find(p => p.market === market.handle && p.language === language)?.prefix ?? ''}`
 
 /** A country's name in the view's language: the dataset's (the primary language's) when the view is in that, otherwise `Intl.DisplayNames`' (`Allemagne`, as the parity store prints on its French pages, fixture `probe-page-fr-ca`), or the dataset's when the runtime has none. */
-const countryName = (data: StoreData, view: StoreView, country: { iso_code: string, name: string }) => view.language === primaryLanguage(data) ? country.name : nameIn(view.language, 'region', country.iso_code) ?? country.name
+const countryName = (data: StoreData, view: StoreView, country: { iso_code: string, name: string }) => view.language === primaryLanguage(data) || legacyLocalization(data) ? country.name : nameIn(view.language, 'region', country.iso_code) ?? country.name
 
-/** Sorts by `locale`, as the parity store sorts `available_countries` by the names it shows; plain code-unit order when the runtime does not know the locale. */
+/** Sorts by `locale`, as the parity store sorts `available_countries` by the names it shows; plain code-unit order when the runtime does not know the locale (it would otherwise sort by its own default's rules, whatever the language of the names). */
 function compareIn (locale: string): (a: string, b: string) => number {
+  const plain = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0
   try {
-    return new Intl.Collator(locale).compare
+    const collator = new Intl.Collator(locale)
+    return sameLanguage(collator.resolvedOptions().locale, locale) ? collator.compare : plain
   } catch {
-    return (a, b) => a < b ? -1 : a > b ? 1 : 0
+    return plain
   }
 }
 
@@ -153,11 +172,13 @@ export function buildLocalization (data: StoreData, view: StoreView, country?: s
   const markets = marketsOf(data)
   const market = marketOf(data, view.market)
   const id = (m: MarketData) => markets.indexOf(m) + 1
+  // the country the legacy `localization` names shows the currency the data gives it, which need not be the shop's (`marketsOf` keeps the shop's for prices)
+  const legacyCurrency = legacyLocalization(data)?.country.currency
   const countries = markets.flatMap(m => m.countries.map(c => ({
     iso_code: c.iso_code,
     name: countryName(data, view, c),
     unit_system: 'metric',
-    currency: { iso_code: m.currency.iso_code, symbol: m.currency.symbol, name: m.currency.name ?? m.currency.iso_code },
+    currency: legacyCurrency ?? { iso_code: m.currency.iso_code, symbol: m.currency.symbol, name: m.currency.name ?? m.currency.iso_code },
     market: { id: id(m), handle: m.handle }
   })))
   const here = countries.filter(c => c.market.handle === market.handle)
@@ -179,7 +200,7 @@ export function buildLocalization (data: StoreData, view: StoreView, country?: s
 export interface Alternate { hreflang: string, prefix: string }
 
 /**
- * The `hreflang` alternates `content_for_header` links, https://shopify.dev/docs/storefronts/themes/seo/hreflang says Shopify adds them "automatically through the `content_for_header` object" for a store with markets, "reflect each market's languages and regions" and "stay in sync with each page's canonical URL". The rest is as the parity store's recorded pages print them (its recordings `page-home`, `page-home-fr-ca` and `page-product-en-eu`, which are not among the fork's fixtures): first `x-default`, the primary market's first language's root, then one tag of the language alone for each language of the primary market, then each other market in the store's order: for each of its countries in ISO order, one `<language>-<COUNTRY>` tag for each of its languages. Each carries the prefix (base path and locale prefix) of its market and language. A store of one market and one language has none, the page not saying whether Shopify then prints any; the recordings show no such store.
+ * The `hreflang` alternates `content_for_header` links, https://shopify.dev/docs/storefronts/themes/seo/hreflang says Shopify adds them "automatically through the `content_for_header` object" for a store with markets, "reflect each market's languages and regions" and "stay in sync with each page's canonical URL". The rest is as the parity store's recorded pages print them (its recordings `page-home`, `page-home-fr-ca` and `page-product-en-eu`, which are not among the fork's fixtures): first `x-default`, the primary market's first language's root, then one tag of the language alone for each language of the primary market, then each other market in the store's order: for each of its countries in ISO order, one `<language>-<COUNTRY>` tag for each of its languages. Each carries the prefix (base path and locale prefix) of its market and language. The recordings do not tell two orders of the other markets apart: the order above (markets in the store's order, countries in ISO order inside each) and all the other markets' countries in one ISO order give the same list for the one store recorded (Canada, then Europe, which are also in alphabetical order); the first is what is written here, and a store with its markets in another order, or a primary market of several countries (which prints only its languages here), is not recorded. A store of one market and one language has none, the page not saying whether Shopify then prints any; the recordings show no such store.
  */
 export function alternatesOf (data: StoreData, view: StoreView): Alternate[] {
   const markets = marketsOf(data)

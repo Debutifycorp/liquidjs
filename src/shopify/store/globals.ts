@@ -140,7 +140,7 @@ function orderFor (customer: LiquidObject | null, resource: string | undefined, 
 
 export interface GlobalsInput {
   store: StoreObjects
-  /** The data `store` was built from, which the view (market, language and prefix) is resolved against with the request; the sample store's when omitted, as the runtime does. */
+  /** The data `store` was built from, which the view (market, language and prefix) is resolved against with the request; the sample store's when omitted, as the runtime does. Required when the request names a market or a language: `buildGlobals` throws then, not resolving them against another store's markets. */
   data?: StoreData
   templateName: string
   request: RequestInput
@@ -179,6 +179,8 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   const resource = kind ? resources[template.name] : null
   const host = request.host ?? String(store.shop.domain)
   const origin = request.origin ?? `https://${host}`
+  // the view is resolved against the data, so a request that names a market or a language needs the data the store was built from, not the sample store's
+  if (!input.data && (request.market !== undefined || request.language !== undefined)) throw new Error('buildGlobals: pass the `data` the store was built from when the request names a market or a language')
   const data = input.data ?? sampleStoreData
   const view = resolveView(data, request)
   const path = request.path ?? defaultPath(pageType, template, resource, view.prefix)
@@ -207,7 +209,8 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
       host,
       origin,
       // https://shopify.dev/docs/api/liquid/objects/request: `locale` is the language the page is shown in, a shop_locale (https://shopify.dev/docs/api/liquid/objects/shop_locale), with the view's root as its `root_url` (fixtures `probe-page-home`, `probe-page-en-ca` and `probe-page-fr-ca`)
-      locale: { ...languageIn(data, view, input.locale), root_url: view.prefix || '/' },
+      // the language the request names, otherwise the `locale` the page renders in
+      locale: { ...languageIn(data, view, request.language ?? input.locale), root_url: view.prefix || '/' },
       design_mode: false,
       visual_preview_mode: false
     },
