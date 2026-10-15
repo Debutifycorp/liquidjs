@@ -96,7 +96,7 @@
         },
         "shop": {
           "name": "Debutify Parity",
-          "description": "",
+          "description": "Everyday clothing, made well.",
           "currency": "USD",
           "enabled_currencies": [
             "CAD",
