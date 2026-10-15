@@ -6,6 +6,23 @@ import { buildLinklists, LiquidObject, StoreObjects } from './build'
 import { buildRecommendations, RecommendationsRequest } from './recommendations'
 import { buildSearch } from './search'
 
+export interface PredictiveRequest {
+  q: string
+  types: string[]
+  limit: number
+  limitScope: 'all' | 'each'
+  fields: string[]
+  unavailable: 'show' | 'hide' | 'last'
+}
+
+export interface FormOutcome {
+  type: string
+  posted: boolean
+  /** By field, as `form.errors` reads them. https://shopify.dev/docs/api/liquid/objects/form_errors */
+  errors?: Record<string, string[]>
+  values?: Record<string, string>
+}
+
 /** What the caller says about the request being rendered. Everything is optional; defaults follow from the template and the shop. */
 export interface RequestInput {
   /** Defaults to the resource's URL for the template (`/products/<handle>`), `/` for `index`. */
@@ -24,6 +41,36 @@ export interface RequestInput {
   searchTerms?: string
   /** A Product Recommendations API request (`/recommendations/products?product_id=…&limit=…&intent=…`), which renders `recommendations` for that product (`buildRecommendations`). */
   recommendations?: RecommendationsRequest
+  /** Every query pair of the address, in order. */
+  query?: Array<[string, string]>
+  /** `?variant=`: the variant `product.selected_variant` names. https://shopify.dev/docs/api/liquid/objects/product#product-selected_variant */
+  variant?: number
+  /** `?selling_plan=`. https://shopify.dev/docs/api/liquid/objects/product#product-selected_selling_plan */
+  sellingPlan?: number
+  /** `?view=`: the alternate template suffix. https://shopify.dev/docs/storefronts/themes/architecture/templates/alternate-templates */
+  view?: string
+  /** `?sort_by=`. https://shopify.dev/docs/api/liquid/objects/collection#collection-sort_by */
+  sortBy?: string
+  /** The `filter.*` pairs. https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/storefront-filtering */
+  filters?: Array<[string, string]>
+  /** The tags of `/collections/<handle>/<tag>+<tag>`. */
+  tags?: string[]
+  /** The search page's `type` and `options[...]`. https://shopify.dev/docs/storefronts/themes/navigation-search/search */
+  search?: { types?: string[], prefix?: 'last' | 'none', unavailable?: 'show' | 'hide' | 'last' }
+  /** A Predictive Search API request. https://shopify.dev/docs/api/ajax/reference/predictive-search */
+  predictive?: PredictiveRequest
+  /** The outcome of the form posted before this page, for the `form` tag. */
+  form?: FormOutcome
+  /** The path every URL starts with (`/p/<token>`); empty when omitted. */
+  basePath?: string
+  /** The market and language prefix after the base path (`/fr-ca`); empty for the primary market's default language. */
+  localePrefix?: string
+  market?: string
+  language?: string
+  /** The shopper's country, ISO code. */
+  country?: string
+  /** The collection of `/collections/<handle>/products/<product>`, which Shopify sets as the `collection` global on that product page. */
+  collection?: string
 }
 
 /** Shopify's storefront routes for the primary locale, https://shopify.dev/docs/api/liquid/objects/routes. The paths are the ones that page lists for the default locale; a market's locale prefix is not applied. */

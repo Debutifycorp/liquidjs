@@ -19,10 +19,10 @@ const theme = probeTheme()
 const sectionTheme: ThemeInput = { files: { ...theme.files, 'templates/index.json': '{"sections":{},"order":[]}' } }
 
 /** The HTML a probe template (or, with `section`, a probe section on the `index` page, without its wrapper) renders. */
-export async function renderProbeHtml (name: string, options: { request?: RequestInput, data?: StoreData, section?: boolean, templateName?: string } = {}): Promise<string> {
+export async function renderProbeHtml (name: string, options: { request?: RequestInput, data?: StoreData, section?: boolean, templateName?: string, locale?: string } = {}): Promise<string> {
   const data = options.data ?? storefrontSampleData
-  if (!options.section) return (await renderPage({ theme, templateName: name, data, request: options.request })).html
-  const { html } = await renderSection({ theme: sectionTheme, templateName: options.templateName ?? 'index', section: name, data, request: options.request })
+  if (!options.section) return (await renderPage({ theme, templateName: name, data, request: options.request, locale: options.locale })).html
+  const { html } = await renderSection({ theme: sectionTheme, templateName: options.templateName ?? 'index', section: name, data, request: options.request, locale: options.locale })
   return html.replace(/^<div[^>]*>/, '').replace(/<\/div>\s*$/, '')
 }
 

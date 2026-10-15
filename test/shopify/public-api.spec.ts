@@ -7,7 +7,7 @@ describe('the /shopify entry', () => {
     expect(added).toEqual([
       'ColorDrop', 'ColorSchemeDrop', 'ContentForTag', 'DocTag', 'ExternalVideoUrlDrop', 'FontDrop', 'FormTag', 'ImageDrop', 'ImageUrlDrop', 'JavascriptTag', 'PaginateTag',
       'SHOPIFY_DEFAULT_LIMITS', 'SchemaTag', 'SectionTag', 'SectionsTag', 'SettingsDrop', 'ShopifyLayoutTag', 'ShopifyTablerowTag', 'StyleTag', 'StylesheetTag', 'Translator', 'VideoUrlDrop',
-      'compileTheme', 'createShopifyLiquid', 'defaultServices', 'parseWrapper', 'renderLiquid', 'renderPage', 'renderSection', 'sampleStoreData', 'shopifyFilterRegistry', 'storefrontSampleData'
+      'compileTheme', 'createShopifyLiquid', 'defaultServices', 'localePrefixes', 'parseWrapper', 'renderLiquid', 'renderPage', 'renderSection', 'requestFromUrl', 'sampleStoreData', 'shopifyFilterRegistry', 'storefrontSampleData'
     ])
   })
   it('leaves the root tag classes alone and registers its own under the Shopify names', () => {
