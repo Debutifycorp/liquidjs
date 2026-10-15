@@ -27,13 +27,15 @@ export function localePrefixes (data: StoreData): LocalePrefix[] {
   return out
 }
 
+// https://shopify.dev/docs/api/ajax/reference/predictive-search names the defaults: `resources[limit]` is 1 to 10 and 10 when omitted, `resources[limit_scope]` is `all` and `resources[options][unavailable_products]` is `last`; with no `resources[type]` it searches `query,product,collection,page` (the parity store agrees: no articles, fixture `ajax-suggest-json`, step 2). The page gives no default for `resources[options][fields]` (a product searches all its fields, and pages, articles and collections their titles), so the four product fields here are Debutify's choice, and no fixture pins them.
 const PREDICTIVE_FIELDS = ['title', 'product_type', 'variants.title', 'vendor']
-// a request with no `resources[type]` gets no articles: the parity store answers collections, pages, products and queries (fixture `ajax-suggest-json`, step 2)
 const PREDICTIVE_TYPES = ['collection', 'page', 'product', 'query']
 
+/** A Predictive Search API request, https://shopify.dev/docs/api/ajax/reference/predictive-search. An empty `resources[limit]` reads as the default, as a missing one does. */
 function predictive (params: URLSearchParams): PredictiveRequest {
   const types = params.get('resources[type]')
-  const limit = Number(params.get('resources[limit]') ?? 10)
+  const rawLimit = params.get('resources[limit]')
+  const limit = rawLimit ? Number(rawLimit) : 10
   return {
     q: params.get('q') ?? '',
     types: types ? types.split(',').map(t => t.trim()).filter(Boolean) : PREDICTIVE_TYPES,
@@ -50,33 +52,51 @@ function unavailable (value: string | null): 'show' | 'hide' | 'last' | undefine
 
 const int = (value: string | null) => value !== null && /^\d+$/.test(value) ? Number(value) : undefined
 
-/** A path with its percent escapes decoded; a malformed escape leaves the path as the address wrote it, so it names no page rather than throwing. */
-function decodePath (pathname: string): string {
+/** `?page=` counts from 1: `paginate` clamps anything lower to the first page (https://shopify.dev/docs/api/liquid/tags/paginate). */
+const pageNumber = (value: string | null) => {
+  const n = int(value)
+  return n !== undefined && n >= 1 ? n : undefined
+}
+
+/** One path segment with its percent escapes decoded; a malformed escape leaves the segment as the address wrote it, so it names no page rather than throwing. */
+function decodeSegment (segment: string): string {
   try {
-    return decodeURIComponent(pathname)
+    return decodeURIComponent(segment)
   } catch {
-    return pathname
+    return segment
   }
 }
 
+/** The path (still encoded) after `prefix`, a path of whole segments such as `/p/tok` or `/fr-ca`, compared by decoded segment; undefined when `path` does not start with it. `/p/tok` after `/p/tok` is `/`. */
+function after (path: string, prefix: string): string | undefined {
+  const have = path.split('/')
+  const want = prefix.split('/')
+  if (want.length > have.length || want.some((segment, i) => decodeSegment(segment) !== decodeSegment(have[i]))) return undefined
+  return `/${have.slice(want.length).join('/')}`
+}
+
 /**
- * The page a storefront address shows, as Shopify routes it (https://shopify.dev/docs/api/liquid/objects/routes and the templates of https://shopify.dev/docs/storefronts/themes/architecture/templates): the template, its resource and the request's query, with the base path and locale prefix taken off first. `/search/suggest` reads as the search template with a predictive request; an address that names no page is the `404` template.
+ * The page a storefront address shows, as Shopify routes it (https://shopify.dev/docs/api/liquid/objects/routes and the templates of https://shopify.dev/docs/storefronts/themes/architecture/templates): the template, its resource and the request's query, with the base path and locale prefix taken off first. The path stays percent-encoded in `request.path`; each segment is decoded only to be matched, so `%2F` and `%2B` stay inside their segment. `/search/suggest` reads as the search template with a predictive request; an address that names no page is the `404` template.
  */
 export function requestFromUrl (url: string, data: StoreData, options: { basePath?: string, country?: string, form?: FormOutcome } = {}): PageRequest {
-  const parsed = new URL(url, 'https://storefront.invalid')
-  const basePath = (options.basePath ?? '').replace(/\/$/, '')
-  let path = decodePath(parsed.pathname)
-  if (basePath && (path === basePath || path.startsWith(`${basePath}/`))) path = path.slice(basePath.length) || '/'
+  // an address that opens with `//` is a path, not a host
+  const parsed = new URL(url.replace(/^\/{2,}/, '/'), 'https://storefront.invalid')
+  const trimmedBase = (options.basePath ?? '').replace(/^\/+|\/+$/g, '')
+  const basePath = trimmedBase ? `/${trimmedBase}` : ''
+  // the path stays percent-encoded: a segment is decoded only to be read, so `%2F` and `%2B` stay inside their segment
+  let path = parsed.pathname
+  if (basePath) path = after(path, basePath) ?? path
   const primary = primaryMarket(data)
   let market = primary?.handle ?? 'default'
   let language = primary?.languages[0] ?? shopLanguage(data)
   let localePrefix = ''
   for (const entry of localePrefixes(data)) {
-    if (path === entry.prefix || path.startsWith(`${entry.prefix}/`)) {
+    const rest = after(path, entry.prefix)
+    if (rest !== undefined) {
       market = entry.market
       language = entry.language
       localePrefix = entry.prefix
-      path = path.slice(entry.prefix.length) || '/'
+      path = rest
       break
     }
   }
@@ -91,7 +111,7 @@ export function requestFromUrl (url: string, data: StoreData, options: { basePat
     market,
     language,
     country: countryFor(data, market, options.country),
-    page: int(params.get('page')),
+    page: pageNumber(params.get('page')),
     view: params.get('view') ?? undefined,
     sortBy: params.get('sort_by') ?? undefined,
     variant: int(params.get('variant')),
@@ -99,21 +119,26 @@ export function requestFromUrl (url: string, data: StoreData, options: { basePat
     filters: query.filter(([name]) => name.startsWith('filter.')),
     ...(options.form ? { form: options.form } : postedForm(params))
   }
-  const parts = path.split('/').filter(Boolean)
+  const rawParts = path.split('/').filter(Boolean)
+  const parts = rawParts.map(decodeSegment)
   const page = (templateName: string, extra: Partial<RequestInput> = {}): PageRequest => ({ templateName, request: { ...request, ...extra }, locale: language })
   if (!parts.length) return page('index')
   const [kind, a, b, c] = parts
+  // the tags of a segment: `+` joins them (https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/tag-filtering for collections, https://shopify.dev/docs/storefronts/themes/architecture/templates/blog for blogs), so it splits the encoded segment, and a `%2B` stays inside its tag
+  const tagsOf = (segment: string) => segment.split('+').map(t => decodeSegment(t).trim()).filter(Boolean)
   if (kind === 'products' && a && !b) return page('product', { resource: a })
   // `/variants/<id>` is no page: Shopify redirects it to `/products/<handle>?variant=<id>` and drops the rest of the query (fixture `flow-variant-route`), so the storefront router answers it (part S, Task 1) and it falls through to the 404 template here
   if (kind === 'collections' && !a) return page('list-collections')
-  if (kind === 'collections' && b === 'products' && c) return page('product', { resource: c, collection: a })
+  // `/collections/<collection>/products/<product>`, https://shopify.dev/docs/api/liquid/objects/collection: a longer address is no page
+  if (kind === 'collections' && parts.length === 4 && b === 'products') return page('product', { resource: c, collection: a })
   if (kind === 'collections' && (a === 'vendors' || a === 'types') && !b) return page('collection', { resource: a, searchTerms: params.get('q') ?? '' })
-  if (kind === 'collections' && a) return page('collection', { resource: a, ...(b ? { tags: b.split('+').map(t => t.trim()).filter(Boolean) } : {}) })
+  if (kind === 'collections' && a && parts.length <= 3) return page('collection', { resource: a, ...(b ? { tags: tagsOf(rawParts[2]) } : {}) })
   if (kind === 'pages' && a && !b) return page('page', { resource: a })
-  if (kind === 'blogs' && a && b === 'tagged' && c) return page('blog', { resource: a, tags: [c] })
+  // `/blogs/<blog>/tagged/<tag>[+<tag>]`, https://shopify.dev/docs/storefronts/themes/architecture/templates/blog (filter articles by tag)
+  if (kind === 'blogs' && parts.length === 4 && b === 'tagged') return page('blog', { resource: a, tags: tagsOf(rawParts[3]) })
   if (kind === 'blogs' && a && b && !c) return page('article', { resource: `${a}/${b}` })
   if (kind === 'blogs' && a && !b) return page('blog', { resource: a })
-  if (kind === 'search' && a === 'suggest') return page('search', { predictive: predictive(params) })
+  if (kind === 'search' && parts.length === 2 && a === 'suggest') return page('search', { predictive: predictive(params) })
   // https://shopify.dev/docs/api/ajax/reference/product-recommendations: answered with a section (`section_id`), so the page template does not matter; `index` gives the section the shop's globals
   if (kind === 'recommendations' && a === 'products' && !b) return page('index', { recommendations: { productId: params.get('product_id') ?? '', limit: params.get('limit'), intent: params.get('intent') } })
   if (kind === 'search' && !a) {

@@ -41,7 +41,7 @@ export interface RequestInput {
   searchTerms?: string
   /** A Product Recommendations API request (`/recommendations/products?product_id=…&limit=…&intent=…`), which renders `recommendations` for that product (`buildRecommendations`). */
   recommendations?: RecommendationsRequest
-  /** Every query pair of the address, in order. */
+  /** Every query pair of the address, in order. Debutify's: the request object (https://shopify.dev/docs/api/liquid/objects/request) has no query, so this only keeps what the address said. */
   query?: Array<[string, string]>
   /** `?variant=`: the variant `product.selected_variant` names. https://shopify.dev/docs/api/liquid/objects/product#product-selected_variant */
   variant?: number
@@ -53,7 +53,7 @@ export interface RequestInput {
   sortBy?: string
   /** The `filter.*` pairs. https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/storefront-filtering */
   filters?: Array<[string, string]>
-  /** The tags of `/collections/<handle>/<tag>+<tag>`. */
+  /** The tags of `/collections/<handle>/<tag>+<tag>` (https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/tag-filtering) or `/blogs/<handle>/tagged/<tag>+<tag>` (https://shopify.dev/docs/storefronts/themes/architecture/templates/blog). */
   tags?: string[]
   /** The search page's `type` and `options[...]`. https://shopify.dev/docs/storefronts/themes/navigation-search/search */
   search?: { types?: string[], prefix?: 'last' | 'none', unavailable?: 'show' | 'hide' | 'last' }
@@ -61,10 +61,11 @@ export interface RequestInput {
   predictive?: PredictiveRequest
   /** The outcome of the form posted before this page, for the `form` tag. */
   form?: FormOutcome
-  /** The path every URL starts with (`/p/<token>`); empty when omitted. */
+  /** The path every URL starts with (`/p/<token>`); empty when omitted. Debutify's: a store served under a path of its own, which shopify.dev does not describe. */
   basePath?: string
   /** The market and language prefix after the base path (`/fr-ca`); empty for the primary market's default language. */
   localePrefix?: string
+  /** The handle of the market the address belongs to, and its language: https://shopify.dev/docs/storefronts/themes/markets/multiple-currencies-languages */
   market?: string
   language?: string
   /** The shopper's country, ISO code. */

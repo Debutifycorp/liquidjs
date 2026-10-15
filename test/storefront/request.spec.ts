@@ -53,6 +53,18 @@ describe('requestFromUrl', () => {
     // no `resources[type]`: no articles (fixture `ajax-suggest-json`, step 2)
     expect(requestFromUrl('/search/suggest?q=zzz', data).request.predictive?.types).toEqual(['collection', 'page', 'product', 'query'])
   })
+  it('clamps the predictive limit to 1 to 10, reads an empty one as 10, and reads scope, fields and unavailable products', () => {
+    const read = (query: string) => requestFromUrl(`/search/suggest?q=ca&${query}`, data).request.predictive
+    expect(read('resources%5Blimit%5D=99')?.limit).toBe(10)
+    expect(read('resources%5Blimit%5D=0')?.limit).toBe(1)
+    expect(read('resources%5Blimit%5D=')?.limit).toBe(10)
+    expect(read('resources%5Blimit%5D=x')?.limit).toBe(10)
+    expect(read('resources%5Blimit_scope%5D=each')?.limitScope).toBe('each')
+    expect(read('resources%5Blimit_scope%5D=other')?.limitScope).toBe('all')
+    expect(read('resources%5Boptions%5D%5Bfields%5D=title,vendor')?.fields).toEqual(['title', 'vendor'])
+    expect(read('resources%5Boptions%5D%5Bunavailable_products%5D=hide')?.unavailable).toBe('hide')
+    expect(read('resources%5Boptions%5D%5Bunavailable_products%5D=other')?.unavailable).toBe('last')
+  })
   it('strips the base path and the locale prefix, and picks the market and language', () => {
     expect(localePrefixes(data).map(p => p.prefix)).toEqual(['/en-ca', '/fr-ca', '/en-eu', '/fr-eu'])
     const page = requestFromUrl('/p/tok/fr-ca/products/hoodie', data, { basePath: '/p/tok' })
@@ -68,13 +80,68 @@ describe('requestFromUrl', () => {
     expect(requestFromUrl('/', data, { country: 'US' }).request.country).toBe('US')
     expect(requestFromUrl('/en-ca', data, { country: 'US' }).request.country).toBe('CA')
   })
-  it('reads every recorded probe address without throwing, to a known template', () => {
+  it('reads the rest of the search page, the vendor and type lists, blog tags and the recommendations request', () => {
+    expect(requestFromUrl('/search?q=shi&options%5Bprefix%5D=last', data).request.search).toEqual({ types: undefined, prefix: 'last', unavailable: undefined })
+    expect(requestFromUrl('/collections/vendors?q=Mock.shop', data).request.searchTerms).toBe('Mock.shop')
+    expect(requestFromUrl('/blogs/news/tagged/collections', data).request.tags).toEqual(['collections'])
+    expect(requestFromUrl('/blogs/news/tagged/news+breaking', data).request.tags).toEqual(['news', 'breaking'])
+    expect(requestFromUrl('/recommendations/products?product_id=10489561382934&limit=4&intent=related', data).request.recommendations).toEqual({ productId: '10489561382934', limit: '4', intent: 'related' })
+    expect(requestFromUrl('/collections/all', data).request.filters).toEqual([])
+    expect(requestFromUrl('/collections/all', data).request.tags).toBeUndefined()
+  })
+  it('reads only an address of the exact length as a page', () => {
+    for (const url of ['/collections/a/products/b/extra', '/blogs/news/tagged/x/extra', '/blogs/news/making-liquid/extra', '/collections/all/a/b', '/products/x/extra', '/pages/about/extra', '/search/suggest/extra']) {
+      expect([url, requestFromUrl(url, data).templateName]).toEqual([url, '404'])
+    }
+  })
+  it('counts pages from 1', () => {
+    expect(requestFromUrl('/collections/all?page=0', data).request.page).toBeUndefined()
+    expect(requestFromUrl('/collections/all?page=-1', data).request.page).toBeUndefined()
+    expect(requestFromUrl('/collections/all?page=1', data).request.page).toBe(1)
+  })
+  it('splits the path before decoding it, and keeps the encoded path for links', () => {
+    const encoded = requestFromUrl('/products/a%2Fb', data)
+    expect(encoded).toMatchObject({ templateName: 'product', request: { resource: 'a/b', path: '/products/a%2Fb' } })
+    expect(requestFromUrl('/collections/all/men%2Bshoes', data).request.tags).toEqual(['men+shoes'])
+    expect(requestFromUrl('/collections/all/men+shoes', data).request.tags).toEqual(['men', 'shoes'])
+    expect(requestFromUrl('/pages/a%20b', data)).toMatchObject({ templateName: 'page', request: { resource: 'a b', path: '/pages/a%20b' } })
+  })
+  it('reads an address that opens with // as a path, not a host', () => {
+    expect(requestFromUrl('//products/hoodie', data)).toMatchObject({ templateName: 'product', request: { resource: 'hoodie', path: '/products/hoodie' } })
+  })
+  it('takes a base path without its leading slash as the one with it', () => {
+    const page = requestFromUrl('/p/tok/products/hoodie', data, { basePath: 'p/tok/' })
+    expect(page).toMatchObject({ templateName: 'product', request: { resource: 'hoodie', basePath: '/p/tok', path: '/p/tok/products/hoodie' } })
+    expect(requestFromUrl('/p/tok', data, { basePath: '/p/tok' })).toMatchObject({ templateName: 'index', request: { basePath: '/p/tok', path: '/p/tok' } })
+  })
+  it('lets the form the caller names win over the query', () => {
+    const form = { type: 'contact', posted: false, errors: { email: ['is invalid'] } }
+    expect(requestFromUrl('/pages/about?contact_posted=true', data, { form }).request.form).toEqual(form)
+  })
+  it('gives the market\'s first country when the visitor chose none', () => {
+    expect(requestFromUrl('/', data).request.country).toBe('US')
+    expect(requestFromUrl('/en-eu', data).request.country).toBe('FR')
+  })
+  it('reads every recorded probe address without throwing, to the page its recorded body names', () => {
     const templates = new Set(['index', 'product', 'collection', 'list-collections', 'page', 'blog', 'article', 'search', 'cart', 'password', '404'])
+    // a probe body names the page it rendered: `request.page_type` (the page probe) or `template` (a name, or `{ name, suffix }`)
+    const named = (body: any): string | undefined => {
+      const name = body?.request?.page_type ?? (typeof body?.template === 'string' ? body.template : body?.template?.name)
+      return typeof name === 'string' ? name.split('.')[0] : undefined
+    }
+    let checked = 0
     for (const file of readdirSync(join(__dirname, 'fixtures'))) {
       for (const step of loadFixture(file.replace(/\.json$/, '')).steps) {
         if (step.method !== 'GET' || /\.js(on)?(\?|$)/.test(step.url)) continue
-        expect(templates).toContain(requestFromUrl(step.url, data).templateName)
+        const { templateName } = requestFromUrl(step.url, data)
+        expect(templates).toContain(templateName)
+        const recorded = named(step.body)
+        if (recorded) {
+          expect([step.url, templateName]).toEqual([step.url, recorded])
+          checked++
+        }
       }
     }
+    expect(checked).toBeGreaterThan(40)
   })
 })
