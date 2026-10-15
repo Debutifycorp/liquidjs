@@ -1,0 +1,166 @@
+{
+  "scenario": "probe-page-en-eu",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/en-eu/pages/about?view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "localization": {
+          "country": {
+            "iso_code": "DE",
+            "name": "Germany",
+            "currency": "EUR",
+            "symbol": "€"
+          },
+          "language": {
+            "iso_code": "en",
+            "name": "English",
+            "endonym_name": "English",
+            "root_url": "/en-eu",
+            "primary": true
+          },
+          "market": {
+            "handle": "eu"
+          },
+          "available_countries": [
+            {
+              "iso_code": "CA",
+              "name": "Canada",
+              "currency": "CAD"
+            },
+            {
+              "iso_code": "FR",
+              "name": "France",
+              "currency": "EUR"
+            },
+            {
+              "iso_code": "DE",
+              "name": "Germany",
+              "currency": "EUR"
+            },
+            {
+              "iso_code": "IT",
+              "name": "Italy",
+              "currency": "EUR"
+            },
+            {
+              "iso_code": "NL",
+              "name": "Netherlands",
+              "currency": "EUR"
+            },
+            {
+              "iso_code": "ES",
+              "name": "Spain",
+              "currency": "EUR"
+            },
+            {
+              "iso_code": "US",
+              "name": "United States",
+              "currency": "USD"
+            }
+          ],
+          "available_languages": [
+            {
+              "iso_code": "en",
+              "root_url": "/en-eu"
+            },
+            {
+              "iso_code": "fr",
+              "root_url": "/fr-eu"
+            }
+          ]
+        },
+        "routes": {
+          "root_url": "/en-eu",
+          "cart_url": "/en-eu/cart",
+          "cart_add_url": "/en-eu/cart/add",
+          "cart_change_url": "/en-eu/cart/change",
+          "cart_update_url": "/en-eu/cart/update",
+          "cart_clear_url": "/en-eu/cart/clear",
+          "collections_url": "/en-eu/collections",
+          "all_products_collection_url": "/en-eu/collections/all",
+          "search_url": "/en-eu/search",
+          "predictive_search_url": "/en-eu/search/suggest",
+          "product_recommendations_url": "/en-eu/recommendations/products",
+          "account_url": "/en-eu/account",
+          "account_login_url": "https://medzreferralai2.myshopify.com/customer_authentication/redirect?locale=en&region_country=DE"
+        },
+        "request": {
+          "path": "/en-eu/pages/about",
+          "host": "medzreferralai2.myshopify.com",
+          "page_type": "page",
+          "locale": "en",
+          "locale_root_url": "/en-eu"
+        },
+        "shop": {
+          "name": "Debutify Parity",
+          "description": "Everyday clothing, made well.",
+          "currency": "USD",
+          "enabled_currencies": [
+            "CAD",
+            "EUR",
+            "USD"
+          ],
+          "published_locales": [
+            {
+              "iso_code": "en",
+              "root_url": "/en-eu"
+            },
+            {
+              "iso_code": "fr",
+              "root_url": "/fr-eu"
+            }
+          ]
+        },
+        "cart_currency": "EUR",
+        "money": "€19,99",
+        "money_with_currency": "€19,99 EUR",
+        "product": {
+          "title": "Hoodie",
+          "url": "/en-eu/products/hoodie",
+          "price": 8295
+        },
+        "collection": {
+          "title": "Tops",
+          "url": "/en-eu/collections/tops"
+        },
+        "page": {
+          "title": "About",
+          "content": "<p>We make everyday clothing.</p>",
+          "template_suffix": null
+        },
+        "menu": [
+          {
+            "title": "Men",
+            "url": "/en-eu/collections/men"
+          },
+          {
+            "title": "Women",
+            "url": "/en-eu/collections/women"
+          },
+          {
+            "title": "Unisex",
+            "url": "/en-eu/collections/unisex"
+          },
+          {
+            "title": "Collections",
+            "url": "/en-eu/collections"
+          },
+          {
+            "title": "News",
+            "url": "/en-eu/blogs/news"
+          }
+        ],
+        "canonical_url": "https://medzreferralai2.myshopify.com/en-eu/pages/about",
+        "template": {
+          "name": "page",
+          "suffix": "probe"
+        },
+        "localization_form": "<form method=\"post\" action=\"/en-eu/localization\" id=\"localization_form\" accept-charset=\"UTF-8\" class=\"shopify-localization-form\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"form_type\" value=\"localization\" /><input type=\"hidden\" name=\"utf8\" value=\"✓\" /><input type=\"hidden\" name=\"_method\" value=\"put\" /><input type=\"hidden\" name=\"return_to\" value=\"/en-eu/pages/about?view=probe\" /></form>",
+        "product_form": ""
+      }
+    }
+  ]
+}
