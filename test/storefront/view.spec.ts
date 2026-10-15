@@ -1,10 +1,11 @@
+import { runInNewContext } from 'vm'
 import { renderPage, storefrontSampleData as data, requestFromUrl, resolveView } from '../../src/shopify'
 import { HandleMap } from '../../src/shopify/objects/handle-map'
 import { buildLinklists, buildStore } from '../../src/shopify/store/build'
 import { ReportCollector } from '../../src/shopify/report'
 import { buildGlobals, buildRoutes, ROUTES } from '../../src/shopify/store/globals'
 import { buildSearch } from '../../src/shopify/store/search'
-import { withPrefix } from '../../src/shopify/store/view'
+import { withoutPrefix, withPrefix } from '../../src/shopify/store/view'
 import { loadFixture } from './fixtures'
 import { probeMatches } from './expect-probe'
 import { probeTheme } from './probe'
@@ -62,6 +63,33 @@ describe('views and the URL prefix', () => {
     expect(withPrefix('/fr-ca', '//cdn.example.com/a')).toBe('//cdn.example.com/a')
     expect(withPrefix('/fr-ca', '#top')).toBe('#top')
     expect(withPrefix('/fr-ca', 'mailto:a@b.c')).toBe('mailto:a@b.c')
+  })
+  it('puts the root with a query or fragment on the bare prefix, and puts a prefix on once', () => {
+    expect(withPrefix('/fr-ca', '/?x=1')).toBe('/fr-ca?x=1')
+    expect(withPrefix('/fr-ca', '/#top')).toBe('/fr-ca#top')
+    expect(withPrefix('', '/?x=1')).toBe('/?x=1')
+    for (const path of ['/fr-ca', '/fr-ca/products/hoodie', '/fr-ca?x=1', '/fr-ca#top']) expect(withPrefix('/fr-ca', path)).toBe(path)
+    expect(withPrefix('/p/tok/fr-ca', withPrefix('/p/tok/fr-ca', '/cart'))).toBe('/p/tok/fr-ca/cart')
+    // a segment that only starts like the prefix is not under it
+    expect(withPrefix('/fr', '/france/cart')).toBe('/fr/france/cart')
+    expect(withoutPrefix('/fr-ca', '/fr-ca/products/hoodie?variant=1')).toBe('/products/hoodie?variant=1')
+    expect(withoutPrefix('/fr-ca', '/fr-ca')).toBe('/')
+    expect(withoutPrefix('/fr-ca', '/fr-ca?x=1')).toBe('/?x=1')
+    expect(withoutPrefix('/fr', '/france/cart')).toBe('/france/cart')
+    expect(withoutPrefix('', '/cart')).toBe('/cart')
+  })
+  it('normalises the base path and the locale prefix to whole segments', () => {
+    const prefix = (basePath?: string, localePrefix?: string) => resolveView(data, { basePath, localePrefix }).prefix
+    expect(prefix('//')).toBe('')
+    expect(prefix('/')).toBe('')
+    expect(prefix('p/tok')).toBe('/p/tok')
+    expect(prefix('/p/tok/')).toBe('/p/tok')
+    expect(prefix('/p//tok')).toBe('/p/tok')
+    expect(prefix('/p/tok', '/fr-ca/')).toBe('/p/tok/fr-ca')
+    expect(prefix('', 'fr-ca')).toBe('/fr-ca')
+    expect(prefix(undefined, '//')).toBe('')
+    expect(withPrefix(prefix('//'), '/cart')).toBe('/cart')
+    expect(withPrefix(prefix('/p/tok/', '/fr-ca/'), '/cart')).toBe('/p/tok/fr-ca/cart')
   })
   it('writes the routes under the prefix, with the bare prefix as the root', () => {
     expect(buildRoutes('/p/tok/fr-ca').cart_add_url).toBe('/p/tok/fr-ca/cart/add')
@@ -124,6 +152,54 @@ describe('views and the URL prefix', () => {
     expect(globals('cart').request.prefix).toBe('/fr-ca')
     expect(globals('cart', {} as typeof request).request.prefix).toBe('')
   })
+  it('puts the URLs of a customer\'s addresses and orders under the prefix', () => {
+    const variant = data.products![0].variants[0]
+    const customer = {
+      id: 1,
+      email: 'a@example.com',
+      addresses: [{ id: 7, address1: '1 Main St', city: 'Montreal', country: 'Canada', country_code: 'CA', zip: 'H2X 1Y4' }],
+      orders: [{ id: 99, order_number: 1001, created_at: '2026-01-01T00:00:00Z', line_items: [{ product_handle: data.products![0].handle, variant_id: variant.id, quantity: 1 }], billing_address: { id: 8, address1: '1 Main St', city: 'Montreal', country: 'Canada', country_code: 'CA', zip: 'H2X 1Y4' } }]
+    }
+    const withCustomer = { ...data, customer }
+    const urls = (prefix: string) => {
+      const built = buildStore(withCustomer, { market: 'us', language: 'en', prefix }).customer as Record<string, any>
+      const order = built.orders[0]
+      return [built.addresses[0].url, built.default_address.url, order.customer_url, order.line_items[0].url, order.billing_address.url]
+    }
+    expect(urls('')).toEqual(['/account/addresses/7', '/account/addresses/7', '/account/orders/99', `/products/${data.products![0].handle}?variant=${variant.id}`, null])
+    expect(urls('/p/tok/fr-ca')).toEqual(['/p/tok/fr-ca/account/addresses/7', '/p/tok/fr-ca/account/addresses/7', '/p/tok/fr-ca/account/orders/99', `/p/tok/fr-ca/products/${data.products![0].handle}?variant=${variant.id}`, null])
+  })
+  it('puts paginate links under the prefix', async () => {
+    const theme = headerTheme('{% paginate collections.men.products by 2 %}{{ paginate.next.url }}|{{ paginate.pages }}|{{ paginate | default_pagination }}{% endpaginate %}')
+    const page = requestFromUrl('/p/tok/fr-ca/collections/men', data, { basePath: '/p/tok' })
+    const { html } = await renderPage({ theme, templateName: 'index', data, request: page.request, locale: page.locale })
+    expect(html.startsWith('/p/tok/fr-ca/collections/men?page=2|')).toBe(true)
+    expect(html).toContain('href="/p/tok/fr-ca/collections/men?page=2"')
+    expect(html).not.toMatch(/href="\/(?!p\/tok\/fr-ca)/)
+    const plain = requestFromUrl('/collections/men', data)
+    expect((await renderPage({ theme, templateName: 'index', data, request: plain.request, locale: plain.locale })).html.startsWith('/collections/men?page=2|')).toBe(true)
+  })
+  it('sets the blog of an article page under a base path and a locale prefix', async () => {
+    const theme = { files: { ...headerTheme('{{ blog.handle }}|{{ article.handle }}|{{ blog.url }}|{{ article.url }}').files, 'templates/article.json': '{"sections":{},"order":[]}' } }
+    const render = async (url: string, basePath?: string) => {
+      const page = requestFromUrl(url, data, { basePath })
+      expect(page.templateName).toBe('article')
+      return (await renderPage({ theme, templateName: page.templateName, data, request: page.request, locale: page.locale })).html
+    }
+    expect(await render('/blogs/news/making-liquid')).toBe('news|making-liquid|/blogs/news|/blogs/news/making-liquid')
+    expect(await render('/fr-ca/blogs/news/making-liquid')).toBe('news|making-liquid|/fr-ca/blogs/news|/fr-ca/blogs/news/making-liquid')
+    expect(await render('/p/tok/fr-ca/blogs/news/making-liquid', '/p/tok')).toBe('news|making-liquid|/p/tok/fr-ca/blogs/news|/p/tok/fr-ca/blogs/news/making-liquid')
+  })
+  it('writes a product URL within a collection with the prefix once', async () => {
+    const theme = headerTheme('{{ all_products.hoodie.url | within: collections.men }}|{{ \'/products/hoodie\' | within: collections.men }}')
+    const render = async (url: string, basePath?: string) => {
+      const page = requestFromUrl(url, data, { basePath })
+      return (await renderPage({ theme, templateName: 'index', data, request: page.request, locale: page.locale })).html
+    }
+    expect(await render('/')).toBe('/collections/men/products/hoodie|/collections/men/products/hoodie')
+    expect(await render('/fr-ca')).toBe('/fr-ca/collections/men/products/hoodie|/fr-ca/collections/men/products/hoodie')
+    expect(await render('/p/tok/fr-ca', '/p/tok')).toBe('/p/tok/fr-ca/collections/men/products/hoodie|/p/tok/fr-ca/collections/men/products/hoodie')
+  })
   it('keeps the engine\'s own login route under the prefix', () => {
     expect(buildRoutes('/fr-ca').account_login_url).toBe('/fr-ca/account/login')
   })
@@ -158,9 +234,22 @@ describe('views and the URL prefix', () => {
     const page = requestFromUrl('/p/tok/fr-ca', data, { basePath: '/p/tok' })
     const { html } = await renderPage({ theme, templateName: 'index', data, request: page.request, locale: page.locale })
     expect(html).toContain('Shopify.routes.root = "/p/tok/fr-ca/"')
-    expect(html).toContain('Shopify.analytics = Shopify.analytics || {')
-    expect(html).toMatch(/publish: function \(name, data\)/)
+    expect(html).toContain('Shopify.analytics = Shopify.analytics || ')
+    expect(html).toMatch(/publish: function \(name, data, customData\)/)
     expect(html).toMatch(/visitor: function \(data, options\)/)
+  })
+  it('defines Shopify.analytics as closures that work passed around, as the parity store\'s publish does', async () => {
+    const theme = headerTheme('<head>{{ content_for_header }}</head>{{ content_for_layout }}')
+    const { html } = await renderPage({ theme, templateName: 'index', data })
+    const sandbox: Record<string, any> = {}
+    runInNewContext(/<script>([\s\S]*?)<\/script>/.exec(html)![1], sandbox)
+    // detached from `Shopify.analytics`, as a theme or app passes them to a timer or a callback
+    const answers = runInNewContext('var publish = Shopify.analytics.publish, visitor = Shopify.analytics.visitor; JSON.stringify([publish("my_app:opened", { id: 1 }, { source: "test" }), publish("bare"), visitor({ email: "a@example.com" }, { appId: "1" }), visitor()])', sandbox)
+    expect(JSON.parse(answers)).toEqual([true, true, true, false])
+    expect(JSON.parse(runInNewContext('JSON.stringify(Shopify.analytics.events)', sandbox))).toEqual([{ name: 'my_app:opened', data: { id: 1 }, customData: { source: 'test' } }, { name: 'bare' }])
+    // a second header script leaves the first one's API and events as they are
+    runInNewContext(/<script>([\s\S]*?)<\/script>/.exec(html)![1], sandbox)
+    expect(JSON.parse(runInNewContext('JSON.stringify(Shopify.analytics.events.length)', sandbox))).toBe(2)
   })
   it('writes Shopify.routes.root as the slash of an unprefixed store, as the recorded home page of the parity store does (recording `page-home`)', async () => {
     const theme = headerTheme('<head>{{ content_for_header }}</head>{{ content_for_layout }}')

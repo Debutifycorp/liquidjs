@@ -7,6 +7,7 @@ import { SafeHtmlDrop } from '../objects/safe-html'
 import { namedForDisplay, plainValue, splitArgs } from '../util/args'
 import { hasOwn } from '../util/own'
 import { shopifyState } from '../state'
+import { withoutPrefix } from '../store/view'
 import type { ShopifyFilterSet } from './types'
 
 const ESCAPE_ONCE = /["><']|&(?!([a-zA-Z]+|(#\d+));)/g
@@ -46,10 +47,11 @@ function linkTo (text: unknown, url: unknown, ...args: unknown[]) {
 }
 
 /** A product URL under a collection's URL, https://shopify.dev/docs/api/liquid/filters/within (`/products/draught-of-immortality` within a collection prints `/collections/sale-potions/products/draught-of-immortality`). The page does not say what a collection without a URL does; the URL is returned unchanged here. */
-function within (url: unknown, collection: unknown) {
+function within (this: FilterImpl, url: unknown, collection: unknown) {
   const target = toValue(collection) as Record<string, unknown> | undefined
   const base = target && typeof target === 'object' ? stringify(target.url) : ''
-  return base ? `${base}${stringify(url)}` : url
+  // the collection's URL and the input (a product's URL) both sit under the view's prefix, which Shopify writes once: `/fr-ca/collections/men/products/hoodie` (the prefix is not on shopify.dev's example, which has none)
+  return base ? `${base}${withoutPrefix(shopifyState(this.context).request.prefix, stringify(url))}` : url
 }
 
 /**

@@ -171,7 +171,8 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     const found = request.resource ? HandleMap.get(map, request.resource) : HandleMap.values(map)[0]
     if (request.resource && !found) report.missing('resource', `${template.name} ${request.resource}`)
     resources[template.name] = found ?? null
-    if (template.name === 'article' && found) resources.blog = HandleMap.get(store.blogs, String(found.url).split('/')[2]) ?? null
+    // the article's blog is the one that lists it (the article objects are the same in `store.articles` and in its blog's `articles`); its URL is no help, as a base path or locale prefix adds segments before the blog's
+    if (template.name === 'article' && found) resources.blog = HandleMap.values(store.blogs).find(blog => (blog.articles as LiquidObject[]).includes(found)) ?? null
   }
   const resource = kind ? resources[template.name] : null
   const host = request.host ?? String(store.shop.domain)

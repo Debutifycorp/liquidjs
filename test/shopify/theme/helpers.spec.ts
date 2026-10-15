@@ -70,7 +70,7 @@ describe('shopify/theme/header', () => {
   it('writes no style or deferred script when the page has none', () => {
     const header = contentForHeader(createState(), { shop: { permanent_domain: 'a.example', currency: 'USD' }, localization: {}, request: {} })
     expect(header).toBe('<script>var Shopify = Shopify || {};Shopify.shop = "a.example";Shopify.locale = null;Shopify.currency = {"active":"USD","rate":"1.0"};Shopify.country = null;Shopify.designMode = false;Shopify.routes = Shopify.routes || {};Shopify.routes.root = "/";' +
-      'Shopify.analytics = Shopify.analytics || { events: [], publish: function (name, data) { this.events.push({ name: String(name), data: data }); return true; }, visitor: function (data, options) { return !!data; } };</script>')
+      'Shopify.analytics = Shopify.analytics || (function () { var events = []; return { events: events, publish: function (name, data, customData) { events.push({ name: String(name), data: data, customData: customData }); return true; }, visitor: function (data, options) { return !!data; } }; })();</script>')
   })
 })
 

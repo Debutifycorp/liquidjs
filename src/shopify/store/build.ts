@@ -4,7 +4,7 @@ import { DEFAULT_MONEY_FORMAT, DEFAULT_MONEY_WITH_CURRENCY_FORMAT } from '../sta
 import type { ImageData } from '../types'
 import { escapeHtml } from '../util/html'
 import { buildFilters } from './filters'
-import { resolveView, viewKey, withPrefix } from './view'
+import { resolveView, viewKey, withoutPrefix, withPrefix } from './view'
 import type { StoreView } from './view'
 import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, ProductData, StoreData, TransactionData, VariantData } from './types'
 
@@ -277,20 +277,12 @@ function linkType (url: string): string {
   return 'http_link'
 }
 
-/** `url` without `prefix` (a path of whole segments, the view's base path and locale prefix), so a link and the request path compare as the store's own paths whatever the view; a URL that does not start with `prefix` stays as it is. */
-function unprefixed (url: string, prefix: string): string {
-  if (!prefix || !url.startsWith(prefix)) return url
-  const rest = url.slice(prefix.length)
-  if (rest === '' || rest.startsWith('/')) return rest || '/'
-  return /^[?#]/.test(rest) ? `/${rest}` : url
-}
-
 /**
  * One menu link, https://shopify.dev/docs/api/liquid/objects/link. Its `url` sits under `prefix` (`withPrefix`), as a link of the parity store's menu does under a locale prefix (fixture `probe-page-fr-ca`); `type` and the comparisons below read the store's own path, without the prefix, and so does the request `path`, which carries it. `current` is true when the link's path is the request path and `active` when it is the path or a parent of it ("matches, or contains, the link's url"); both ignore query strings, `current` also reads a product in a collection as the product, and `child_active` and `child_current` look at the children. `levels` counts the nested levels below the link. `object` is always nil: the page says it is the article, blog, collection, metaobject, page, policy or product the link points at, which this layer does not resolve from a URL. `handle` and `data_sharing_opt_out_icon` are not built.
  */
 function buildLink (data: LinkData, path: string, prefix: string): LiquidObject {
   const links = (data.links ?? []).map(child => buildLink(child, path, prefix))
-  const here = unprefixed(path, prefix)
+  const here = withoutPrefix(prefix, path)
   const current = linkPath(data.url) === linkPath(here)
   const target = stripQuery(data.url)
   const active = current || (target !== '/' && stripQuery(here).startsWith(`${target}/`))
