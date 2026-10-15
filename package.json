@@ -1,6 +1,6 @@
 {
   "name": "@debutify/liquidjs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "sideEffects": false,
   "description": "Debutify's fork of LiquidJS with Shopify Liquid semantics, for rendering Shopify themes outside Shopify.",
   "upstreamLiquidjs": "10.30.0",

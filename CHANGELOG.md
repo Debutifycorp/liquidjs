@@ -1,3 +1,30 @@
+## [1.0.1](https://github.com/Debutifycorp/liquidjs/compare/debutify-v1.0.0...debutify-v1.0.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* compare a value with empty or blank through its own empty? ([8dad0c5](https://github.com/Debutifycorp/liquidjs/commit/8dad0c56509f4c5f57844c3b467d774bfb6c9881))
+* **shopify:** add the section-id input to a product form inside a section, as Shopify prints it ([47ae6de](https://github.com/Debutifycorp/liquidjs/commit/47ae6de2a7e4726e3f1d99fb8014c29cd28fd80f))
+* **shopify:** build collection storefront filters from store data ([3c39dbb](https://github.com/Debutifycorp/liquidjs/commit/3c39dbba7b867e56b3cdafbf884be052647c9f94))
+* **shopify:** build the customer's addresses and orders, and give the order template its order ([0c2e175](https://github.com/Debutifycorp/liquidjs/commit/0c2e17530fc33ae3b27c78a7cf9326ef1492abff))
+* **shopify:** draw placeholder_svg_tag as line art on no background, in the markup shopify.dev shows ([6efeceb](https://github.com/Debutifycorp/liquidjs/commit/6efeceb9f398d7f142957fd38d9779e6655ca7e7))
+* **shopify:** escape leaves image_tag output as it is, as Shopify does ([20b1b64](https://github.com/Debutifycorp/liquidjs/commit/20b1b64e7235a533ecf35378a7081659defa9a84))
+* **shopify:** give a theme block its own blocks as block.blocks ([68d047e](https://github.com/Debutifycorp/liquidjs/commit/68d047ee96adde21b22397ed161417ccc5b67aae))
+* **shopify:** give templates country_option_tags and all_country_option_tags ([be3f698](https://github.com/Debutifycorp/liquidjs/commit/be3f6988bf9d07af0f6f0ebf5f486074f047a6b2))
+* **shopify:** give the gift_card template its gift_card object ([8c337e2](https://github.com/Debutifycorp/liquidjs/commit/8c337e26eb6971523037d3f1681d61b0fb1dac4e))
+* **shopify:** payment_terms prints nothing, as Shopify does for a store without Shop Pay Installments, and is no longer a reported stub ([337b807](https://github.com/Debutifycorp/liquidjs/commit/337b8070237292bf12aa9c235aa08d629c33e2c9))
+* **shopify:** perform product recommendations for a recommendations request ([08fa2c5](https://github.com/Debutifycorp/liquidjs/commit/08fa2c53acdf209ae0be7038ec8eaf9605da3198))
+* **shopify:** print an _html translation's interpolated values as they are ([e9c2e97](https://github.com/Debutifycorp/liquidjs/commit/e9c2e97dde73cb694409f79d01b3b6d2feb0d914))
+* **shopify:** print nothing for an if, unless, case or for whose every branch is blank, as Ruby Liquid drops their text ([1427b0b](https://github.com/Debutifycorp/liquidjs/commit/1427b0b12b5609edb15c2680119966cb62249ea8))
+* **shopify:** render a block given to render as Shopify does, and never fail with a TypeError ([6419b2f](https://github.com/Debutifycorp/liquidjs/commit/6419b2f4241d17169f437f26c9c6941af8f16859))
+* **shopify:** run a storefront search when the request has search terms ([5d9ff34](https://github.com/Debutifycorp/liquidjs/commit/5d9ff341102039134d04e607ad78d91077b5d835))
+* **shopify:** trim whitespace bug-compatibly, as Shopify's storefront parses themes ([ce3b1ad](https://github.com/Debutifycorp/liquidjs/commit/ce3b1ada6ba785dcf622a34a55f2c8a0907f2cd8))
+
+
+### Upstream
+
+Based on [LiquidJS 10.30.0](https://github.com/harttle/liquidjs/releases/tag/v10.30.0).
+
 # [1.0.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v0.1.0...debutify-v1.0.0) (2026-10-13)
 
 
