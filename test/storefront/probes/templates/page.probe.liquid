@@ -1,6 +1,6 @@
 {%- layout none -%}
 {%- capture localization_form -%}{%- form 'localization' -%}{%- endform -%}{%- endcapture -%}
-{%- capture product_form -%}{%- form 'product', all_products['classic-tee'] -%}{%- endform -%}{%- endcapture -%}
+{%- capture product_form -%}{%- form 'product', all_products['hoodie'] -%}{%- endform -%}{%- endcapture -%}
 {"localization":{
 "country":{"iso_code":{{ localization.country.iso_code | json }},"name":{{ localization.country.name | json }},"currency":{{ localization.country.currency.iso_code | json }},"symbol":{{ localization.country.currency.symbol | json }}},
 "language":{"iso_code":{{ localization.language.iso_code | json }},"name":{{ localization.language.name | json }},"endonym_name":{{ localization.language.endonym_name | json }},"root_url":{{ localization.language.root_url | json }},"primary":{{ localization.language.primary | json }}},
@@ -11,8 +11,8 @@
 "request":{"path":{{ request.path | json }},"host":{{ request.host | json }},"page_type":{{ request.page_type | json }},"locale":{{ request.locale.iso_code | json }},"locale_root_url":{{ request.locale.root_url | json }}},
 "shop":{"name":{{ shop.name | json }},"description":{{ shop.description | json }},"currency":{{ shop.currency | json }},"enabled_currencies":[{%- for c in shop.enabled_currencies -%}{{ c.iso_code | json }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],"published_locales":[{%- for l in shop.published_locales -%}{"iso_code":{{ l.iso_code | json }},"root_url":{{ l.root_url | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}]},
 "cart_currency":{{ cart.currency.iso_code | json }},"money":{{ 1999 | money | json }},"money_with_currency":{{ 1999 | money_with_currency | json }},
-"product":{"title":{{ all_products['classic-tee'].title | json }},"url":{{ all_products['classic-tee'].url | json }},"price":{{ all_products['classic-tee'].price | json }}},
-"collection":{"title":{{ collections.apparel.title | json }},"url":{{ collections.apparel.url | json }}},
+"product":{"title":{{ all_products['hoodie'].title | json }},"url":{{ all_products['hoodie'].url | json }},"price":{{ all_products['hoodie'].price | json }}},
+"collection":{"title":{{ collections.tops.title | json }},"url":{{ collections.tops.url | json }}},
 "page":{"title":{{ page.title | json }},"content":{{ page.content | json }},"template_suffix":{{ page.template_suffix | json }}},
 "menu":[{%- for l in linklists['main-menu'].links -%}{"title":{{ l.title | json }},"url":{{ l.url | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],
 "canonical_url":{{ canonical_url | json }},"template":{"name":{{ template.name | json }},"suffix":{{ template.suffix | json }}},

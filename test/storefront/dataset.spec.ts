@@ -20,6 +20,9 @@ describe('storefrontSampleData', () => {
     expect(new Set(ids).size).toBe(ids.length)
     expect(new Set(products.map(p => p.handle)).size).toBe(products.length)
   })
+  it('titles every variant by its option values, as Shopify does', () => {
+    for (const v of (data.products ?? []).flatMap(p => p.variants)) expect(v.title).toBe([v.option1, v.option2, v.option3].filter(value => value != null).join(' / '))
+  })
   it('names only products the dataset has, in collections, discounts and translations', () => {
     const handles = new Set((data.products ?? []).map(p => p.handle))
     for (const c of data.collections ?? []) for (const h of c.products) expect(handles).toContain(h)

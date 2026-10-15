@@ -35,6 +35,8 @@ for (const p of catalog.products) {
   for (const v of p.variants) Object.assign(v, { inventory_management: 'shopify', weight: WEIGHTS[p.type] ?? 300 })
   if (MATERIALS[p.type]) p.metafields = { custom: { material: MATERIALS[p.type] } }
 }
+// Shopify titles a variant by its option values joined with ' / ', and the Admin API cannot set a title, so the parity store titles mock.shop's size-only hoodie variants (a combined-listing artefact) "Green / Small" and the like.
+for (const v of catalog.products.flatMap(p => p.variants)) v.title = [v.option1, v.option2, v.option3].filter(value => value != null).join(' / ')
 product('canvas-sneakers').metafields = { custom: { material: 'Canvas' } }
 for (const handle of ['white-leather-sneakers', 'gray-leather-sneakers']) product(handle).metafields = { custom: { material: 'Leather' } }
 
