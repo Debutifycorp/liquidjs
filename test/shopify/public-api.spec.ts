@@ -7,7 +7,7 @@ describe('the /shopify entry', () => {
     expect(added).toEqual([
       'ColorDrop', 'ColorSchemeDrop', 'ContentForTag', 'DocTag', 'ExternalVideoUrlDrop', 'FontDrop', 'FormTag', 'ImageDrop', 'ImageUrlDrop', 'JavascriptTag', 'PaginateTag',
       'SHOPIFY_DEFAULT_LIMITS', 'SchemaTag', 'SectionTag', 'SectionsTag', 'SettingsDrop', 'ShopifyLayoutTag', 'ShopifyTablerowTag', 'StyleTag', 'StylesheetTag', 'Translator', 'VideoUrlDrop',
-      'compileTheme', 'createShopifyLiquid', 'defaultServices', 'parseWrapper', 'renderLiquid', 'renderPage', 'renderSection', 'sampleStoreData', 'shopifyFilterRegistry'
+      'compileTheme', 'createShopifyLiquid', 'defaultServices', 'parseWrapper', 'renderLiquid', 'renderPage', 'renderSection', 'sampleStoreData', 'shopifyFilterRegistry', 'storefrontSampleData'
     ])
   })
   it('leaves the root tag classes alone and registers its own under the Shopify names', () => {
@@ -22,6 +22,7 @@ describe('the /shopify entry', () => {
     expect(() => { (shopify.SHOPIFY_DEFAULT_LIMITS as { renderLimit: number }).renderLimit = Infinity }).toThrow(TypeError)
     const frozen = (value: unknown): boolean => !value || typeof value !== 'object' || (Object.isFrozen(value) && Object.values(value).every(frozen))
     expect(frozen(shopify.sampleStoreData)).toBe(true)
+    expect(frozen(shopify.storefrontSampleData)).toBe(true)
     shopify.shopifyFilterRegistry()[0].aliases.push('changed')
     expect(shopify.shopifyFilterRegistry()[0].aliases).not.toContain('changed')
   })

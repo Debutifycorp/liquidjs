@@ -1,4 +1,4 @@
-import { ColorSchemeDrop, createShopifyLiquid, renderLiquid, sampleStoreData, SettingsDrop, Translator } from '../../src/shopify'
+import { ColorSchemeDrop, createShopifyLiquid, renderLiquid, SettingsDrop, Translator } from '../../src/shopify'
 import type { SettingDefinition } from '../../src/shopify'
 import { filterStatus } from '../../src/shopify/filters'
 import { HandleMap } from '../../src/shopify/objects/handle-map'
@@ -8,6 +8,7 @@ import type { SettingsEnv } from '../../src/shopify/settings'
 import { buildLinklists, buildProduct, buildStore } from '../../src/shopify/store/build'
 import { buildGlobals } from '../../src/shopify/store/globals'
 import { isSafeUrl, sanitizeHtml } from '../../src/shopify/util/sanitize'
+import { legacySampleData as sampleStoreData } from './legacy-sample'
 
 const store = buildStore(sampleStoreData)
 const liquid = createShopifyLiquid()

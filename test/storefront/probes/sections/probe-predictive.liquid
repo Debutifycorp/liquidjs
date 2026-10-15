@@ -1,0 +1,7 @@
+{"performed":{{ predictive_search.performed | json }},"terms":{{ predictive_search.terms | json }},"types":{{ predictive_search.types | json }},
+"products":[{%- for p in predictive_search.resources.products -%}{{ p.handle | json }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],
+"collections":[{%- for c in predictive_search.resources.collections -%}{{ c.handle | json }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],
+"pages":[{%- for p in predictive_search.resources.pages -%}{{ p.handle | json }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],
+"articles":[{%- for a in predictive_search.resources.articles -%}{{ a.handle | json }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],
+"queries":[{%- for q in predictive_search.resources.queries -%}{"text":{{ q.text | json }},"styled_text":{{ q.styled_text | json }},"url":{{ q.url | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}]}
+{% schema %}{ "name": "Probe predictive" }{% endschema %}

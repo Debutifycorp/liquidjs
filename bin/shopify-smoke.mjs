@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 import { performance } from 'node:perf_hooks'
 
 const require = createRequire(import.meta.url)
-const { compileTheme, renderPage, renderSection } = require('../dist/shopify.node.js')
+const { compileTheme, renderPage, renderSection, sampleStoreData } = require('../dist/shopify.node.js')
 
 // realpathSync.native, not realpathSync: on a case-insensitive volume the plain one keeps the case it is given, so a case alias of a path inside the repository would slip past the refusal below.
 const repo = realpathSync.native(resolve(fileURLToPath(new URL('..', import.meta.url))))
@@ -179,7 +179,7 @@ if (flags.includes('--presets')) {
       const started = performance.now()
       try {
         theme.files[templatePath] = JSON.stringify({ sections: { main: { type, settings: preset.settings ?? {}, ...toBlocks(preset.blocks, preset.block_order) } }, order: ['main'] })
-        const { report } = await renderSection({ theme, templateName: 'page.smoke-preset', section: 'main', request: { resource: 'about' } })
+        const { report } = await renderSection({ theme, templateName: 'page.smoke-preset', section: 'main', request: { resource: sampleStoreData.pages[0].handle } })
         presetTimes.push(performance.now() - started)
         collect(report)
         const notRendered = report.sections.filter(section => section.status !== 'rendered')

@@ -1,0 +1,18 @@
+{%- layout none -%}
+{%- capture filters -%}
+{%- for f in collection.filters -%}
+{"label":{{ f.label | json }},"type":{{ f.type | json }},"param_name":{{ f.param_name | json }},"operator":{{ f.operator | json }},"presentation":{{ f.presentation | json }},"url_to_remove":{{ f.url_to_remove | json }},"range_max":{{ f.range_max | json }},
+"min_value":{"param_name":{{ f.min_value.param_name | json }},"value":{{ f.min_value.value | json }}},"max_value":{"param_name":{{ f.max_value.param_name | json }},"value":{{ f.max_value.value | json }}},
+"active_values":[{%- for v in f.active_values -%}{{ v.value | json }}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],
+"values":[{%- for v in f.values -%}{"label":{{ v.label | json }},"value":{{ v.value | json }},"count":{{ v.count | json }},"active":{{ v.active | json }},"param_name":{{ v.param_name | json }},"url_to_add":{{ v.url_to_add | json }},"url_to_remove":{{ v.url_to_remove | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}]}{%- unless forloop.last -%},{%- endunless -%}
+{%- endfor -%}
+{%- endcapture -%}
+{%- paginate collection.products by 4 -%}
+{"handle":{{ collection.handle | json }},"title":{{ collection.title | json }},"url":{{ collection.url | json }},"template_suffix":{{ collection.template_suffix | json }},"template":{"name":{{ template.name | json }},"suffix":{{ template.suffix | json }}},
+"products":[{%- for p in collection.products -%}{"handle":{{ p.handle | json }},"price":{{ p.price | json }},"url":{{ p.url | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],
+"products_count":{{ collection.products_count | json }},"all_products_count":{{ collection.all_products_count | json }},
+"sort_by":{{ collection.sort_by | json }},"default_sort_by":{{ collection.default_sort_by | json }},"sort_options":[{%- for o in collection.sort_options -%}{"name":{{ o.name | json }},"value":{{ o.value | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],
+"current_tags":{{ current_tags | json }},"tags":{{ collection.tags | json }},"all_tags":{{ collection.all_tags | json }},"all_types":{{ collection.all_types | json }},"all_vendors":{{ collection.all_vendors | json }},
+"paginate":{"current_page":{{ paginate.current_page | json }},"pages":{{ paginate.pages | json }},"items":{{ paginate.items | json }},"page_size":{{ paginate.page_size | json }},"next":{{ paginate.next.url | json }},"previous":{{ paginate.previous.url | json }}},
+"filters":[{{ filters }}]}
+{%- endpaginate -%}

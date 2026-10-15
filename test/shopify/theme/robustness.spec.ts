@@ -1,5 +1,6 @@
 import { join } from 'path'
 import { renderPage, renderSection } from '../../../src/shopify'
+import { legacySampleData } from '../legacy-sample'
 import { loadTheme } from './load-fixture'
 
 const theme = loadTheme(join(__dirname, '../fixtures/theme'))
@@ -13,7 +14,7 @@ async function pageWith (files: Record<string, string>, section: Record<string, 
     ...files,
     'templates/t.json': JSON.stringify({ sections: { b: section, f: { type: 'footer' } }, order: ['b', 'f'] })
   }
-  return renderPage({ theme: { files: all }, templateName: 't' })
+  return renderPage({ data: legacySampleData, theme: { files: all }, templateName: 't' })
 }
 
 describe('shopify/theme/runtime malformed section schema and data', () => {
@@ -40,16 +41,16 @@ describe('shopify/theme/runtime malformed section schema and data', () => {
   it('keeps a bad section of a section group inside it and leaves the others', async () => {
     const group = { type: 'header', sections: { one: { type: 'bad' }, two: { type: 'footer' } }, order: ['one', 'two'] }
     const files = { ...theme.files, 'sections/bad.liquid': BAD_SECTION('{ "blocks": {} }'), 'sections/header-group.json': JSON.stringify(group) }
-    const { html, report } = await renderPage({ theme: { files }, templateName: 'gift_card' })
+    const { html, report } = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'gift_card' })
     expect(html).toBe('<p>Gift card for Sample Store</p>\n')
-    const page = await renderPage({ theme: { files }, templateName: 'index' })
+    const page = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'index' })
     expect(page.html).toContain('<!-- BEGIN sections: header-group --><div id="shopify-section-sections--header-group__one" class="shopify-section shopify-section-group-header-group">Liquid error: sections/bad.liquid: schema &quot;blocks&quot; must be an array of objects</div><div id="shopify-section-sections--header-group__two"')
     expect(page.report.sections.filter(entry => entry.id.startsWith('sections--')).map(entry => `${entry.id}:${entry.status}`)).toEqual(['sections--header-group__one:failed', 'sections--header-group__two:rendered'])
     expect(report.sections).toEqual([])
   })
   it('keeps a bad static section inside it and records it', async () => {
     const files = { ...theme.files, 'sections/footer.liquid': BAD_SECTION('{ "settings": {} }') }
-    const { html, report } = await renderPage({ theme: { files }, templateName: 'index' })
+    const { html, report } = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'index' })
     expect(html).toContain('<div id="shopify-section-footer" class="shopify-section">Liquid error: sections/footer.liquid: schema &quot;settings&quot; must be an array of objects</div>')
     expect(report.sections.map(entry => `${entry.id}:${entry.status}`)).toEqual([
       'template--index__hero:rendered',
@@ -115,62 +116,62 @@ describe('shopify/theme/runtime malformed section schema and data', () => {
 describe('shopify/theme/runtime malformed template and group JSON', () => {
   it('reads a template whose order is not an array in the order of its sections', async () => {
     const files = { ...theme.files, 'templates/t.json': '{ "sections": { "f": { "type": "footer" } }, "order": {} }' }
-    const { html, report } = await renderPage({ theme: { files }, templateName: 't' })
+    const { html, report } = await renderPage({ data: legacySampleData, theme: { files }, templateName: 't' })
     expect(html).toContain('<main id="MainContent"><div id="shopify-section-template--t__f"')
     expect(report.unsupported).toEqual([{ feature: 'order', detail: 'templates/t.json "order" is not an array' }])
   })
   it('renders nothing for a template whose sections is not an object, and says so', async () => {
     const files = { ...theme.files, 'templates/t.json': '{ "sections": [], "order": ["f"] }' }
-    const { html, report } = await renderPage({ theme: { files }, templateName: 't' })
+    const { html, report } = await renderPage({ data: legacySampleData, theme: { files }, templateName: 't' })
     expect(html).toContain('<main id="MainContent"></main>')
     expect(report.unsupported).toEqual([{ feature: 'sections', detail: 'templates/t.json "sections" is not an object' }])
   })
   it('ignores a wrapper that is not a string', async () => {
     const files = { ...theme.files, 'templates/t.json': '{ "wrapper": 3, "sections": { "f": { "type": "footer" } }, "order": ["f"] }' }
-    const { html, report } = await renderPage({ theme: { files }, templateName: 't' })
+    const { html, report } = await renderPage({ data: legacySampleData, theme: { files }, templateName: 't' })
     expect(html).toContain('<main id="MainContent"><div id="shopify-section-template--t__f"')
     expect(report.unsupported).toEqual([{ feature: 'wrapper', detail: '3' }])
   })
   it('reads a group whose order is not an array in the order of its sections', async () => {
     const group = { type: 'header', sections: { a: { type: 'footer' } }, order: 'a' }
     const files = { ...theme.files, 'sections/header-group.json': JSON.stringify(group) }
-    const { html, report } = await renderPage({ theme: { files }, templateName: 'index' })
+    const { html, report } = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'index' })
     expect(html).toContain('<!-- BEGIN sections: header-group --><div id="shopify-section-sections--header-group__a"')
     expect(report.unsupported).toEqual([{ feature: 'order', detail: 'sections/header-group.json "order" is not an array' }])
   })
   it('skips a group that is not an object and reports it', async () => {
     const files = { ...theme.files, 'sections/header-group.json': '[]' }
-    const { html, report } = await renderPage({ theme: { files }, templateName: 'index' })
+    const { html, report } = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'index' })
     expect(html).not.toContain('BEGIN sections')
     expect(report.unsupported).toEqual([{ feature: 'section_group', detail: 'sections/header-group.json is not a JSON object' }])
     expect(report.missing).toEqual([{ kind: 'section', name: 'does-not-exist' }])
   })
   it('affects a contextual group file only when a context is requested, and skips a bad one', async () => {
     const files = { ...theme.files, 'sections/header-group.context.ca.json': '{ nope', 'sections/header-group.context.yy.json': 'null', 'sections/header-group.context.zz.json': '{ "context": { "market": "ca" }, "sections": { "announcement": { "settings": { "text": "From zz" } } } }' }
-    const plain = await renderPage({ theme: { files }, templateName: 'index' })
+    const plain = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'index' })
     expect(plain.html).toContain('<p class="announcement">Free shipping|header|1</p>')
     expect(plain.report.unsupported).toEqual([])
-    const ca = await renderPage({ theme: { files }, templateName: 'index', request: { context: { market: 'ca' } } })
+    const ca = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'index', request: { context: { market: 'ca' } } })
     expect(ca.html).toContain('<p class="announcement">From zz|header|1</p>')
     expect(ca.report.unsupported).toEqual([
       { feature: 'section_group', detail: expect.stringMatching(/^sections\/header-group\.context\.ca\.json: /) },
       { feature: 'section_group', detail: 'sections/header-group.context.yy.json is not a JSON object' }
     ])
-    const us = await renderPage({ theme: { files }, templateName: 'index', request: { context: { market: 'us' } } })
+    const us = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'index', request: { context: { market: 'us' } } })
     expect(us.html).toContain('<p class="announcement">Free shipping|header|1</p>')
   })
   it('rejects for a template, settings_data.json or settings_schema.json that is not usable', async () => {
-    await expect(renderPage({ theme: { files: { ...theme.files, 'templates/index.json': '{ nope' } }, templateName: 'index' })).rejects.toThrow(/^templates\/index\.json: /)
-    await expect(renderPage({ theme: { files: { ...theme.files, 'templates/index.json': '[]' } }, templateName: 'index' })).rejects.toThrow('templates/index.json: must be a JSON object')
+    await expect(renderPage({ data: legacySampleData, theme: { files: { ...theme.files, 'templates/index.json': '{ nope' } }, templateName: 'index' })).rejects.toThrow(/^templates\/index\.json: /)
+    await expect(renderPage({ data: legacySampleData, theme: { files: { ...theme.files, 'templates/index.json': '[]' } }, templateName: 'index' })).rejects.toThrow('templates/index.json: must be a JSON object')
     await expect(renderPage({ theme: { files: { ...theme.files, 'config/settings_data.json': '[]' } }, templateName: 'index' })).rejects.toThrow('config/settings_data.json: must be a JSON object')
-    await expect(renderPage({ theme: { files: { ...theme.files, 'config/settings_schema.json': '{}' } }, templateName: 'index' })).rejects.toThrow('config/settings_schema.json: must be a JSON array')
+    await expect(renderPage({ data: legacySampleData, theme: { files: { ...theme.files, 'config/settings_schema.json': '{}' } }, templateName: 'index' })).rejects.toThrow('config/settings_schema.json: must be a JSON array')
   })
   it('reports a group whose JSON is not valid, for renderSection too, without rejecting', async () => {
     const files = { ...theme.files, 'sections/header-group.json': '{ nope' }
-    const page = await renderPage({ theme: { files }, templateName: 'index' })
+    const page = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'index' })
     expect(page.html).toContain('Liquid error (layout/theme line 9): sections/header-group.json: ')
     expect(page.report.errors[0].message).toContain('sections/header-group.json: ')
-    const one = await renderSection({ theme: { files }, templateName: 'index', section: 'sections--header-group__header' })
+    const one = await renderSection({ data: legacySampleData, theme: { files }, templateName: 'index', section: 'sections--header-group__header' })
     expect(one.html).toMatch(/^Liquid error: sections\/header-group\.json: /)
     expect(one.report.unsupported).toEqual([{ feature: 'section_group', detail: expect.stringMatching(/^sections\/header-group\.json: /) }])
     expect(one.report.missing).toEqual([])
@@ -181,7 +182,7 @@ describe('shopify/theme/runtime malformed template and group JSON', () => {
       'sections/hg.json': '{ nope',
       'sections/hg__top.json': '{ "type": "header", "sections": { "bar": { "type": "footer" } }, "order": ["bar"] }'
     }
-    const one = await renderSection({ theme: { files }, templateName: 'index', section: 'sections--hg__top__bar' })
+    const one = await renderSection({ data: legacySampleData, theme: { files }, templateName: 'index', section: 'sections--hg__top__bar' })
     expect(one.html).toBe('<div id="shopify-section-sections--hg__top__bar" class="shopify-section shopify-section-group-hg__top"><footer>Default copyright|sections--hg__top__bar|1|header</footer>\n\n</div>')
     expect(one.report.unsupported).toEqual([])
   })
@@ -193,7 +194,7 @@ describe('shopify/theme/runtime malformed template and group JSON', () => {
       'sections/header-group.context.cc.json': '{ "context": { "market": "ca" }, "sections": null }',
       'sections/header-group.context.cd.json': '{ "context": { "market": "ca" }, "sections": { "announcement": { "settings": { "text": "From cd" } } } }'
     }
-    const { html, report } = await renderPage({ theme: { files }, templateName: 'index', request: { context: { market: 'ca' } } })
+    const { html, report } = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'index', request: { context: { market: 'ca' } } })
     expect(html).toContain('<p class="announcement">From cd|header|1</p>')
     expect(html).toContain('<header-wrapper id="shopify-section-sections--header-group__header"')
     expect(report.unsupported).toEqual([
@@ -202,7 +203,7 @@ describe('shopify/theme/runtime malformed template and group JSON', () => {
       { feature: 'section_group', detail: 'sections/header-group.context.cc.json "sections" is not an object' }
     ])
     const only = { ...theme.files, 'sections/header-group.context.ca.json': '{ "context": { "market": "ca" }, "sections": "x" }' }
-    const base = await renderPage({ theme: { files: only }, templateName: 'index', request: { context: { market: 'ca' } } })
+    const base = await renderPage({ data: legacySampleData, theme: { files: only }, templateName: 'index', request: { context: { market: 'ca' } } })
     expect(base.html).toContain('<p class="announcement">Free shipping|header|1</p>')
     expect(base.html).toContain('<header-wrapper id="shopify-section-sections--header-group__header"')
   })
@@ -211,16 +212,16 @@ describe('shopify/theme/runtime malformed template and group JSON', () => {
 describe('shopify/theme/runtime malformed locale files', () => {
   it('affects only the renders that look in the file', async () => {
     const files = { ...theme.files, 'locales/de.json': '{ nope', 'locales/fr.schema.json': '{ nope' }
-    const english = await renderPage({ theme: { files }, templateName: 'index' })
+    const english = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'index' })
     expect(english.report.unsupported).toEqual([])
     expect(english.html).toContain('<p>Hello, Sample Store!</p>')
-    const german = await renderPage({ theme: { files }, templateName: 'index', locale: 'de' })
+    const german = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'index', locale: 'de' })
     expect(german.html).toContain('<html lang="de">')
     expect(german.html).toContain('<p>Hello, Sample Store!</p>')
     expect(german.report.unsupported).toEqual([{ feature: 'locale_file', detail: expect.stringMatching(/^locales\/de\.json: /) }])
-    const gift = await renderPage({ theme: { files }, templateName: 'gift_card', locale: 'fr' })
+    const gift = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'gift_card', locale: 'fr' })
     expect(gift.report.unsupported).toEqual([])
-    const french = await renderPage({ theme: { files }, templateName: 'index', locale: 'fr' })
+    const french = await renderPage({ data: legacySampleData, theme: { files }, templateName: 'index', locale: 'fr' })
     expect(french.html).toContain('<p>Bonjour, Sample Store !</p><p>Fait avec soin</p><p>Schema subheading</p>')
     expect(french.report.unsupported).toEqual([{ feature: 'locale_file', detail: expect.stringMatching(/^locales\/fr\.schema\.json: /) }])
   })
@@ -233,11 +234,11 @@ describe('shopify/theme/runtime limits and recursion', () => {
   })
   it('rejects for a section file past the parse limit instead of printing it in the section', async () => {
     const files = { ...theme.files, 'sections/huge.liquid': ' '.repeat(10000001), 'templates/t.json': '{ "sections": { "h": { "type": "huge" }, "f": { "type": "footer" } }, "order": ["h", "f"] }' }
-    await expect(renderPage({ theme: { files }, templateName: 't' })).rejects.toThrow('parse length limit exceeded')
+    await expect(renderPage({ data: legacySampleData, theme: { files }, templateName: 't' })).rejects.toThrow('parse length limit exceeded')
   })
   it('stops a section that renders itself and prints the error where the tag stands', async () => {
     const files = { ...theme.files, 'sections/loop.liquid': '<i>{% section "loop" %}</i>', 'templates/t.json': '{ "sections": { "a": { "type": "loop" } }, "order": ["a"] }' }
-    const { html, report } = await renderPage({ theme: { files }, templateName: 't' })
+    const { html, report } = await renderPage({ data: legacySampleData, theme: { files }, templateName: 't' })
     expect(html.match(/id="shopify-section-loop"/g)).toHaveLength(99)
     expect(html).toContain('<i>Liquid error (sections/loop line 1): Nesting too deep</i>')
     expect(report.errors).toHaveLength(1)
@@ -251,7 +252,7 @@ describe('shopify/theme/runtime limits and recursion', () => {
       'layout/bare.liquid': '{% sections "again" %}',
       'templates/t.json': '{ "layout": "bare", "sections": {}, "order": [] }'
     }
-    const { html, report } = await renderPage({ theme: { files }, templateName: 't' })
+    const { html, report } = await renderPage({ data: legacySampleData, theme: { files }, templateName: 't' })
     expect(html).toContain('Liquid error (sections/again-section line 1): Nesting too deep')
     expect(report.errors).toHaveLength(1)
   })

@@ -18,6 +18,9 @@ export interface ShopData {
   locale?: string
   enabled_payment_types?: string[]
   metafields?: Metafields
+  /** The storefront asks for a password on every page but `/password`, https://shopify.dev/docs/api/liquid/objects/shop (`shop.password_message`). */
+  password_enabled?: boolean
+  password_message?: string
 }
 
 /** The data behind Shopify's `variant` object, https://shopify.dev/docs/api/liquid/objects/variant. Prices are integers in the currency's minor unit. */
@@ -33,6 +36,13 @@ export interface VariantData {
   option3?: string | null
   image?: ImageData | null
   inventory_quantity?: number
+  /** `continue` sells past zero stock; `deny` (the default) stops at it. https://shopify.dev/docs/api/liquid/objects/variant#variant-inventory_policy */
+  inventory_policy?: 'deny' | 'continue'
+  /** `shopify` when Shopify tracks the stock, nil when nothing does (the default). */
+  inventory_management?: 'shopify' | null
+  /** Grams. */
+  weight?: number
+  requires_shipping?: boolean
 }
 
 /** An image as product media, https://shopify.dev/docs/api/liquid/objects/media (`media_type` is `image`). */
@@ -90,6 +100,13 @@ export interface ProductData {
   created_at?: string
   published_at?: string
   metafields?: Metafields
+  /** Picks `templates/product.<suffix>.json`. https://shopify.dev/docs/storefronts/themes/architecture/templates/alternate-templates */
+  template_suffix?: string | null
+  /** The product can be bought only with a selling plan. https://shopify.dev/docs/api/liquid/objects/product#product-requires_selling_plan */
+  requires_selling_plan?: boolean
+  selling_plan_groups?: SellingPlanGroupData[]
+  /** Place in the store's best-selling order, 1 first; products without one follow, in store order. */
+  sales_rank?: number
 }
 
 /** The data behind Shopify's `collection` object, https://shopify.dev/docs/api/liquid/objects/collection. */
@@ -102,6 +119,9 @@ export interface CollectionData {
   /** Product handles, in collection order. */
   products: string[]
   metafields?: Metafields
+  /** The collection's default sort order, one of the `sort_by` values on https://shopify.dev/docs/api/liquid/objects/collection; `manual` when omitted. */
+  sort_order?: 'manual' | 'best-selling' | 'title-ascending' | 'title-descending' | 'price-ascending' | 'price-descending' | 'created-ascending' | 'created-descending'
+  template_suffix?: string | null
 }
 
 /** The data behind Shopify's `page` object, https://shopify.dev/docs/api/liquid/objects/page. */
@@ -113,6 +133,7 @@ export interface PageData {
   content: string
   published_at?: string
   metafields?: Metafields
+  template_suffix?: string | null
 }
 
 /** The data behind Shopify's `article` object, https://shopify.dev/docs/api/liquid/objects/article. */
@@ -169,10 +190,12 @@ export interface CountryOptionData {
   provinces?: Array<[string, string]>
 }
 
-/** A storefront filter the merchant set up in the admin. `attribute` is what it filters on, one of the kinds the storefront filtering guide lists (https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/storefront-filtering): variant availability, variant price, product type, vendor, product tag, or the variant option named by `option`. `label` is what shoppers see; `presentation` is how an option filter's values are shown (https://shopify.dev/docs/api/liquid/objects/filter#filter-presentation). */
+/** A storefront filter the merchant set up in the admin. `attribute` is what it filters on, one of the kinds the storefront filtering guide lists (https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/storefront-filtering): variant availability, variant price, product type, vendor, product tag, the variant option named by `option`, or the product metafield named by `metafield`. `label` is what shoppers see; `presentation` is how an option filter's values are shown (https://shopify.dev/docs/api/liquid/objects/filter#filter-presentation). */
 export interface FilterData {
-  attribute: 'availability' | 'price' | 'product_type' | 'vendor' | 'tag' | 'option'
+  attribute: 'availability' | 'price' | 'product_type' | 'vendor' | 'tag' | 'option' | 'metafield'
   option?: string
+  /** For `attribute: 'metafield'`: the product metafield the filter reads (`filter.p.m.<namespace>.<key>`). */
+  metafield?: { namespace: string, key: string }
   label?: string
   presentation?: 'image' | 'swatch' | 'text'
 }
@@ -297,6 +320,140 @@ export interface CustomerData {
   [key: string]: unknown
 }
 
+/** One price change of a selling plan, https://shopify.dev/docs/api/liquid/objects/selling_plan_price_adjustment. `value` is a percentage (10 = 10%) for `percentage` and an amount in the minor unit otherwise. `order_count` is how many orders it lasts; nil for the last adjustment. */
+export interface SellingPlanPriceAdjustmentData {
+  value_type: 'percentage' | 'fixed_amount' | 'price'
+  value: number
+  order_count?: number | null
+}
+
+/** https://shopify.dev/docs/api/liquid/objects/selling_plan. `options` are this plan's values for its group's options, in order. */
+export interface SellingPlanData {
+  id: number
+  name: string
+  description?: string | null
+  options: string[]
+  recurring_deliveries: boolean
+  price_adjustments: SellingPlanPriceAdjustmentData[]
+}
+
+/** https://shopify.dev/docs/api/liquid/objects/selling_plan_group. It applies to every variant of its product unless `variant_ids` lists some. */
+export interface SellingPlanGroupData {
+  id: string
+  name: string
+  app_id?: string | null
+  options: Array<{ name: string, values: string[] }>
+  selling_plans: SellingPlanData[]
+  variant_ids?: number[]
+}
+
+/** The products a discount applies to or counts: all of them, or the products and collections named by handle. */
+export type DiscountItemsData = { all: true } | { products?: string[], collections?: string[] }
+
+/** A percentage (10 = 10%) or an amount in the minor unit; `each` applies the amount to each item instead of once across them. */
+export type DiscountValueData = { percentage: number } | { amount: number, each?: boolean }
+
+interface DiscountBaseData {
+  id: number
+  title: string
+  /** The code a shopper enters; an automatic discount has none. */
+  code?: string
+  combines_with?: { product?: boolean, order?: boolean, shipping?: boolean }
+  /** At most one of the two, in the minor unit and in items. */
+  minimum?: { subtotal?: number, quantity?: number }
+}
+
+export interface AmountOffProductsDiscountData extends DiscountBaseData {
+  type: 'amount_off_products'
+  value: DiscountValueData
+  items: DiscountItemsData
+  applies_on_one_time_purchase?: boolean
+  applies_on_subscription?: boolean
+}
+
+export interface AmountOffOrderDiscountData extends DiscountBaseData {
+  type: 'amount_off_order'
+  value: DiscountValueData
+}
+
+export interface FreeShippingDiscountData extends DiscountBaseData {
+  type: 'free_shipping'
+  /** ISO country codes; every country when omitted. */
+  countries?: string[]
+  /** Rates above this price, in the minor unit, are not made free. */
+  max_shipping_price?: number
+}
+
+export interface BuyXGetYDiscountData extends DiscountBaseData {
+  type: 'buy_x_get_y'
+  /** What the cart must hold: a quantity or an amount (minor unit) of `items`. */
+  buys: { items: DiscountItemsData, quantity?: number, amount?: number }
+  /** What it then gets: `quantity` of `items` at `value` off (`{ percentage: 100 }` is free). */
+  gets: { items: DiscountItemsData, quantity: number, value: DiscountValueData }
+  uses_per_order?: number
+}
+
+/** A discount of the store, by the four kinds the Admin API creates (basic, free shipping and Buy X Get Y, as codes or automatic). */
+export type DiscountData = AmountOffProductsDiscountData | AmountOffOrderDiscountData | FreeShippingDiscountData | BuyXGetYDiscountData
+
+/** One shipping rate of a zone, in the shop's currency and minor unit; weights in grams. A rate applies when the cart is inside every range it gives. */
+export interface ShippingRateData {
+  name: string
+  price: number
+  min_subtotal?: number
+  max_subtotal?: number
+  min_weight?: number
+  max_weight?: number
+}
+
+/** A shipping zone: the countries it covers (every province, or the ones named by code), or every country no other zone covers. */
+export interface ShippingZoneData {
+  name: string
+  countries: Array<{ code: string, provinces?: string[] }> | 'rest_of_world'
+  rates: ShippingRateData[]
+}
+
+/** A market, https://shopify.dev/docs/api/liquid/objects/market. The primary market is served without a URL prefix; another market is served at `/<language>-<subfolder>` for each of its languages. `rate` converts the shop's currency into the market's (1 for the shop's own), `price_adjustment` is a percentage (-10 lowers prices by 10%), and `rounding` turns on Shopify's price rounding: `true` uses Shopify's value for the currency, a number is the value prices are rounded up to (Shopify's "Round up to the nearest {value}" setting, in major units: 1 rounds to whole units, 0.95 to x.95). */
+export interface MarketData {
+  handle: string
+  name: string
+  primary?: boolean
+  countries: Array<{ iso_code: string, name: string }>
+  currency: { iso_code: string, symbol: string, rate: number, rounding?: boolean | number, money_format?: string, money_with_currency_format?: string }
+  price_adjustment?: number
+  /** ISO codes, the market's default language first. */
+  languages: string[]
+  subfolder?: string
+}
+
+/** A language the store is published in, https://shopify.dev/docs/api/liquid/objects/language. */
+export interface LanguageData {
+  iso_code: string
+  name: string
+  endonym_name: string
+}
+
+/** Translated fields of one resource; a field that is missing shows the default locale's value. */
+export interface ResourceTranslations {
+  title?: string
+  description?: string
+  content?: string
+  excerpt?: string
+}
+
+/** Content translations by locale. Menus are by handle, each a list of link titles in the order the menu lists its links, children after their parent. */
+export interface TranslationsData {
+  [locale: string]: {
+    shop?: { name?: string, description?: string }
+    products?: Record<string, ResourceTranslations>
+    collections?: Record<string, ResourceTranslations>
+    pages?: Record<string, ResourceTranslations>
+    /** By `<blog handle>/<article handle>`. */
+    articles?: Record<string, ResourceTranslations>
+    menus?: Record<string, string[]>
+  }
+}
+
 /**
  * The store a page renders against. Field names follow Shopify's Liquid objects (https://shopify.dev/docs/api/liquid/objects), so data moves into Liquid without renaming. Money amounts are integers in the currency's minor unit (cents), as in Liquid. Derived fields (URLs, price ranges, first available variant) are computed by `buildStore`.
  */
@@ -322,4 +479,12 @@ export interface StoreData {
   country_option_tags?: CountryOptionData[]
   /** Every country, in the order `all_country_option_tags` prints them; the `country_option_tags` countries when omitted. */
   all_country_option_tags?: CountryOptionData[]
+  /** The store's discounts, codes and automatic ones; none when omitted. */
+  discounts?: DiscountData[]
+  shipping_zones?: ShippingZoneData[]
+  /** The store's markets, the primary one first; one market of the shop's country and currency when omitted. */
+  markets?: MarketData[]
+  /** The languages the store is published in, the primary one first; the shop's locale alone when omitted. */
+  languages?: LanguageData[]
+  translations?: TranslationsData
 }

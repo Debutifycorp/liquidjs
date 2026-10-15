@@ -1,0 +1,23 @@
+{%- layout none -%}
+{%- capture variants -%}
+{%- for v in product.variants -%}
+{"id":{{ v.id | json }},"title":{{ v.title | json }},"price":{{ v.price | json }},"compare_at_price":{{ v.compare_at_price | json }},"available":{{ v.available | json }},"selected":{{ v.selected | json }},"inventory_policy":{{ v.inventory_policy | json }},"inventory_management":{{ v.inventory_management | json }},"inventory_quantity":{{ v.inventory_quantity | json }},"weight":{{ v.weight | json }},"requires_selling_plan":{{ v.requires_selling_plan | json }},"url":{{ v.url | json }},"selected_selling_plan_allocation":{{ v.selected_selling_plan_allocation.selling_plan.id | json }},"allocations":[
+{%- for a in v.selling_plan_allocations -%}
+{"selling_plan":{{ a.selling_plan.id | json }},"group":{{ a.selling_plan_group_id | json }},"price":{{ a.price | json }},"compare_at_price":{{ a.compare_at_price | json }},"per_delivery_price":{{ a.per_delivery_price | json }},"price_adjustments":[{%- for p in a.price_adjustments -%}{"position":{{ p.position | json }},"price":{{ p.price | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}]}{%- unless forloop.last -%},{%- endunless -%}
+{%- endfor -%}]}{%- unless forloop.last -%},{%- endunless -%}
+{%- endfor -%}
+{%- endcapture -%}
+{%- capture groups -%}
+{%- for g in product.selling_plan_groups -%}
+{"id":{{ g.id | json }},"name":{{ g.name | json }},"app_id":{{ g.app_id | json }},"selected":{{ g.selected | json }},"options":[{%- for o in g.options -%}{"name":{{ o.name | json }},"position":{{ o.position | json }},"values":{{ o.values | json }},"selected_value":{{ o.selected_value | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],"selling_plans":[
+{%- for p in g.selling_plans -%}
+{"id":{{ p.id | json }},"name":{{ p.name | json }},"description":{{ p.description | json }},"recurring_deliveries":{{ p.recurring_deliveries | json }},"selected":{{ p.selected | json }},"group_id":{{ p.group_id | json }},"options":[{%- for o in p.options -%}{"name":{{ o.name | json }},"position":{{ o.position | json }},"value":{{ o.value | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],"price_adjustments":[{%- for a in p.price_adjustments -%}{"order_count":{{ a.order_count | json }},"position":{{ a.position | json }},"value":{{ a.value | json }},"value_type":{{ a.value_type | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}]}{%- unless forloop.last -%},{%- endunless -%}
+{%- endfor -%}]}{%- unless forloop.last -%},{%- endunless -%}
+{%- endfor -%}
+{%- endcapture -%}
+{"id":{{ product.id | json }},"title":{{ product.title | json }},"description":{{ product.description | json }},"url":{{ product.url | json }},"template_suffix":{{ product.template_suffix | json }},"template":{"name":{{ template.name | json }},"suffix":{{ template.suffix | json }}},
+"price":{{ product.price | json }},"price_min":{{ product.price_min | json }},"price_max":{{ product.price_max | json }},"compare_at_price":{{ product.compare_at_price | json }},"money":{{ product.price | money | json }},"money_with_currency":{{ product.price | money_with_currency | json }},
+"selected_variant":{{ product.selected_variant.id | json }},"selected_or_first_available_variant":{{ product.selected_or_first_available_variant.id | json }},"first_available_variant":{{ product.first_available_variant.id | json }},
+"requires_selling_plan":{{ product.requires_selling_plan | json }},"selected_selling_plan":{{ product.selected_selling_plan.id | json }},"selected_or_first_available_selling_plan_allocation":{{ product.selected_or_first_available_selling_plan_allocation.selling_plan.id | json }},
+"options_with_values":[{%- for o in product.options_with_values -%}{"name":{{ o.name | json }},"selected_value":{{ o.selected_value | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],
+"variants":[{{ variants }}],"selling_plan_groups":[{{ groups }}],"ajax":{{ product | json }}}

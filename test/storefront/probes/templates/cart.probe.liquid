@@ -1,0 +1,16 @@
+{%- layout none -%}
+{%- capture apps -%}
+{%- for d in cart.cart_level_discount_applications -%}{"title":{{ d.title | json }},"type":{{ d.type | json }},"value":{{ d.value | json }},"value_type":{{ d.value_type | json }},"target_selection":{{ d.target_selection | json }},"target_type":{{ d.target_type | json }},"allocation_method":{{ d.allocation_method | json }},"total_allocated_amount":{{ d.total_allocated_amount | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}
+{%- endcapture -%}
+{%- capture all_apps -%}
+{%- for d in cart.discount_applications -%}{"title":{{ d.title | json }},"type":{{ d.type | json }},"target_type":{{ d.target_type | json }},"total_allocated_amount":{{ d.total_allocated_amount | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}
+{%- endcapture -%}
+{%- capture items -%}
+{%- for i in cart.items -%}
+{"key":{{ i.key | json }},"variant_id":{{ i.variant_id | json }},"quantity":{{ i.quantity | json }},"title":{{ i.title | json }},"url":{{ i.url | json }},"url_to_remove":{{ i.url_to_remove | json }},"original_price":{{ i.original_price | json }},"final_price":{{ i.final_price | json }},"original_line_price":{{ i.original_line_price | json }},"final_line_price":{{ i.final_line_price | json }},"line_level_total_discount":{{ i.line_level_total_discount | json }},"properties":{{ i.properties | json }},"selling_plan":{{ i.selling_plan_allocation.selling_plan.id | json }},
+"line_level_discount_allocations":[{%- for a in i.line_level_discount_allocations -%}{"amount":{{ a.amount | json }},"title":{{ a.discount_application.title | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}],
+"discount_allocations":[{%- for a in i.discount_allocations -%}{"amount":{{ a.amount | json }},"title":{{ a.discount_application.title | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}]}{%- unless forloop.last -%},{%- endunless -%}
+{%- endfor -%}
+{%- endcapture -%}
+{"item_count":{{ cart.item_count | json }},"total_price":{{ cart.total_price | json }},"items_subtotal_price":{{ cart.items_subtotal_price | json }},"original_total_price":{{ cart.original_total_price | json }},"total_discount":{{ cart.total_discount | json }},"total_weight":{{ cart.total_weight | json }},"currency":{{ cart.currency.iso_code | json }},"note":{{ cart.note | json }},"attributes":{{ cart.attributes | json }},"requires_shipping":{{ cart.requires_shipping | json }},"money":{{ cart.total_price | money | json }},
+"cart_level_discount_applications":[{{ apps }}],"discount_applications":[{{ all_apps }}],"items":[{{ items }}],"ajax":{{ cart | json }}}

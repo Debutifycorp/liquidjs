@@ -68,12 +68,12 @@ const theme = {
 
 const services = { assetUrl: (path) => `https://cdn.example.com/assets/${path}` }
 
-const { html, report } = await renderPage({ theme, templateName: 'product', request: { resource: 'canvas-bag' }, services })
-// html ends with <body><div id="shopify-section-template--product__main" class="shopify-section"><h1>Canvas Bag</h1>$45.00<link rel="stylesheet" href="https://cdn.example.com/assets/product.css"></div></body></html>
+const { html, report } = await renderPage({ theme, templateName: 'product', request: { resource: 'black-sunnies' }, services })
+// html ends with <body><div id="shopify-section-template--product__main" class="shopify-section"><h1>Black Sunnies</h1>$50.00<link rel="stylesheet" href="https://cdn.example.com/assets/product.css"></div></body></html>
 // report.errors is [] and report.sections[0].status is 'rendered'
 
-const { html: section } = await renderSection({ theme, templateName: 'product', section: 'main', request: { resource: 'canvas-bag' }, services })
-// section is <div id="shopify-section-template--product__main" class="shopify-section"><h1>Canvas Bag</h1>$45.00<link rel="stylesheet" href="https://cdn.example.com/assets/product.css"></div>
+const { html: section } = await renderSection({ theme, templateName: 'product', section: 'main', request: { resource: 'black-sunnies' }, services })
+// section is <div id="shopify-section-template--product__main" class="shopify-section"><h1>Black Sunnies</h1>$50.00<link rel="stylesheet" href="https://cdn.example.com/assets/product.css"></div>
 ```
 
 From CommonJS, which has no top-level `await`, use `require` with `.then` (with the `theme` and `services` objects from above):
@@ -81,10 +81,10 @@ From CommonJS, which has no top-level `await`, use `require` with `.then` (with 
 ```js
 const { renderPage } = require('@debutify/liquidjs/shopify')
 
-renderPage({ theme, templateName: 'product', request: { resource: 'canvas-bag' }, services }).then(({ html }) => console.log(html))
+renderPage({ theme, templateName: 'product', request: { resource: 'black-sunnies' }, services }).then(({ html }) => console.log(html))
 ```
 
-`theme.files` holds every file of the theme by path; the package never reads the file system. Keep the same `theme` object between renders: it is parsed once, and a file you edit in `theme.files` is re-parsed on the next render. Without `data`, pages render with the package's small public sample store (`sampleStoreData`): the products `classic-tee`, `canvas-bag` (Canvas Bag, $45.00) and `ceramic-mug`, the collections `frontpage` and `apparel`, the pages `about` and `contact` and the blog `news`, which is why `request: { resource: 'canvas-bag' }` finds a product in the example. To render your own store, pass `data`, a `StoreData` object (an exported type, with `sampleStoreData` as a model of one; `sampleStoreData` is frozen all the way down, so to change it pass a copy, `data: structuredClone(sampleStoreData)`, edited first). `t` reads translations from `locales/<locale>.json`, `locales/<locale>.default.json` and the `.schema.json` variants in `theme.files`. A template the theme does not have rejects.
+`theme.files` holds every file of the theme by path; the package never reads the file system. Keep the same `theme` object between renders: it is parsed once, and a file you edit in `theme.files` is re-parsed on the next render. Without `data`, pages render with the package's public sample store (`sampleStoreData`): Shopify's mock.shop `demostore` catalogue (https://mock.shop), 29 apparel products such as `black-sunnies` (Black Sunnies, $50.00), the collections `men`, `women`, `unisex`, `tops`, `bottoms`, `accessories`, `featured` and `shoes`, the pages `contact` and `liquid`, the blog `news` and the `main-menu` and `footer` menus, which is why `request: { resource: 'black-sunnies' }` finds a product in the example. Its product images are on Shopify's CDN. To render your own store, pass `data`, a `StoreData` object (an exported type, with `sampleStoreData` as a model of one; `sampleStoreData` is frozen all the way down, so to change it pass a copy, `data: structuredClone(sampleStoreData)`, edited first). `t` reads translations from `locales/<locale>.json`, `locales/<locale>.default.json` and the `.schema.json` variants in `theme.files`. A template the theme does not have rejects.
 
 The options of `renderPage` are `theme`, `templateName` (`index`, `product`, `page.contact`, `customers/login`), `data` (a `StoreData` object), `locale`, `request` (`path`, `host`, `origin`, `page`, `resource`, `context` for contextual section groups, `searchTerms`, `recommendations` for a [Product Recommendations API](https://shopify.dev/docs/api/ajax/reference/product-recommendations) request with its `productId`, `limit` and `intent`), `services`, `trustLiquidSettings`, `trustHtmlSettings`, `unknownTags`, `parseLimit`, `renderLimit` and `memoryLimit`. `renderSection` takes the same options plus `section`: the id `renderPage` reports for it (`template--product__main`), a key of the template's `sections` (`main`) or the name of a static section. It returns `html`, `report` and `assets`, the bodies of the `{% stylesheet %}` and `{% javascript %}` tags that ran while the section rendered. A section the page does not have renders nothing and is reported.
 

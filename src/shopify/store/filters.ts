@@ -2,7 +2,7 @@ import type { LiquidObject } from './build'
 import type { FilterData } from './types'
 
 /** The labels used when the store data gives none. shopify.dev does not list default filter or value labels, so these are not pinned. */
-const LABELS: Record<FilterData['attribute'], string> = { availability: 'Availability', price: 'Price', product_type: 'Product type', vendor: 'Vendor', tag: 'Tags', option: '' }
+const LABELS: Record<Exclude<FilterData['attribute'], 'metafield'>, string> = { availability: 'Availability', price: 'Price', product_type: 'Product type', vendor: 'Vendor', tag: 'Tags', option: '' }
 
 interface Entry { value: string, label: string, count: number }
 
@@ -27,7 +27,7 @@ function optionValues (products: LiquidObject[], name: string): Entry[] {
   })
 }
 
-const listEntries: Record<Exclude<FilterData['attribute'], 'price' | 'option'>, (products: LiquidObject[]) => Entry[]> = {
+const listEntries: Record<Exclude<FilterData['attribute'], 'price' | 'option' | 'metafield'>, (products: LiquidObject[]) => Entry[]> = {
   availability: products => [
     { value: '1', label: 'In stock', count: products.filter(product => variantsOf(product).some(variant => variant.available)).length },
     { value: '0', label: 'Out of stock', count: products.filter(product => variantsOf(product).some(variant => !variant.available)).length }
@@ -37,7 +37,7 @@ const listEntries: Record<Exclude<FilterData['attribute'], 'price' | 'option'>, 
   tag: products => sorted(countValues(products, product => product.tags as string[]))
 }
 
-const PARAMS: Record<Exclude<FilterData['attribute'], 'option'>, string> = { availability: 'filter.v.availability', price: 'filter.v.price', product_type: 'filter.p.product_type', vendor: 'filter.p.vendor', tag: 'filter.p.tag' }
+const PARAMS: Record<Exclude<FilterData['attribute'], 'option' | 'metafield'>, string> = { availability: 'filter.v.availability', price: 'filter.v.price', product_type: 'filter.p.product_type', vendor: 'filter.p.vendor', tag: 'filter.p.tag' }
 
 /**
  * The storefront filters of a list of products shown at `url` (a collection's `filters`), following https://shopify.dev/docs/api/liquid/objects/filter and https://shopify.dev/docs/api/liquid/objects/filter_value, with the parameter names of https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/storefront-filtering. As the collection page says, only filters relevant to the products are returned: a list filter needs at least one value among them, a price filter at least one product. The request carries no query string here, so no filter is applied: every value is inactive, `active_values` is empty, the price filter's `min_value` and `max_value` have no `value`, `url_to_remove` is `url` and `url_to_add` is `url` with the value's parameter added to its query. Availability, price, product type, vendor and tag filters are `list` or `price_range`; an option filter is a `list` named after its option.
@@ -59,6 +59,8 @@ export function buildFilters (filters: FilterData[] | undefined, products: Liqui
   })
   const out: LiquidObject[] = []
   for (const filter of filters ?? []) {
+    // Metafield filters are not built yet: the store data can name them, and they are left out.
+    if (filter.attribute === 'metafield') continue
     if (filter.attribute === 'price') {
       if (!products.length) continue
       const prices = products.flatMap(product => variantsOf(product).map(variant => variant.price as number))
