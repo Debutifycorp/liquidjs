@@ -1,5 +1,5 @@
 import { HandleMap } from '../objects/handle-map'
-import { printsHandle, type LiquidObject, type StoreObjects } from './build'
+import { articlesInDataOrder, printsHandle, type LiquidObject, type StoreObjects } from './build'
 import { sortProducts } from './collection-view'
 import { buildFilters, filterMatcher, requestQuery } from './filters'
 import type { RequestInput } from './globals'
@@ -74,7 +74,7 @@ export function buildSearch (store: StoreObjects, terms: string | undefined, req
   const pages = find(HandleMap.values(store.pages), 'page').map(page => ({ item: page, kind: 'page' as Kind }))
   // an article found by search has its blog in its handle, `news/liquidpeak-450` (fixtures `probe-search-shirt` and `probe-search-prefix`), where `article.handle` elsewhere is the article's own
   const articles = HandleMap.values(store.blogs)
-    .flatMap(blog => find(blog.articles as LiquidObject[], 'article').map(article => ({ item: { ...article, handle: `${blog.handle}/${article.handle}` }, kind: 'article' as Kind })))
+    .flatMap(blog => find(articlesInDataOrder(blog), 'article').map(article => ({ item: { ...article, handle: `${blog.handle}/${article.handle}` }, kind: 'article' as Kind })))
   // `last` sets the unavailable products apart, to follow every other result; a price order pushes the non-products to the end of the results, behind those products
   const apart = unavailable === 'last'
   const inOrder = (list: LiquidObject[]) => (sortBy === 'relevance' ? list : sortProducts(list, sortBy)).map(asProduct)

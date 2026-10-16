@@ -71,11 +71,15 @@ describe('shopify/store', () => {
     const product = store.products.liquidMethodMissing('canvas-bag')
     const [title, json] = (await render('{{ p.variants[0].product.title }}|{{ p.variants[0] | json }}', { p: product })).split('|')
     expect(title).toBe('Canvas Bag')
-    expect(JSON.parse(json)).toEqual(JSON.parse(JSON.stringify((product as any).variants[0])))
+    // a variant prints as the variants of `product | json` do (scenario `page-product`), not as the engine's own object: it holds neither the back reference nor the engine's fields
+    const printed = JSON.parse(json)
+    expect(printed).toEqual(JSON.parse(await render('{{ p | json }}', { p: product })).variants[0])
+    expect(printed).not.toHaveProperty('product')
+    expect(printed.id).toBe((product as any).variants[0].id)
   })
   it('iterates and looks up handle maps, with an implicit collections.all', async () => {
     expect(await render("{% for c in collections %}{{ c.handle }} {% endfor %}{{ collections.size }} {{ collections.all.products_count }} {{ collections['apparel'].title }} {{ all_products['ceramic-mug'].vendor }}", { collections: store.collections, all_products: store.products }))
-      .toBe('frontpage apparel 2 3 Apparel Kiln & Co')
+      .toBe('apparel frontpage 2 3 Apparel Kiln & Co')
   })
   it('marks menu links active for the request path', async () => {
     const linklists = buildLinklists(store.linklists, '/collections/apparel')
@@ -118,8 +122,9 @@ describe('shopify/store', () => {
       ]
     }]
     const show = (path: string) => render('{% for l in linklists.m.links %}{{ l.title }}:{{ l.current }}:{{ l.active }}:{{ l.child_current }}:{{ l.child_active }} {% endfor %}', { linklists: buildLinklists(lists, path) })
-    expect(await show('/collections/all')).toBe('Catalog:true:true:false:false Collections:false:true:false:false Tee:false:false:false:false Blog:false:false:false:false Group:false:false:false:false ')
-    expect(await show('/collections/apparel/products/classic-tee')).toBe('Catalog:false:false:false:false Collections:false:true:false:false Tee:true:true:false:false Blog:false:false:false:false Group:false:false:false:false ')
+    // the list of collections is not active on a page below it, as the parity store renders it (scenarios `page-collection` and `page-collection-filtered`)
+    expect(await show('/collections/all')).toBe('Catalog:true:true:false:false Collections:false:false:false:false Tee:false:false:false:false Blog:false:false:false:false Group:false:false:false:false ')
+    expect(await show('/collections/apparel/products/classic-tee')).toBe('Catalog:false:false:false:false Collections:false:false:false:false Tee:true:true:false:false Blog:false:false:false:false Group:false:false:false:false ')
     expect(await show('/blogs/news/hello-world')).toBe('Catalog:false:false:false:false Collections:false:false:false:false Tee:false:false:false:false Blog:false:true:false:false Group:false:false:false:false ')
     expect(await show('/pages/group/deep?page=2')).toBe('Catalog:false:false:false:false Collections:false:false:false:false Tee:false:false:false:false Blog:false:false:false:false Group:false:true:true:true ')
     const types: Array<[string, string]> = [

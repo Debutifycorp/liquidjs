@@ -7,6 +7,7 @@ import { buildFilters } from './filters'
 import { buildLocalization, currencyOf, enabledCurrencies, marketRoot } from './markets'
 import type { ViewCurrency } from './markets'
 import { convert, planAmount, planPrice } from './pricing'
+import { byTitle, sortProducts } from './sort'
 import { translateData } from './translate'
 import { resolveView, viewKey, withoutPrefix, withPrefix } from './view'
 import type { StoreView } from './view'
@@ -65,8 +66,20 @@ export function copyObject (object: LiquidObject, ...omit: string[]): LiquidObje
   return Object.create(Object.getPrototypeOf(object), descriptors)
 }
 
+/** The hidden field that holds a collection's products in the order of the store data, its manual order; `products` lists them in the collection's default order (`buildCollection`). */
+const MANUAL_ORDER = 'manual_products'
+
+/** The products of a built collection in the order of the store data: what the collection page's `sort_by=manual` shows, and what its other sorts start from, so a tie keeps the data's order. */
+export const manualProductsOf = (collection: LiquidObject): LiquidObject[] => (collection[MANUAL_ORDER] as LiquidObject[] | undefined) ?? collection.products as LiquidObject[]
+
 /** The hidden field that marks a built product for the `json` filter. */
 const PRODUCT_MARKER = '__product'
+
+/** The hidden field that marks a built variant for the `json` filter. */
+const VARIANT_MARKER = '__variant'
+
+/** Whether `value` is a variant built by `buildVariant` (or a copy `selectProduct` and `selectSellingPlan` make of one). */
+export const isBuiltVariant = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject)[VARIANT_MARKER] === true
 
 /** Whether `value` is a product built by `buildProduct` (or selected by `selectProduct`). */
 export const isBuiltProduct = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject)[PRODUCT_MARKER] === true
@@ -80,9 +93,9 @@ export function printsHandle (object: LiquidObject): LiquidObject {
 }
 
 /** Product media: images (https://shopify.dev/docs/api/liquid/objects/media), videos (https://shopify.dev/docs/api/liquid/objects/video) and external videos (https://shopify.dev/docs/api/liquid/objects/external_video). Only media images carry a `preview_image`, https://shopify.dev/docs/api/liquid/objects/image#image-preview_image. `index` is the media's place in `product.media`; it becomes the media's `position`, counted from 1 (https://shopify.dev/docs/api/liquid/objects/media#media-position). The media page and shopify.dev's image page (https://shopify.dev/docs/api/liquid/objects/image#image-position) both show `1` in their example for the first entry but neither states the base; the parity store counts from 1 (fixture `probe-product-default`: the hoodie's eight media print positions 1 to 8 in `product | json`). Media from anywhere else has no position. */
-function buildMedia (media: MediaData, index?: number): unknown {
+function buildMedia (media: MediaData, index?: number, title = ''): unknown {
   const position = index === undefined ? null : index + 1
-  if (media.media_type === 'image') return new ImageDrop(media, true, position)
+  if (media.media_type === 'image') return new ImageDrop(media, true, position, title)
   return { ...media, alt: media.alt ?? '', preview_image: image(media.preview_image), position }
 }
 
@@ -149,11 +162,11 @@ function buildAllocation ({ group, plan, data }: PlanOffer, price: number, curre
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/variant. `url` carries `?variant=<id>` as that page documents. `inventory_quantity`, `inventory_policy` (`deny` unless the data says `continue`), `inventory_management` (nil unless the data says `shopify`), `weight` (grams, 0 when the data has none) and `requires_shipping` (true unless the data says otherwise) come from the data, as that page lists them and as the parity store prints them (fixtures `probe-product-default` and `ajax-product-js`). `selected` is false here: it is the request that selects a variant (`selectProduct`). `unit_price_measurement` is left empty and `quantity_rule` holds Shopify's defaults; shopify.dev documents the fields but this layer has no data for them. `selling_plan_allocations` is one allocation per plan of every group that offers the variant (`plans`, see `buildSellingPlanGroup`), `requires_selling_plan` the product's, and `selected_selling_plan_allocation` nil until a request selects a plan (`selectSellingPlan`). `featured_image` and `featured_media` are the product's own image, so they carry the `position` of the matching entry in `product.images` and `product.media` (nil when the product does not list that image); shopify.dev does not say so, and it goes on the confirm-on-a-development-store list with the counting base. `price` and `compare_at_price` are in the view's currency when `currency` is given (`convert`: the market's rate, price adjustment and rounding, https://help.shopify.com/en/manual/international/pricing/exchange-rates), the dataset's shop-currency amounts otherwise; a variant without a compare-at price keeps nil. A market that hides compare-at prices (`ViewCurrency.hide_compare_at_prices`, Shopify's "Hide compare-at" setting, https://help.shopify.com/en/manual/compliance/legal/pricing-indication-directive) gives its variants none: nil, as the parity store prints the hoodie's on-sale variant in the Europe market (fixture `probe-product-en-eu-hoodie`). */
-function buildVariant (variant: VariantData, productUrl: string, productImages: ImageData[], productMedia: MediaData[], currency?: ViewCurrency, plans: PlanOffer[] = [], requiresPlan = false): LiquidObject {
+function buildVariant (variant: VariantData, productUrl: string, productImages: ImageData[], productMedia: MediaData[], currency?: ViewCurrency, plans: PlanOffer[] = [], requiresPlan = false, title = ''): LiquidObject {
   const options = [variant.option1, variant.option2, variant.option3].filter((option): option is string => typeof option === 'string')
-  const featured = variant.image ? new ImageDrop(variant.image, false, positionIn(productImages, variant.image)) : null
+  const featured = variant.image ? new ImageDrop(variant.image, false, positionIn(productImages, variant.image), title) : null
   const price = currency ? convert(variant.price, currency) : variant.price
-  return {
+  const built: LiquidObject = {
     id: variant.id,
     title: variant.title,
     price,
@@ -167,7 +180,7 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
     url: `${productUrl}?variant=${variant.id}`,
     image: featured,
     featured_image: featured,
-    featured_media: variant.image ? new ImageDrop(variant.image, true, positionIn(productMedia, variant.image)) : null,
+    featured_media: variant.image ? new ImageDrop(variant.image, true, positionIn(productMedia, variant.image), title) : null,
     selected: false,
     inventory_quantity: variant.inventory_quantity ?? (variant.available ? 1 : 0),
     inventory_management: variant.inventory_management ?? null,
@@ -181,6 +194,9 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
     selected_selling_plan_allocation: null,
     quantity_rule: { min: 1, max: null, increment: 1 }
   }
+  // marks a built variant for the `json` filter, which prints it with `variantLiquidJson`
+  hidden(built, VARIANT_MARKER, true)
+  return built
 }
 
 /**
@@ -189,15 +205,15 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
 export function buildProduct (data: ProductData, prefix = '', currency?: ViewCurrency): LiquidObject {
   const url = withPrefix(prefix, `/products/${data.handle}`)
   // The image `position` counts from 1, which shopify.dev's image page does not state (its example shows 1 for the first image) and the parity store prints (fixture `probe-product-default`: the first variant's image, the hoodie's sixth, prints `position` 6 in `product | json`).
-  const images = (data.images ?? []).map((img, i) => new ImageDrop(img, false, i + 1))
+  const images = (data.images ?? []).map((img, i) => new ImageDrop(img, false, i + 1, data.title))
   const mediaData: MediaData[] = data.media ?? (data.images ?? []).map(img => ({ ...img, media_type: 'image' as const }))
-  const media = mediaData.map(buildMedia)
+  const media = mediaData.map((entry, i) => buildMedia(entry, i, data.title))
   // https://shopify.dev/docs/api/liquid/objects/product#product-selling_plan_groups lists "the selling plan groups that the variants of the product are included in", and the selling_plan_group page describes a group as one "that include[s] any of a product's variants": a group that offers none of the product's variants (`variant_ids` empty, or naming only variants the product lacks) is not listed
   const groupData = (data.selling_plan_groups ?? []).filter(group => data.variants.some(variant => offersVariant(group, variant)))
   const groups = groupData.map(group => buildSellingPlanGroup(group, currency))
   const variants = data.variants.map(variant => {
     const offers = groupData.flatMap((group, g) => offersVariant(group, variant) ? group.selling_plans.map((plan, i) => ({ group: groups[g], plan: (groups[g].selling_plans as LiquidObject[])[i], data: plan })) : [])
-    return buildVariant(variant, url, data.images ?? [], mediaData, currency, offers, !!data.requires_selling_plan)
+    return buildVariant(variant, url, data.images ?? [], mediaData, currency, offers, !!data.requires_selling_plan, data.title)
   })
   const options = data.options ?? ['Title']
   const prices = variants.map(variant => variant.price as number)
@@ -326,19 +342,21 @@ export function selectSellingPlan (product: LiquidObject, planId: number | undef
  */
 export function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>, filters: FilterData[] | undefined, prefix: string, currency?: ViewCurrency): LiquidObject {
   const items = data.products.map(handle => HandleMap.get(products, handle)).filter((product): product is LiquidObject => !!product)
+  // `products` lists the collection in its default order wherever it is read, not only on the collection page: https://shopify.dev/docs/api/liquid/objects/collection#collection-default_sort_by; the parity store lists `collections['all'].products` by title in the header's predictive search suggestions and the empty cart's featured collection (scenarios `page-home` and `page-cart-empty`), where the data's order is Slides, Sweatpants, Men's T-shirt, Hoodie. The store data's order is the manual one (`MANUAL_ORDER`), which the collection page's own sort starts from (`collectionView`).
+  const ordered = sortProducts(items, data.sort_order ?? 'manual', AUTOMATIC_COLLECTIONS.has(data.handle))
   const collect = (key: string) => unique(items.flatMap(product => product[key] as string | string[]).filter(Boolean)).sort()
   const own = image(data.image)
   const url = withPrefix(prefix, `/collections/${data.handle}`)
   let computed: LiquidObject[] | undefined
-  return printsHandle({
+  const collection = printsHandle({
     id: data.id,
     handle: data.handle,
     title: data.title,
     description: data.description ?? '',
     url,
     image: own,
-    featured_image: own ?? items[0]?.featured_image ?? null,
-    products: items,
+    featured_image: own ?? ordered[0]?.featured_image ?? null,
+    products: ordered,
     products_count: items.length,
     all_products_count: items.length,
     all_tags: collect('tags'),
@@ -368,6 +386,8 @@ export function buildCollection (data: CollectionData, products: HandleMap<Liqui
     template_suffix: data.template_suffix ?? null,
     metafields: data.metafields ?? {}
   })
+  hidden(collection, MANUAL_ORDER, items)
+  return collection
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/page, at its URL under `prefix`; `template_suffix` is the data's (https://shopify.dev/docs/api/liquid/objects/page#page-template_suffix), nil for the base template (fixture `probe-page-home`). */
@@ -399,10 +419,27 @@ function buildArticle (data: ArticleData, blogHandle: string, prefix: string): L
   })
 }
 
+/** `articles` newest first, by the time their `published_at` holds (whatever its UTC offset); a tie keeps the order it came in, and an article whose `published_at` is no date sorts after every dated one. */
+function newestFirst (articles: LiquidObject[]): LiquidObject[] {
+  const time = (article: LiquidObject) => {
+    const stamp = Date.parse(String(article.published_at))
+    return Number.isNaN(stamp) ? -Infinity : stamp
+  }
+  return [...articles].sort((a, b) => time(a) === time(b) ? 0 : time(a) < time(b) ? 1 : -1)
+}
+
+/** The hidden field that holds a blog's articles in the order of the store data; `articles` lists them newest first (`buildBlog`). */
+const DATA_ORDER = 'articles_in_data_order'
+
+/** The articles of a built blog in the order of the store data, which the search and the predictive search rank their ties by. */
+export const articlesInDataOrder = (blog: LiquidObject): LiquidObject[] => (blog[DATA_ORDER] as LiquidObject[] | undefined) ?? blog.articles as LiquidObject[]
+
 /** https://shopify.dev/docs/api/liquid/objects/blog, at its URL under `prefix`. Comments are not modelled: `comments_enabled?` and `moderated?` are false. */
 function buildBlog (data: BlogData, prefix: string): LiquidObject {
-  const articles = data.articles.map(article => buildArticle(article, data.handle, prefix))
-  return printsHandle({
+  // a blog lists its articles newest first, https://shopify.dev/docs/api/liquid/objects/blog#blog-articles ("all of the articles in the blog"): the parity store's blog page starts with the latest article (scenario `page-blog`); articles published at the same time keep the data's order, and one with no date comes last
+  const inDataOrder = data.articles.map(article => buildArticle(article, data.handle, prefix))
+  const articles = newestFirst(inDataOrder)
+  const blog = printsHandle({
     id: data.id,
     handle: data.handle,
     title: data.title,
@@ -415,6 +452,8 @@ function buildBlog (data: BlogData, prefix: string): LiquidObject {
     'moderated?': false,
     metafields: {}
   })
+  hidden(blog, DATA_ORDER, inDataOrder)
+  return blog
 }
 
 /** A URL without its query string and fragment: `link.current` and `link.child_current` "ignore URL parameters". https://shopify.dev/docs/api/liquid/objects/link */
@@ -455,7 +494,9 @@ function buildLink (data: LinkData, path: string, prefix: string): LiquidObject 
   const here = withoutPrefix(prefix, path)
   const current = linkPath(data.url) === linkPath(here)
   const target = stripQuery(data.url)
-  const active = current || (target !== '/' && stripQuery(here).startsWith(`${target}/`))
+  // the list of collections holds no page below it: a collection's page does not light `/collections`, as the parity store renders it (scenarios `page-collection` and `page-collection-filtered`), while a blog's link is active on its articles (scenario `page-article`)
+  const holdsPagesBelow = target !== '/' && target !== '/collections'
+  const active = current || (holdsPagesBelow && stripQuery(here).startsWith(`${target}/`))
   return {
     title: data.title,
     url: withPrefix(prefix, data.url),
@@ -784,11 +825,13 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   // Every shop answers `collections.all` with all its products. https://shopify.dev/docs/api/liquid/objects/collections
   // its default order is by title (fixture `probe-collection-all`)
   const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (source.products ?? []).map(product => product.handle), sort_order: 'title-ascending' }, products, data.filters, prefix, currency)
-  const collections = new HandleMap((source.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters, prefix, currency)]), [['all', all]])
+  // `collections` lists the store's collections alphabetically by title, whatever order the data has them in: https://shopify.dev/docs/api/liquid/objects/collections shows its example sorted so, and the parity store lists /collections that way (scenario `page-collections`: Accessories, Bottoms, Featured, Home page, Men, Shoes, Tops, Unisex, Women)
+  const collections = new HandleMap((source.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters, prefix, currency)]), [['all', all]], byTitle)
   const blogs = new HandleMap((source.blogs ?? []).map(blog => [blog.handle, buildBlog(blog, prefix)]))
   const localization = buildLocalization(data, view)
   const shippingCountries = data.country_option_tags ?? [{ name: String((localization.country as LiquidObject | null)?.name ?? '') }]
-  const articles = new HandleMap(HandleMap.values(blogs).flatMap(blog => (blog.articles as LiquidObject[]).map(article => [`${blog.handle}/${article.handle}`, article] as [string, LiquidObject])))
+  // the articles keep the store data's order here, which the search and the predictive search rank their ties by (fixture `probe-search-prefix`: the older article of two equal matches comes first), while a blog lists them newest first
+  const articles = new HandleMap(HandleMap.values(blogs).flatMap(blog => articlesInDataOrder(blog).map(article => [`${blog.handle}/${article.handle}`, article] as [string, LiquidObject])))
   const objects: StoreObjects = {
     data,
     prefix,

@@ -74,6 +74,8 @@ Object.assign(product('frontpack'), {
 // The accessories collection sorts by best sellers; the featured collection is the one a template suffix picks (`templates/collection.probe.liquid`).
 Object.assign(catalog.collections.find(c => c.handle === 'accessories') ?? {}, { sort_order: 'best-selling' })
 Object.assign(catalog.collections.find(c => c.handle === 'featured') ?? {}, { template_suffix: 'probe' })
+// The parity store has Shopify's "Home page" collection (handle `frontpage`), which a new store comes with and mock.shop's dataset does not hold: empty, as in a store whose merchant has put nothing on the home page (scenario `page-collections` lists it, between Featured and Men). The engine does not invent it, because a store may delete it; this dataset holds it because the parity store has it.
+catalog.collections.push({ id: 50101, handle: 'frontpage', title: 'Home page', products: [] })
 
 // The contact page uses the theme's contact template; the pages the theme's FAQ and order-tracking templates show, and an about page, are added.
 Object.assign(catalog.pages.find(p => p.handle === 'contact') ?? {}, { template_suffix: 'contact' })
@@ -84,9 +86,9 @@ const pages: PageData[] = [
   { id: 50004, handle: 'track-order', title: 'Track your order', content: '<p>Where is it?</p>', template_suffix: 'track-order' }
 ]
 
-/** The dataset the parity store is seeded from (item 22, `tools/shopify-parity/` in the Debutify repository): Shopify's mock.shop `demostore` catalogue (`mock-shop.ts`) with what the parity scenarios need on top, in a USD shop of its own: product types, weights, material metafields, compare-at prices, best-seller ranks, selling plans, template suffixes, three pages, storefront filters, discounts, shipping zones, three markets, and French as a second language with its translations. Prices are USD cents. */
+/** The dataset the parity store is seeded from (item 22, `tools/shopify-parity/` in the Debutify repository): Shopify's mock.shop `demostore` catalogue (`mock-shop.ts`) with what the parity scenarios need on top, in a USD shop of its own: product types, weights, material metafields, compare-at prices, best-seller ranks, selling plans, template suffixes, three pages, the Home page collection, the six card types the store accepts, storefront filters, discounts, shipping zones, three markets, and French as a second language with its translations. Prices are USD cents. */
 export const storefrontSampleData: StoreData = freeze({
-  shop: { name: 'Debutify Parity', domain: 'medzreferralai2.myshopify.com', email: 'store@example.com', description: 'Everyday clothing, made well.', currency: 'USD', locale: 'en', money_format: '${{amount}}', money_with_currency_format: '${{amount}} USD' }, // eslint-disable-line no-template-curly-in-string
+  shop: { name: 'Debutify Parity', domain: 'medzreferralai2.myshopify.com', email: 'store@example.com', description: 'Everyday clothing, made well.', currency: 'USD', locale: 'en', money_format: '${{amount}}', money_with_currency_format: '${{amount}} USD', enabled_payment_types: ['visa', 'master', 'american_express', 'paypal', 'diners_club', 'discover'] }, // eslint-disable-line no-template-curly-in-string
   products: catalog.products,
   collections: catalog.collections,
   pages,

@@ -12,6 +12,9 @@ const imageUrl = (image: ImageDrop | null | undefined, shape: 'ajax' | 'liquid')
 /** The text of a field the Ajax API writes as `null` when it is empty (an image's `alt`, a variant's `sku`), as the parity store does (fixture `ajax-product-js`). */
 const textOrNull = (text: unknown) => text === '' || text === undefined || text === null ? null : text
 
+/** An image's own alt text as the answers write it, `null` when it has none: the title that `image.alt` reads in its place is for Liquid only (fixtures `probe-product-default` and `ajax-product-js`, where the media and the variants' images print `"alt":null`). */
+const altOf = (image: ImageDrop) => textOrNull(image.data.alt)
+
 /** Whether two variants show the same image: matched by `id` when both have one, by `src` otherwise (as the product's images are). */
 const sameImage = (a: ImageDrop, b: ImageDrop) => a.id != null && b.id != null ? a.id === b.id : a.src === b.src
 
@@ -24,7 +27,7 @@ function previewImage (image: ImageDrop | null | undefined, shape: 'ajax' | 'liq
 /** A variant's image as the Ajax API writes it: the product's image with its `position` in `product.images`, the ids of the variants that show it and its two timestamps, which the dataset does not hold, so they are the product's creation time (the parity store prints the moments it made the image, which the engine cannot reproduce: `VOLATILE` in `test/storefront/expect-probe.ts`). */
 function variantImage (image: ImageDrop, product: LiquidObject, shape: 'ajax' | 'liquid'): Record<string, unknown> {
   const variantIds = (product.variants as LiquidObject[]).filter(other => other.featured_image && sameImage(other.featured_image as ImageDrop, image)).map(other => other.id)
-  return { id: image.id, product_id: product.id, position: image.position, created_at: product.created_at ?? null, updated_at: product.created_at ?? null, alt: textOrNull(image.alt), width: image.width, height: image.height, src: imageUrl(image, shape), variant_ids: variantIds }
+  return { id: image.id, product_id: product.id, position: image.position, created_at: product.created_at ?? null, updated_at: product.created_at ?? null, alt: altOf(image), width: image.width, height: image.height, src: imageUrl(image, shape), variant_ids: variantIds }
 }
 
 /** The answer's form of a selling plan allocation, the same in the Ajax answer and in `product | json` (fixtures `ajax-product-js` and `probe-product-plans`): the allocation's price fields with the ids of its plan and group in place of the objects. */
@@ -87,7 +90,7 @@ function variantJson (variant: LiquidObject, product: LiquidObject, shape: 'ajax
     compare_at_price: variant.compare_at_price,
     inventory_management: variant.inventory_management,
     barcode: variant.barcode ?? null,
-    featured_media: media ? { alt: textOrNull(media.alt), id: media.id, position: media.position, preview_image: previewImage(media, shape) } : null
+    featured_media: media ? { alt: altOf(media), id: media.id, position: media.position, preview_image: previewImage(media, shape) } : null
   }
   const plans = { requires_selling_plan: variant.requires_selling_plan ?? false, selling_plan_allocations: (variant.selling_plan_allocations as LiquidObject[]).map(allocationJson) }
   return shape === 'ajax'
@@ -95,11 +98,18 @@ function variantJson (variant: LiquidObject, product: LiquidObject, shape: 'ajax
     : { ...head, ...plans, quantity_rule: variant.quantity_rule }
 }
 
+/**
+ * A built variant, or a list of them (`product.variants`), as `{{ variant | json }}` prints it: the variants of `product | json` (`variantJson`, fixtures `probe-product-default` and `probe-product-en-ca`), whose keys and order are those the parity store prints for `product.variants | json` (scenarios `page-product`, `page-product-variant`: `id`, `title`, `option1` to `option3`, `sku` (nil without one), `requires_shipping`, `taxable`, `featured_image` as the Ajax API writes an image, `available`, `name`, `public_title`, `options`, `price`, `weight`, `compare_at_price`, `inventory_management`, `barcode`, `featured_media`, `requires_selling_plan`, `selling_plan_allocations`, `quantity_rule`). A single variant is printed the same way: no recording prints one on its own, so that is the list's element, not a pinned shape. The variant's product is the hidden back reference `buildProduct` sets.
+ */
+export function variantLiquidJson (variant: LiquidObject): Record<string, unknown> {
+  return variantJson(variant, variant.product as LiquidObject, 'liquid')
+}
+
 /** A media entry as the Ajax API writes it. An image carries its own fields beside its `preview_image` (fixture `ajax-product-js`); the page shows no video, so a hosted or external video keeps the fields of its media object with the preview in the same compact form, which no recording pins. */
 function mediaJson (media: LiquidObject, shape: 'ajax' | 'liquid'): Record<string, unknown> {
   if (media.media_type === 'image') {
     const image = media as unknown as ImageDrop
-    return { alt: textOrNull(image.alt), id: image.id, position: image.position, preview_image: previewImage(image, shape), aspect_ratio: image.aspect_ratio ? image.aspect_ratio.value : null, height: image.height, media_type: 'image', src: imageUrl(image, shape), width: image.width }
+    return { alt: altOf(image), id: image.id, position: image.position, preview_image: previewImage(image, shape), aspect_ratio: image.aspect_ratio ? image.aspect_ratio.value : null, height: image.height, media_type: 'image', src: imageUrl(image, shape), width: image.width }
   }
   return { ...media, alt: textOrNull(media.alt), preview_image: previewImage(media.preview_image as ImageDrop | null, shape) }
 }

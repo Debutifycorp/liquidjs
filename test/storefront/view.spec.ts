@@ -121,9 +121,9 @@ describe('views and the URL prefix', () => {
     ]
     const lists = [{ handle: 'm', title: 'M', links }]
     const state = (path: string, prefix: string) => (HandleMap.get(buildLinklists(lists, path, prefix), 'm')!.links as any[]).map(l => [l.url, l.type, l.current, l.active, l.child_current])
-    expect(state('/collections/tops', '')).toEqual([['/', 'frontpage_link', false, false, false], ['/collections', 'collections_link', false, true, true], ['/products/hoodie', 'product_link', false, false, false], ['https://example.com/x', 'http_link', false, false, false]])
+    expect(state('/collections/tops', '')).toEqual([['/', 'frontpage_link', false, false, false], ['/collections', 'collections_link', false, false, true], ['/products/hoodie', 'product_link', false, false, false], ['https://example.com/x', 'http_link', false, false, false]])
     // the same page under a base path and a locale prefix: the same types and flags, and the home link is the bare prefix without being active on every page
-    expect(state('/p/tok/fr-ca/collections/tops', '/p/tok/fr-ca')).toEqual([['/p/tok/fr-ca', 'frontpage_link', false, false, false], ['/p/tok/fr-ca/collections', 'collections_link', false, true, true], ['/p/tok/fr-ca/products/hoodie', 'product_link', false, false, false], ['https://example.com/x', 'http_link', false, false, false]])
+    expect(state('/p/tok/fr-ca/collections/tops', '/p/tok/fr-ca')).toEqual([['/p/tok/fr-ca', 'frontpage_link', false, false, false], ['/p/tok/fr-ca/collections', 'collections_link', false, false, true], ['/p/tok/fr-ca/products/hoodie', 'product_link', false, false, false], ['https://example.com/x', 'http_link', false, false, false]])
     expect(state('/p/tok/fr-ca', '/p/tok/fr-ca')[0]).toEqual(['/p/tok/fr-ca', 'frontpage_link', true, true, false])
     expect(state('/p/tok/fr-ca/products/hoodie?variant=1', '/p/tok/fr-ca')[2]).toEqual(['/p/tok/fr-ca/products/hoodie', 'product_link', true, true, false])
   })
