@@ -235,7 +235,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     handle: resource?.handle ?? '',
     current_page: page,
     current_tags: pageType === 'collection' && request.tags?.length ? request.tags : null,
-    search: buildSearch(store, request.searchTerms, view.prefix),
+    search: buildSearch(store, request.searchTerms, request, view.prefix),
     recommendations: buildRecommendations(store, request.recommendations, report),
     powered_by_link: '',
     additional_checkout_buttons: false,

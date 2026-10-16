@@ -128,7 +128,7 @@ describe('views and the URL prefix', () => {
     expect(state('/p/tok/fr-ca/products/hoodie?variant=1', '/p/tok/fr-ca')[2]).toEqual(['/p/tok/fr-ca/products/hoodie', 'product_link', true, true, false])
   })
   it('puts the search filters\' URLs under the prefix', () => {
-    const urls = (prefix: string) => (buildSearch(buildStore(data), 'shirt', prefix).filters as any[]).flatMap(f => [f.url_to_remove, ...(f.values ?? []).map((v: any) => v.url_to_add)])
+    const urls = (prefix: string) => (buildSearch(buildStore(data), 'shirt', {}, prefix).filters as any[]).flatMap(f => [f.url_to_remove, ...(f.values ?? []).map((v: any) => v.url_to_add)])
     expect(urls('').length).toBeGreaterThan(0)
     expect(urls('').every(url => url.startsWith('/search?q=shirt'))).toBe(true)
     expect(urls('/p/tok/fr-ca').every(url => url.startsWith('/p/tok/fr-ca/search?q=shirt'))).toBe(true)

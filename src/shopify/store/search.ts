@@ -1,6 +1,8 @@
 import { HandleMap } from '../objects/handle-map'
 import { printsHandle, type LiquidObject, type StoreObjects } from './build'
-import { buildFilters } from './filters'
+import { sortProducts } from './collection-view'
+import { applyFilters, buildFilters, matchingVariant } from './filters'
+import type { RequestInput } from './globals'
 import { withPrefix } from './view'
 
 const words = (text: string) => text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean)
@@ -15,40 +17,71 @@ function searchable (item: LiquidObject, kind: 'product' | 'page' | 'article'): 
   return fields.flatMap(field => words(String(field ?? '')))
 }
 
-/** Every term but the last is a whole word of the resource, and the last starts one, as shopify.dev's storefront search page describes its default `prefix: last`. */
-function matches (found: string[], terms: string[]): boolean {
+/** Every term but the last is a whole word of the resource, and the last starts one when `prefix` is on (`options[prefix]=last`, the default) or is a whole word too (`none`), as shopify.dev's storefront search page describes ("Perform a partial word match on the last search term"). */
+function matches (found: string[], terms: string[], prefix: boolean): boolean {
   const all = new Set(found)
-  return terms.every((term, at) => at < terms.length - 1 ? all.has(term) : found.some(word => word.startsWith(term)))
+  return terms.every((term, at) => at < terms.length - 1 || !prefix ? all.has(term) : found.some(word => word.startsWith(term)))
 }
 
 const SORT_OPTIONS = [{ name: 'Relevance', value: 'relevance' }, { name: 'Price, low to high', value: 'price-ascending' }, { name: 'Price, high to low', value: 'price-descending' }]
 const LIMIT = 1000
 
+type Kind = 'article' | 'page' | 'product'
+
+/** The kinds of result, in the order the parity store prints `search.types` (fixtures `probe-search-shirt` and `probe-search-none`: `article`, `page`, `product`; a `type` parameter reports the kinds it names in this order too, fixtures `probe-search-type-page` and `-type-product`). */
+const KINDS: Kind[] = ['article', 'page', 'product']
+
+/** The kinds the request searches: those of its `type` parameter that are kinds of result, and all of them when it names none ("Defaults to all types", https://shopify.dev/docs/storefronts/themes/navigation-search/search). */
+function kindsOf (request: RequestInput): Kind[] {
+  const asked = request.search?.types ?? []
+  const named = KINDS.filter(kind => asked.includes(kind))
+  return named.length ? named : KINDS
+}
+
+/** The `sort_by` the search answers: the request's when it is one of the sort options, otherwise `relevance`. */
+const sortOf = (request: RequestInput) => SORT_OPTIONS.find(option => option.value === request.sortBy)?.value ?? 'relevance'
+
 /**
- * The `search` object of https://shopify.dev/docs/api/liquid/objects/search. Without terms no search is run: `performed` is false and nothing is found. With terms, `results` holds the store's products, pages and articles whose words match every term, case-insensitively, each a copy with the `object_type` that page documents; `results_count` and the results stop at 1,000, `types` is all three (the `type` parameter is not modelled), `sort_by` and `default_sort_by` are `relevance` (no `sort_by` parameter is modelled), `sort_options` are the three sort orders shopify.dev's storefront search page lists (https://shopify.dev/docs/storefronts/themes/navigation-search/search), and `filters` are the store's storefront filters over the matching products (`buildFilters`), at `/search?q=<terms>` under `prefix` (the view's base path and locale prefix, like the search route). As that page gives for its defaults, the last term matches the start of a word (`prefix: last`) and unavailable products come after every other result (`unavailable_products: last`).
+ * The `search` object of https://shopify.dev/docs/api/liquid/objects/search. Without terms no search is run: `performed` is false, `terms` is nil and nothing is found (fixture `probe-search-none`). With terms, `results` holds the store's products, pages and articles whose words match every term, case-insensitively, each a copy with the `object_type` that page documents; `results_count` and the results stop at 1,000.
  *
- * Debutify's matching, which shopify.dev does not pin and so goes on the "confirm on a development store" list: the fields searched (a product's title, vendor, type, tags and description; a page's title and content; an article's title, tags and content), splitting text into words at anything that is not a letter or digit, the order of results (available products, then pages, then articles, each in store order, then unavailable products) in place of Shopify's relevance ranking, the sort option names, and the `q` parameter's encoding in the filter URLs.
+ * The request shapes the search as https://shopify.dev/docs/storefronts/themes/navigation-search/search describes. `type` limits the kinds of result (`types` reports them, `article`, `page`, `product` order). `options[prefix]` is `last` by default, so the last term matches the start of a word, and `none` makes it a whole word. `options[unavailable_products]` is `last` by default, so unavailable products come after every other result, `show` leaves them where they are found, and `hide` drops them. `sort_by` is `relevance` or one of the price orders, and with a price order "all non-product results are pushed to the end of the results array" (products first, in price order, unavailable ones last unless the option says otherwise). That page labels `price-ascending` "high to low" and `price-descending` "low to high", the reverse of the names and of the parity store (fixture `probe-search-filtered`: `price-ascending` lists 40.00 before 90.00), so the names win. The `filter.*` parameters of the storefront filters narrow the products (https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/storefront-filtering, as `collectionView` does for a collection), and under variant filters a product's `url` and `featured_media` are its first matching variant's (`matchingVariant`; that page describes the `product` object, not only collections). `filters` are the store's storefront filters over the products that match the terms, the types and the unavailable option, before the filters, so the counts show what each value would give; their links keep the whole query of the address, `q`, `type`, `options[...]`, `sort_by`, `view` and the filters, ordered by name (`withQuery`; fixtures `probe-search-filtered` and `probe-search-prefix`), at `/search` under `prefix` (the view's base path and locale prefix, like the search route). A request with no `query` (one built by hand) extends `/search?q=<terms>` with its `sort_by` and filters. `sort_options` are the three sort orders the page lists, with the values and names of the parity store (fixture `probe-search-none`); `default_sort_by` is `relevance`.
+ *
+ * Debutify's matching, which shopify.dev does not pin and so goes on the "confirm on a development store" list: the fields searched (a product's title, vendor, type, tags and description; a page's title and content; an article's title, tags and content), splitting text into words at anything that is not a letter or digit, the order of results (available products, then pages, then articles, each in store order, then unavailable products) in place of Shopify's relevance ranking, an unknown `type` being ignored (and a `type` of only unknown kinds searching all kinds), an unknown `sort_by` reading as `relevance`, and the `q` parameter's encoding in the filter URLs. Shopify's relevance order is not reproduced where the fixtures show it: `probe-search-type-product` lists gray-leather-sneakers, canvas-sneakers, high-top-sneakers, white-leather-sneakers and `probe-search-shirt` lists the article liquidpeak-450 before new-line-of-tennis-products (while `probe-search-prefix` lists them the other way round), which no rule of plain matching yields; they are accepted differences.
  */
-export function buildSearch (store: StoreObjects, terms: string | undefined, prefix = ''): LiquidObject {
-  if (terms === undefined || terms.trim() === '') return { performed: false, results: [], results_count: 0, terms: terms ?? '', types: ['product', 'page', 'article'], filters: [], sort_by: 'relevance', default_sort_by: 'relevance' }
+export function buildSearch (store: StoreObjects, terms: string | undefined, request: RequestInput = {}, prefix = ''): LiquidObject {
+  const kinds = kindsOf(request)
+  const sortBy = sortOf(request)
+  const base = { terms: terms ?? null, types: kinds, sort_by: sortBy, default_sort_by: 'relevance', sort_options: SORT_OPTIONS.map(option => ({ ...option })) }
+  if (terms === undefined || terms.trim() === '') return { performed: false, results: [], results_count: 0, filters: [], ...base }
   const wanted = words(terms)
-  const find = (items: LiquidObject[], kind: 'product' | 'page' | 'article') => wanted.length ? items.filter(item => matches(searchable(item, kind), wanted)) : []
-  const products = find(HandleMap.values(store.products), 'product')
-  const found = [
-    ...products.filter(product => product.available).map(product => ({ item: product, kind: 'product' })),
-    ...find(HandleMap.values(store.pages), 'page').map(page => ({ item: page, kind: 'page' })),
-    ...find(HandleMap.values(store.articles), 'article').map(article => ({ item: article, kind: 'article' })),
-    ...products.filter(product => !product.available).map(product => ({ item: product, kind: 'product' }))
-  ].slice(0, LIMIT)
+  const partial = (request.search?.prefix ?? 'last') === 'last'
+  const unavailable = request.search?.unavailable ?? 'last'
+  const find = (items: LiquidObject[], kind: Kind) => wanted.length && kinds.includes(kind) ? items.filter(item => matches(searchable(item, kind), wanted, partial)) : []
+  // the products that match the terms; `hide` drops the unavailable ones
+  const matching = find(HandleMap.values(store.products), 'product').filter(product => unavailable !== 'hide' || product.available)
+  const query = (request.query ?? [...(request.sortBy ? [['sort_by', request.sortBy] as [string, string]] : []), ...(request.filters ?? [])]).filter(([name]) => name !== 'page')
+  const active = request.filters ?? query.filter(([name]) => name.startsWith('filter.'))
+  const narrowed = applyFilters(matching, active, store.currency, undefined, store.storefrontFilters)
+  const asProduct = (product: LiquidObject) => {
+    const variant = matchingVariant(product, active, store.currency, store.storefrontFilters)
+    return { item: variant ? { ...product, url: variant.url, featured_media: variant.featured_media ?? product.featured_media } : product, kind: 'product' as Kind }
+  }
+  const pages = find(HandleMap.values(store.pages), 'page').map(page => ({ item: page, kind: 'page' as Kind }))
+  // an article found by search has its blog in its handle, `news/liquidpeak-450` (fixtures `probe-search-shirt` and `probe-search-prefix`), where `article.handle` elsewhere is the article's own
+  const articles = HandleMap.values(store.blogs)
+    .flatMap(blog => find(blog.articles as LiquidObject[], 'article').map(article => ({ item: { ...article, handle: `${blog.handle}/${article.handle}` }, kind: 'article' as Kind })))
+  // `last` sets the unavailable products apart, to follow every other result; a price order pushes the non-products to the end of the results, behind those products
+  const apart = unavailable === 'last'
+  const inOrder = (list: LiquidObject[]) => (sortBy === 'relevance' ? list : sortProducts(list, sortBy)).map(asProduct)
+  const leading = inOrder(apart ? narrowed.filter(product => product.available) : narrowed)
+  const trailing = inOrder(apart ? narrowed.filter(product => !product.available) : [])
+  const priced = sortBy !== 'relevance'
+  const found = [...leading, ...(priced ? trailing : []), ...pages, ...articles, ...(priced ? [] : trailing)].slice(0, LIMIT)
   return {
     performed: true,
     results: found.map(({ item, kind }) => printsHandle({ ...item, object_type: kind })),
     results_count: found.length,
-    terms,
-    types: ['article', 'page', 'product'],
-    filters: buildFilters(store.storefrontFilters, found.filter(entry => entry.kind === 'product').map(entry => entry.item), withPrefix(prefix, `/search?q=${encodeURIComponent(terms)}`)),
-    sort_by: 'relevance',
-    default_sort_by: 'relevance',
-    sort_options: SORT_OPTIONS.map(option => ({ ...option }))
+    filters: buildFilters(store.storefrontFilters, matching, request.query ? withPrefix(prefix, '/search') : withPrefix(prefix, `/search?q=${encodeURIComponent(terms)}`), query, store.currency),
+    ...base
   }
 }
