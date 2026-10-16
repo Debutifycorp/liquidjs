@@ -1,0 +1,142 @@
+{
+  "scenario": "ajax-shipping-rates-en-ca",
+  "steps": [
+    {
+      "method": "POST",
+      "url": "/en-ca/cart/add.js",
+      "json": {
+        "items": [
+          {
+            "id": 43695847538710,
+            "quantity": 1
+          }
+        ]
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "items": [
+          {
+            "id": 43695847538710,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43695847538710,
+            "key": "43695847538710:<hash>",
+            "title": "Hoodie - Green / Small",
+            "product_title": "Hoodie",
+            "variant_title": "Green / Small",
+            "price": 12200,
+            "original_price": 12200,
+            "discounted_price": 12200,
+            "line_price": 12200,
+            "original_line_price": 12200,
+            "presentment_price": 122,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 600,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 10489561382934,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 12200,
+            "final_line_price": 12200,
+            "url": "/en-ca/products/hoodie?variant=43695847538710",
+            "featured_image": {
+              "alt": "Hoodie",
+              "aspect_ratio": 1,
+              "height": 2048,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+              "width": 2048
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+            "handle": "hoodie",
+            "requires_shipping": true,
+            "product_type": "Hoodies",
+            "untranslated_product_title": "Hoodie",
+            "product_description": "This hoodie is the perfect choice for comfort and warmth. Meticulously crafted from 100% cotton, the hoodie features a soft, plush fleece interior and a unisex sizing design. Soft and lightweight, it's sure to be your go-to for chilly days.",
+            "untranslated_variant_title": "Green / Small",
+            "variant_options": [
+              "Green",
+              "Small"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              },
+              {
+                "name": "Size",
+                "value": "Small"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/en-ca/cart/shipping_rates.json?shipping_address%5Bcountry%5D=Canada&shipping_address%5Bprovince%5D=ON&shipping_address%5Bzip%5D=K1A%200B1",
+      "status": 200,
+      "location": null,
+      "body": {
+        "shipping_rates": [
+          {
+            "name": "Standard",
+            "presentment_name": "Standard",
+            "code": "Standard",
+            "price": "14.00",
+            "markup": "-0.17",
+            "source": "shopify",
+            "delivery_date": null,
+            "delivery_range": null,
+            "delivery_days": [],
+            "compare_price": null,
+            "phone_required": false,
+            "currency": "CAD",
+            "carrier_identifier": null,
+            "delivery_category": null,
+            "using_merchant_account": null,
+            "carrier_service_id": null,
+            "description": null,
+            "additional_data": null,
+            "incoterm": null,
+            "api_client_id": null,
+            "requested_fulfillment_service_id": null,
+            "shipment_options": null,
+            "charge_items": null,
+            "has_restrictions": null,
+            "rating_classification": null,
+            "accepts_instructions": false,
+            "metafields": null
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/en-ca/cart/clear.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 0,
+        "total_price": 0,
+        "total_discount": 0,
+        "total_weight": 0,
+        "item_count": 0,
+        "items": [],
+        "requires_shipping": false,
+        "currency": "CAD",
+        "items_subtotal_price": 0,
+        "cart_level_discount_applications": [],
+        "discount_codes": []
+      }
+    }
+  ]
+}
