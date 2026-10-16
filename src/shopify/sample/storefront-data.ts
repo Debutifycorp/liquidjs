@@ -119,7 +119,8 @@ export const storefrontSampleData: StoreData = freeze({
   markets: [
     { handle: 'us', name: 'United States', primary: true, countries: [{ iso_code: 'US', name: 'United States' }], currency: { iso_code: 'USD', symbol: '$', rate: 1 }, languages: ['en'] },
     { handle: 'ca', name: 'Canada', countries: [{ iso_code: 'CA', name: 'Canada' }], currency: { iso_code: 'CAD', symbol: '$', rate: 1.35, rounding: true }, languages: ['en', 'fr'], subfolder: 'ca' },
-    { handle: 'eu', name: 'Europe', countries: [{ iso_code: 'FR', name: 'France' }, { iso_code: 'DE', name: 'Germany' }, { iso_code: 'IT', name: 'Italy' }, { iso_code: 'ES', name: 'Spain' }, { iso_code: 'NL', name: 'Netherlands' }], currency: { iso_code: 'EUR', symbol: '€', rate: 0.92, rounding: true }, languages: ['en', 'fr'], subfolder: 'eu' }
+    // Shopify's market setting "Hide compare-at" for a market with an EEA country, which hides compare-at prices from EEA customers when the primary market is outside the EEA (https://help.shopify.com/en/manual/compliance/legal/pricing-indication-directive; the page gives both defaults, on and off). The parity store has it on for this market: no compare-at price in Liquid or Ajax (fixtures `probe-product-en-eu-hoodie` and `ajax-product-js`). A display setting only: the parity seed (`tools/shopify-parity/seed/markets.mjs`) reads a market's handle, name, countries, languages, subfolder and currency, not this.
+    { handle: 'eu', name: 'Europe', hide_compare_at_prices: true, countries: [{ iso_code: 'FR', name: 'France' }, { iso_code: 'DE', name: 'Germany' }, { iso_code: 'IT', name: 'Italy' }, { iso_code: 'ES', name: 'Spain' }, { iso_code: 'NL', name: 'Netherlands' }], currency: { iso_code: 'EUR', symbol: '€', rate: 0.92, rounding: true }, languages: ['en', 'fr'], subfolder: 'eu' }
   ],
   languages: [{ iso_code: 'en', name: 'English', endonym_name: 'English' }, { iso_code: 'fr', name: 'French', endonym_name: 'français' }],
   translations: {

@@ -421,6 +421,8 @@ export interface MarketData {
   countries: Array<{ iso_code: string, name: string }>
   currency: { iso_code: string, symbol: string, /** The currency's name (`Canadian Dollar`, https://shopify.dev/docs/api/liquid/objects/currency); its ISO code when omitted. */ name?: string, rate: number, rounding?: boolean | number, money_format?: string, money_with_currency_format?: string }
   price_adjustment?: number
+  /** Shopify's market setting "Hide compare-at" for a market that holds a country of the European Economic Area (https://help.shopify.com/en/manual/compliance/legal/pricing-indication-directive): the market's variants have no compare-at price, in Liquid and in the Ajax API. False when omitted. */
+  hide_compare_at_prices?: boolean
   /** ISO codes, the market's default language first. */
   languages: string[]
   subfolder?: string

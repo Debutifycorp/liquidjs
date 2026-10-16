@@ -802,6 +802,9 @@ describe('shopify/filters/json', () => {
     expect(await render('{{ 5 | json }}|{{ true | json }}|{{ "x" | json }}|{{ nothing | json }}', {})).toBe('5|true|"x"|null')
     expect(await render('{{ v | inspect }}', { v: { a: 1 } })).toBe('{"a":1}')
   })
+  it('writes the nil literal as null, and leaves jsonify and inspect printing nothing for nil', async () => {
+    expect(await render('{% assign x = nil %}{{ x | json }}|{{ nil | json }}|{{ null | json: 2 }}|{{ nothing | jsonify }}|{{ nothing | inspect }}', {})).toBe('null|null|null||')
+  })
   it('charges the longer, escaped output to the memory limit', async () => {
     const source = '{{ v | json }}'
     const v = '<'.repeat(1000)

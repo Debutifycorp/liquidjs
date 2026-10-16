@@ -1,3 +1,4 @@
+import { NullDrop } from '../../drop'
 import { filters as engineFilters } from '../../filters'
 import type { FilterImpl } from '../../template/filter-impl-options'
 import type { ShopifyFilterSet } from './types'
@@ -18,8 +19,8 @@ function escaping (name: 'json' | 'jsonify' | 'inspect') {
   const engine = engineFilters[name] as unknown as JsonFilter
   return function (this: FilterImpl, value: unknown, space?: number) {
     const json = engine.call(this, value, space)
-    // Shopify writes nil as `null` (the parity store prints `{{ product.selected_selling_plan.id | json }}` on a product with no selected plan as `null`, fixture `probe-product-default`; https://shopify.dev/docs/api/liquid/filters/json shows nil fields as `null` in its product example); the engine has no text for `undefined`, which would leave `"key":,` in a JSON a theme builds. `jsonify` and `inspect` keep printing nothing for nil.
-    if (json === undefined && name === 'json') return 'null'
+    // Shopify writes nil as `null` (the parity store prints `{{ product.selected_selling_plan.id | json }}` on a product with no selected plan as `null`, fixture `probe-product-default`; https://shopify.dev/docs/api/liquid/filters/json shows nil fields as `null` in its product example); the engine has no text for `undefined`, which would leave `"key":,` in a JSON a theme builds, and prints the `nil` literal (a `NullDrop`) as `{}`. `jsonify` and `inspect` keep printing nothing for nil.
+    if (name === 'json' && (json === undefined || value instanceof NullDrop)) return 'null'
     if (typeof json !== 'string') return json
     const escaped = escapeJson(json)
     this.context.memoryLimit.use(escaped.length - json.length)

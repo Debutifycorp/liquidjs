@@ -5,7 +5,7 @@ import { defaultCountry } from './view'
 import type { StoreView } from './view'
 import type { LanguageData, MarketData, StoreData } from './types'
 
-/** The currency of a view's market: https://shopify.dev/docs/api/liquid/objects/currency (`iso_code`, `symbol`, and a `name` that is the ISO code unless the market data names it), with the market's `rate`, price `rounding` and `adjustment` (Task 4 prices products with them) and the two money formats its prices print in. */
+/** The currency of a view's market: https://shopify.dev/docs/api/liquid/objects/currency (`iso_code`, `symbol`, and a `name` that is the ISO code unless the market data names it), with the market's `rate`, price `rounding` and `adjustment` (`convert` in `pricing.ts` prices products with them), whether the currency is the shop's own (`own`: its prices are not converted), whether the market hides compare-at prices (`hide_compare_at_prices`, `MarketData`) and the two money formats its prices print in. */
 export interface ViewCurrency {
   iso_code: string
   symbol: string
@@ -13,6 +13,8 @@ export interface ViewCurrency {
   rate: number
   rounding: boolean | number
   adjustment: number
+  own: boolean
+  hide_compare_at_prices: boolean
   money_format: string
   money_with_currency_format: string
 }
@@ -72,6 +74,8 @@ export function currencyOf (data: StoreData, view: StoreView): ViewCurrency {
     rate: c.rate,
     rounding: c.rounding ?? false,
     adjustment: market.price_adjustment ?? 0,
+    own,
+    hide_compare_at_prices: market.hide_compare_at_prices ?? false,
     money_format: c.money_format ?? (own ? data.shop.money_format ?? DEFAULT_MONEY_FORMAT : `${c.symbol}${amount}`),
     money_with_currency_format: c.money_with_currency_format ?? (own ? data.shop.money_with_currency_format ?? DEFAULT_MONEY_WITH_CURRENCY_FORMAT : `${c.symbol}${amount} ${c.iso_code}`)
   }
