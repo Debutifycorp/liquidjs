@@ -65,8 +65,9 @@ const FORM_TYPES: Record<string, FormType> = {
 
 const hidden = (name: string, value: string) => `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}" />`
 
-/** The values a form keeps from a post, https://shopify.dev/docs/api/liquid/objects/form (`email`, `body`, `name`, `phone`, `first_name`, `last_name`). */
+/** The values a form keeps from a post, https://shopify.dev/docs/api/liquid/objects/form: `email`, `body`, `name`, `phone`, `first_name` and `last_name` (`null` when not posted), and the others the page lists (`author` of `new_comment`, `message` of the gift card in a `product` form, and the address fields of `customer_address`), which are nil when not posted and so are not set then. */
 type PostedValue = 'email' | 'body' | 'name' | 'phone' | 'first_name' | 'last_name'
+const MORE_POSTED_VALUES = ['author', 'message', 'address1', 'address2', 'city', 'company', 'country', 'province', 'zip']
 
 /** The title of a field as a last resort: `first_name` is `First name`. */
 const capitalised = (field: string) => {
@@ -74,40 +75,55 @@ const capitalised = (field: string) => {
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/form_errors: iterating gives the field names (its keys are `author`, `body`, `email`, `form` and `password`); `messages[field]` and `translated_fields[field]` give the field's message and its name. A field with several messages prints them joined with `, `: the page shows one message per field and does not say what several look like. */
+const fieldsOf = (errors: FormErrorsDrop) => Object.keys(errors.messages)
+
+/** https://shopify.dev/docs/api/liquid/objects/form_errors: iterating gives the field names (its keys are `author`, `body`, `email`, `form` and `password`); `messages[field]` and `translated_fields[field]` give the field's message and its name. A field with several messages prints them joined with `, `: the page shows one message per field and does not say what several look like. The page calls the object an array, so `size`, `length`, `first`, `last` and an index (`form.errors[0]`, `form.errors[-1]`) read the field names as an array's items. */
 export class FormErrorsDrop extends Drop {
   public readonly messages: Record<string, string>
   public readonly translated_fields: Record<string, string>
 
-  public constructor (private readonly fields: Record<string, string[]>, translate: (field: string) => string) {
+  public constructor (fields: Record<string, string[]>, translate: (field: string) => string) {
     super()
     this.messages = Object.fromEntries(Object.entries(fields).map(([field, messages]) => [field, messages.join(', ')]))
     this.translated_fields = Object.fromEntries(Object.keys(fields).map(field => [field, translate(field)]))
   }
 
   public * [Symbol.iterator] () {
-    yield * Object.keys(this.fields)
+    yield * fieldsOf(this)
   }
 
   /** What `for` and `contains` read: the field names. */
   public valueOf () {
-    return Object.keys(this.fields)
+    return fieldsOf(this)
   }
 
-  /** The page calls `form_errors` an array of the error values, so `form.errors.size` and `form.errors | size` count the fields, as they count an array's items. */
   public get size () {
-    return Object.keys(this.fields).length
+    return fieldsOf(this).length
   }
 
   public get length () {
     return this.size
+  }
+
+  public get first () {
+    return fieldsOf(this)[0]
+  }
+
+  public get last () {
+    return fieldsOf(this).pop()
+  }
+
+  public liquidMethodMissing (key: string | number) {
+    const index = typeof key === 'number' ? key : /^-?\d+$/.test(key) ? Number(key) : NaN
+    const fields = fieldsOf(this)
+    return Number.isInteger(index) ? fields[index < 0 ? fields.length + index : index] : undefined
   }
 }
 
 /**
  * The `form` object inside `{% form %}`. https://shopify.dev/docs/api/liquid/objects/form: `password_needed` is `true` for `customer_login`, `posted_successfully?` always `true` for `customer_address`, `id` is `new` and `set_as_default_checkbox` the single-quoted `<input type='checkbox' id='address_default_address_new' …>` in its example. The page's example key is `password_needed?` while its property list says `password_needed`, so only the latter exists here. `form.id` for the other form types is the markup's `id` (the page gives no example).
  *
- * A form of the type the request's outcome (`RequestInput.form`) names shows it: `posted_successfully?` is `posted`, `errors` is a `FormErrorsDrop` over the outcome's errors (`null` when it has none, as the page says "or nil if none"), and the posted values are `email`, `body`, `name`, `phone`, `first_name` and `last_name`. Every other form is as nothing had been posted: not posted, no errors, and `null` for the fields (the page shows address fields filled from the posted address, which a preview has none of).
+ * A form of the type the request's outcome (`RequestInput.form`) names shows it: `posted_successfully?` is `posted`, `errors` is a `FormErrorsDrop` over the outcome's errors (`null` when it has none, as the page says "or nil if none"), and the posted values (`PostedValue`, `MORE_POSTED_VALUES`). Every other form is as nothing had been posted: not posted, no errors, and `null` for the six main fields and nil for the rest (the page shows address fields filled from the posted address, which a preview has none of). The properties are assigned in the order they had before a post was carried, so a form with no outcome prints through `json` as it did.
  */
 export class FormDrop extends Drop {
   public readonly errors: FormErrorsDrop | null
@@ -124,19 +140,22 @@ export class FormDrop extends Drop {
 
   public constructor (public readonly formType: string, public readonly resource: Resource, id: string, outcome?: FormOutcome, translate: (field: string) => string = capitalised) {
     super()
-    this.id = id
-    this.password_needed = formType === 'customer_login'
-    this['posted_successfully?'] = formType === 'customer_address' || !!outcome?.posted
-    this.errors = outcome?.errors && Object.keys(outcome.errors).length ? new FormErrorsDrop(outcome.errors, translate) : null
     const values = outcome?.values ?? {}
     const posted = (key: PostedValue) => (hasOwn(values, key) ? values[key] : null)
+    this.errors = outcome?.errors && Object.keys(outcome.errors).length ? new FormErrorsDrop(outcome.errors, translate) : null
     this.email = posted('email')
     this.body = posted('body')
     this.name = posted('name')
     this.phone = posted('phone')
     this.first_name = posted('first_name')
     this.last_name = posted('last_name')
+    this.id = id
+    this.password_needed = formType === 'customer_login'
+    this['posted_successfully?'] = formType === 'customer_address' || !!outcome?.posted
     this.set_as_default_checkbox = `<input type='checkbox' id='address_default_address_${escapeHtml(id)}' name='address[default]' value='1'>`
+    for (const key of MORE_POSTED_VALUES) {
+      if (hasOwn(values, key)) this[key] = values[key]
+    }
   }
 }
 

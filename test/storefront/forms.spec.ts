@@ -38,6 +38,13 @@ function formTheme (extra: Record<string, string> = {}) {
   return { files: { ...probeTheme().files, 'templates/index.liquid': FORMS, 'sections/forms.liquid': FORMS, ...extra } }
 }
 
+/** What `template` prints inside `{% form 'contact' %}`, for a contact form that failed with `errors` and kept `values`. */
+async function inContact (template: string, errors?: Record<string, string[]>, values?: Record<string, string>) {
+  const request = requestFromUrl('/', data, { form: { type: 'contact', posted: false, ...(errors ? { errors } : {}), ...(values ? { values } : {}) } })
+  const { html: out } = await renderPage({ theme: formTheme({ 'templates/index.liquid': `{%- form 'contact' -%}${template}{%- endform -%}` }), templateName: 'index', data, request: request.request })
+  return out.replace(/<form[^>]*>|<input[^>]*>|<\/form>/g, '')
+}
+
 async function html (form: FormOutcome | undefined, extra: Record<string, string> = {}) {
   const request = requestFromUrl('/', data, form ? { form } : {})
   const { html } = await renderPage({ theme: formTheme(extra), templateName: 'index', data, request: request.request })
@@ -117,14 +124,36 @@ describe('form errors', () => {
     expect(errors.translated_fields).toEqual({ email: 'EMAIL', body: 'BODY' })
   })
 
-  it('counts its fields for size, as an array does', async () => {
-    const form = '{%- form \'contact\' -%}{{ form.errors.size }}|{{ form.errors | size }}|{{ form.errors | join: \'+\' }}{%- endform -%}'
-    const request = requestFromUrl('/', data, { form: { type: 'contact', posted: false, errors: { email: ['is invalid'], phone: ['is bad'] } } })
-    const { html: out } = await renderPage({ theme: formTheme({ 'templates/index.liquid': form }), templateName: 'index', data, request: request.request })
-    expect(out.replace(/<form[^>]*>|<input[^>]*>|<\/form>/g, '')).toBe('2|2|email+phone')
+  it('reads as an array for size, first, last and an index', async () => {
+    const out = await inContact('{{ form.errors.size }}|{{ form.errors | size }}|{{ form.errors | join: \'+\' }}|{{ form.errors.first }}|{{ form.errors.last }}|{{ form.errors[0] }}|{{ form.errors[1] }}|{{ form.errors[-1] }}|[{{ form.errors[2] }}]|[{{ form.errors.other }}]', { email: ['is invalid'], phone: ['is bad'] })
+    expect(out).toBe('2|2|email+phone|email|phone|email|phone|phone|[]|[]')
+  })
+
+  it('shows only its messages and translated names to json, not the fields it was made from', async () => {
+    expect(await inContact('{{ form.errors | json }}|[{{ form.errors.fields }}]', { email: ['is invalid'] })).toBe('{"messages":{"email":"is invalid"},"translated_fields":{"email":"Email"}}|[]')
+  })
+
+  it('prints nothing for default_errors, also for a form that has errors (Shopify\'s wording is unrecorded)', async () => {
+    expect(await inContact('[{{ form.errors | default_errors }}]', { email: ['is invalid'] })).toBe('[]')
   })
 
   it('ignores a posted value the form does not keep', async () => {
     expect(await html({ type: 'contact', posted: false, values: { email: 'a@b', toString: 'x', secret: 'y' } })).toContain('[contact false|0|a@b|||||]')
+  })
+})
+
+describe('form object', () => {
+  it('prints through json as it did before a post was carried: same keys in the same order, nothing added', async () => {
+    const out = JSON.parse(await inContact('{{ form | json }}'))
+    expect(Object.keys(out)).toEqual(['formType', 'errors', 'email', 'body', 'name', 'phone', 'first_name', 'last_name', 'id', 'password_needed', 'posted_successfully?', 'set_as_default_checkbox'])
+    expect(out).toMatchObject({ formType: 'contact', errors: null, email: null, id: 'contact_form', 'posted_successfully?': false })
+  })
+
+  it('carries the other values shopify.dev lists on the form object, and nil for the ones not posted', async () => {
+    const values = { author: 'Ann', message: 'Happy birthday', address1: '1 Main St', address2: 'Suite 2', city: 'Calgary', company: 'Potions', country: 'Canada', province: 'Alberta', zip: 'T1X 0L3' }
+    const template = ['author', 'message', 'address1', 'address2', 'city', 'company', 'country', 'province', 'zip'].map(key => `{{ form.${key} }}`).join('|')
+    expect(await inContact(template, undefined, values)).toBe('Ann|Happy birthday|1 Main St|Suite 2|Calgary|Potions|Canada|Alberta|T1X 0L3')
+    expect(await inContact(template)).toBe('||||||||')
+    expect(await inContact('{{ form.author | json }}|{{ form.zip | json }}')).toBe('null|null')
   })
 })
