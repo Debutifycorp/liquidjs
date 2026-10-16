@@ -47,6 +47,11 @@ export function newline_to_br (this: FilterImpl, v: string) {
 export function strip_html (this: FilterImpl, v: string) {
   const str = stringify(v)
   this.context.memoryLimit.use(str.length)
+  return stripTags(str)
+}
+
+/** `str` without its tags, comments and script and style blocks: the text `strip_html` returns, for callers outside a render. */
+export function stripTags (str: string) {
   const blocks = new Map([['<script', '</script>'], ['<style', '</style>'], ['<!--', '-->'], ['<', '>']])
   let out = ''
   let i = 0

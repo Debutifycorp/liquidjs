@@ -1,5 +1,5 @@
-import { cartJson, findVariant, lineItemJson, lineKey, renderPage, stockFor, storefrontSampleData as data } from '../../src/shopify'
-import type { CartState, StoreData } from '../../src/shopify'
+import { cartJson, findVariant, lineItemJson, lineKey, renderPage, renderSection, stockFor, storefrontSampleData as data } from '../../src/shopify'
+import type { CartState, RequestInput, StoreData } from '../../src/shopify'
 import { ReportCollector } from '../../src/shopify/report'
 import { buildCartObject } from '../../src/shopify/store/cart'
 import { buildStore } from '../../src/shopify/store/build'
@@ -152,6 +152,68 @@ describe('cart', () => {
       expect([item.price, item.selling_plan_allocation, item.url]).toEqual([9000, null, '/products/hoodie?variant=43695847538710'])
       expect(item.key).toBe(lineKey(line(HOODIE, 1, {}, 71001)))
     })
+    it('leaves out a line that holds less than one of its variant', () => {
+      const cart = cartOf(state([line(HOODIE, 0), line(HOODIE, -1), line(HOODIE, Number.NaN), line(BLACK_SUNNIES, 2)]))
+      expect([cart.item_count, cart.total_price, (cart.items as unknown[]).length]).toEqual([2, 10000, 1])
+    })
+    it('hides the private attributes, those named __…, from the cart, /cart.js and cart | json, and keeps them in the state', async () => {
+      // https://shopify.dev/docs/api/ajax/reference/cart: "Private cart attributes are not available in the Liquid `cart.attributes` object or the Ajax API"
+      const cart = state([line(HOODIE, 1)], { attributes: { gift: 'yes', __hidden: 'secret' } })
+      const theme = { files: { ...probeTheme().files, 'templates/cart.liquid': '{{ cart.attributes | json }}|{{ cart.attributes.__hidden }}|{{ cart | json }}' } }
+      const [attributes, direct, printed] = (await renderPage({ theme, templateName: 'cart', data, cart })).html.split('|')
+      expect(JSON.parse(attributes)).toEqual({ gift: 'yes' })
+      expect(direct).toBe('')
+      expect(JSON.parse(printed).attributes).toEqual({ gift: 'yes' })
+      expect(cartJson(data, cart).attributes).toEqual({ gift: 'yes' })
+      expect(cart.attributes).toEqual({ gift: 'yes', __hidden: 'secret' })
+    })
+    it('gives the cart a copy of the attributes, so changing one leaves the state alone', () => {
+      const cart = state([], { attributes: { gift: 'yes' } })
+      ;(cartJson(data, cart).attributes as Record<string, string>).gift = 'changed'
+      ;(cartOf(cart).attributes as Record<string, string>).other = 'added'
+      expect(cart.attributes).toEqual({ gift: 'yes' })
+    })
+    it('keeps a private line property (_gift) in the line, its key and /cart.js, where a template can read it', async () => {
+      const cart = state([line(HOODIE, 1, { _gift: 'yes' })])
+      const item = (cartJson(data, cart).items as any[])[0]
+      expect(item.properties).toEqual({ _gift: 'yes' })
+      expect(item.key).toBe(lineKey(line(HOODIE, 1, { _gift: 'yes' })))
+      expect(item.key).not.toBe(lineKey(line(HOODIE, 1)))
+      const theme = { files: { ...probeTheme().files, 'templates/cart.liquid': '{{ cart.items[0].properties._gift }}' } }
+      expect((await renderPage({ theme, templateName: 'cart', data, cart })).html).toBe('yes')
+    })
+    it('gives the currency the symbol and name of the localization\'s, and a line its weight and tax flag', async () => {
+      const theme = { files: { ...probeTheme().files, 'templates/cart.liquid': '{{ cart.currency.iso_code }}|{{ cart.currency.symbol }}|{{ cart.currency.name }}|{{ localization.country.currency.iso_code }}|{{ localization.country.currency.symbol }}|{{ localization.country.currency.name }}|{{ cart.items[0].grams }}|{{ cart.items[0].taxable }}' } }
+      const show = async (request?: RequestInput) => (await renderPage({ theme, templateName: 'cart', data, cart: state([line(HOODIE, 2)]), request })).html.split('|')
+      const us = await show()
+      expect(us.slice(0, 3)).toEqual(us.slice(3, 6))
+      expect(us.slice(0, 2)).toEqual(['USD', '$'])
+      expect(us.slice(6)).toEqual(['600', 'true'])
+      const ca = await show({ market: 'ca', language: 'en', localePrefix: '/en-ca' })
+      expect(ca.slice(0, 3)).toEqual(ca.slice(3, 6))
+      expect(ca.slice(0, 2)).toEqual(['CAD', '$'])
+    })
+    it('prints a line item, and the list of them, as the lines of cart | json', async () => {
+      const cart = state([line(HOODIE, 1, { Engraving: 'Hi' }), line(SLIDES_SMALL, 1, {}, 71001)])
+      const theme = { files: { ...probeTheme().files, 'templates/cart.liquid': '{{ cart | json }}|{{ cart.items | json }}|{{ cart.items[1] | json }}' } }
+      const [whole, items, second] = (await renderPage({ theme, templateName: 'cart', data, cart })).html.split('|')
+      const lines = JSON.parse(whole).items
+      expect(JSON.parse(items)).toEqual(lines)
+      expect(JSON.parse(second)).toEqual(lines[1])
+      expect(Object.keys(lines[0])).not.toContain('product')
+      expect(items.length).toBeLessThan(6000)
+    })
+    it('shows the cart a section renders with', async () => {
+      const files = { ...probeTheme().files, 'templates/index.json': JSON.stringify({ sections: { main: { type: 'cart-count' } }, order: ['main'] }), 'sections/cart-count.liquid': '{{ cart.item_count }}:{{ cart.items[0].title }}' }
+      const { html } = await renderSection({ theme: { files }, templateName: 'index', section: 'main', data, cart: state([line(HOODIE, 3)]) })
+      expect(html).toContain('3:Hoodie - Green / Small')
+    })
+    it('survives a round trip through JSON as a whole', () => {
+      const cart = state([line(HOODIE, 1, { Engraving: 'Hi' }), line(SLIDES_SMALL, 2, {}, 71001)], { note: 'Gift wrap', attributes: { gift: 'yes', __hidden: 'x' }, discountCodes: ['WELCOME10'], currency: 'USD' })
+      const copy = JSON.parse(JSON.stringify(cart)) as CartState
+      expect(copy).toEqual(cart)
+      expect(cartJson(data, copy)).toEqual(cartJson(data, cart))
+    })
     it('counts the items, the weight and the total, and requires shipping while it has a line', () => {
       const cart = cartOf(state([line(HOODIE, 3), line(SLIDES_SMALL, 1, {}, 71001)]))
       expect(cart).toMatchObject({ item_count: 4, total_price: 9000 * 3 + 2250, items_subtotal_price: 9000 * 3 + 2250, original_total_price: 9000 * 3 + 2250, total_weight: 600 * 3 + 300, requires_shipping: true, total_discount: 0, 'empty?': false })
@@ -201,6 +263,11 @@ describe('cart', () => {
     it('counts the stock of a tracked variant, and sells nothing of a sold out one (fixture ajax-cart-errors)', () => {
       expect(stockFor(findVariant(data, 43696926949398)!.variant)).toBe(3)
       expect(stockFor(findVariant(data, 43695847145494)!.variant)).toBe(0)
+    })
+    it('sells none of a variant the data marks unavailable, tracked or not', () => {
+      const variant = { id: 1, title: 'x', price: 100, available: false }
+      expect(stockFor(variant)).toBe(0)
+      expect(stockFor({ ...variant, inventory_management: 'shopify', inventory_policy: 'continue' })).toBe(0)
     })
     it('has no limit for a variant that is not tracked or that sells past zero', () => {
       const variant = { id: 1, title: 'x', price: 100, available: true, inventory_quantity: 0 }

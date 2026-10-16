@@ -2,7 +2,7 @@ import { NullDrop } from '../../drop'
 import { filters as engineFilters } from '../../filters'
 import type { FilterImpl } from '../../template/filter-impl-options'
 import { isBuiltProduct } from '../store/build'
-import { cartLiquidJson, isBuiltCart } from '../store/cart'
+import { cartLiquidJson, isBuiltCart, isBuiltLine, lineItemJson } from '../store/cart'
 import { productLiquidJson } from '../store/product-json'
 import type { ShopifyFilterSet } from './types'
 
@@ -20,8 +20,8 @@ type JsonFilter = (this: FilterImpl, value: unknown, space?: number) => string |
 /** A product, or a list of them (`collection.products`), as the parity store prints it (`productLiquidJson`; fixtures `probe-product-default`, `probe-product-en-ca` and `probe-product-en-eu-hoodie`), which is not the `/products/<handle>.js` object. Any other value is left as it is. */
 const printedProducts = (value: unknown): unknown => isBuiltProduct(value) ? productLiquidJson(value) : Array.isArray(value) && value.some(isBuiltProduct) ? value.map(printedProducts) : value
 
-/** A cart built for a page (`cart`), as the parity store prints it (`cartLiquidJson`; fixtures `ajax-cart-session` and `ajax-cart-en-ca`), which is neither the engine's cart object nor the `/cart.js` answer. Any other value is left as it is. */
-const printedCart = (value: unknown): unknown => isBuiltCart(value) ? cartLiquidJson(value) : value
+/** A cart built for a page (`cart`), as the parity store prints it (`cartLiquidJson`; fixtures `ajax-cart-session` and `ajax-cart-en-ca`), which is neither the engine's cart object nor the `/cart.js` answer. A line item of the cart, or a list of them (`cart.items`), prints as a line of that answer (`lineItemJson` in its `liquid` form): no recording prints a line or the list on its own, so this is the line the cart holds, not a pinned shape. Any other value is left as it is. */
+const printedCart = (value: unknown): unknown => isBuiltCart(value) ? cartLiquidJson(value) : isBuiltLine(value) ? lineItemJson(value, 'liquid') : Array.isArray(value) && value.some(isBuiltLine) ? value.map(printedCart) : value
 
 /** The engine's filter, with its output escaped by `escapeJson`. The longer output is charged to the memory limit. */
 function escaping (name: 'json' | 'jsonify' | 'inspect') {

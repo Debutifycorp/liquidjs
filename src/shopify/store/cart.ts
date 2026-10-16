@@ -1,5 +1,5 @@
 import { createHash } from 'crypto'
-import { strip_html } from '../../filters/html'
+import { stripTags } from '../../filters/html'
 import { HandleMap } from '../objects/handle-map'
 import type { ImageDrop } from '../objects/image'
 import { buildStore, hidden } from './build'
@@ -14,7 +14,13 @@ const CART_MARKER = '__cart'
 /** Whether `value` is a cart built by `buildCartObject`. */
 export const isBuiltCart = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject)[CART_MARKER] === true
 
-/** One line of a visitor's cart: a variant, how many of it, its line item properties and the selling plan it is bought under. */
+/** The hidden field that marks a line item built by `buildCartObject` for the `json` filter. */
+const LINE_MARKER = '__line'
+
+/** Whether `value` is a line item built by `buildCartObject`. */
+export const isBuiltLine = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject)[LINE_MARKER] === true
+
+/** One line of a visitor's cart: a variant, how many of it, its line item properties and the selling plan it is bought under. A line holds at least one of its variant (the storefront removes a line whose quantity reaches zero); the engine leaves a line with less out of the cart. */
 export interface CartLineState {
   variantId: number
   quantity: number
@@ -55,8 +61,9 @@ export function findVariant (data: StoreData, variantId: number): { product: Pro
   return null
 }
 
-/** How many of a variant can be sold: unlimited (null) when Shopify does not track its stock or sells past zero. https://shopify.dev/docs/api/liquid/objects/variant#variant-inventory_policy ("continue" sells when the stock is out) and #variant-inventory_management. A tracked variant whose data gives no quantity counts as the variant object does (`inventory_quantity`: one when it is available, none when it is not). */
+/** How many of a variant can be sold: none when the data marks it unavailable, otherwise unlimited (null) when Shopify does not track its stock or sells past zero. https://shopify.dev/docs/api/liquid/objects/variant#variant-inventory_policy ("continue" sells when the stock is out) and #variant-inventory_management. A tracked variant whose data gives no quantity counts as the variant object does (`inventory_quantity`: one when it is available, none when it is not). */
 export function stockFor (variant: VariantData): number | null {
+  if (!variant.available) return 0
   if (variant.inventory_management == null || variant.inventory_policy === 'continue') return null
   return Math.max(0, variant.inventory_quantity ?? (variant.available ? 1 : 0))
 }
@@ -108,7 +115,7 @@ function propertiesOf (properties: Record<string, string>): Record<string, strin
  */
 function lineItem (store: StoreObjects, state: CartLineState, index: number): LiquidObject | null {
   const found = builtVariant(store, state.variantId)
-  if (!found) return null
+  if (!found || !(state.quantity >= 1)) return null
   const { product, variant, untranslatedTitle } = found
   const allocation = state.sellingPlanId === null ? null : (variant.selling_plan_allocations as LiquidObject[]).find(entry => (entry.selling_plan as LiquidObject).id === state.sellingPlanId) ?? null
   const price = allocation ? allocation.price as number : variant.price as number
@@ -144,16 +151,19 @@ function lineItem (store: StoreObjects, state: CartLineState, index: number): Li
     total_discount: 0,
     selling_plan_allocation: allocation,
     requires_shipping: variant.requires_shipping,
+    taxable: variant.taxable,
+    grams: variant.weight,
     gift_card: false,
     options_with_values: (product.options as string[]).map((name, i) => ({ name, value: (variant.options as string[])[i] ?? null })),
     unit_price_measurement: null
   }
   hidden(item, 'untranslated_product_title', untranslatedTitle)
+  hidden(item, LINE_MARKER, true)
   return item
 }
 
 /**
- * The `cart` object for a cart state, https://shopify.dev/docs/api/liquid/objects/cart, in the store's view (its prices, language and prefix). Lines naming a variant the store does not have are left out. `token` is nil for a cart without one (`cartStateOf`). Totals add the lines' prices, `total_weight` their weight in grams times the quantity, and `requires_shipping` is true while a line requires it. No discounts are applied yet, so `total_discount` is 0 and the discount lists are empty.
+ * The `cart` object for a cart state, https://shopify.dev/docs/api/liquid/objects/cart, in the store's view (its prices, language and prefix). Lines naming a variant the store does not have, or holding less than one of it, are left out. `attributes` are the state's less the private ones, those whose name starts with `__`, which https://shopify.dev/docs/api/ajax/reference/cart says are "not available in the Liquid `cart.attributes` object or the Ajax API"; the object is a copy, so a template or a caller changing it leaves the state alone. `currency` has the view's `iso_code`, `symbol` and `name`. `token` is nil for a cart without one (`cartStateOf`). Totals add the lines' prices, `total_weight` their weight in grams times the quantity, and `requires_shipping` is true while a line requires it. No discounts are applied yet, so `total_discount` is 0 and the discount lists are empty.
  */
 export function buildCartObject (store: StoreObjects, state: CartState): LiquidObject {
   const items: LiquidObject[] = []
@@ -172,9 +182,9 @@ export function buildCartObject (store: StoreObjects, state: CartState): LiquidO
     checkout_charge_amount: subtotal,
     total_discount: 0,
     total_weight: items.reduce((sum, item) => sum + ((item.variant as LiquidObject).weight as number) * (item.quantity as number), 0),
-    currency: { iso_code: store.currency.iso_code },
+    currency: { iso_code: store.currency.iso_code, symbol: store.currency.symbol, name: store.currency.name },
     note: state.note,
-    attributes: state.attributes,
+    attributes: Object.fromEntries(Object.entries(state.attributes).filter(([name]) => !name.startsWith('__'))),
     requires_shipping: items.some(item => item.requires_shipping),
     cart_level_discount_applications: [],
     discount_applications: [],
@@ -189,10 +199,8 @@ export function buildCartObject (store: StoreObjects, state: CartState): LiquidO
 /** The text of a field the Ajax API writes as `null` when it is empty (a variant's `sku`), as the parity store does (fixture `ajax-cart-session`). */
 const textOrNull = (text: unknown) => text === '' || text === undefined || text === null ? null : text
 
-const noMemoryLimit = { context: { memoryLimit: { use: () => undefined } } } as unknown as ThisParameterType<typeof strip_html>
-
 /** A product's description as the Ajax cart prints it: the text without its tags (`<p>` is gone in fixture `ajax-cart-session`, whose products' descriptions are paragraphs). */
-const plainText = (html: unknown) => strip_html.call(noMemoryLimit, String(html ?? ''))
+const plainText = (html: unknown) => stripTags(String(html ?? ''))
 
 /** A line's image as the Ajax cart prints it: `url` is the full `https://` address of the dataset, the `alt` the image's, or the product's title when it has none (fixtures `ajax-cart-session` and `ajax-cart-sections`: the dataset's images have none), and the keys' order differs by form. */
 function imageJson (image: ImageDrop | null | undefined, product: LiquidObject, form: LineItemForm): Record<string, unknown> | null {
@@ -264,9 +272,9 @@ export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): 
     total_discount: item.total_discount,
     discounts: [],
     sku: form === 'change' ? item.sku : textOrNull(item.sku),
-    grams: variant.weight,
+    grams: item.grams,
     vendor: item.vendor,
-    taxable: variant.taxable,
+    taxable: item.taxable,
     product_id: item.product_id,
     product_has_only_default_variant: product.has_only_default_variant,
     gift_card: item.gift_card,
