@@ -10,7 +10,8 @@
             "id": 43695847538710,
             "quantity": 1,
             "properties": {
-              "Engraving": "<b>A & \"B\"</b>"
+              "Engraving": "<b>A & \"B\"</b>",
+              "<u>N</u>": "v"
             }
           }
         ]
@@ -22,7 +23,8 @@
           {
             "id": 43695847538710,
             "properties": {
-              "Engraving": "<b>A & \"B\"</b>"
+              "Engraving": "<b>A & \"B\"</b>",
+              "<u>N</u>": "v"
             },
             "quantity": 1,
             "variant_id": 43695847538710,
@@ -88,7 +90,8 @@
       "json": {
         "note": "</textarea><b>A & \"B\"</b>",
         "attributes": {
-          "gift": "<i>x & \"y\"</i>"
+          "gift": "<i>x & \"y\"</i>",
+          "<s>k</s>": "w"
         }
       },
       "status": 200,
@@ -97,7 +100,8 @@
         "token": "<token>",
         "note": "</textarea><b>A & \"B\"</b>",
         "attributes": {
-          "gift": "<i>x & \"y\"</i>"
+          "gift": "<i>x & \"y\"</i>",
+          "<s>k</s>": "w"
         },
         "original_total_price": 9000,
         "total_price": 9000,
@@ -108,7 +112,8 @@
           {
             "id": 43695847538710,
             "properties": {
-              "Engraving": "<b>A & \"B\"</b>"
+              "Engraving": "<b>A & \"B\"</b>",
+              "<u>N</u>": "v"
             },
             "quantity": 1,
             "variant_id": 43695847538710,
@@ -185,7 +190,8 @@
         "token": "<token>",
         "note": "</textarea><b>A & \"B\"</b>",
         "attributes": {
-          "gift": "<i>x & \"y\"</i>"
+          "gift": "<i>x & \"y\"</i>",
+          "<s>k</s>": "w"
         },
         "original_total_price": 9000,
         "total_price": 9000,
@@ -196,7 +202,8 @@
           {
             "id": 43695847538710,
             "properties": {
-              "Engraving": "<b>A & \"B\"</b>"
+              "Engraving": "<b>A & \"B\"</b>",
+              "<u>N</u>": "v"
             },
             "quantity": 1,
             "variant_id": 43695847538710,
@@ -271,7 +278,7 @@
       "status": 200,
       "location": null,
       "body": {
-        "text": "note=&lt;/textarea&gt;&lt;b&gt;A &amp; &quot;B&quot;&lt;/b&gt;\nattribute=&lt;i&gt;x &amp; &quot;y&quot;&lt;/i&gt;\nproperties=Engraving=&lt;b&gt;A &amp; &quot;B&quot;&lt;/b&gt;;\n"
+        "text": "note=&lt;/textarea&gt;&lt;b&gt;A &amp; &quot;B&quot;&lt;/b&gt;\nattribute=&lt;i&gt;x &amp; &quot;y&quot;&lt;/i&gt;\nattributes=gift=&lt;i&gt;x &amp; &quot;y&quot;&lt;/i&gt;;k=w;\nproperties=Engraving=&lt;b&gt;A &amp; &quot;B&quot;&lt;/b&gt;;N=v;\n"
       }
     },
     {
@@ -289,7 +296,8 @@
         "currency": "USD",
         "note": "&lt;/textarea&gt;&lt;b&gt;A &amp; &quot;B&quot;&lt;/b&gt;",
         "attributes": {
-          "gift": "&lt;i&gt;x &amp; &quot;y&quot;&lt;/i&gt;"
+          "gift": "&lt;i&gt;x &amp; &quot;y&quot;&lt;/i&gt;",
+          "k": "w"
         },
         "requires_shipping": true,
         "money": "$90.00",
@@ -312,6 +320,10 @@
               [
                 "Engraving",
                 "&lt;b&gt;A &amp; &quot;B&quot;&lt;/b&gt;"
+              ],
+              [
+                "N",
+                "v"
               ]
             ],
             "selling_plan": null,
@@ -322,7 +334,8 @@
         "ajax": {
           "note": "</textarea><b>A & \"B\"</b>",
           "attributes": {
-            "gift": "<i>x & \"y\"</i>"
+            "gift": "<i>x & \"y\"</i>",
+            "<s>k</s>": "w"
           },
           "original_total_price": 9000,
           "total_price": 9000,
@@ -333,7 +346,8 @@
             {
               "id": 43695847538710,
               "properties": {
-                "Engraving": "<b>A & \"B\"</b>"
+                "Engraving": "<b>A & \"B\"</b>",
+                "<u>N</u>": "v"
               },
               "quantity": 1,
               "variant_id": 43695847538710,
@@ -405,7 +419,8 @@
         "token": "<token>",
         "note": "</textarea><b>A & \"B\"</b>",
         "attributes": {
-          "gift": "<i>x & \"y\"</i>"
+          "gift": "<i>x & \"y\"</i>",
+          "<s>k</s>": "w"
         },
         "original_total_price": 0,
         "total_price": 0,
