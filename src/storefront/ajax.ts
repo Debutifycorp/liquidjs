@@ -1,19 +1,29 @@
 import { cartJson, lineKey, predictiveJson, productJson, recommendationsJson, shippingRates } from '../shopify'
 import type { CartLineState, PageRequest } from '../shopify'
 import type { Fields } from './body'
-import { addToCart, changeCart, clearCart, updateCart } from './cart'
-import type { CartResult } from './cart'
+import { addToCart, CART_ERRORS, changeCart, clearCart, updateCart } from './cart'
+import type { CartError, CartResult } from './cart'
 import { redirect, refererPath, STORE_PATH } from './handler'
 import type { Context, RouteHandler } from './handler'
 import { pageForPath, renderSectionsJson } from './pages'
 import type { CartAction, Route } from './router'
-import { withoutBase } from './support'
+import { PRIVATE, withoutBase } from './support'
 import type { VisitorState } from './types'
 import { randomUUID } from 'crypto'
 
-const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'private, no-store' }
-const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: JSON_HEADERS })
-/** A response with a status and no body, as the parity store answers a prepared shipping rate or a product it lacks. */
+const typed = (type: string) => ({ 'content-type': type, 'cache-control': PRIVATE })
+/** The type of an answer asked at a `.json` address, as the parity store types it (fixtures `ajax-shipping-rates`, `ajax-suggest-json`, `ajax-recommendations-json`). */
+const JSON_HEADERS = typed('application/json; charset=utf-8')
+/** The type of an answer asked at a `.js` address: the parity store sends the cart and product `.js` endpoints, their errors included, as `text/javascript; charset=utf-8` (scenarios `ajax-cart-session`, `ajax-cart-errors`, `ajax-product-js`). */
+const JS_HEADERS = typed('text/javascript; charset=utf-8')
+/** The type of the "Cannot find variant" errors of `add.js` and `update.js`: plain `application/json`, with no charset, unlike every other cart error (scenario `ajax-cart-errors`, steps 3 and 6). */
+const PLAIN_JSON_HEADERS = typed('application/json')
+/** The error typed `PLAIN_JSON_HEADERS`: a variant the store lacks. */
+const isPlainJson = (error: CartError) => error.body.description === CART_ERRORS.notFound().error.body.description
+const answer = (headers: Record<string, string>) => (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers })
+const json = answer(JSON_HEADERS)
+const js = answer(JS_HEADERS)
+/** A response with a status and no body, as the parity store answers a product it lacks (scenario `ajax-product-js`, step 3). */
 const empty = (status: number) => new Response(null, { status, headers: JSON_HEADERS })
 
 type Item = Record<string, unknown>
@@ -158,14 +168,14 @@ const cartOps: RouteHandler = async ctx => {
   const route = ctx.routed.route
   if (route.kind !== 'cart') throw new Error('not a cart route')
   const result: CartResult = route.action === 'clear' ? clearCart(ctx.visitor) : OPS[route.action](ctx.visitor, ctx.fields, ctx.data, ctx.limits)
-  if (!result.ok) return { response: json(result.error.body, result.error.status) }
+  if (!result.ok) return { response: (isPlainJson(result.error) ? answer(PLAIN_JSON_HEADERS) : js)(result.error.body, result.error.status) }
   const body = answerBody(ctx, route.action, ctx.fields, result)
   const sections = await sectionsFor(ctx, ctx.fields, result.state)
-  return { response: json(sections === undefined ? body : { ...body, sections }), state: result.state }
+  return { response: js(sections === undefined ? body : { ...body, sections }), state: result.state }
 }
 
 /** `GET /cart.js`: the cart. */
-const cartGet: RouteHandler = async ctx => ({ response: json(cartJson(ctx.data, ctx.visitor.cart, ctx.view)) })
+const cartGet: RouteHandler = async ctx => ({ response: js(cartJson(ctx.data, ctx.visitor.cart, ctx.view)) })
 
 /** `GET /discount/<code>?redirect=<path>`: adds the code to the visitor's cart (once: the same code in any case is moved last), then redirects (default `/`, and `redirect` must be a path on the store), as https://help.shopify.com/en/manual/discounts/discount-methods/discount-links describes discount links; the recorder followed the redirect to `/cart.js`, which showed the code applied (fixture `ajax-discount-codes`, step 13). A cart holds at most `limits.properties` codes of `limits.propertyLength` characters, as `update.js` holds them (the oldest goes first), and a blank or longer code is not added: the link still redirects, as a code that does not exist does on Shopify. */
 const discount: RouteHandler = async ctx => {
@@ -182,21 +192,21 @@ const discount: RouteHandler = async ctx => {
 /** One part of `shipping_address[…]`, as long as a cart attribute may be. */
 const part = (ctx: Context, name: string) => ctx.routed.query.get(`shipping_address[${name}]`)?.slice(0, ctx.limits.propertyLength)
 
-/** `prepare_shipping_rates.json`, `async_shipping_rates.json` and `shipping_rates.json` (https://shopify.dev/docs/api/ajax/reference/cart: the shipping rates endpoints). The rates are computed on the cart as it is when they are asked for, so `prepare` answers 202 with an empty body, as the parity store does (fixture `ajax-shipping-rates`, steps 1, 3 and 5), and `async` answers the rates on the first poll (200). An address no zone covers answers the error object with status 422 (step 9). */
+/** `prepare_shipping_rates.json`, `async_shipping_rates.json` and `shipping_rates.json` (https://shopify.dev/docs/api/ajax/reference/cart: the shipping rates endpoints). The rates are computed on the cart as it is when they are asked for, so `prepare` answers 202 with the JSON `null`, as the parity store does (scenario `ajax-shipping-rates`, steps 2, 4 and 6: the body is the four characters `null`; the fixture cut keeps it as `null`), and `async` answers the rates on the first poll (200). An address no zone covers answers the error object with status 422 (step 9). */
 const shipping: RouteHandler = async ctx => {
   const route = ctx.routed.route
   if (route.kind !== 'shipping') throw new Error('not a shipping route')
-  if (route.action === 'prepare') return { response: empty(202) }
+  if (route.action === 'prepare') return { response: json(null, 202) }
   const rates = shippingRates(ctx.data, ctx.visitor.cart, { country: part(ctx, 'country'), province: part(ctx, 'province'), zip: part(ctx, 'zip') }, ctx.view)
   return { response: json(rates, 'shipping_rates' in rates ? 200 : 422) }
 }
 
-/** `GET /products/<handle>.js`. An unknown product answers 404 with an empty body, not the theme's page (fixture `ajax-product-js`, step 2). */
+/** `GET /products/<handle>.js`, typed `text/javascript`. An unknown product answers 404 with an empty body, not the theme's page (fixture `ajax-product-js`, step 2), typed as JSON (scenario `ajax-product-js`, step 3). */
 const product: RouteHandler = async ctx => {
   const route = ctx.routed.route
   if (route.kind !== 'product-json') throw new Error('not a product route')
   const found = productJson(ctx.data, route.handle, ctx.view)
-  return { response: found ? json(found) : empty(404) }
+  return { response: found ? js(found) : empty(404) }
 }
 
 /** `GET /search/suggest.json`; the terms are cut to `limits.search` characters. */

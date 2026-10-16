@@ -91,9 +91,9 @@ async function answerPage (ctx: Context): Promise<Answer> {
   if (!resourceExists(ctx.data, route.page)) return { response: await renderPageResponse(ctx, route.page) }
   if (route.sectionId) return { response: await renderSectionResponse(ctx, route.page, route.sectionId), fragment: true }
   if (route.sections) {
-    // https://shopify.dev/docs/api/ajax/section-rendering: "up to five sections"; the parity store answers a sixth with 400 and an empty body (fixture `ajax-sections-page`, step 3)
-    if (route.sections.length > ctx.limits.sections) return { response: new Response(null, { status: 400 }) }
-    return { response: Response.json(await renderSectionsJson(ctx, route.page, route.sections)) }
+    // https://shopify.dev/docs/api/ajax/section-rendering: "up to five sections"; the parity store answers a sixth with 400 and an empty body typed `text/html; charset=utf-8` (fixture `ajax-sections-page`, step 3), and the map as `application/json; charset=utf-8` (scenario `ajax-sections-page`, step 2)
+    if (route.sections.length > ctx.limits.sections) return { response: new Response(null, { status: 400, headers: { 'content-type': 'text/html; charset=utf-8' } }) }
+    return { response: new Response(JSON.stringify(await renderSectionsJson(ctx, route.page, route.sections)), { headers: { 'content-type': 'application/json; charset=utf-8' } }) }
   }
   return { response: await renderPageResponse(ctx, route.page) }
 }

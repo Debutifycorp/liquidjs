@@ -32,7 +32,7 @@ describe('pages', () => {
     expect([sixth.status, sixth.text, sixth.headers.get('cache-control')]).toEqual([loadFixture('ajax-sections-page').steps[2].status, '', 'private, no-store'])
     const absent = await send('GET', '/?section_id=missing')
     expect([absent.status, absent.text, absent.headers.get('cache-control')]).toEqual([loadFixture('ajax-sections-page').steps[3].status, '', 'private, no-store'])
-    expect([one.headers.get('cache-control'), many.headers.get('cache-control'), many.headers.get('content-type')]).toEqual(['private, no-store', 'private, no-store', 'application/json'])
+    expect([one.headers.get('cache-control'), many.headers.get('cache-control'), many.headers.get('content-type')]).toEqual(['private, no-store', 'private, no-store', 'application/json; charset=utf-8'])
   })
 
   it('answers the section calls the parity store recorded (fixture ajax-sections-page)', async () => {

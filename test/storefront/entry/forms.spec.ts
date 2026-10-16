@@ -151,7 +151,8 @@ describe('form redirects', () => {
   it('leaves the JSON endpoints on JSON', async () => {
     const { send } = harness()
     const added = await send('POST', '/cart/add.js', { id: 43696940613654, quantity: 1 })
-    expect([added.status, added.headers.get('content-type')]).toEqual([200, 'application/json; charset=utf-8'])
+    // the parity store types `add.js` as text/javascript (scenario `ajax-cart-session`, step 1)
+    expect([added.status, added.headers.get('content-type')]).toEqual([200, 'text/javascript; charset=utf-8'])
     expect((await send('POST', '/cart/change.js', { line: 1, quantity: 0 })).status).toBe(200)
     expect((await send('GET', '/cart.js')).status).toBe(200)
   })

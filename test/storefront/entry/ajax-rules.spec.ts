@@ -333,7 +333,8 @@ describe('the other endpoints', () => {
     await seed([line(HOODIE, 1)])
     const query = 'shipping_address[country]=United%20States&shipping_address[province]=CA&shipping_address[zip]=90210'
     const prepared = await send('POST', `/cart/prepare_shipping_rates.json?${query}`)
-    expect([prepared.status, prepared.text]).toEqual([202, ''])
+    // the parity store answers the prepare with the JSON `null` (scenario `ajax-shipping-rates`, steps 2, 4 and 6)
+    expect([prepared.status, prepared.text, prepared.headers.get('content-type')]).toEqual([202, 'null', 'application/json; charset=utf-8'])
     for (const path of ['async_shipping_rates.json', 'shipping_rates.json']) {
       const rates = await send('GET', `/cart/${path}?${query}`)
       expect([rates.status, (rates.json as any).shipping_rates.length > 0]).toEqual([200, true])
@@ -355,7 +356,7 @@ describe('the other endpoints', () => {
   it('answers a product as JSON, in the language and market of the address, and a product the store lacks with 404 and no body', async () => {
     const { send } = harness()
     const hoodie = await send('GET', '/products/hoodie.js')
-    expect([hoodie.status, hoodie.headers.get('content-type'), (hoodie.json as any).handle, (hoodie.json as any).url]).toEqual([200, 'application/json; charset=utf-8', 'hoodie', '/products/hoodie'])
+    expect([hoodie.status, hoodie.headers.get('content-type'), (hoodie.json as any).handle, (hoodie.json as any).url]).toEqual([200, 'text/javascript; charset=utf-8', 'hoodie', '/products/hoodie'])
     expect((await send('GET', '/en-ca/products/hoodie.js')).json).toMatchObject({ url: '/en-ca/products/hoodie' })
     const missing = await send('GET', '/products/nope.js')
     expect([missing.status, missing.text]).toEqual([404, ''])
@@ -413,4 +414,37 @@ describe('the other endpoints', () => {
       expect([url, answer.headers.get('cache-control')]).toEqual([url, 'private, no-store'])
     }
   })
+})
+
+// scenarios `ajax-cart-session`, `ajax-cart-errors`, `ajax-product-js`, `ajax-shipping-rates`, `ajax-suggest-json` and `ajax-sections-page`: the parity store types an answer by the address it was asked at
+it('types each answer as the parity store does: .js is text/javascript, .json is application/json, with the cart errors of a missing variant in plain application/json', async () => {
+  const { send, seed } = harness()
+  await seed([line(SUNNIES, 1)])
+  const JS = 'text/javascript; charset=utf-8'
+  const JSON_TYPE = 'application/json; charset=utf-8'
+  const typed = async (method: string, url: string, body?: unknown) => {
+    const answer = await send(method, url, body)
+    return [method, url, answer.status, answer.headers.get('content-type')]
+  }
+  expect(await typed('GET', '/cart.js')).toEqual(['GET', '/cart.js', 200, JS])
+  expect(await typed('POST', '/cart/add.js', { id: HOODIE, quantity: 1 })).toEqual(['POST', '/cart/add.js', 200, JS])
+  expect(await typed('POST', '/cart/update.js', { updates: { [SUNNIES]: 2 } })).toEqual(['POST', '/cart/update.js', 200, JS])
+  expect(await typed('POST', '/cart/change.js', { line: 1, quantity: 1 })).toEqual(['POST', '/cart/change.js', 200, JS])
+  // a change that names no line is an error the parity store types as the other cart errors (`ajax-cart-errors`, steps 5 and 9)
+  expect(await typed('POST', '/cart/change.js', { line: 9, quantity: 1 })).toEqual(['POST', '/cart/change.js', 422, JS])
+  // a variant the store lacks is typed application/json with no charset (`ajax-cart-errors`, steps 3 and 6)
+  expect(await typed('POST', '/cart/add.js', { id: 1, quantity: 1 })).toEqual(['POST', '/cart/add.js', 422, 'application/json'])
+  expect(await typed('POST', '/cart/update.js', { updates: { 1: 1 } })).toEqual(['POST', '/cart/update.js', 422, 'application/json'])
+  expect(await typed('POST', '/cart/clear.js')).toEqual(['POST', '/cart/clear.js', 200, JS])
+  expect(await typed('GET', '/products/hoodie.js')).toEqual(['GET', '/products/hoodie.js', 200, JS])
+  // the product the store lacks answers 404 with no body, typed as JSON (`ajax-product-js`, step 3)
+  expect(await typed('GET', '/products/nope.js')).toEqual(['GET', '/products/nope.js', 404, JSON_TYPE])
+  expect(await typed('GET', '/cart/shipping_rates.json?shipping_address[country]=Canada')).toEqual(['GET', '/cart/shipping_rates.json?shipping_address[country]=Canada', 200, JSON_TYPE])
+  expect(await typed('GET', '/search/suggest.json?q=shirt')).toEqual(['GET', '/search/suggest.json?q=shirt', 200, JSON_TYPE])
+  const recommended = `/recommendations/products.json?product_id=${data.products?.[0]?.id}&limit=2`
+  expect(await typed('GET', recommended)).toEqual(['GET', recommended, 200, JSON_TYPE])
+  // the sections map is JSON with a charset, and a sixth section is a 400 with an empty HTML body (`ajax-sections-page`, steps 2 and 3)
+  expect(await typed('GET', '/?sections=cart-count')).toEqual(['GET', '/?sections=cart-count', 200, JSON_TYPE])
+  const sixth = await send('GET', '/?sections=a,b,c,d,e,f')
+  expect([sixth.status, sixth.text, sixth.headers.get('content-type')]).toEqual([400, '', 'text/html; charset=utf-8'])
 })
