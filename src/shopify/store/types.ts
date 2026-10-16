@@ -105,7 +105,7 @@ export interface ProductData {
   /** The product can be bought only with a selling plan. https://shopify.dev/docs/api/liquid/objects/product#product-requires_selling_plan */
   requires_selling_plan?: boolean
   selling_plan_groups?: SellingPlanGroupData[]
-  /** Place in the store's best-selling order, 1 first; products without one follow, in store order. */
+  /** Place in the store's best-selling order, 1 first; products without one follow, newest first (what Shopify lists for a store with no sales, fixture `probe-collection-sort-best-selling`). */
   sales_rank?: number
 }
 
@@ -198,6 +198,8 @@ export interface FilterData {
   metafield?: { namespace: string, key: string }
   label?: string
   presentation?: 'image' | 'swatch' | 'text'
+  /** How the selected values of a list filter combine, https://shopify.dev/docs/api/liquid/objects/filter#filter-operator: a product must have every one (`AND`) or any one (`OR`, the default). The parity store's tag filter is `AND` and its others `OR` (fixture `probe-collection-all`). */
+  operator?: 'AND' | 'OR'
 }
 
 /** The data behind Shopify's `gift_card` object, https://shopify.dev/docs/api/liquid/objects/gift_card: a gift card issued to a customer, shown by the `gift_card` template. `balance` and `initial_value` are in the currency's subunit; `product_handle` and `variant_id` name the gift card product and variant in the store. */

@@ -9,6 +9,7 @@ import type { TagToken, TopLevelToken, ValueToken } from '../../tokens'
 import { evalToken } from '../../render'
 import { isTagToken, toEnumerable, toValue } from '../../util'
 import { shopifyState } from '../state'
+import { withQuery } from '../util/query'
 
 export interface PaginatePart {
   title: string
@@ -36,12 +37,15 @@ export const PAGINATION_LIMIT = 25000
  * The `paginate` object. Pages around the current one get links (a page is in the window when it is fewer than `windowSize` pages from the current one, which reproduces the `window_size: 1` example on https://shopify.dev/docs/api/liquid/tags/paginate: 7 pages on page 1 give `1 … 7 Next`); the first and last page always do; each gap collapses into one `&hellip;` part. The default window of 3 is not pinned by shopify.dev: the 4-page examples on the paginate and default_pagination pages show every page, which a window of 3 also does. The part titles `Next &raquo;` and `&laquo; Previous` are the ones on https://shopify.dev/docs/api/liquid/filters/default_pagination.
  *
  * A single page still gets a `current` part (not pinned), and the shape follows https://shopify.dev/docs/api/liquid/objects/paginate and https://shopify.dev/docs/api/liquid/objects/part.
+ *
+ * Each link keeps the request's `query` (its filters, sort and `view`) and sets `page`, the pairs ordered by name (`withQuery`), as the parity store prints them (fixtures `probe-collection-filter-combined`: `?filter.p.tag=accessories&filter.v.availability=1&page=2&sort_by=price-descending&view=probe`, and `probe-collection-page-2`, whose previous link names page 1).
  */
-export function buildPaginate (items: number, pageSize: number, currentPage: number, path: string, windowSize = 3): Paginate {
+export function buildPaginate (items: number, pageSize: number, currentPage: number, path: string, windowSize = 3, query: ReadonlyArray<readonly [string, string]> = []): Paginate {
   items = Math.min(items, PAGINATION_LIMIT)
   currentPage = Math.min(currentPage, PAGINATION_LIMIT)
   const pages = items === 0 ? 0 : Math.ceil(items / pageSize)
-  const url = (page: number) => `${path}?page=${page}`
+  const kept = query.filter(([name]) => name !== 'page')
+  const url = (page: number) => withQuery(path, [...kept, ['page', String(page)] as const])
   const parts: PaginatePart[] = []
   let gap = false
   for (let page = 1; page <= pages; page++) {
@@ -128,7 +132,7 @@ export class PaginateTag extends Tag {
     const page = Math.min(Math.max(1, Math.floor(state.request.page) || 1), PAGINATION_LIMIT)
     const offset = (page - 1) * pageSize
     const total: number = (yield * this.totalItems(ctx, items)) as number
-    const scope: Record<string, unknown> = { paginate: buildPaginate(total, pageSize, page, state.request.path, windowSize) }
+    const scope: Record<string, unknown> = { paginate: buildPaginate(total, pageSize, page, state.request.path, windowSize, state.request.query) }
     if (this.path) {
       // an array as long as the total is the whole list and gets sliced; a shorter one is taken to be the page the host already fetched
       const pageItems = items.length >= total ? items.slice(offset, Math.min(offset + pageSize, PAGINATION_LIMIT)) : items

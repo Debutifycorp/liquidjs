@@ -40,8 +40,7 @@ for (const v of catalog.products.flatMap(p => p.variants)) v.title = [v.option1,
 product('canvas-sneakers').metafields = { custom: { material: 'Canvas' } }
 for (const handle of ['white-leather-sneakers', 'gray-leather-sneakers']) product(handle).metafields = { custom: { material: 'Leather' } }
 
-// Best sellers, for the `best-selling` sort.
-Object.entries({ hoodie: 1, frontpack: 2, sweatpants: 3, 'men-t-shirt': 4 }).forEach(([handle, rank]) => { product(handle).sales_rank = rank })
+// No `sales_rank` is set: the parity store has had no sales, so Shopify lists its products newest first for `best-selling` (fixture `probe-collection-sort-best-selling`), and no Admin API sets a sales rank.
 // A product on sale (every variant), and the one product a template suffix picks (`templates/product.probe.liquid`).
 for (const v of product('white-leather-sneakers').variants) v.compare_at_price = 11000
 product('white-leather-sneakers').template_suffix = 'probe'
@@ -96,10 +95,10 @@ export const storefrontSampleData: StoreData = freeze({
   filters: [
     { attribute: 'availability' },
     { attribute: 'price' },
-    { attribute: 'vendor' },
+    { attribute: 'vendor', label: 'Brand' },
     { attribute: 'product_type' },
-    { attribute: 'tag' },
-    { attribute: 'option', option: 'Color', presentation: 'swatch' },
+    { attribute: 'tag', label: 'More filters', operator: 'AND' },
+    { attribute: 'option', option: 'Color' },
     { attribute: 'option', option: 'Size' },
     { attribute: 'metafield', metafield: { namespace: 'custom', key: 'material' }, label: 'Material' }
   ],

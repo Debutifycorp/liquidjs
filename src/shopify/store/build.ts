@@ -49,7 +49,7 @@ function hidden (target: LiquidObject, key: string, value: unknown) {
 }
 
 /** A copy of `object` with every own property as it has it, the hidden ones (`toString`, back references, markers) included, so a hidden property added to a builder travels with a copy of what it builds; `omit` names the properties left out, which the caller sets again. */
-function copyObject (object: LiquidObject, ...omit: string[]): LiquidObject {
+export function copyObject (object: LiquidObject, ...omit: string[]): LiquidObject {
   const descriptors = Object.getOwnPropertyDescriptors(object)
   for (const key of omit) delete descriptors[key]
   return Object.create(Object.getPrototypeOf(object), descriptors)
@@ -247,6 +247,8 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
   for (const variant of variants) hidden(variant, 'product', product)
   // marks a built product for the `json` filter, which prints it with `productLiquidJson`
   hidden(product, PRODUCT_MARKER, true)
+  // the store's place in the best-selling order, which `sort_by=best-selling` reads and templates cannot print
+  hidden(product, 'sales_rank', data.sales_rank)
   return printsHandle(product)
 }
 
@@ -309,8 +311,10 @@ export function selectSellingPlan (product: LiquidObject, planId: number | undef
   return copy
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/collection, at its URL under `prefix`. Filtering, tags and sorting are not applied: `products` is the collection's product list as given, `filters` are the store's storefront filters over those products (`buildFilters`), `tags` is empty and `sort_options` lists Shopify's standard options. */
-function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>, filters: FilterData[] | undefined, prefix: string): LiquidObject {
+/**
+ * https://shopify.dev/docs/api/liquid/objects/collection, at its URL under `prefix`. Filtering, tags and sorting are not applied here (`collectionView` applies them per request): `products` is the collection's product list as given, `filters` are the store's storefront filters over those products (`buildFilters`, in the view `currency` when given), `default_sort_by` is the collection's `sort_order` (`manual` when it has none) and `sort_options` lists the options the parity store lists, `Most relevant` included (fixture `probe-collection-all`). `tags` are the tags of the products in `products`, read when asked, so inside a `paginate` block they are the tags of the products of the page, as the parity store prints them (fixtures `probe-collection-page-2` and `probe-collection-page-past`, where the page after the last has none).
+ */
+export function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>, filters: FilterData[] | undefined, prefix: string, currency?: ViewCurrency): LiquidObject {
   const items = data.products.map(handle => HandleMap.get(products, handle)).filter((product): product is LiquidObject => !!product)
   const collect = (key: string) => unique(items.flatMap(product => product[key] as string | string[]).filter(Boolean)).sort()
   const own = image(data.image)
@@ -329,12 +333,15 @@ function buildCollection (data: CollectionData, products: HandleMap<LiquidObject
     all_tags: collect('tags'),
     all_types: collect('type'),
     all_vendors: collect('vendor'),
-    tags: [],
-    filters: buildFilters(filters, items, url),
-    sort_by: null,
-    default_sort_by: 'manual',
+    get tags () {
+      return unique(((this as LiquidObject).products as LiquidObject[]).flatMap(product => product.tags as string[])).sort()
+    },
+    filters: buildFilters(filters, items, url, [], currency),
+    sort_by: '',
+    default_sort_by: data.sort_order ?? 'manual',
     sort_options: [
       { name: 'Featured', value: 'manual' },
+      { name: 'Most relevant', value: 'most-relevant' },
       { name: 'Best selling', value: 'best-selling' },
       { name: 'Alphabetically, A-Z', value: 'title-ascending' },
       { name: 'Alphabetically, Z-A', value: 'title-descending' },
@@ -786,8 +793,9 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   const currency = currencyOf(data, view)
   const products = new HandleMap((source.products ?? []).map(product => [product.handle, buildProduct(product, prefix, currency)]))
   // Every shop answers `collections.all` with all its products. https://shopify.dev/docs/api/liquid/objects/collections
-  const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (source.products ?? []).map(product => product.handle) }, products, data.filters, prefix)
-  const collections = new HandleMap((source.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters, prefix)]), [['all', all]])
+  // its default order is by title (fixture `probe-collection-all`)
+  const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (source.products ?? []).map(product => product.handle), sort_order: 'title-ascending' }, products, data.filters, prefix, currency)
+  const collections = new HandleMap((source.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters, prefix, currency)]), [['all', all]])
   const blogs = new HandleMap((source.blogs ?? []).map(blog => [blog.handle, buildBlog(blog, prefix)]))
   const localization = buildLocalization(data, view)
   const shippingCountries = data.country_option_tags ?? [{ name: String((localization.country as LiquidObject | null)?.name ?? '') }]

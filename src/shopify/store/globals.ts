@@ -3,6 +3,7 @@ import { TemplateDrop } from '../objects/template'
 import { own } from '../util/own'
 import type { ReportCollector } from '../report'
 import { buildLinklists, LiquidObject, selectProduct, selectSellingPlan, StoreObjects } from './build'
+import { collectionView, typeCollection, vendorCollection } from './collection-view'
 import { alternatesOf, buildLocalization, languageIn } from './markets'
 import { buildRecommendations, RecommendationsRequest } from './recommendations'
 import { buildSearch } from './search'
@@ -117,6 +118,8 @@ export function buildRoutes (prefix: string): Readonly<Record<string, string>> {
 /** The routes of an unprefixed store (`buildRoutes('')`). */
 export const ROUTES: Readonly<Record<string, string>> = buildRoutes('')
 
+const TERM_COLLECTIONS: Record<string, typeof vendorCollection> = { vendors: vendorCollection, types: typeCollection }
+
 const RESOURCE_TYPES: Record<string, keyof StoreObjects> = { product: 'products', collection: 'collections', page: 'pages', blog: 'blogs', article: 'articles' }
 
 const PATHS: Record<string, string> = { index: '/', cart: '/cart', search: '/search', 'list-collections': '/collections', 404: '/404', password: '/password', gift_card: '/gift_cards/sample' }
@@ -155,7 +158,7 @@ export interface PageGlobals {
   /** The request's menus, with `active` and `current` set for its path. */
   linklists: HandleMap<LiquidObject>
   /** The resolved request: path, origin and page, for the Shopify state, with the `hreflang` links of its page (`content_for_header`). */
-  request: { path: string, origin: string, page: number, prefix: string, alternates: Array<{ hreflang: string, path: string }> }
+  request: { path: string, origin: string, page: number, prefix: string, alternates: Array<{ hreflang: string, path: string }>, query?: Array<[string, string]> }
 }
 
 /**
@@ -167,11 +170,17 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   const { store, request, report } = input
   const template = new TemplateDrop(input.templateName)
   const pageType = template.directory ? `${template.directory}/${template.name}` : template.name
+  // the view is resolved against the data, so a request that names a market or a language needs the data the store was built from, not the sample store's
+  if (!input.data && (request.market !== undefined || request.language !== undefined)) throw new Error('buildGlobals: pass the `data` the store was built from when the request names a market or a language')
+  const data = input.data ?? sampleStoreData
+  const view = resolveView(data, request)
   const resources: Record<string, LiquidObject | null> = {}
   const kind = own(RESOURCE_TYPES, template.name)
   if (kind) {
     const map = store[kind] as HandleMap<LiquidObject>
-    const found = request.resource ? HandleMap.get(map, request.resource) : HandleMap.values(map)[0]
+    // `/collections/vendors?q=` and `/collections/types?q=` are collections Shopify makes from the term
+    const automatic = template.name === 'collection' ? own(TERM_COLLECTIONS, request.resource ?? '') : undefined
+    const found = automatic ? automatic(store, request.searchTerms ?? '', view.prefix) : request.resource ? HandleMap.get(map, request.resource) : HandleMap.values(map)[0]
     if (request.resource && !found) report.missing('resource', `${template.name} ${request.resource}`)
     // a product page shows the variant `?variant=` names (`selectProduct`) and the selling plan `?selling_plan=` names (`selectSellingPlan`); the built product is shared by every request, so a selection is a copy
     resources[template.name] = found && template.name === 'product' ? selectSellingPlan(selectProduct(found, request.variant), request.sellingPlan) : found ?? null
@@ -187,11 +196,9 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   const resource = kind ? resources[template.name] : null
   const host = request.host ?? String(store.shop.domain)
   const origin = request.origin ?? `https://${host}`
-  // the view is resolved against the data, so a request that names a market or a language needs the data the store was built from, not the sample store's
-  if (!input.data && (request.market !== undefined || request.language !== undefined)) throw new Error('buildGlobals: pass the `data` the store was built from when the request names a market or a language')
-  const data = input.data ?? sampleStoreData
-  const view = resolveView(data, request)
   const path = request.path ?? defaultPath(pageType, template, resource, view.prefix)
+  // the collection as the request shows it: its tags, filters and sort order; the filters' links extend the address without its query
+  if (template.name === 'collection' && resource) resources.collection = collectionView(resource, request, store.storefrontFilters, store.currency, path.split('?')[0])
   const page = request.page ?? 1
   const linklists = buildLinklists(store.linklists, path, view.prefix)
   // the shopper's country is per request, so a request that names another country than the view's default gets its own localization
@@ -227,7 +234,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     canonical_url: `${origin}${path}`,
     handle: resource?.handle ?? '',
     current_page: page,
-    current_tags: null,
+    current_tags: pageType === 'collection' && request.tags?.length ? request.tags : null,
     search: buildSearch(store, request.searchTerms, view.prefix),
     recommendations: buildRecommendations(store, request.recommendations, report),
     powered_by_link: '',
@@ -240,7 +247,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     ...(pageType === 'customers/order' ? { order: orderFor(store.customer, request.resource, report) } : {}),
     ...resources
   }
-  return { globals, linklists, request: { path, origin, page, prefix: view.prefix, alternates: pageType === '404' ? [] : alternates(data, view, path, request.searchTerms, pageType) } }
+  return { globals, linklists, request: { path, origin, page, prefix: view.prefix, query: request.query, alternates: pageType === '404' ? [] : alternates(data, view, path, request.searchTerms, pageType) } }
 }
 
 /**
