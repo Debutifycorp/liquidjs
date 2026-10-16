@@ -3,6 +3,7 @@ import type { Liquid } from '../liquid'
 import { ReportCollector } from './report'
 import { resolveServices, ShopifyServices } from './services'
 import { emptyTranslator, SectionLocales, Translator } from './translations'
+import type { FormOutcome } from './store/globals'
 import type { BlockData, LocaleTree } from './types'
 
 /** Where the per-render state lives: a symbol key on the render's globals, which LiquidJS shares with every partial and which no template can name. */
@@ -49,6 +50,8 @@ export interface ShopifyState {
   liquid?: Liquid
   /** Set by `{% layout %}`: a layout name, `null` for `none`, `undefined` when the template did not say, https://shopify.dev/docs/api/liquid/tags/layout. */
   layout?: string | null
+  /** The outcome of the form posted before this page (`RequestInput.form`), which the `form` tag of its type shows as `form.posted_successfully?`, `form.errors` and the posted values. https://shopify.dev/docs/api/liquid/objects/form */
+  form?: FormOutcome
 }
 
 /** Shopify's formats for a new USD shop. https://shopify.dev/docs/api/liquid/objects/shop shows `money_format` as `${{amount}}` and `money_with_currency_format` as `${{amount}} CAD` for a Canadian shop; the ` USD` suffix here is the same pattern for a USD shop and is not pinned by shopify.dev. */

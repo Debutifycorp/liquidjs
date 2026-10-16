@@ -13,6 +13,9 @@ import { withPrefix } from '../store/view'
 import { attribute, escapeHtml } from '../util/html'
 import { plainValue } from '../util/args'
 import { currentFrame, shopifyState } from '../state'
+import type { ShopifyState } from '../state'
+import type { FormOutcome } from '../store/globals'
+import { hasOwn } from '../util/own'
 
 type Resource = Record<string, unknown> | undefined
 
@@ -62,27 +65,87 @@ const FORM_TYPES: Record<string, FormType> = {
 
 const hidden = (name: string, value: string) => `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}" />`
 
-/** The `form` object inside `{% form %}`: nothing has been posted in a preview. https://shopify.dev/docs/api/liquid/objects/form: `password_needed` is `true` for `customer_login`, `posted_successfully?` always `true` for `customer_address`, `id` is `new` and `set_as_default_checkbox` the single-quoted `<input type='checkbox' id='address_default_address_new' …>` in its example. The page's example key is `password_needed?` while its property list says `password_needed`, so only the latter exists here. The other fields are `null` (the page shows address fields filled from the posted address, which a preview has none of), and `form.id` for the other form types is the markup's `id` (the page gives no example). */
+/** The values a form keeps from a post, https://shopify.dev/docs/api/liquid/objects/form (`email`, `body`, `name`, `phone`, `first_name`, `last_name`). */
+type PostedValue = 'email' | 'body' | 'name' | 'phone' | 'first_name' | 'last_name'
+
+/** The title of a field as a last resort: `first_name` is `First name`. */
+const capitalised = (field: string) => {
+  const words = field.replace(/_/g, ' ')
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+/** https://shopify.dev/docs/api/liquid/objects/form_errors: iterating gives the field names (its keys are `author`, `body`, `email`, `form` and `password`); `messages[field]` and `translated_fields[field]` give the field's message and its name. A field with several messages prints them joined with `, `: the page shows one message per field and does not say what several look like. */
+export class FormErrorsDrop extends Drop {
+  public readonly messages: Record<string, string>
+  public readonly translated_fields: Record<string, string>
+
+  public constructor (private readonly fields: Record<string, string[]>, translate: (field: string) => string) {
+    super()
+    this.messages = Object.fromEntries(Object.entries(fields).map(([field, messages]) => [field, messages.join(', ')]))
+    this.translated_fields = Object.fromEntries(Object.keys(fields).map(field => [field, translate(field)]))
+  }
+
+  public * [Symbol.iterator] () {
+    yield * Object.keys(this.fields)
+  }
+
+  /** What `for` and `contains` read: the field names. */
+  public valueOf () {
+    return Object.keys(this.fields)
+  }
+
+  /** The page calls `form_errors` an array of the error values, so `form.errors.size` and `form.errors | size` count the fields, as they count an array's items. */
+  public get size () {
+    return Object.keys(this.fields).length
+  }
+
+  public get length () {
+    return this.size
+  }
+}
+
+/**
+ * The `form` object inside `{% form %}`. https://shopify.dev/docs/api/liquid/objects/form: `password_needed` is `true` for `customer_login`, `posted_successfully?` always `true` for `customer_address`, `id` is `new` and `set_as_default_checkbox` the single-quoted `<input type='checkbox' id='address_default_address_new' …>` in its example. The page's example key is `password_needed?` while its property list says `password_needed`, so only the latter exists here. `form.id` for the other form types is the markup's `id` (the page gives no example).
+ *
+ * A form of the type the request's outcome (`RequestInput.form`) names shows it: `posted_successfully?` is `posted`, `errors` is a `FormErrorsDrop` over the outcome's errors (`null` when it has none, as the page says "or nil if none"), and the posted values are `email`, `body`, `name`, `phone`, `first_name` and `last_name`. Every other form is as nothing had been posted: not posted, no errors, and `null` for the fields (the page shows address fields filled from the posted address, which a preview has none of).
+ */
 export class FormDrop extends Drop {
-  public readonly errors = null
+  public readonly errors: FormErrorsDrop | null
   public readonly 'posted_successfully?': boolean
   public readonly id: string
-  public readonly email = null
-  public readonly body = null
-  public readonly name = null
-  public readonly phone = null
-  public readonly first_name = null
-  public readonly last_name = null
+  public readonly email: string | null
+  public readonly body: string | null
+  public readonly name: string | null
+  public readonly phone: string | null
+  public readonly first_name: string | null
+  public readonly last_name: string | null
   public readonly password_needed: boolean
   public readonly set_as_default_checkbox: string
 
-  public constructor (public readonly formType: string, public readonly resource: Resource, id: string) {
+  public constructor (public readonly formType: string, public readonly resource: Resource, id: string, outcome?: FormOutcome, translate: (field: string) => string = capitalised) {
     super()
     this.id = id
     this.password_needed = formType === 'customer_login'
-    this['posted_successfully?'] = formType === 'customer_address'
+    this['posted_successfully?'] = formType === 'customer_address' || !!outcome?.posted
+    this.errors = outcome?.errors && Object.keys(outcome.errors).length ? new FormErrorsDrop(outcome.errors, translate) : null
+    const values = outcome?.values ?? {}
+    const posted = (key: PostedValue) => (hasOwn(values, key) ? values[key] : null)
+    this.email = posted('email')
+    this.body = posted('body')
+    this.name = posted('name')
+    this.phone = posted('phone')
+    this.first_name = posted('first_name')
+    this.last_name = posted('last_name')
     this.set_as_default_checkbox = `<input type='checkbox' id='address_default_address_${escapeHtml(id)}' name='address[default]' value='1'>`
   }
+}
+
+/**
+ * The name of a field in `form.errors.translated_fields`. https://shopify.dev/docs/api/liquid/objects/form_errors calls them "the translated names" and does not say where they come from; https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files says Shopify's system messages sit under the reserved `shopify` key of the locale files, which a theme overrides by adding the key. The keys of the form messages are not listed there, so `shopify.<form type>.form.<field>` (`shopify.contact.form.email`) is Debutify's choice, found in the locale of the page and then the theme's default one, and the field's own name, capitalised, stands in when the theme has none (no fixture records Shopify's text: its bot challenge answers every scripted contact post).
+ */
+function fieldName (state: ShopifyState, formType: string, field: string): string {
+  const text = state.translator.lookup(`shopify.${formType}.form.${field}`)
+  return typeof text === 'string' ? text : capitalised(field)
 }
 
 /** `{% form 'type', resource, attribute: value %}`. https://shopify.dev/docs/api/liquid/tags/form */
@@ -147,7 +210,9 @@ export class FormTag extends Tag {
     }
     for (const [name, value] of before) open += hidden(name, value)
     emitter.write(open)
-    ctx.push({ form: new FormDrop(formType, resource, spec.formId?.(resource) ?? id ?? '') })
+    // the outcome of the post belongs to the form of its type; any other form on the page is as nothing was posted
+    const outcome = state.form?.type === formType ? state.form : undefined
+    ctx.push({ form: new FormDrop(formType, resource, spec.formId?.(resource) ?? id ?? '', outcome, field => fieldName(state, formType, field)) })
     yield this.liquid.renderer.renderTemplates(this.templates, ctx, emitter)
     ctx.pop()
     emitter.write((spec.after?.(resource, currentFrame(state)?.section.id) ?? []).map(([name, value]) => hidden(name, value)).join('') + '</form>')

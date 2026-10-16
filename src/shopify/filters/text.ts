@@ -188,7 +188,7 @@ function itemCountForVariant (cart: unknown, variantId: unknown) {
   return items.reduce((sum: number, item: any) => (String(toValue(item?.variant_id)) === id ? sum + (Number(item.quantity) || 0) : sum), 0)
 }
 
-/** Nothing is posted in a preview, so `form.errors` is empty and there is nothing to list. https://shopify.dev/docs/api/liquid/filters/default_errors */
+/** https://shopify.dev/docs/api/liquid/filters/default_errors says only that it generates default error messages for each value of `form.errors`, with no example, so the markup and wording Shopify prints are unrecorded and nothing is printed, also for a form that has errors (`form.errors` lists them, `messages[field]` has their text). */
 function defaultErrors () {
   return ''
 }

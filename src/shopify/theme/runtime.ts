@@ -378,6 +378,7 @@ class PageRender implements ThemeHooks {
     this.state.currency = { iso_code: store.currency.iso_code, rate: store.currency.rate }
     const page = buildGlobals({ store, data, templateName: this.templateName, request: options.request ?? {}, locale, report: this.state.report })
     this.state.request = page.request
+    this.state.form = options.request?.form
     const env: SettingsEnv = { store, linklists: page.linklists, services: this.state.services, translator, report: this.state.report, trust: this.trust }
     const settingsData = theme.json('config/settings_data.json') ?? {}
     if (!isRecord(settingsData)) throw new Error('config/settings_data.json: must be a JSON object')
