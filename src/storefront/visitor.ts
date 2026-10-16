@@ -62,7 +62,7 @@ export function memoryCartStore (options: { max?: number, idleMs?: number, now?:
   }
 }
 
-/** Runs tasks one at a time per key, in the order they were given; a failed task does not stop the next one. */
+/** Runs tasks one at a time per key, in the order they were given; a failed task does not stop the next one. A task must not run another task of its own key (it would wait for itself forever), and a task that never settles blocks its key for good: the host's request timeouts bound it. */
 export class VisitorQueue {
   private readonly tails = new Map<string, Promise<unknown>>()
 

@@ -193,7 +193,7 @@ const shopifyEsm = {
   input: shopifyInput
 }
 
-// The storefront, `@debutify/liquidjs/storefront`: Node only. Its source imports the engine as `../shopify`; that import becomes the external module `@debutify/liquidjs/shopify`, so the engine is one copy per process (Node resolves the package's own name through its `exports`). A plugin names it external under that id: with `external` and `paths`, Rollup makes the relative id absolute first and writes a path relative to the bundle. The same plugin fails the build on any other import from `src/storefront` that is not a sibling file (`./…`) or `crypto`, which Rollup would otherwise inline (`../shopify/store/build`) or leave as a Node import (`fs`).
+// The storefront, `@debutify/liquidjs/storefront`: Node only. Its source imports the engine as `../shopify`; that import becomes the external module `@debutify/liquidjs/shopify`, so the engine is one copy per process (Node resolves the package's own name through its `exports`). A plugin names it external under that id: with `external` and `paths`, Rollup makes the relative id absolute first and writes a path relative to the bundle. The same plugin fails the build on any other import from `src/storefront` that is not a sibling file (`./…`) or `crypto`, which Rollup would otherwise inline (`../shopify/store/build`) or leave as a Node import (`fs`). `tslib`, the compiler's helper module, is let through: Rollup inlines it.
 const storefrontInput = './src/storefront/index.ts'
 const storefrontDir = resolve('src/storefront')
 const shopifyEntry = resolve('src/shopify/index.ts')
@@ -204,6 +204,8 @@ const storefrontEngine = {
     if (source === '../shopify') return { id: '@debutify/liquidjs/shopify', external: true }
     // for a file that imports only the engine's types, rpt2 hands Rollup the entry's absolute path: left alone, the module reads nothing the bundle uses and Rollup drops it
     if (source === shopifyEntry) return null
+    // the helpers the es6 bundle's compiler adds for `async` functions and `for … of` (`__awaiter`, `__values`): rpt2 resolves `tslib` and Rollup inlines it, so the bundle imports nothing for it
+    if (source === 'tslib') return null
     // a sibling file, written as `./x` or, once rpt2 has resolved it, as its absolute path
     if (source.startsWith('./') || (isAbsolute(source) && dirname(source) === storefrontDir)) return null
     return this.error(`${importer} imports '${source}': src/storefront may import only './…', '../shopify' and 'crypto'`)

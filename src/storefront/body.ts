@@ -32,6 +32,18 @@ function nameParts (name: string): string[] | undefined {
   return parts.length > MAX_PARTS || parts.some(part => UNSAFE.has(part)) ? undefined : parts
 }
 
+/** Whether `branch` already holds the key path `path`; an empty part is skipped and a path with a `[]` in it is never held, as Rack's `params_hash_has_key?` reads it. */
+function holds (branch: Branch, path: string[]): boolean {
+  let at: Branch | string | undefined = branch
+  for (const part of path) {
+    if (part === '') return false
+    if (!(at instanceof Branch)) return false
+    at = at.entries.get(part)
+    if (at === undefined) return false
+  }
+  return true
+}
+
 /** A branch as the array or object it stands for. A branch is a list when it was appended to with `[]`, or when every key is an index and `name` is not one of the keyed names; a list is ordered by its indexes with the gaps closed, so a huge index never builds a sparse array. */
 function build (branch: Branch, name: string | null): unknown[] | Fields {
   const entries = [...branch.entries]
@@ -45,7 +57,7 @@ function build (branch: Branch, name: string | null): unknown[] | Fields {
 }
 
 /**
- * Reads `items[0][id]`, `properties[Engraving]`, `updates[]` and `updates[<id>]` into nested objects and arrays, the way Rack reads form names. https://shopify.dev/docs/api/ajax/reference/cart documents the form names `updates[<variant id>]`, `attributes[<name>]` and `properties[<name>]` (`formData.append("updates[794864053]", 2)`); the indexed `items[0][id]` is the same convention, and neither that page nor a fixture pins it. The last of two values for one name wins. A name part of `__proto__`, `constructor` or `prototype`, a name of more than five parts and a name that is not bracket syntax drop the field. A name used as a value and as a group of fields (`a=1&a[b]=2`) is a 400, as Rack's query parser rejects it (`ParameterTypeError`); no fixture pins the parity store's answer.
+ * Reads `items[0][id]`, `properties[Engraving]`, `updates[]` and `updates[<id>]` into nested objects and arrays, the way Rack reads form names (including `items[][id]` with `items[][quantity]` as one element, below). https://shopify.dev/docs/api/ajax/reference/cart documents the form names `updates[<variant id>]`, `attributes[<name>]` and `properties[<name>]` (`formData.append("updates[794864053]", 2)`); the indexed `items[0][id]` is the same convention, and neither that page nor a fixture pins it. The last of two values for one name wins. A name part of `__proto__`, `constructor` or `prototype`, a name of more than five parts and a name that is not bracket syntax drop the field. A name used as a value and as a group of fields (`a=1&a[b]=2`) is a 400, as Rack's query parser rejects it (`ParameterTypeError`); no fixture pins the parity store's answer.
  */
 export function nestFields (pairs: Array<[string, string]>): Fields {
   const root = new Branch()
@@ -56,8 +68,10 @@ export function nestFields (pairs: Array<[string, string]>): Fields {
     parts.forEach((part, i) => {
       let key = part
       if (key === '') {
-        key = String(at.next)
         at.appended = true
+        // `items[][id]` then `items[][quantity]` is one element: the last one goes on until the name would repeat in it (Rack's `normalize_params`); the last element is the one at the highest index
+        const last = at.entries.get(String(at.next - 1))
+        key = String(last instanceof Branch && i < parts.length - 1 && !holds(last, parts.slice(i + 1)) ? at.next - 1 : at.next)
       }
       if (INDEX.test(key)) at.next = Math.max(at.next, Number(key) + 1)
       const existing = at.entries.get(key)
@@ -76,6 +90,8 @@ export function nestFields (pairs: Array<[string, string]>): Fields {
 }
 
 async function bytes (request: Request, limit: number): Promise<Uint8Array> {
+  // a limit of `undefined` or `NaN` would make every comparison below false and switch the limit off, so it is a programmer's error, not a body that passes
+  if (!Number.isFinite(limit) || limit < 0) throw new TypeError('readBody: the limit must be a non-negative number of bytes')
   const declared = Number(request.headers.get('content-length') ?? 0)
   if (declared > limit) throw new BodyError(413, 'The request body is too large.')
   if (!request.body) return new Uint8Array()
@@ -87,12 +103,14 @@ async function bytes (request: Request, limit: number): Promise<Uint8Array> {
     for (;;) {
       const { done, value } = await reader.read()
       if (done) break
+      // a chunk that is not bytes has no length to count, so it could not be held to the limit
+      if (!ArrayBuffer.isView(value)) throw new TypeError('not bytes')
       size += value.byteLength
       if (size > limit) {
         tooLarge = true
         break
       }
-      chunks.push(value)
+      chunks.push(new Uint8Array(value.buffer, value.byteOffset, value.byteLength))
     }
   } catch {
     throw new BodyError(400, 'The request body could not be read.')
@@ -115,7 +133,7 @@ async function bytes (request: Request, limit: number): Promise<Uint8Array> {
 const dropUnsafe = (key: string, value: unknown) => UNSAFE.has(key) ? undefined : value
 
 /**
- * The body of a storefront request as one shape: a JSON object, or the fields of a url-encoded or multipart form read by `nestFields`; Shopify themes post all three to the Cart API (https://shopify.dev/docs/api/ajax/reference/cart: JSON with `Content-Type: application/json`, a `FormData` of the add-to-cart form, or "a serialized cart form"). Any other type, or none, is read as url-encoded, as a form posts it. File fields are dropped (the spec: file properties are not kept). A body over `limit` bytes is a 413; one that cannot be parsed, or JSON that is not an object, is a 400. The messages of both are fixed sentences.
+ * The body of a storefront request as one shape: a JSON object, or the fields of a url-encoded or multipart form read by `nestFields`; Shopify themes post all three to the Cart API (https://shopify.dev/docs/api/ajax/reference/cart: JSON with `Content-Type: application/json`, a `FormData` of the add-to-cart form, or "a serialized cart form"). Any other type, or none, is read as url-encoded, as a form posts it. File fields are dropped (the spec: file properties are not kept). A body over `limit` bytes is a 413; one that cannot be read or parsed, or JSON that is not an object, is a 400. The messages of both are fixed sentences. A `limit` that is not a non-negative number, and a request whose body was already read, are the caller's bugs and throw the runtime's own `TypeError`, not a `BodyError`.
  */
 export async function readBody (request: Request, limit: number): Promise<Fields> {
   const type = (request.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase()

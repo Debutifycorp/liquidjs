@@ -36,6 +36,12 @@ describe('visitors', () => {
     await expect(queue.run('v', async () => { throw new Error('boom') })).rejects.toThrow('boom')
     await expect(queue.run('v', async () => 'after')).resolves.toBe('after')
   })
+
+  it('releases a visitor whose task throws at once, not as a rejected promise', async () => {
+    const queue = new VisitorQueue()
+    await expect(queue.run('v', () => { throw new Error('sync') })).rejects.toThrow('sync')
+    await expect(queue.run('v', async () => 'after')).resolves.toBe('after')
+  })
 })
 
 describe('visitor keys', () => {

@@ -2,6 +2,8 @@ import { BodyError, nestFields, readBody } from '../../../src/storefront/body'
 
 const post = (body: BodyInit, type?: string, extra: Record<string, string> = {}) => new Request('https://x.invalid/cart/add', { method: 'POST', body, headers: { ...(type ? { 'content-type': type } : {}), ...extra } })
 
+const streamed = (pull: (controller: ReadableStreamDefaultController<unknown>) => void) => new Request('https://x.invalid/cart/add.js', { method: 'POST', body: new ReadableStream({ pull }), duplex: 'half', headers: { 'content-type': 'application/x-www-form-urlencoded' } } as RequestInit)
+
 describe('readBody', () => {
   it('reads JSON, url-encoded and multipart bodies into one shape', async () => {
     expect(await readBody(post('{"items":[{"id":43695847538710,"quantity":2}]}', 'application/json'), 1000)).toEqual({ items: [{ id: 43695847538710, quantity: 2 }] })
@@ -44,6 +46,31 @@ describe('readBody', () => {
     await expect(readBody(post('x'.repeat(2000), 'application/x-www-form-urlencoded'), 1000)).rejects.toMatchObject({ status: 413 })
     await expect(readBody(post('{"items":', 'application/json'), 1000)).rejects.toMatchObject({ status: 400 })
     await expect(readBody(post('[1,2]', 'application/json'), 1000)).rejects.toBeInstanceOf(BodyError)
+  })
+
+  it('stops reading a stream that never ends at the limit, without a declared length', async () => {
+    let pulls = 0
+    await expect(readBody(streamed(controller => { pulls++; controller.enqueue(new Uint8Array(100).fill(97)) }), 1000)).rejects.toMatchObject({ status: 413 })
+    expect(pulls).toBeLessThan(15)
+  })
+
+  it('counts the chunks of a stream together: the limit can be crossed by a later chunk, and a body in several chunks within it is read whole', async () => {
+    const bytesOf = (text: string) => new TextEncoder().encode(text)
+    let sent = 0
+    await expect(readBody(streamed(controller => { if (sent++ < 3) controller.enqueue(new Uint8Array(400).fill(97)); else controller.close() }), 1000)).rejects.toMatchObject({ status: 413 })
+    const parts = ['a=1&', 'b%5Bc%5D=2&', 'd=3']
+    let at = 0
+    expect(await readBody(streamed(controller => { if (at < parts.length) controller.enqueue(bytesOf(parts[at++])); else controller.close() }), 1000)).toEqual({ a: '1', b: { c: '2' }, d: '3' })
+  })
+
+  it('answers 400 to a stream that fails or yields something that is not bytes, and cannot be made to skip the limit with it', async () => {
+    let sent = 0
+    await expect(readBody(streamed(controller => { if (sent++ < 3) controller.enqueue('a'.repeat(100000)); else controller.close() }), 1000)).rejects.toMatchObject({ status: 400 })
+    await expect(readBody(streamed(controller => controller.error(new Error('secret internal path'))), 1000)).rejects.toMatchObject({ status: 400, message: 'The request body could not be read.' })
+  })
+
+  it('refuses a limit that is not a usable number, so the limit cannot be switched off', async () => {
+    for (const limit of [undefined, Number.NaN, -1, Infinity]) await expect(readBody(post('x'.repeat(100000), 'application/x-www-form-urlencoded'), limit as number)).rejects.toThrow(TypeError)
   })
 
   it('refuses on the declared length alone, before it reads a byte', async () => {
@@ -104,6 +131,12 @@ describe('nestFields', () => {
     const fields = nestFields([['items[999999999][id]', 'b'], ['items[2][id]', 'a'], ['items[999999999][quantity]', '3']])
     expect(fields).toEqual({ items: [{ id: 'a' }, { id: 'b', quantity: '3' }] })
     expect((fields.items as unknown[]).length).toBe(2)
+  })
+
+  it('groups items[][id] and items[][quantity] into elements as Rack does: the last element goes on until a name would repeat in it', () => {
+    expect(nestFields([['items[][id]', '1'], ['items[][quantity]', '2'], ['items[][id]', '3'], ['items[][quantity]', '4']])).toEqual({ items: [{ id: '1', quantity: '2' }, { id: '3', quantity: '4' }] })
+    expect(nestFields([['items[][properties][a]', '1'], ['items[][properties][b]', '2'], ['items[][properties][a]', '3']])).toEqual({ items: [{ properties: { a: '1', b: '2' } }, { properties: { a: '3' } }] })
+    expect(nestFields([['list[3]', 'x'], ['list[][a]', '1'], ['list[][b]', '2']])).toEqual({ list: ['x', { a: '1', b: '2' }] })
   })
 
   it('puts a field named [] after the highest index', () => {
