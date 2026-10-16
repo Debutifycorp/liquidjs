@@ -1,3 +1,5 @@
+import { storefrontSampleData } from '../../../src/shopify'
+import type { StoreData } from '../../../src/shopify'
 import { storefrontClientScript } from '../../../src/storefront'
 import { harness, harnessTheme, VISITOR } from './harness'
 
@@ -90,6 +92,47 @@ describe('sandbox mode: cookies and visitors', () => {
     const added = await storefront.handle(new Request('https://store.invalid/cart/add.js', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: HOODIE }) }), {})
     expect(added.headers.get('set-cookie')).toMatch(/^cart=/)
     expect(added.headers.get('access-control-allow-origin')).toBeNull()
+  })
+})
+
+describe('sandbox mode: the form posts', () => {
+  const form = (fields: Record<string, string>) => new URLSearchParams(fields).toString()
+  const origin = { origin: 'null', referer: 'https://preview.invalid/p/tok/pages/about' }
+  const answers = async (send: ReturnType<typeof harness>['send']) => [
+    ['cart add', await send('POST', '/p/tok/cart/add', form({ id: String(HOODIE), quantity: '1', form_type: 'product' }), origin)],
+    ['cart add, sold out', await send('POST', '/p/tok/cart/add', form({ id: '43695847145494', quantity: '1', form_type: 'product' }), origin)],
+    ['cart update', await send('POST', '/p/tok/cart', form({ 'updates[]': '2' }), origin)],
+    ['contact', await send('POST', '/p/tok/contact', form({ form_type: 'contact', 'contact[email]': 'shopper@example.com', 'contact[body]': 'Hello' }), origin)],
+    ['contact, bad email', await send('POST', '/p/tok/contact', form({ form_type: 'contact', 'contact[email]': 'not-an-email', 'contact[body]': 'Hello' }), origin)],
+    ['localization', await send('POST', '/p/tok/localization', form({ country_code: 'CA', return_to: '/' }), origin)]
+  ] as const
+
+  it('keeps the CORS header and sets no cookie on any of them', async () => {
+    const { send } = harness({}, sandbox)
+    for (const [name, answer] of await answers(send)) expect([name, answer.headers.get('access-control-allow-origin'), answer.headers.get('set-cookie')]).toEqual([name, '*', null])
+  })
+  it('redirects under the base path, and puts the script on the pages they show and nowhere else', async () => {
+    const { send, store } = harness({}, sandbox)
+    const got = Object.fromEntries((await answers(send)).map(([name, answer]) => [name, answer]))
+    expect(got['cart add'].status).toBe(302)
+    expect(got['cart add'].headers.get('location')).toMatch(/^\/p\/tok\//)
+    expect([got['cart add'].text.includes('<script')]).toEqual([false])
+    for (const name of ['cart add, sold out', 'contact, bad email']) expect([name, afterHead(got[name].text).startsWith('<script>')]).toEqual([name, true])
+    expect(got['cart add, sold out'].status).toBe(422)
+    for (const name of ['contact', 'localization']) expect([name, got[name].status, got[name].headers.get('location')]).toEqual([name, 302, expect.stringMatching(/^\/p\/tok/)])
+    // the cart is the visitor option's, whatever cookie the browser would have sent
+    expect((await store.get(sandbox.visitor))?.cart.lines).toHaveLength(1)
+  })
+  it('keeps them too when the store is locked by a password', async () => {
+    const locked = { ...storefrontSampleData, shop: { ...storefrontSampleData.shop, password_enabled: true } } as StoreData
+    const { send, store } = harness({ data: locked, password: 'open' }, sandbox)
+    const wrong = await send('POST', '/p/tok/password', form({ form_type: 'storefront_password', password: 'nope' }), { origin: 'null' })
+    expect([wrong.headers.get('access-control-allow-origin'), wrong.headers.get('set-cookie'), afterHead(wrong.text).startsWith('<script>')]).toEqual(['*', null, true])
+    const right = await send('POST', '/p/tok/password', form({ form_type: 'storefront_password', password: 'open' }), { origin: 'null' })
+    expect([right.status, right.headers.get('access-control-allow-origin'), right.headers.get('set-cookie')]).toEqual([302, '*', null])
+    expect((await store.get(sandbox.visitor))?.unlocked).toBe(true)
+    const locks = await send('GET', '/p/tok/products/black-sunnies', undefined, { origin: 'null' })
+    expect([locks.status, locks.headers.get('access-control-allow-origin')]).toEqual([200, '*'])
   })
 })
 
