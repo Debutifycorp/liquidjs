@@ -18,7 +18,7 @@ const empty = (status: number) => new Response(null, { status, headers: JSON_HEA
 type Item = Record<string, unknown>
 
 /** `path` without the base path, which is a whole-segment prefix: `/p/tok` is the base of `/p/tok/cart`, `/p/tok?x` and `/p/tok#top`, not of `/p/token`. */
-function withoutBase (ctx: Context, path: string): string {
+export function withoutBase (ctx: Context, path: string): string {
   const base = ctx.basePath
   if (base === '' || !(path === base || path.startsWith(`${base}/`) || path.startsWith(`${base}?`) || path.startsWith(`${base}#`))) return path
   const rest = path.slice(base.length)
@@ -74,6 +74,16 @@ export async function sectionsFor (ctx: Context, fields: Fields, state: VisitorS
   if (!ids.length) return undefined
   if (ids.length > ctx.limits.sections) return null
   return renderSectionsJson({ ...ctx, visitor: state }, contextPage(ctx, fields), ids)
+}
+
+/** The fields of a link to `GET /cart/change?id=<key>&quantity=0` (a line's `url_to_remove`): the four the change reads, from the query, so a query cannot name anything else. */
+export function linkFields (query: URLSearchParams): Fields {
+  const fields: Fields = {}
+  for (const name of ['id', 'line', 'quantity', 'selling_plan']) {
+    const value = query.get(name)
+    if (value !== null) fields[name] = value
+  }
+  return fields
 }
 
 /** The last item of each key: when the cart splits a line in two (a Buy X Get Y discount), the parity store names the line by its key and answers the later of the two (fixture `ajax-discount-automatic-bxgy`, step 0: an add of two answers one item, the discounted one). */
@@ -168,7 +178,7 @@ function answerBody (ctx: Context, action: CartAction, fields: Fields, result: E
 }
 
 /**
- * `POST /cart/<action>.js`, https://shopify.dev/docs/api/ajax/reference/cart, and, until the forms unit takes the form format, the form spellings too. `add.js` answers the added lines, the others the cart; `change.js` also lists the lines that grew and shrank, and `update.js` the variants that grew; all hold the bundled sections when the request asked for them. The cart's lines are in the `change` form, which the add, change, update and clear answers print (`cartJson`). A `GET` of `/cart/change` (a line's remove link) is the forms unit's.
+ * `POST /cart/<action>.js`, https://shopify.dev/docs/api/ajax/reference/cart; the form spellings (`/cart/add`, the remove link) are the forms unit's. `add.js` answers the added lines, the others the cart; `change.js` also lists the lines that grew and shrank, and `update.js` the variants that grew; all hold the bundled sections when the request asked for them. The cart's lines are in the `change` form, which the add, change, update and clear answers print (`cartJson`). A `GET` of `/cart/change` (a line's remove link) is the forms unit's.
  */
 const cartOps: RouteHandler = async ctx => {
   const route = ctx.routed.route
@@ -238,5 +248,5 @@ const recommendations: RouteHandler = async ctx => {
   return { response: json(recommendationsJson(ctx.data, request, ctx.view, ctx.visitor.cart)) }
 }
 
-/** The handlers this unit adds, by route kind; `cart` covers the `.js` format and, until the forms unit takes the form format, the form format as well. */
+/** The handlers this unit adds, by route kind; `cart` answers the `.js` format; `index.ts` sends the form format to the forms unit. */
 export const AJAX_HANDLERS: Partial<Record<Route['kind'], RouteHandler>> = { 'cart-json': cartGet, cart: cartOps, discount, shipping, 'product-json': product, 'suggest-json': suggest, 'recommendations-json': recommendations }
