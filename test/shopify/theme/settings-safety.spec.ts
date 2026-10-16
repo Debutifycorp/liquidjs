@@ -171,7 +171,8 @@ describe('shopify/theme settings safety through renderPage', () => {
     expect(document.querySelector('.banner')?.getAttribute('style')).toBe('--pad: 40px')
     expect(Array.from(document.querySelectorAll('.banner a')).map(a => a.getAttribute('href'))).toEqual(['/collections/apparel', 'https://x.example/a?b=c&d=e', '/pages/about#team', 'mailto:hello@x.example', 'https://www.youtube.com/watch?v=abcdefg'])
     expect(document.querySelector('input')?.getAttribute('data-flag')).toBe('true')
-    expect(Array.from(document.querySelectorAll('img')).map(img => img.getAttribute('src'))).toEqual(['//cdn.example/a.png?width=10', '//cdn.example/a.png?width=10', '//cdn.example/a.png', '/b.png'])
+    // `image_url` keeps the width asked for, also past the image's own (recording `page-collections`), and `image_tag` uses that address as its `src`
+    expect(Array.from(document.querySelectorAll('img')).map(img => img.getAttribute('src'))).toEqual(['//cdn.example/a.png?width=100', '//cdn.example/a.png?width=100', '//cdn.example/a.png', '/b.png'])
     expect(document.body.getAttribute('data-accent')).toBe('#336699')
   })
   it('is a real check: the same page with html trusted does hold script-capable nodes', async () => {
