@@ -46,8 +46,7 @@ describe('products per request', () => {
     expect(built.tags).toEqual([])
     expect(built.variants[0].options).toEqual(['Red', 'Small'])
   })
-  // `slides` has selling plans, which Task 7 builds: skipped here, turned on in Task 7
-  it.skip('prints the product JSON of a product with selling plans', () => {
+  it('prints the product JSON of a product with selling plans', () => {
     expect(maskVolatile(productJson(data, 'slides'))).toEqual(maskVolatile(loadFixture('ajax-product-js').steps[1].body))
   })
   // the parity store prints `product | json` in a shape of its own, not the `.js` answer: option names, no `url`, `content` last (fixture `probe-product-default`)

@@ -27,6 +27,43 @@ function variantImage (image: ImageDrop, product: LiquidObject): Record<string, 
   return { id: image.id, product_id: product.id, position: image.position, created_at: product.created_at ?? null, updated_at: product.created_at ?? null, alt: textOrNull(image.alt), width: image.width, height: image.height, src: imageUrl(image), variant_ids: variantIds }
 }
 
+/** The answer's form of a selling plan allocation, the same in the Ajax answer and in `product | json` (fixtures `ajax-product-js` and `probe-product-plans`): the allocation's price fields with the ids of its plan and group in place of the objects. */
+function allocationJson (allocation: LiquidObject): Record<string, unknown> {
+  return {
+    price_adjustments: allocation.price_adjustments,
+    price: allocation.price,
+    compare_at_price: allocation.compare_at_price,
+    per_delivery_price: allocation.per_delivery_price,
+    selling_plan_id: (allocation.selling_plan as LiquidObject).id,
+    selling_plan_group_id: allocation.selling_plan_group_id
+  }
+}
+
+/** A selling plan as the answer writes it: no `selected` or `group_id`, price adjustments with `value_type` before `value`, and `checkout_charge` in `product | json` only (the Ajax answer leaves it out), fixtures `ajax-product-js` and `probe-product-plans`. */
+function sellingPlanJson (plan: LiquidObject, shape: 'ajax' | 'liquid'): Record<string, unknown> {
+  const checkout = plan.checkout_charge as LiquidObject
+  return {
+    id: plan.id,
+    name: plan.name,
+    description: plan.description,
+    options: plan.options,
+    recurring_deliveries: plan.recurring_deliveries,
+    price_adjustments: (plan.price_adjustments as LiquidObject[]).map(adjustment => ({ order_count: adjustment.order_count, position: adjustment.position, value_type: adjustment.value_type, value: adjustment.value })),
+    ...(shape === 'liquid' ? { checkout_charge: { value_type: checkout.value_type, value: checkout.value } } : {})
+  }
+}
+
+/** A selling plan group as the answer writes it: its options without the selected value, `app_id` last (fixtures `ajax-product-js` and `probe-product-plans`). */
+function sellingPlanGroupJson (group: LiquidObject, shape: 'ajax' | 'liquid'): Record<string, unknown> {
+  return {
+    id: group.id,
+    name: group.name,
+    options: (group.options as LiquidObject[]).map(option => ({ name: option.name, position: option.position, values: option.values })),
+    selling_plans: (group.selling_plans as LiquidObject[]).map(plan => sellingPlanJson(plan, shape)),
+    app_id: group.app_id
+  }
+}
+
 /** A variant in the Ajax answer (`.js`) or in `product | json` (`'liquid'`): the parity store prints the same fields in a different order, with `quantity_price_breaks` in the first only (fixtures `ajax-product-js` and `probe-product-default`). */
 function variantJson (variant: LiquidObject, product: LiquidObject, shape: 'ajax' | 'liquid'): Record<string, unknown> {
   const featured = variant.featured_image as ImageDrop | null
@@ -52,7 +89,7 @@ function variantJson (variant: LiquidObject, product: LiquidObject, shape: 'ajax
     barcode: variant.barcode ?? null,
     featured_media: media ? { alt: textOrNull(media.alt), id: media.id, position: media.position, preview_image: previewImage(media) } : null
   }
-  const plans = { requires_selling_plan: variant.requires_selling_plan ?? false, selling_plan_allocations: variant.selling_plan_allocations }
+  const plans = { requires_selling_plan: variant.requires_selling_plan ?? false, selling_plan_allocations: (variant.selling_plan_allocations as LiquidObject[]).map(allocationJson) }
   return shape === 'ajax'
     ? { ...head, quantity_rule: variant.quantity_rule, quantity_price_breaks: variant.quantity_price_breaks ?? [], ...plans }
     : { ...head, ...plans, quantity_rule: variant.quantity_rule }
@@ -104,7 +141,7 @@ export function productAjax (product: LiquidObject): Record<string, unknown> {
     url: product.url,
     media: (product.media as LiquidObject[]).map(mediaJson),
     requires_selling_plan: product.requires_selling_plan,
-    selling_plan_groups: product.selling_plan_groups
+    selling_plan_groups: (product.selling_plan_groups as LiquidObject[]).map(group => sellingPlanGroupJson(group, 'ajax'))
   }
 }
 
@@ -120,7 +157,7 @@ export function productLiquidJson (product: LiquidObject): Record<string, unknow
     options: product.options,
     media: (product.media as LiquidObject[]).map(mediaJson),
     requires_selling_plan: product.requires_selling_plan,
-    selling_plan_groups: product.selling_plan_groups,
+    selling_plan_groups: (product.selling_plan_groups as LiquidObject[]).map(group => sellingPlanGroupJson(group, 'liquid')),
     content: product.content
   }
 }

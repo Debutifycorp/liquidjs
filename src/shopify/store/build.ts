@@ -6,11 +6,11 @@ import { escapeHtml } from '../util/html'
 import { buildFilters } from './filters'
 import { buildLocalization, currencyOf, enabledCurrencies } from './markets'
 import type { ViewCurrency } from './markets'
-import { convert } from './pricing'
+import { convert, planAmount, planPrice } from './pricing'
 import { translateData } from './translate'
 import { resolveView, viewKey, withoutPrefix, withPrefix } from './view'
 import type { StoreView } from './view'
-import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, ProductData, StoreData, TransactionData, VariantData } from './types'
+import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, ProductData, SellingPlanData, SellingPlanGroupData, StoreData, TransactionData, VariantData } from './types'
 
 /**
  * Turns `StoreData` into the objects Liquid reads, computing what Shopify derives (URLs, price ranges, the first available variant, option values) so templates find every field they expect. Built objects are plain objects, readable under `ownPropertyOnly`; images become `ImageDrop`s and handle-keyed collections `HandleMap`s. Field lists follow https://shopify.dev/docs/api/liquid/objects, object by object as each builder cites.
@@ -85,14 +85,65 @@ function positionIn (list: Array<ImageData | { media_type: string }>, target: Im
   return index < 0 ? null : index + 1
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/variant. `url` carries `?variant=<id>` as that page documents. `inventory_quantity`, `inventory_policy` (`deny` unless the data says `continue`), `inventory_management` (nil unless the data says `shopify`), `weight` (grams, 0 when the data has none) and `requires_shipping` (true unless the data says otherwise) come from the data, as that page lists them and as the parity store prints them (fixtures `probe-product-default` and `ajax-product-js`). `selected` is false here: it is the request that selects a variant (`selectProduct`). `unit_price_measurement` and `selling_plan_allocations` are left empty and `quantity_rule` holds Shopify's defaults; shopify.dev documents the fields but this layer has no data for them. `featured_image` and `featured_media` are the product's own image, so they carry the `position` of the matching entry in `product.images` and `product.media` (nil when the product does not list that image); shopify.dev does not say so, and it goes on the confirm-on-a-development-store list with the counting base. `price` and `compare_at_price` are in the view's currency when `currency` is given (`convert`: the market's rate, price adjustment and rounding, https://help.shopify.com/en/manual/international/pricing/exchange-rates), the dataset's shop-currency amounts otherwise; a variant without a compare-at price keeps nil. A market that hides compare-at prices (`ViewCurrency.hide_compare_at_prices`, Shopify's "Hide compare-at" setting, https://help.shopify.com/en/manual/compliance/legal/pricing-indication-directive) gives its variants none: nil, as the parity store prints the hoodie's on-sale variant in the Europe market (fixture `probe-product-en-eu-hoodie`). */
-function buildVariant (variant: VariantData, productUrl: string, productImages: ImageData[], productMedia: MediaData[], currency?: ViewCurrency): LiquidObject {
+/** One selling plan a variant is offered under: the built group and plan, and the data the plan was built from. */
+interface PlanOffer {
+  group: LiquidObject
+  plan: LiquidObject
+  data: SellingPlanData
+}
+
+/**
+ * A selling plan group of the data, https://shopify.dev/docs/api/liquid/objects/selling_plan_group, with its plans (https://shopify.dev/docs/api/liquid/objects/selling_plan), their options (https://shopify.dev/docs/api/liquid/objects/selling_plan_option) and price adjustments (https://shopify.dev/docs/api/liquid/objects/selling_plan_price_adjustment). The group keeps the data's `id`; the parity store makes its own 40-hex checksum, which the probe comparison masks (`VOLATILE` in `test/storefront/expect-probe.ts`). Nothing is selected: `selling_plan_selected` is false, each plan's `selected` is false and each option's `selected_value` is nil until a request names a plan (`selectSellingPlan`). The group has no `selected` field: shopify.dev names the group's flag `selling_plan_selected`, and the parity store prints `group.selected` as nil even with one of its plans selected (fixtures `probe-product-plans` and `probe-product-plan-selected`). Each plan has the `checkout_charge` the parity store prints, 100 percent (fixture `probe-product-plans`, in `product | json`), because the data holds no partial checkout charge. A fixed amount or price in an adjustment's `value` is in the view's currency (`planAmount`), a percentage as it is.
+ */
+function buildSellingPlanGroup (data: SellingPlanGroupData, currency?: ViewCurrency): LiquidObject {
+  return {
+    id: data.id,
+    name: data.name,
+    app_id: data.app_id ?? null,
+    options: data.options.map((option, i) => ({ name: option.name, position: i + 1, values: option.values, selected_value: null })),
+    selling_plan_selected: false,
+    selling_plans: data.selling_plans.map(plan => ({
+      id: plan.id,
+      name: plan.name,
+      description: plan.description ?? null,
+      recurring_deliveries: plan.recurring_deliveries,
+      selected: false,
+      group_id: data.id,
+      options: plan.options.map((value, i) => ({ name: data.options[i]?.name ?? '', position: i + 1, value })),
+      price_adjustments: plan.price_adjustments.map((adjustment, i) => ({ order_count: adjustment.order_count ?? null, position: i + 1, value: adjustment.value_type === 'percentage' ? adjustment.value : planAmount(adjustment.value, currency), value_type: adjustment.value_type })),
+      checkout_charge: { value_type: 'percentage', value: 100 }
+    }))
+  }
+}
+
+/**
+ * What a plan does to a variant's `price` (in the view's currency), https://shopify.dev/docs/api/liquid/objects/selling_plan_allocation. `price` and `per_delivery_price` are the first adjustment's price (`planPrice`; one delivery's, which the parity store prints equal to the price) and the variant's own price when the plan adjusts nothing; each entry of `price_adjustments` is the price under that adjustment (https://shopify.dev/docs/api/liquid/objects/selling_plan_allocation_price_adjustment). `compare_at_price` is "the line item's price without the selling plan applied", the variant's price, as the parity store prints it (fixtures `probe-product-plans` and `probe-product-requires-plan`); that holds for a variant that has a compare-at price of its own too, which no fixture shows. `checkout_charge_amount` is the price (the plan charges all of it at checkout, see `buildSellingPlanGroup`) and `remaining_balance_charge_amount` 0; `unit_price` is nil. The last three follow shopify.dev and no fixture prints them.
+ */
+function buildAllocation ({ group, plan, data }: PlanOffer, price: number, currency?: ViewCurrency): LiquidObject {
+  const adjustments = data.price_adjustments.map((adjustment, i) => ({ position: i + 1, price: planPrice(price, adjustment, currency) }))
+  const planned = adjustments[0]?.price ?? price
+  return {
+    selling_plan: plan,
+    selling_plan_group_id: group.id,
+    price: planned,
+    compare_at_price: price,
+    per_delivery_price: planned,
+    price_adjustments: adjustments,
+    checkout_charge_amount: planned,
+    remaining_balance_charge_amount: 0,
+    unit_price: null
+  }
+}
+
+/** https://shopify.dev/docs/api/liquid/objects/variant. `url` carries `?variant=<id>` as that page documents. `inventory_quantity`, `inventory_policy` (`deny` unless the data says `continue`), `inventory_management` (nil unless the data says `shopify`), `weight` (grams, 0 when the data has none) and `requires_shipping` (true unless the data says otherwise) come from the data, as that page lists them and as the parity store prints them (fixtures `probe-product-default` and `ajax-product-js`). `selected` is false here: it is the request that selects a variant (`selectProduct`). `unit_price_measurement` is left empty and `quantity_rule` holds Shopify's defaults; shopify.dev documents the fields but this layer has no data for them. `selling_plan_allocations` is one allocation per plan of every group that offers the variant (`plans`, see `buildSellingPlanGroup`), `requires_selling_plan` the product's, and `selected_selling_plan_allocation` nil until a request selects a plan (`selectSellingPlan`). `featured_image` and `featured_media` are the product's own image, so they carry the `position` of the matching entry in `product.images` and `product.media` (nil when the product does not list that image); shopify.dev does not say so, and it goes on the confirm-on-a-development-store list with the counting base. `price` and `compare_at_price` are in the view's currency when `currency` is given (`convert`: the market's rate, price adjustment and rounding, https://help.shopify.com/en/manual/international/pricing/exchange-rates), the dataset's shop-currency amounts otherwise; a variant without a compare-at price keeps nil. A market that hides compare-at prices (`ViewCurrency.hide_compare_at_prices`, Shopify's "Hide compare-at" setting, https://help.shopify.com/en/manual/compliance/legal/pricing-indication-directive) gives its variants none: nil, as the parity store prints the hoodie's on-sale variant in the Europe market (fixture `probe-product-en-eu-hoodie`). */
+function buildVariant (variant: VariantData, productUrl: string, productImages: ImageData[], productMedia: MediaData[], currency?: ViewCurrency, plans: PlanOffer[] = [], requiresPlan = false): LiquidObject {
   const options = [variant.option1, variant.option2, variant.option3].filter((option): option is string => typeof option === 'string')
   const featured = variant.image ? new ImageDrop(variant.image, false, positionIn(productImages, variant.image)) : null
+  const price = currency ? convert(variant.price, currency) : variant.price
   return {
     id: variant.id,
     title: variant.title,
-    price: currency ? convert(variant.price, currency) : variant.price,
+    price,
     compare_at_price: variant.compare_at_price == null || currency?.hide_compare_at_prices ? null : currency ? convert(variant.compare_at_price, currency) : variant.compare_at_price,
     available: variant.available,
     sku: variant.sku ?? '',
@@ -112,13 +163,15 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
     taxable: true,
     weight: variant.weight ?? 0,
     unit_price_measurement: null,
-    selling_plan_allocations: [],
+    selling_plan_allocations: plans.map(offer => buildAllocation(offer, price, currency)),
+    requires_selling_plan: requiresPlan,
+    selected_selling_plan_allocation: null,
     quantity_rule: { min: 1, max: null, increment: 1 }
   }
 }
 
 /**
- * https://shopify.dev/docs/api/liquid/objects/product. The product's and its variants' URLs sit under `prefix` (the view's base path and locale prefix, as the parity store prints them, fixture `probe-page-fr-ca`). `price` is the lowest variant price and `compare_at_price` the lowest variant compare-at price, as that page documents them; `compare_at_price` is nil when no variant has one (shopify.dev does not pin that case, so dividing by it raises "divided by 0" as Ruby does). `first_available_variant` is nil when no variant is available (the page: "The first available variant of the product"; fixture `probe-product-en-eu-leggings`, whose variants are all sold out, records null), while `selected_or_first_available_variant` (no `?variant=` is known here) then falls back to the first variant, as the page says, and so does each option's `selected_value` (the same fixture); `options_with_values` and `has_only_default_variant` follow the same page. Selling plans are left out. Every price field is in the view's currency when `currency` is given, because the variants' are (`buildVariant`) and the product's are the lowest and highest of them; the parity store's product-level `compare_at_price` is the lowest converted variant compare-at price in the markets that show them (fixtures `probe-product-default` and `probe-product-en-ca`: 110.00 USD and 149.00 CAD, with one variant on sale) and nil in one that hides them, with `compare_at_price_min` and `compare_at_price_max` 0 as for any product without one (fixtures `probe-product-en-eu-hoodie` and `ajax-product-js`).
+ * https://shopify.dev/docs/api/liquid/objects/product. The product's and its variants' URLs sit under `prefix` (the view's base path and locale prefix, as the parity store prints them, fixture `probe-page-fr-ca`). `price` is the lowest variant price and `compare_at_price` the lowest variant compare-at price, as that page documents them; `compare_at_price` is nil when no variant has one (shopify.dev does not pin that case, so dividing by it raises "divided by 0" as Ruby does). `first_available_variant` is nil when no variant is available (the page: "The first available variant of the product"; fixture `probe-product-en-eu-leggings`, whose variants are all sold out, records null), while `selected_or_first_available_variant` (no `?variant=` is known here) then falls back to the first variant, as the page says, and so does each option's `selected_value` (the same fixture); `options_with_values` and `has_only_default_variant` follow the same page. `selling_plan_groups` are the data's (`buildSellingPlanGroup`), `requires_selling_plan` the data's flag, and `selected_selling_plan` and `selected_selling_plan_allocation` nil until a request selects a plan (`selectSellingPlan`). `selected_or_first_available_selling_plan_allocation` is, with nothing selected, "the first allocation on the first available variant", or on the first variant when none is available, and nil when the product has no selling plans (https://shopify.dev/docs/api/liquid/objects/product#product-selected_or_first_available_selling_plan_allocation); the parity store prints it for every product with plans, not only one that requires them (fixtures `probe-product-plans` and `probe-product-requires-plan`: 71001 and 71003). Every price field is in the view's currency when `currency` is given, because the variants' are (`buildVariant`) and the product's are the lowest and highest of them; the parity store's product-level `compare_at_price` is the lowest converted variant compare-at price in the markets that show them (fixtures `probe-product-default` and `probe-product-en-ca`: 110.00 USD and 149.00 CAD, with one variant on sale) and nil in one that hides them, with `compare_at_price_min` and `compare_at_price_max` 0 as for any product without one (fixtures `probe-product-en-eu-hoodie` and `ajax-product-js`).
  */
 export function buildProduct (data: ProductData, prefix = '', currency?: ViewCurrency): LiquidObject {
   const url = withPrefix(prefix, `/products/${data.handle}`)
@@ -126,7 +179,12 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
   const images = (data.images ?? []).map((img, i) => new ImageDrop(img, false, i + 1))
   const mediaData: MediaData[] = data.media ?? (data.images ?? []).map(img => ({ ...img, media_type: 'image' as const }))
   const media = mediaData.map(buildMedia)
-  const variants = data.variants.map(variant => buildVariant(variant, url, data.images ?? [], mediaData, currency))
+  const groupData = data.selling_plan_groups ?? []
+  const groups = groupData.map(group => buildSellingPlanGroup(group, currency))
+  const variants = data.variants.map(variant => {
+    const offers = groupData.flatMap((group, g) => !group.variant_ids || group.variant_ids.includes(variant.id) ? group.selling_plans.map((plan, i) => ({ group: groups[g], plan: (groups[g].selling_plans as LiquidObject[])[i], data: plan })) : [])
+    return buildVariant(variant, url, data.images ?? [], mediaData, currency, offers, !!data.requires_selling_plan)
+  })
   const options = data.options ?? ['Title']
   const prices = variants.map(variant => variant.price as number)
   const compares = variants.map(variant => variant.compare_at_price as number | null).filter((price): price is number => typeof price === 'number')
@@ -169,8 +227,11 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
     first_available_variant: firstAvailable,
     selected_variant: null,
     selected_or_first_available_variant: firstOrAvailable,
-    requires_selling_plan: false,
-    selling_plan_groups: [],
+    requires_selling_plan: !!data.requires_selling_plan,
+    selling_plan_groups: groups,
+    selected_selling_plan: null,
+    selected_selling_plan_allocation: null,
+    selected_or_first_available_selling_plan_allocation: ((firstOrAvailable?.selling_plan_allocations as LiquidObject[] | undefined) ?? [])[0] ?? null,
     'gift_card?': false,
     'quantity_price_breaks_configured?': false,
     // the suffix of the alternate template the product uses, https://shopify.dev/docs/api/liquid/objects/product#product-template_suffix; nil when it uses the base template (fixture `probe-product-default`)
@@ -201,6 +262,46 @@ export function selectProduct (product: LiquidObject, variantId: number | undefi
   copy.first_available_variant = copyOf(product.first_available_variant)
   copy.options_with_values = (product.options_with_values as LiquidObject[]).map((option, i) => ({ ...option, selected_value: (chosen.options as string[])[i] ?? null }))
   copy.options_by_name = Object.fromEntries((copy.options_with_values as LiquidObject[]).map(option => [String(option.name).toLowerCase(), option]))
+  return copy
+}
+
+/**
+ * The product a request shows under `?selling_plan=<id>`: that plan is `selected_selling_plan` and `selected` (https://shopify.dev/docs/api/liquid/objects/product#product-selected_selling_plan, https://shopify.dev/docs/api/liquid/objects/selling_plan#selling_plan-selected), its group is `selling_plan_selected` (https://shopify.dev/docs/api/liquid/objects/selling_plan_group#selling_plan_group-selling_plan_selected) and each of the group's options has the plan's value as `selected_value` (https://shopify.dev/docs/api/liquid/objects/selling_plan_group_option#selling_plan_group_option-selected_value). The plan's allocation is the selected one only on the selected variant (`?variant=`): shopify.dev ties `product.selected_selling_plan_allocation` to "the currently selected variant" and returns it, and no other, as `selected_or_first_available_selling_plan_allocation` "if a variant and selling plan are selected", otherwise the first allocation on the first available variant. The parity store agrees: with a plan in the address and no variant, every variant's `selected_selling_plan_allocation` is nil and the product's selected-or-first allocation is the first one (fixture `probe-product-plan-selected`). A selected variant and plan together are not recorded, so the selected variant's own allocation for the plan is what the docs describe, not a fixture's. An id no group of the product has selects nothing, and a request without one leaves the product alone. Like `selectProduct`, a selection returns a copy and leaves the shared product alone; the copy's variants and allocations are copies too, each allocation pointing at the copy's plan, and every reference to a variant is re-pointed at the copy's.
+ */
+export function selectSellingPlan (product: LiquidObject, planId: number | undefined): LiquidObject {
+  if (planId === undefined) return product
+  const groups = product.selling_plan_groups as LiquidObject[]
+  const group = groups.find(g => (g.selling_plans as LiquidObject[]).some(plan => plan.id === planId))
+  if (!group) return product
+  const copy = copyObject(product)
+  // the group's plans are copies, one of them selected; an allocation of the old plan gets the copy
+  const plans = new Map<LiquidObject, LiquidObject>()
+  const chosen = (group.selling_plans as LiquidObject[]).find(plan => plan.id === planId)!
+  const selectedGroup: LiquidObject = {
+    ...group,
+    selling_plan_selected: true,
+    selling_plans: (group.selling_plans as LiquidObject[]).map(plan => {
+      const next = { ...plan, selected: plan === chosen }
+      plans.set(plan, next)
+      return next
+    }),
+    options: (group.options as LiquidObject[]).map((option, i) => ({ ...option, selected_value: (((chosen.options as LiquidObject[])[i]) ?? {}).value ?? null }))
+  }
+  copy.selling_plan_groups = groups.map(g => g === group ? selectedGroup : g)
+  const selected = plans.get(chosen)!
+  copy.selected_selling_plan = selected
+  copy.variants = (product.variants as LiquidObject[]).map(variant => {
+    const allocations = (variant.selling_plan_allocations as LiquidObject[]).map(allocation => ({ ...allocation, selling_plan: plans.get(allocation.selling_plan as LiquidObject) ?? allocation.selling_plan }))
+    return Object.assign(copyObject(variant, 'product'), { selling_plan_allocations: allocations, selected_selling_plan_allocation: variant.selected ? allocations.find(allocation => allocation.selling_plan === selected) ?? null : null })
+  })
+  const variants = copy.variants as LiquidObject[]
+  for (const variant of variants) hidden(variant, 'product', copy)
+  const copyOf = (variant: unknown) => variant ? variants.find(entry => entry.id === (variant as LiquidObject).id) ?? null : null
+  copy.selected_variant = copyOf(product.selected_variant)
+  copy.selected_or_first_available_variant = copyOf(product.selected_or_first_available_variant)
+  copy.first_available_variant = copyOf(product.first_available_variant)
+  copy.selected_selling_plan_allocation = (copy.selected_variant as LiquidObject | null)?.selected_selling_plan_allocation ?? null
+  copy.selected_or_first_available_selling_plan_allocation = copy.selected_selling_plan_allocation ?? ((((copy.first_available_variant ?? variants[0]) as LiquidObject | undefined)?.selling_plan_allocations as LiquidObject[] | undefined) ?? [])[0] ?? null
   return copy
 }
 

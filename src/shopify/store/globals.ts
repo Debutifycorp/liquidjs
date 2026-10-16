@@ -2,7 +2,7 @@ import { HandleMap } from '../objects/handle-map'
 import { TemplateDrop } from '../objects/template'
 import { own } from '../util/own'
 import type { ReportCollector } from '../report'
-import { buildLinklists, LiquidObject, selectProduct, StoreObjects } from './build'
+import { buildLinklists, LiquidObject, selectProduct, selectSellingPlan, StoreObjects } from './build'
 import { alternatesOf, buildLocalization, languageIn } from './markets'
 import { buildRecommendations, RecommendationsRequest } from './recommendations'
 import { buildSearch } from './search'
@@ -173,8 +173,8 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     const map = store[kind] as HandleMap<LiquidObject>
     const found = request.resource ? HandleMap.get(map, request.resource) : HandleMap.values(map)[0]
     if (request.resource && !found) report.missing('resource', `${template.name} ${request.resource}`)
-    // a product page shows the variant `?variant=` names (`selectProduct`); the built product is shared by every request, so a selection is a copy
-    resources[template.name] = found && template.name === 'product' ? selectProduct(found, request.variant) : found ?? null
+    // a product page shows the variant `?variant=` names (`selectProduct`) and the selling plan `?selling_plan=` names (`selectSellingPlan`); the built product is shared by every request, so a selection is a copy
+    resources[template.name] = found && template.name === 'product' ? selectSellingPlan(selectProduct(found, request.variant), request.sellingPlan) : found ?? null
     // `/collections/<collection>/products/<product>` shows the product with that collection as the `collection` global: https://shopify.dev/docs/api/liquid/objects/collection says `collection.next_product` and `collection.previous_product` "can be used on the product page", which they could not be without it. The product's own URL does not carry the collection (fixture `probe-product-in-collection`: `/products/men-t-shirt`). A collection the store does not have sets none.
     if (template.name === 'product' && request.collection !== undefined) {
       const collection = HandleMap.get(store.collections, request.collection)

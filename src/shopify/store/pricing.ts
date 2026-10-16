@@ -1,4 +1,5 @@
 import type { ViewCurrency } from './markets'
+import type { SellingPlanPriceAdjustmentData } from './types'
 
 /**
  * Shopify's "Round up to the nearest {value}" per currency, in major units. https://help.shopify.com/en/manual/international/pricing/rounding names the setting and says "prices are automatically rounded to the most common denominator for each currency" and "You can't customize your rounding rules to anything different from these defaults", but lists no values, so these are the ones the parity store applies, as it renders them: the Canadian dollar rounds up to whole units (fixture `probe-product-en-ca`: the hoodie's 90.00 USD, 121.50 CAD at 1.35, is 122.00, and its compare-at 110.00 USD, 148.50 CAD, is 149.00) and the euro up to an amount ending in .95, whatever the amount (fixtures `probe-product-en-eu`, `probe-product-en-eu-workout-shirt`, `probe-product-en-eu-leggings`, `probe-product-en-eu-hoodie` and `probe-collection-en-eu-price`: 10.00 USD, 9.20 EUR at 0.92, is 9.95; 20.00 USD, 18.40 EUR, is 18.95; 25.00 USD, 23.00 EUR, is 23.95; 40.00, 50.00, 90.00 and 100.00 USD, 36.80, 46.00, 82.80 and 92.00 EUR, are 36.95, 46.95, 82.95 and 92.95). The docs' euro example is not what the parity store does: https://help.shopify.com/en/manual/international/pricing/exchange-rates rounds 8.81 EUR up to 8.85, a step of .05, while the store rounds 9.20 EUR up to 9.95, so the fixtures win. A currency not listed here rounds only when its market data gives a number (`MarketData.currency.rounding`).
@@ -26,4 +27,20 @@ export function convert (amount: number, currency: ViewCurrency): number {
     ? currency.rounding
     : currency.rounding && Object.prototype.hasOwnProperty.call(ROUND_UP_TO, currency.iso_code) ? ROUND_UP_TO[currency.iso_code] : undefined
   return value !== undefined && value > 0 ? roundUp(raw, value) : raw
+}
+
+/**
+ * A fixed amount of a selling plan price adjustment in the view's currency: converted at the market's rate and price adjustment like any amount, but not rounded up to the market's rounding value. The parity store prints the $2.00 off plan as 1.84 EUR in the Europe market (200 x 0.92 = 184), where rounding up would give 1.95 (fixture `probe-product-en-eu`: the plan's `price_adjustments[].value` is 184 and the allocation prices 2156 and 2211 follow from 2395 and 184). The amount is the data's, in the shop currency's minor unit, when no currency is given.
+ */
+export function planAmount (value: number, currency?: ViewCurrency): number {
+  return currency ? convert(value, { ...currency, rounding: false }) : value
+}
+
+/**
+ * A variant price under one selling plan price adjustment, https://shopify.dev/docs/api/liquid/objects/selling_plan_price_adjustment: a percentage off, a fixed amount off (never below zero) or a fixed price, each in the minor unit. A fixed amount or price is in the shop's currency and converted by `planAmount`; the result is rounded to the minor unit, half up, as the parity store prints it (fixtures `probe-product-plans`: 2500 less 10% is 2250, and `probe-product-en-eu`: 2395 less 10% is 2155.5, printed 2156).
+ */
+export function planPrice (price: number, adjustment: SellingPlanPriceAdjustmentData, currency?: ViewCurrency): number {
+  if (adjustment.value_type === 'percentage') return Math.max(0, Math.round(price * (100 - adjustment.value) / 100))
+  if (adjustment.value_type === 'fixed_amount') return Math.max(0, price - planAmount(adjustment.value, currency))
+  return planAmount(adjustment.value, currency)
 }
