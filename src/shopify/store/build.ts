@@ -92,6 +92,9 @@ interface PlanOffer {
   data: SellingPlanData
 }
 
+/** Whether `group` offers `variant`: a group applies to every variant of its product unless its `variant_ids` list some (`SellingPlanGroupData`). */
+const offersVariant = (group: SellingPlanGroupData, variant: VariantData) => !group.variant_ids || group.variant_ids.includes(variant.id)
+
 /**
  * A selling plan group of the data, https://shopify.dev/docs/api/liquid/objects/selling_plan_group, with its plans (https://shopify.dev/docs/api/liquid/objects/selling_plan), their options (https://shopify.dev/docs/api/liquid/objects/selling_plan_option) and price adjustments (https://shopify.dev/docs/api/liquid/objects/selling_plan_price_adjustment). The group keeps the data's `id`; the parity store makes its own 40-hex checksum, which the probe comparison masks (`VOLATILE` in `test/storefront/expect-probe.ts`). Nothing is selected: `selling_plan_selected` is false, each plan's `selected` is false and each option's `selected_value` is nil until a request names a plan (`selectSellingPlan`). The group has no `selected` field: shopify.dev names the group's flag `selling_plan_selected`, and the parity store prints `group.selected` as nil even with one of its plans selected (fixtures `probe-product-plans` and `probe-product-plan-selected`). Each plan has the `checkout_charge` the parity store prints, 100 percent (fixture `probe-product-plans`, in `product | json`), because the data holds no partial checkout charge. A fixed amount or price in an adjustment's `value` is in the view's currency (`planAmount`), a percentage as it is.
  */
@@ -179,10 +182,11 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
   const images = (data.images ?? []).map((img, i) => new ImageDrop(img, false, i + 1))
   const mediaData: MediaData[] = data.media ?? (data.images ?? []).map(img => ({ ...img, media_type: 'image' as const }))
   const media = mediaData.map(buildMedia)
-  const groupData = data.selling_plan_groups ?? []
+  // https://shopify.dev/docs/api/liquid/objects/product#product-selling_plan_groups lists "the selling plan groups that the variants of the product are included in", and the selling_plan_group page describes a group as one "that include[s] any of a product's variants": a group that offers none of the product's variants (`variant_ids` empty, or naming only variants the product lacks) is not listed
+  const groupData = (data.selling_plan_groups ?? []).filter(group => data.variants.some(variant => offersVariant(group, variant)))
   const groups = groupData.map(group => buildSellingPlanGroup(group, currency))
   const variants = data.variants.map(variant => {
-    const offers = groupData.flatMap((group, g) => !group.variant_ids || group.variant_ids.includes(variant.id) ? group.selling_plans.map((plan, i) => ({ group: groups[g], plan: (groups[g].selling_plans as LiquidObject[])[i], data: plan })) : [])
+    const offers = groupData.flatMap((group, g) => offersVariant(group, variant) ? group.selling_plans.map((plan, i) => ({ group: groups[g], plan: (groups[g].selling_plans as LiquidObject[])[i], data: plan })) : [])
     return buildVariant(variant, url, data.images ?? [], mediaData, currency, offers, !!data.requires_selling_plan)
   })
   const options = data.options ?? ['Title']

@@ -1,11 +1,29 @@
 import { productJson, sampleStoreData, storefrontSampleData as data } from '../../src/shopify'
-import type { RequestInput } from '../../src/shopify'
+import type { RequestInput, SellingPlanPriceAdjustmentData, StoreData } from '../../src/shopify'
 import { ReportCollector } from '../../src/shopify/report'
 import { buildStore, selectSellingPlan } from '../../src/shopify/store/build'
 import { buildGlobals } from '../../src/shopify/store/globals'
 import { planPrice } from '../../src/shopify/store/pricing'
 import { loadFixture } from './fixtures'
 import { maskVolatile, probeMatches } from './expect-probe'
+
+/** Three variants (11, 12, 13) of one product with two groups: A offers 12 and 13 (one 50% plan), B offers all three (a $1.00 off and a fixed price plan). */
+const twoGroups = (): StoreData => {
+  const first = sampleStoreData.products![0]
+  const base = first.variants[0]
+  const plan = (id: number, adjustment: SellingPlanPriceAdjustmentData) => ({ id, name: `Plan ${id}`, options: [`Option ${id}`], recurring_deliveries: false, price_adjustments: [adjustment] })
+  return {
+    ...sampleStoreData,
+    products: [{
+      ...first,
+      variants: [11, 12, 13].map(id => ({ ...base, id, available: true, price: 1000 })),
+      selling_plan_groups: [
+        { id: 'a', name: 'A', variant_ids: [12, 13], options: [{ name: 'Every', values: ['Option 1'] }], selling_plans: [plan(1, { value_type: 'percentage', value: 50 })] },
+        { id: 'b', name: 'B', options: [{ name: 'Every', values: ['Option 2', 'Option 3'] }], selling_plans: [plan(2, { value_type: 'fixed_amount', value: 100 }), plan(3, { value_type: 'price', value: 500 })] }
+      ]
+    }]
+  }
+}
 
 const eur = { rate: 0.92, adjustment: 0, rounding: 0.95, own: false, iso_code: 'EUR' } as any
 
@@ -25,9 +43,14 @@ describe('selling plans', () => {
       expect(planPrice(20000, { value_type: 'price', value: 2500 })).toBe(2500)
       expect(planPrice(100, { value_type: 'fixed_amount', value: 200 })).toBe(0)
     })
-    it('rounds a percentage to the minor unit, half up', () => {
+    it('prints a half minor unit of a percentage up, as the parity store does', () => {
+      // fixture `probe-product-en-eu`: 2395 less 10% is 2155.5, printed 2156 (the only fraction the fixtures hold)
       expect(planPrice(2395, { value_type: 'percentage', value: 10 })).toBe(2156)
+    })
+    it('rounds the other fractions of a percentage to the nearest, the engine\'s own choice, and stops at zero', () => {
+      // no fixture pins these: 999 less 33% is 669.33 (not 670) and 999 less 66.7% is 332.667 (not 332)
       expect(planPrice(999, { value_type: 'percentage', value: 33 })).toBe(669)
+      expect(planPrice(999, { value_type: 'percentage', value: 66.7 })).toBe(333)
       expect(planPrice(100, { value_type: 'percentage', value: 150 })).toBe(0)
     })
     it('converts a fixed amount or price to the view currency without rounding it up', () => {
@@ -111,11 +134,28 @@ describe('selling plans', () => {
       expect(product.variants.map((v: any) => v.selling_plan_allocations.length)).toEqual([0, 1])
       expect(product.selling_plan_groups).toHaveLength(1)
     })
+    it('lists a group only when it offers some variant of the product', () => {
+      // shopify.dev: product.selling_plan_groups are "the selling plan groups that the variants of the product are included in"
+      const first = sampleStoreData.products![0]
+      const group = (id: string, variantIds?: number[]) => ({ id, name: id, ...(variantIds ? { variant_ids: variantIds } : {}), options: [{ name: 'Every', values: ['Week'] }], selling_plans: [{ id: 1, name: 'Weekly', options: ['Week'], recurring_deliveries: false, price_adjustments: [] }] })
+      const listed = { ...sampleStoreData, products: [{ ...first, selling_plan_groups: [group('none', []), group('absent', [999999]), group('all'), group('some', [first.variants[0].id])] }] }
+      const product = (buildStore(listed).products as any).liquidMethodMissing(first.handle)
+      expect(product.selling_plan_groups.map((g: any) => g.id)).toEqual(['all', 'some'])
+      expect(product.variants[0].selling_plan_allocations.map((a: any) => a.selling_plan_group_id)).toEqual(['all', 'some'])
+    })
     it('requires a plan when the data says so, on the product and on every variant', () => {
       const frontpack = (buildStore(data).products as any).liquidMethodMissing('frontpack')
       expect(frontpack.requires_selling_plan).toBe(true)
       expect(frontpack.variants.every((v: any) => v.requires_selling_plan)).toBe(true)
       expect(frontpack.selected_or_first_available_selling_plan_allocation.selling_plan.id).toBe(71003)
+    })
+    it('converts a fixed price plan to the market\'s currency like a fixed amount, unrounded (the engine\'s choice: no fixture records it)', () => {
+      const store = buildStore(data, { market: 'eu', language: 'en', prefix: '/en-eu' } as any)
+      const frontpack = (store.products as any).liquidMethodMissing('frontpack')
+      expect(frontpack.selling_plan_groups[0].selling_plans[0].price_adjustments[0]).toEqual({ order_count: null, position: 1, value: 2300, value_type: 'price' })
+      const [variant] = frontpack.variants
+      expect(variant.selling_plan_allocations[0]).toMatchObject({ price: 2300, per_delivery_price: 2300, compare_at_price: variant.price, price_adjustments: [{ position: 1, price: 2300 }] })
+      expect(variant.price).toBeGreaterThan(2300)
     })
     it('prices the plans in the view currency of a market', () => {
       const store = buildStore(data, { market: 'eu', language: 'en', prefix: '/en-eu' } as any)
@@ -179,6 +219,54 @@ describe('selling plans', () => {
         expect(product.variants.filter((v: any) => v.selected).map((v: any) => v.id)).toEqual([43695710404630])
         expect(product.options_with_values[0].selected_value).toBe('Medium')
         expect(product.selected_or_first_available_variant).toBe(product.selected_variant)
+      })
+      it('leaves the first available allocation alone when only a variant is chosen', () => {
+        const product = page('slides', { variant: 43695710404630 })
+        expect(product.selected_variant.id).toBe(43695710404630)
+        expect(product.selected_selling_plan).toBeNull()
+        expect(product.selected_selling_plan_allocation).toBeNull()
+        expect(product.selected_or_first_available_selling_plan_allocation).toBe(product.variants[0].selling_plan_allocations[0])
+      })
+      describe('with two groups, one of which does not offer every variant', () => {
+        const custom = twoGroups()
+        const customStore = buildStore(custom)
+        const shared = () => (customStore.products as any).liquidMethodMissing(custom.products![0].handle)
+        const choose = (request: RequestInput) => buildGlobals({ store: customStore, data: custom, templateName: 'product', request: { resource: custom.products![0].handle, ...request }, locale: 'en', report: new ReportCollector() }).globals.product as any
+
+        it('offers each variant its own plans', () => {
+          expect(shared().variants.map((v: any) => v.selling_plan_allocations.map((a: any) => a.selling_plan.id))).toEqual([[2, 3], [1, 2, 3], [1, 2, 3]])
+          expect(shared().variants[1].selling_plan_allocations.map((a: any) => a.price)).toEqual([500, 900, 500])
+        })
+        it('selects a plan of one group and leaves the other group, and the plans its allocations hold, as they were', () => {
+          const product = choose({ sellingPlan: 1 })
+          const [a, b] = product.selling_plan_groups
+          expect([a.selling_plan_selected, b.selling_plan_selected]).toEqual([true, false])
+          expect(b).toBe(shared().selling_plan_groups[1])
+          expect(a).not.toBe(shared().selling_plan_groups[0])
+          const [fromA, fromB] = [product.variants[1].selling_plan_allocations[0].selling_plan, product.variants[1].selling_plan_allocations[1].selling_plan]
+          expect(fromA).toBe(a.selling_plans[0])
+          expect(fromA.selected).toBe(true)
+          expect(fromB).toBe(b.selling_plans[0])
+          expect(fromB.selected).toBe(false)
+          expect(product.selected_selling_plan).toBe(a.selling_plans[0])
+        })
+        it('gives a selected variant that the plan\'s group does not offer no selected allocation, and the first available one instead', () => {
+          // shopify.dev: the selected allocation is returned "if a variant and selling plan are selected"; variant 11 has no allocation for plan 1
+          const product = choose({ variant: 11, sellingPlan: 1 })
+          expect(product.selected_variant.id).toBe(11)
+          expect(product.selected_selling_plan.id).toBe(1)
+          expect(product.selected_variant.selected_selling_plan_allocation).toBeNull()
+          expect(product.selected_selling_plan_allocation).toBeNull()
+          expect(product.selected_or_first_available_selling_plan_allocation).toBe(product.variants[0].selling_plan_allocations[0])
+          expect(product.selected_or_first_available_selling_plan_allocation.selling_plan.id).toBe(2)
+        })
+        it('gives a selected variant that the group offers the allocation for the plan', () => {
+          const product = choose({ variant: 13, sellingPlan: 3 })
+          expect(product.selected_variant.selected_selling_plan_allocation.selling_plan.id).toBe(3)
+          expect(product.selected_selling_plan_allocation).toBe(product.selected_variant.selected_selling_plan_allocation)
+          expect(product.selected_selling_plan_allocation.price).toBe(500)
+          expect(product.selected_or_first_available_selling_plan_allocation).toBe(product.selected_selling_plan_allocation)
+        })
       })
       it('selects nothing for an id no group of the product has', () => {
         const shared = slides()

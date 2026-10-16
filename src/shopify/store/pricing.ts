@@ -37,7 +37,7 @@ export function planAmount (value: number, currency?: ViewCurrency): number {
 }
 
 /**
- * A variant price under one selling plan price adjustment, https://shopify.dev/docs/api/liquid/objects/selling_plan_price_adjustment: a percentage off, a fixed amount off (never below zero) or a fixed price, each in the minor unit. A fixed amount or price is in the shop's currency and converted by `planAmount`; the result is rounded to the minor unit, half up, as the parity store prints it (fixtures `probe-product-plans`: 2500 less 10% is 2250, and `probe-product-en-eu`: 2395 less 10% is 2155.5, printed 2156).
+ * A variant price under one selling plan price adjustment, https://shopify.dev/docs/api/liquid/objects/selling_plan_price_adjustment: a percentage off, a fixed amount off (never below zero) or a fixed price, each in the minor unit. A fixed amount or price is in the shop's currency and converted by `planAmount`; the result is a whole number of minor units. The parity store prints 2395 less 10%, 2155.5, as 2156 (fixture `probe-product-en-eu`); that is all it pins of the rounding, since half up, half even and rounding up all give 2156, so other fractions are rounded to the nearest with halves up (`Math.round`) as the engine's own choice, which no fixture settles (the README lists it).
  */
 export function planPrice (price: number, adjustment: SellingPlanPriceAdjustmentData, currency?: ViewCurrency): number {
   if (adjustment.value_type === 'percentage') return Math.max(0, Math.round(price * (100 - adjustment.value) / 100))
