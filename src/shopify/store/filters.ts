@@ -1,6 +1,7 @@
 import { own } from '../util/own'
 import { withQuery } from '../util/query'
 import type { LiquidObject } from './build'
+import type { RequestInput } from './globals'
 import type { ViewCurrency } from './markets'
 import type { FilterData } from './types'
 
@@ -176,6 +177,12 @@ function tally (products: LiquidObject[], others: Matcher, ofProduct?: (product:
 /** `query` with the option name of each `filter.v.option.<name>` pair lower-cased, as the filters' own parameters are, so a hand-typed `filter.v.option.Color=Green` filters, is marked active, counts and links like `filter.v.option.color=Green`. */
 export function normalizeQuery (query: Array<[string, string]>): Array<[string, string]> {
   return query.map(([name, value]) => name.startsWith(OPTION) ? [`${OPTION}${name.slice(OPTION.length).toLowerCase()}`, value] : [name, value])
+}
+
+/** The query pairs a request's filter links keep and the `filter.*` pairs it has active (option names lower-cased, `normalizeQuery`): the request's `query` without `page`, or, for a request built by hand without one, its `sort_by` and `filters`; the active pairs are the request's `filters`, or the `filter.*` pairs of that query. A collection page and a search page both read their request this way. */
+export function requestQuery (request: Pick<RequestInput, 'query' | 'sortBy' | 'filters'>): { query: Array<[string, string]>, active: Array<[string, string]> } {
+  const query = normalizeQuery(request.query ?? [...(request.sortBy ? [['sort_by', request.sortBy] as [string, string]] : []), ...(request.filters ?? [])]).filter(([name]) => name !== 'page')
+  return { query, active: request.filters ? normalizeQuery(request.filters) : query.filter(([name]) => name.startsWith('filter.')) }
 }
 
 /**

@@ -8,7 +8,15 @@ import { renderProbeHtml } from './probe'
 /** The fixtures whose results the parity store ranks in an order no rule of plain matching yields (accepted differences, see `buildSearch`): their results are compared as a set, and everything else exactly. */
 const ACCEPTED_ORDER = new Set(['probe-search-shirt', 'probe-search-type-product'])
 
-const unordered = (body: any) => ({ ...body, results: [...body.results].sort((a: any, b: any) => `${a.object_type}:${a.handle}`.localeCompare(`${b.object_type}:${b.handle}`)) })
+/** `body` with the handles inside each run of results of one kind sorted: the order of the kinds (products, then pages, then articles) is still compared, only the order within a kind is not. */
+const unordered = (body: any) => {
+  const runs: any[][] = []
+  for (const result of body.results) {
+    if (runs.length && runs[runs.length - 1][0].object_type === result.object_type) runs[runs.length - 1].push(result)
+    else runs.push([result])
+  }
+  return { ...body, results: runs.flatMap(run => run.sort((a, b) => a.handle.localeCompare(b.handle))) }
+}
 
 describe('search per request', () => {
   for (const name of ['probe-search-shirt', 'probe-search-prefix', 'probe-search-type-product', 'probe-search-type-page', 'probe-search-filtered', 'probe-search-none']) {
@@ -31,6 +39,13 @@ async function searchJson (url: string, expression: string, data: StoreData = st
   const theme = { files: { 'config/settings_schema.json': '[]', 'config/settings_data.json': '{"current":{}}', 'layout/theme.liquid': '{{ content_for_layout }}', 'templates/search.liquid': `{%- layout none -%}{{ ${expression} | json }}` } }
   const page = requestFromUrl(url, data)
   return JSON.parse((await renderPage({ theme, templateName: 'search', data, request: page.request, locale: page.locale })).html)
+}
+
+/** What a search page template made of `template` prints for `url`. */
+async function searchPage (url: string, template: string, data: StoreData = storefrontSampleData): Promise<string> {
+  const theme = { files: { 'config/settings_schema.json': '[]', 'config/settings_data.json': '{"current":{}}', 'layout/theme.liquid': '{{ content_for_layout }}', 'templates/search.liquid': `{%- layout none -%}${template}` } }
+  const page = requestFromUrl(url, data)
+  return (await renderPage({ theme, templateName: 'search', data, request: page.request, locale: page.locale })).html
 }
 
 const handles = (body: any) => body.results.map((result: any) => result.handle)
@@ -62,6 +77,13 @@ describe('search beyond the recorded scenarios', () => {
     expect((await probe('/search?q=shi&options%5Bprefix%5D=none&view=probe')).results_count).toBe(0)
     expect(handles(await probe('/search?q=shirt&options%5Bprefix%5D=none&view=probe'))).toEqual(['men-t-shirt', 'women-t-shirt', 'workout-shirt'])
     expect((await probe('/search?q=shi&options%5Bprefix%5D=last&view=probe')).results_count).toBe(5)
+  })
+
+  it('treats only the last term as a partial word', async () => {
+    expect(handles(await probe('/search?q=leather%20sneak&view=probe'))).toEqual(['white-leather-sneakers', 'gray-leather-sneakers'])
+    expect((await probe('/search?q=leather%20sneak&options%5Bprefix%5D=none&view=probe')).results_count).toBe(0)
+    // the first term stays a whole word
+    expect((await probe('/search?q=leath%20sneakers&view=probe')).results_count).toBe(0)
   })
 
   it('puts unavailable products last, in place or nowhere, as the option says', async () => {
@@ -134,5 +156,23 @@ describe('search beyond the recorded scenarios', () => {
     expect(brand.url_to_remove).toBe('/search?q=shirt&sort_by=price-ascending')
     expect(search.filters.find((f: any) => f.param_name === 'filter.p.product_type').values[0].url_to_add).toBe('/search?q=shirt&filter.p.product_type=T-shirts&filter.p.vendor=Mock.shop&sort_by=price-ascending')
     expect(search.results.map((result: any) => result.handle)).toEqual(['workout-shirt', 'men-t-shirt', 'women-t-shirt', 'news/new-line-of-tennis-products', 'news/liquidpeak-450'])
+  })
+
+  it('keeps the terms in the links of a request built by hand with a query that has none', () => {
+    const search = buildSearch(buildStore(storefrontSampleData), 'shirt', { query: [['view', 'probe']] }) as any
+    expect(search.filters.find((f: any) => f.param_name === 'filter.p.product_type').values[0].url_to_add).toBe('/search?filter.p.product_type=T-shirts&q=shirt&view=probe')
+  })
+
+  it('gives each search its own types', () => {
+    const store = buildStore(storefrontSampleData)
+    const first = buildSearch(store, 'shirt') as any
+    first.types.push('other')
+    expect((buildSearch(store, 'shirt') as any).types).toEqual(['article', 'page', 'product'])
+  })
+
+  it('paginates the results, the links keeping the query', async () => {
+    const url = '/search?q=sneakers&type=product&sort_by=price-descending&filter.p.vendor=Mock.shop&options%5Bunavailable_products%5D=show'
+    const html = await searchPage(`${url}&page=1`, '{% paginate search.results by 2 %}{{ paginate.items }}|{{ paginate.pages }}|{{ paginate.next.url }}{% for r in search.results %}|{{ r.handle }}{% endfor %}{% endpaginate %}')
+    expect(html).toBe('4|2|/search?filter.p.vendor=Mock.shop&options%5Bunavailable_products%5D=show&page=2&q=sneakers&sort_by=price-descending&type=product|gray-leather-sneakers|high-top-sneakers')
   })
 })
