@@ -38,8 +38,9 @@ describe('storefrontSampleData', () => {
   })
   it('renders every probe with today\'s engine', async () => {
     const templates = readdirSync(join(PROBE_DIR, 'templates')).map(f => f.replace(/\.liquid$/, ''))
-    expect(templates.sort()).toEqual(['cart.probe', 'collection.probe', 'page.probe', 'page.probe-form', 'product.probe', 'search.probe'])
-    for (const t of templates) {
+    expect(templates.sort()).toEqual(['cart.probe', 'cart.probe-text', 'collection.probe', 'page.probe', 'page.probe-form', 'product.probe', 'search.probe'])
+    // `cart.probe-text` prints plain text (fixture `ajax-cart-text`), the others JSON
+    for (const t of templates.filter(name => name !== 'cart.probe-text')) {
       const html = await renderProbeHtml(t)
       expect(() => JSON.parse(html)).not.toThrow()
     }
