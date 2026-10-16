@@ -1,5 +1,7 @@
 import { predictiveJson, productJson, recommendationsJson, requestFromUrl, resolveView, storefrontSampleData as data } from '../../src/shopify'
 import type { PredictiveRequest } from '../../src/shopify'
+import { HandleMap } from '../../src/shopify/objects/handle-map'
+import { buildStore } from '../../src/shopify/store/build'
 import { loadFixture } from './fixtures'
 import { maskVolatile, probeMatches } from './expect-probe'
 import { renderProbeSection } from './probe'
@@ -278,5 +280,25 @@ describe('/recommendations/products.json', () => {
     expect(sneakers.variants.every((variant: { compare_at_price: unknown }) => variant.compare_at_price === null)).toBe(true)
     const primary = (recommendationsJson(data, { productId: byHandle('canvas-sneakers').id, limit: 10 }) as { products: Array<Record<string, any>> }).products.find(product => product.handle === 'white-leather-sneakers')!
     expect(primary).toMatchObject({ price: 9000, compare_at_price: 11000 })
+  })
+})
+
+describe('predictive search: the work a request causes (final review B, M3)', () => {
+  it('tokenises a product once per built store, not on every request', () => {
+    // a data object of its own: the words of the shared one were kept by the tests above
+    const own = { ...data }
+    const store = buildStore(own, resolveView(own, {}))
+    let reads = 0
+    for (const product of HandleMap.values(store.products)) {
+      const description = product.description
+      Object.defineProperty(product, 'description', { get () { reads++; return description }, enumerable: true, configurable: true })
+    }
+    // a term nothing starts with finds nothing, so only the tokenising reads the description
+    predictiveJson(own, suggest('q=zzzz'))
+    const first = reads
+    expect(first).toBe(HandleMap.values(store.products).length)
+    predictiveJson(own, suggest('q=zzzz'))
+    predictiveJson(own, suggest('q=qqqq&resources[type]=product'))
+    expect(reads).toBe(first)
   })
 })

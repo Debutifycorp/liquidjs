@@ -1,4 +1,4 @@
-import { localePrefixes, resolveView } from '../shopify'
+import { localePrefixes, resolveView, setViewCacheSize } from '../shopify'
 import type { StoreData, StoreView, ThemeInput } from '../shopify'
 import { BodyError, readBody } from './body'
 import type { Fields } from './body'
@@ -254,6 +254,8 @@ export function createStorefront (options: StorefrontOptions): Storefront {
       const fromCookie = handleOptions.visitor ? undefined : cookieVisitor(request)
       const key = handleOptions.visitor ?? fromCookie ?? newVisitorKey()
       const [theme, data] = await Promise.all([resolve(options.theme, request), resolve(options.data, request)])
+      // set before any route runs, so the Ajax answers that build a view obey it as much as the pages do
+      if (options.viewCacheSize !== undefined) setViewCacheSize(data, options.viewCacheSize)
       // which routes change state, and which read a body, depend only on the method and the address, so both are decided before the visitor's state is read or their turn is taken
       const first = routeRequest(request.method, request.url, data, { basePath, search: limits.search }).route
       const fields = readsBody(first, verb) ? await readBody(request, limits.body) : {}

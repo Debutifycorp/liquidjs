@@ -1,5 +1,5 @@
 import { own } from '../util/own'
-import { withQuery } from '../util/query'
+import { prepareQuery, withPrepared } from '../util/query'
 import type { LiquidObject } from './build'
 import type { RequestInput } from './globals'
 import type { ViewCurrency } from './markets'
@@ -179,10 +179,36 @@ export function normalizeQuery (query: Array<[string, string]>): Array<[string, 
   return query.map(([name, value]) => name.startsWith(OPTION) ? [`${OPTION}${name.slice(OPTION.length).toLowerCase()}`, value] : [name, value])
 }
 
-/** The query pairs a request's filter links keep and the `filter.*` pairs it has active (option names lower-cased, `normalizeQuery`): the request's `query` without `page`, or, for a request built by hand without one, its `sort_by` and `filters`; the active pairs are the request's `filters`, or the `filter.*` pairs of that query. A collection page and a search page both read their request this way. */
+/** The most `filter.*` parameters a request is read for. Debutify's bound, final review B (I1): the work of a collection or search request grows with the filters it names and with the pairs its links repeat, and shopify.dev gives no limit. The store data lists a handful of filters, so a request that names more is not a shopper's. */
+export const MAX_FILTER_PARAMS = 25
+
+/** The most values of one `filter.*` parameter a request is read for (see `MAX_FILTER_PARAMS`): each value is tested against every product of the page. */
+export const MAX_FILTER_VALUES = 50
+
+/** The most query pairs a request keeps, for its filter and page links (see `MAX_FILTER_PARAMS`): every link repeats them. */
+export const MAX_QUERY_PAIRS = 100
+
+/** `pairs` with the filter parameters, the values of a parameter and the pairs past the limits left out, in order: the first `MAX_FILTER_PARAMS` `filter.*` names, the first `MAX_FILTER_VALUES` values of each, and the first `MAX_QUERY_PAIRS` pairs in all. The rest of the request is not read, as no limit of Shopify's says. */
+export function boundQuery (pairs: Array<[string, string]>): Array<[string, string]> {
+  const values = new Map<string, number>()
+  const kept: Array<[string, string]> = []
+  for (const pair of pairs) {
+    if (kept.length >= MAX_QUERY_PAIRS) break
+    const name = pair[0]
+    if (name.startsWith('filter.')) {
+      const count = values.get(name)
+      if (count === undefined ? values.size >= MAX_FILTER_PARAMS : count >= MAX_FILTER_VALUES) continue
+      values.set(name, (count ?? 0) + 1)
+    }
+    kept.push(pair)
+  }
+  return kept
+}
+
+/** The query pairs a request's filter links keep and the `filter.*` pairs it has active (option names lower-cased, `normalizeQuery`): the request's `query` without `page`, or, for a request built by hand without one, its `sort_by` and `filters`; the active pairs are the request's `filters`, or the `filter.*` pairs of that query. Both are bounded (`boundQuery`). A collection page and a search page both read their request this way. */
 export function requestQuery (request: Pick<RequestInput, 'query' | 'sortBy' | 'filters'>): { query: Array<[string, string]>, active: Array<[string, string]> } {
-  const query = normalizeQuery(request.query ?? [...(request.sortBy ? [['sort_by', request.sortBy] as [string, string]] : []), ...(request.filters ?? [])]).filter(([name]) => name !== 'page')
-  return { query, active: request.filters ? normalizeQuery(request.filters) : query.filter(([name]) => name.startsWith('filter.')) }
+  const query = boundQuery(normalizeQuery(request.query ?? [...(request.sortBy ? [['sort_by', request.sortBy] as [string, string]] : []), ...(request.filters ?? [])]).filter(([name]) => name !== 'page'))
+  return { query, active: request.filters ? boundQuery(normalizeQuery(request.filters)) : query.filter(([name]) => name.startsWith('filter.')) }
 }
 
 /**
@@ -196,10 +222,14 @@ export function buildFilters (filters: FilterData[] | undefined, products: Liqui
   const kept = normalizeQuery(query).filter(([name]) => name !== 'page')
   const active = kept.filter(([name]) => name.startsWith('filter.'))
   const and = andParams(filters)
-  const href = (pairs: Active) => withQuery(url, pairs)
-  const without = (drop: (name: string, value: string) => boolean) => kept.filter(([name, value]) => !drop(name, value))
+  // the whole query sorted and encoded once, for the links of every value (final review B, I1)
+  const sortedQuery = prepareQuery(kept)
+  const href = (change?: Parameters<typeof withPrepared>[2]) => withPrepared(url, sortedQuery, change)
   const value = (param: string, entry: Entry) => {
     const selected = active.some(([name, found]) => name === param && found === entry.value)
+    // the links are made when a template reads them (final review B, I1): a filter has a value for each tag or option of the page, and each link sorts and encodes the whole query, which a template that prints only the labels never needs
+    let add: string | undefined
+    let remove: string | undefined
     return {
       label: entry.label,
       value: entry.value,
@@ -209,8 +239,14 @@ export function buildFilters (filters: FilterData[] | undefined, products: Liqui
       image: null,
       swatch: null,
       display: null,
-      url_to_add: href(selected ? kept : [...kept, [param, entry.value] as const]),
-      url_to_remove: href(without((name, found) => name === param && found === entry.value))
+      get url_to_add () {
+        add ??= href(selected ? undefined : { add: [param, entry.value] })
+        return add
+      },
+      get url_to_remove () {
+        remove ??= href({ drop: (name, found) => name === param && found === entry.value })
+        return remove
+      }
     }
   }
   const out: LiquidObject[] = []
@@ -223,9 +259,9 @@ export function buildFilters (filters: FilterData[] | undefined, products: Liqui
         const raw = active.find(([found]) => found === name)?.[1]
         const amount = raw === undefined || raw.trim() === '' ? NaN : Math.round(Number(raw) * 100)
         const set = Number.isFinite(amount)
-        return { label: null, value: set ? amount : null, param_name: name, count: null, active: set, image: null, swatch: null, display: null, url_to_add: href(kept), url_to_remove: href(without(found => found === name)) }
+        return { label: null, value: set ? amount : null, param_name: name, count: null, active: set, image: null, swatch: null, display: null, url_to_add: href(), url_to_remove: href({ drop: found => found === name }) }
       }
-      out.push({ label: filter.label ?? LABELS.price, type: 'price_range', param_name: param, operator: null, presentation: null, values: [], active_values: [], inactive_values: [], true_value: null, false_value: null, min_value: bound(PRICE_GTE), max_value: bound(PRICE_LTE), range_max: prices.reduce((highest, price) => Math.max(highest, price), 0), url_to_remove: href(without(name => belongsTo(name, param))) })
+      out.push({ label: filter.label ?? LABELS.price, type: 'price_range', param_name: param, operator: null, presentation: null, values: [], active_values: [], inactive_values: [], true_value: null, false_value: null, min_value: bound(PRICE_GTE), max_value: bound(PRICE_LTE), range_max: prices.reduce((highest, price) => Math.max(highest, price), 0), url_to_remove: href({ drop: name => belongsTo(name, param) }) })
       continue
     }
     const option = filter.attribute === 'option' ? filter.option ?? '' : null
@@ -258,7 +294,7 @@ export function buildFilters (filters: FilterData[] | undefined, products: Liqui
     if (!products.length || !entries.length) continue
     for (const entry of entries) entry.count = counts.get(entry.value) ?? 0
     const values = [...entries.filter(entry => entry.count > 0), ...entries.filter(entry => entry.count === 0)].map(entry => value(param, entry))
-    out.push({ label: filter.label ?? (option ?? (filter.attribute === 'metafield' ? filter.metafield?.key : LABELS[filter.attribute as keyof typeof LABELS])), type: 'list', param_name: param, operator: and.has(param) ? 'AND' : 'OR', presentation: option !== null ? filter.presentation ?? 'text' : 'text', values, active_values: values.filter(entry => entry.active), inactive_values: values.filter(entry => !entry.active), true_value: null, false_value: null, min_value: null, max_value: null, range_max: null, url_to_remove: href(without(name => belongsTo(name, param))) })
+    out.push({ label: filter.label ?? (option ?? (filter.attribute === 'metafield' ? filter.metafield?.key : LABELS[filter.attribute as keyof typeof LABELS])), type: 'list', param_name: param, operator: and.has(param) ? 'AND' : 'OR', presentation: option !== null ? filter.presentation ?? 'text' : 'text', values, active_values: values.filter(entry => entry.active), inactive_values: values.filter(entry => !entry.active), true_value: null, false_value: null, min_value: null, max_value: null, range_max: null, url_to_remove: href({ drop: name => belongsTo(name, param) }) })
   }
   return out
 }

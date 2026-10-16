@@ -65,6 +65,8 @@ export interface StorefrontOptions {
   /** Replaces the notice page shown for checkout and the account pages. */
   notice?: (kind: 'checkout' | 'account', request: Request) => Response | Promise<Response>
   limits?: Partial<StorefrontLimits>
+  /** The most views of the store data kept (default 16). A view is a full copy of the store's objects for one base path, market and language, built the first time a request needs it and kept for the next ones; the least recently used is dropped past this number. About 40 MB per view for 5,000 products and 45,000 variants. */
+  viewCacheSize?: number
   /** The password `POST /password` accepts when the store data says the store is password protected (`shop.password_enabled`). */
   password?: string
   onReport?: (report: StorefrontReport, request: Request) => void

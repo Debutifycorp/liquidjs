@@ -1,8 +1,42 @@
+/** A name and a value of a query. */
+type Pair = readonly [string, string]
+
+/** A query ready to be put after many paths with one pair added or taken out each time: its pairs ordered by name and percent-encoded once (`prepareQuery`). */
+export interface PreparedQuery {
+  readonly pairs: readonly Pair[]
+  readonly encoded: readonly string[]
+}
+
+const encode = (pair: Pair) => `${encodeURIComponent(pair[0])}=${encodeURIComponent(pair[1])}`
+
+/** `pairs` ordered by name (pairs of one name keep their order) and percent-encoded with `encodeURIComponent`, the form `withQuery` prints them in. */
+export function prepareQuery (pairs: readonly Pair[]): PreparedQuery {
+  const ordered = [...pairs].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
+  return { pairs: ordered, encoded: ordered.map(encode) }
+}
+
+/**
+ * `path` followed by `query` as its query string, joined to a `?` or, when `path` already has a query, to its end. `change.add` is one more pair, placed after the pairs of its name that `query` has and before those of a later name, where ordering `[...pairs, add]` puts it; `change.drop` names the pairs left out. The same query serves any number of calls, which a page of filter links needs (final review B, I1): sorting and encoding the whole query for each of a thousand links is the cost that a long query multiplied.
+ */
+export function withPrepared (path: string, query: PreparedQuery, change: { add?: Pair, drop?: (name: string, value: string) => boolean } = {}): string {
+  const { add, drop } = change
+  const parts: string[] = []
+  let placed = add === undefined
+  for (let at = 0; at < query.pairs.length; at++) {
+    const [name, value] = query.pairs[at]
+    if (!placed && add![0] < name) {
+      parts.push(encode(add!))
+      placed = true
+    }
+    if (!drop?.(name, value)) parts.push(query.encoded[at])
+  }
+  if (!placed) parts.push(encode(add!))
+  return parts.length ? `${path}${path.includes('?') ? '&' : '?'}${parts.join('&')}` : path
+}
+
 /**
  * `path` followed by `pairs` as its query string: the pairs ordered by name (pairs of one name keep their order) and percent-encoded with `encodeURIComponent`, joined to a `?` or, when `path` already has a query, to its end. The order is the one the parity store prints in filter and pagination links (fixtures `probe-collection-filter-combined` and `probe-collection-types`: `filter.p.tag=…&filter.v.availability=1&page=2&q=…&sort_by=…&view=probe`). shopify.dev does not describe the form of these links; a space encodes as `%20`, which no fixture shows.
  */
-export function withQuery (path: string, pairs: ReadonlyArray<readonly [string, string]>): string {
-  if (!pairs.length) return path
-  const ordered = [...pairs].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
-  return `${path}${path.includes('?') ? '&' : '?'}${ordered.map(([name, value]) => `${encodeURIComponent(name)}=${encodeURIComponent(value)}`).join('&')}`
+export function withQuery (path: string, pairs: readonly Pair[]): string {
+  return withPrepared(path, prepareQuery(pairs))
 }

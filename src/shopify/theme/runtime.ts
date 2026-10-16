@@ -12,7 +12,7 @@ import { sampleStoreData } from '../sample/sample-data'
 import type { ShopifyServices } from '../services'
 import { SettingDefinition, SettingsDrop, SettingsEnv } from '../settings'
 import { createState, currentFrame, Frame, ShopifyState, STATE, ThemeHooks } from '../state'
-import { buildStore, LiquidObject, StoreObjects } from '../store/build'
+import { buildStore, LiquidObject, setViewCacheSize, StoreObjects } from '../store/build'
 import type { CartState } from '../store/cart'
 import { buildGlobals, requestedResource, RequestInput } from '../store/globals'
 import { resolveView } from '../store/view'
@@ -45,6 +45,8 @@ export interface RenderPageOptions {
   /** The cart the page shows, in place of `data.cart`: a visitor's cart as the storefront keeps it (`CartState`). Its lines are priced in the currency of the request's market. */
   cart?: CartState
   services?: Partial<ShopifyServices>
+  /** The most views of `data` kept for the next requests (default 16): a view is a full copy of the store's objects for one market, language and URL prefix, so each base path a store is served under (one per preview) holds one. Set on the `data` object, as `setViewCacheSize` sets it, and left as it is when omitted. About 40 MB per view for 5,000 products and 45,000 variants. */
+  viewCacheSize?: number
   /** Render the Liquid in `liquid` settings where they print. Off by default: they print as escaped text. Shopify renders them, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings, so off is Debutify's safety choice for settings it did not write. */
   trustLiquidSettings?: boolean
   /** Lift every other rule for untrusted settings: `html` settings print unsanitised (less `<html>`, `<head>` and `<body>`, which shopify.dev says Shopify removes, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings), the other setting types are not held to their documented forms, stored keys are not checked, and section keys, block keys and types, group types and the template `wrapper` are not held to the plain-id rule. Off by default, which is Debutify's safety choice and differs from Shopify. `richtext` settings and the escapes of `json` stay on either way. */
@@ -360,6 +362,7 @@ class PageRender implements ThemeHooks {
 
   public constructor (private readonly theme: CompiledTheme, private readonly options: RenderPageOptions) {
     const data = options.data ?? sampleStoreData
+    if (options.viewCacheSize !== undefined) setViewCacheSize(data, options.viewCacheSize)
     const store = buildStore(data, resolveView(data, options.request ?? {}))
     this.templateName = chooseTemplate(theme, options.templateName, options.request?.view, suffixOf(store, options.templateName, options.request?.resource))
     // the theme's locale file is "the locale file for the active language" (https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files), the language the page is shown in, which is the one the request names, as the parity store prints it in `request.locale` (fixtures `probe-page-fr-ca` and `probe-page-fr-eu`: `fr`); a request that names none renders in the shop's locale

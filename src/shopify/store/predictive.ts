@@ -1,7 +1,7 @@
 import { HandleMap } from '../objects/handle-map'
 import type { ImageDrop } from '../objects/image'
 import { own } from '../util/own'
-import { buildStore } from './build'
+import { buildStore, remember } from './build'
 import type { LiquidObject, StoreObjects } from './build'
 import type { PredictiveRequest } from './globals'
 import { trackingId } from './recommendations'
@@ -24,16 +24,26 @@ const plain = (html: unknown) => String(html ?? '').replace(/<[^>]*>/g, ' ').rep
 const hasTerm = (found: string[], term: string, last: boolean) => last ? found.some(word => word.startsWith(term)) : found.includes(term)
 const matches = (found: string[], terms: string[]) => terms.length > 0 && terms.every((term, at) => hasTerm(found, term, at === terms.length - 1))
 
+/** The words of each built product, page and article that the matching reads, made once and kept as long as the built resource (final review B, M3): a predictive search runs on every keystroke and matches every product, and tokenising their text is most of what it costs. The built resources are the view's and are not changed, so their words do not change either. Each word once: a description repeats words, and the matching only asks whether one is there. */
+const partialMemo = new WeakMap<LiquidObject, string[]>()
+const wholeMemo = new WeakMap<LiquidObject, string[]>()
+const contentMemo = new WeakMap<LiquidObject, Map<string, string[]>>()
+const distinct = (list: string[]) => [...new Set(list)]
+
 /** The words of a product that a partly typed last term can start: its title, type, vendor and variant titles, the fields https://shopify.dev/docs/api/ajax/reference/predictive-search lists for typo tolerance. The words of a product's description, tags and variant SKUs, which are searched too, are matched whole (`wholeWords`). */
 function partialWords (product: LiquidObject): string[] {
-  const variants = product.variants as LiquidObject[]
-  return [...words(String(product.title)), ...words(String(product.type)), ...words(String(product.vendor)), ...variants.flatMap(variant => words(String(variant.title)))]
+  return remember(partialMemo, product, () => {
+    const variants = product.variants as LiquidObject[]
+    return distinct([...words(String(product.title)), ...words(String(product.type)), ...words(String(product.vendor)), ...variants.flatMap(variant => words(String(variant.title)))])
+  })
 }
 
 /** The words of a product's description, tags and variant SKUs, which must be typed whole (see `partialWords`). The variant barcode and the product category, the other fields that page lists, are not in the store data. */
 function wholeWords (product: LiquidObject): string[] {
-  const variants = product.variants as LiquidObject[]
-  return [...words(plain(product.description)), ...(product.tags as string[]).flatMap(words), ...variants.flatMap(variant => words(String(variant.sku)))]
+  return remember(wholeMemo, product, () => {
+    const variants = product.variants as LiquidObject[]
+    return distinct([...words(plain(product.description)), ...(product.tags as string[]).flatMap(words), ...variants.flatMap(variant => words(String(variant.sku)))])
+  })
 }
 
 /** Whether a product is found: every term is one of its words, the last also as the start of a word of `partialWords`. */
@@ -43,14 +53,26 @@ function matchesProduct (product: LiquidObject, terms: string[]): boolean {
   return terms.length > 0 && terms.every((term, at) => hasTerm(partial, term, at === terms.length - 1) || whole.includes(term))
 }
 
+/** The words of one field of a page or an article: `author`, `body` and `title` for pages and also `tag` for articles, https://shopify.dev/docs/api/ajax/reference/predictive-search. Only these four fields are kept, so a request cannot make the memo grow by naming others. */
+const CONTENT_FIELDS = new Map<string, (item: LiquidObject, kind: 'page' | 'article') => string[]>([
+  ['title', item => words(String(item.title))],
+  ['author', item => words(String(item.author ?? ''))],
+  ['body', item => words(plain(item.content))],
+  ['tag', (item, kind) => kind === 'article' ? ((item.tags as string[] | undefined) ?? []).flatMap(words) : []]
+])
+
 /** The words of a page's or an article's searchable `fields`: https://shopify.dev/docs/api/ajax/reference/predictive-search lists `author`, `body` and `title` for pages and also `tag` for articles. A collection is found by its title alone, the only property that page lists for it. */
 function contentWords (item: LiquidObject, fields: string[], kind: 'page' | 'article'): string[] {
+  const kept = remember(contentMemo, item, () => new Map<string, string[]>())
   return fields.flatMap(field => {
-    if (field === 'title') return words(String(item.title))
-    if (field === 'author') return words(String(item.author ?? ''))
-    if (field === 'body') return words(plain(item.content))
-    if (field === 'tag' && kind === 'article') return ((item.tags as string[] | undefined) ?? []).flatMap(words)
-    return []
+    const wordsOfField = CONTENT_FIELDS.get(field)
+    if (!wordsOfField) return []
+    let found = kept.get(field)
+    if (!found) {
+      found = wordsOfField(item, kind)
+      kept.set(field, found)
+    }
+    return found
   })
 }
 

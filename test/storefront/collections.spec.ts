@@ -4,7 +4,8 @@ import { requestFromUrl, storefrontSampleData } from '../../src/shopify'
 import type { FilterData, ProductData, StoreData } from '../../src/shopify'
 import { HandleMap } from '../../src/shopify/objects/handle-map'
 import { ReportCollector } from '../../src/shopify/report'
-import { buildStore } from '../../src/shopify/store/build'
+import { buildStore, isBuiltProduct } from '../../src/shopify/store/build'
+import { requestQuery } from '../../src/shopify/store/filters'
 import { buildGlobals } from '../../src/shopify/store/globals'
 import { probeMatches } from './expect-probe'
 import { renderProbeHtml } from './probe'
@@ -177,5 +178,102 @@ describe('collections: more guarantees', () => {
     expect(first).toBeGreaterThan(0)
     expect(all.filters).toBe(all.filters)
     expect(reads).toBe(first)
+  })
+})
+
+describe('collections: the work a request causes (final review B, I1)', () => {
+  const collectionOf = (url: string, data: StoreData, store = buildStore(data)): any => {
+    const page = requestFromUrl(url, data)
+    return buildGlobals({ store, data, templateName: page.templateName, request: page.request, locale: page.locale, report: new ReportCollector() }).globals.collection
+  }
+  /** Counts the reads of `key` on every built product of `store`. */
+  const countReads = (store: ReturnType<typeof buildStore>, key: string) => {
+    const counter = { reads: 0 }
+    for (const product of HandleMap.values(store.products)) {
+      const value = product[key]
+      Object.defineProperty(product, key, { get () { counter.reads++; return value }, enumerable: true, configurable: true })
+    }
+    return counter
+  }
+
+  it('builds the filters when a template reads them, once, and not when it reads only the count', () => {
+    const data = structuredClone(storefrontSampleData) as StoreData
+    const store = buildStore(data)
+    // only the filters read a product's `options`: nothing else a collection page does here (no option filter is active) reaches it
+    const options = countReads(store, 'options')
+    for (const url of ['/collections/all', '/collections/all?sort_by=price-descending&filter.v.availability=1', '/collections/tops?filter.p.vendor=Mock.shop']) {
+      const collection = collectionOf(url, data, store)
+      expect(collection.products_count).toBeGreaterThan(0)
+      expect(options.reads).toBe(0)
+      expect(collection.filters.length).toBeGreaterThan(0)
+      const first = options.reads
+      expect(first).toBeGreaterThan(0)
+      expect(collection.filters).toBe(collection.filters)
+      expect(options.reads).toBe(first)
+      options.reads = 0
+    }
+  })
+
+  it('answers a request with no query and no tag path with the filters the store already built for that collection', () => {
+    const data = structuredClone(storefrontSampleData) as StoreData
+    const store = buildStore(data)
+    const built = HandleMap.get(store.collections, 'tops')!
+    expect(collectionOf('/collections/tops', data, store).filters).toBe(built.filters)
+    expect(collectionOf('/collections/tops?sort_by=price-descending', data, store).filters).not.toBe(built.filters)
+    expect(collectionOf('/collections/tops/men', data, store).filters).not.toBe(built.filters)
+  })
+
+  it('copies the products a variant filter narrows only when they are read, and only the ones read', () => {
+    const data = structuredClone(storefrontSampleData) as StoreData
+    const store = buildStore(data)
+    const copied = jest.spyOn(Object, 'getOwnPropertyDescriptors')
+    const copies = () => copied.mock.calls.filter(([object]) => isBuiltProduct(object)).length
+    try {
+      const collection = collectionOf('/collections/all?filter.v.availability=1&sort_by=title-ascending', data, store)
+      expect(collection.products_count).toBe(26)
+      expect(copies()).toBe(0)
+      const products = collection.products as Array<{ url: string }>
+      expect(products).toHaveLength(26)
+      expect(copies()).toBe(0)
+      const first = products.slice(0, 4).map(product => product.url)
+      expect(copies()).toBeLessThanOrEqual(4)
+      expect(products.slice(0, 4).map(product => product.url)).toEqual(first)
+      expect(products[1]).toBe(products[1])
+      const narrowed = products.filter(product => product.url.includes('?variant=')).length
+      expect(narrowed).toBeGreaterThan(0)
+      expect(copies()).toBe(narrowed)
+    } finally {
+      copied.mockRestore()
+    }
+  })
+
+  it('reads at most 25 filter parameters, 50 values of each and 100 pairs of a query', () => {
+    const junk = Array.from({ length: 300 }, (_, i) => [`z${i}`, '1'] as [string, string])
+    expect(requestQuery({ query: junk }).query).toEqual(junk.slice(0, 100))
+    const tags = Array.from({ length: 60 }, (_, i) => ['filter.p.tag', `t${i}`] as [string, string])
+    const read = requestQuery({ query: [...tags, ['filter.p.vendor', 'a']] })
+    expect(read.active.filter(([name]) => name === 'filter.p.tag')).toEqual(tags.slice(0, 50))
+    expect(read.active).toContainEqual(['filter.p.vendor', 'a'])
+    expect(read.query).toEqual(read.active)
+    const names = Array.from({ length: 40 }, (_, i) => [`filter.p.m.custom.k${i}`, 'x'] as [string, string])
+    expect(requestQuery({ filters: names }).active).toEqual(names.slice(0, 25))
+    const url = `/collections/all?${junk.map(([name, value]) => `${name}=${value}`).join('&')}`
+    expect(requestFromUrl(url, storefrontSampleData).request.query).toHaveLength(100)
+  })
+
+  it('ignores the filter values past the 50th, so a long list cannot make a request expensive', () => {
+    const data = structuredClone(storefrontSampleData) as StoreData
+    // the vendor filter combines its values with OR, so one value that matches shows the products
+    const others = Array.from({ length: 50 }, (_, i) => `filter.p.vendor=other-${i}`)
+    expect(collectionOf(`/collections/all?${others.join('&')}&filter.p.vendor=Mock.shop`, data).products_count).toBe(0)
+    expect(collectionOf(`/collections/all?${others.slice(1).join('&')}&filter.p.vendor=Mock.shop`, data).products_count).toBe(29)
+  })
+
+  it('computes the links of a filter value when they are read', () => {
+    const data = structuredClone(storefrontSampleData) as StoreData
+    const value = collectionOf('/collections/all?view=probe', data).filters[0].values[0]
+    for (const link of ['url_to_add', 'url_to_remove']) expect(typeof Object.getOwnPropertyDescriptor(value, link)?.get).toBe('function')
+    expect(value.url_to_add).toMatch(/^\/collections\/all\?/)
+    expect(JSON.parse(JSON.stringify(value)).url_to_add).toBe(value.url_to_add)
   })
 })

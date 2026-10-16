@@ -87,6 +87,17 @@ describe('the default order of a collection (row 22; scenarios page-home, page-c
     expect(await render('{% for p in collections.sold.products %}{{ p.handle }},{% endfor %}|{% for p in collections.cheap.products %}{{ p.handle }},{% endfor %}|{% for p in collections.hand.products %}{{ p.handle }},{% endfor %}', '/', data)).toBe('b,c,a,|c,b,a,|c,a,b,')
   })
 
+  it('reads a sort_order the store data does not list as the manual order, not as the order of the handles (final review B, M5)', async () => {
+    const data = withData(d => {
+      d.collections = [{ id: 1, handle: 'odd', title: 'Odd', sort_order: 'alpha-asc' as never, products: ['slides', 'hoodie', 'beanie'] }, { id: 2, handle: 'sold', title: 'Sold', sort_order: 'best-selling', products: ['slides', 'hoodie', 'beanie'] }]
+    })
+    expect(await render(`${handles}|{{ collection.default_sort_by }}|{{ collection.products_count }}`, '/collections/odd', data)).toBe('slides,hoodie,beanie,|manual|3')
+    expect(await render('{% for p in collections.odd.products %}{{ p.handle }},{% endfor %}', '/', data)).toBe('slides,hoodie,beanie,')
+    expect(await render(`${handles}|{{ collection.default_sort_by }}`, '/collections/odd?sort_by=title-ascending', data)).toBe('beanie,hoodie,slides,|manual')
+    // a listed order is still the data's
+    expect(await render(`${handles}|{{ collection.default_sort_by }}`, '/collections/sold', data)).toBe('hoodie,beanie,slides,|best-selling')
+  })
+
   it('keeps the collection page\'s own sort: the data order is the manual one', async () => {
     const data = withData(d => {
       d.collections = [{ id: 1, handle: 'sold', title: 'Sold', sort_order: 'best-selling', products: ['hoodie', 'beanie', 'slides'] }]

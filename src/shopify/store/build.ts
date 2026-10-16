@@ -7,7 +7,7 @@ import { buildFilters } from './filters'
 import { buildLocalization, currencyOf, enabledCurrencies, marketRoot } from './markets'
 import type { ViewCurrency } from './markets'
 import { convert, planAmount, planPrice } from './pricing'
-import { byTitle, sortProducts } from './sort'
+import { byTitle, SORT_VALUES, sortProducts } from './sort'
 import { translateData } from './translate'
 import { resolveView, viewKey, withoutPrefix, withPrefix } from './view'
 import type { StoreView } from './view'
@@ -57,6 +57,33 @@ export const AUTOMATIC_COLLECTIONS: ReadonlySet<string> = new Set(['all', 'vendo
 /** A field Liquid can read but `json` and `for` do not walk, for back references such as `variant.product`. */
 export function hidden (target: LiquidObject, key: string, value: unknown) {
   Object.defineProperty(target, key, { value, enumerable: false })
+}
+
+/** Defines `key` on `target` as a property that `make` fills when it is first read, and keeps: a store build or a request does not pay for what no template reads. Enumerable, like the property it stands for, so `json` and `for` read it. */
+export function lazy (target: LiquidObject, key: string, make: () => unknown): void {
+  let value: unknown
+  let made = false
+  Object.defineProperty(target, key, {
+    get () {
+      if (!made) {
+        value = make()
+        made = true
+      }
+      return value
+    },
+    enumerable: true,
+    configurable: true
+  })
+}
+
+/** What `cache` holds for the built object `key`, made by `make` and kept the first time it is asked for: the object, which lives as long as its view, owns the answer. */
+export function remember<K extends object, V> (cache: WeakMap<K, V>, key: K, make: () => V): V {
+  let found = cache.get(key)
+  if (found === undefined) {
+    found = make()
+    cache.set(key, found)
+  }
+  return found
 }
 
 /** A copy of `object` with every own property as it has it, the hidden ones (`toString`, back references, markers) included, so a hidden property added to a builder travels with a copy of what it builds; `omit` names the properties left out, which the caller sets again. */
@@ -360,15 +387,17 @@ export function selectSellingPlan (product: LiquidObject, planId: number | undef
 }
 
 /**
- * https://shopify.dev/docs/api/liquid/objects/collection, at its URL under `prefix`. Filtering, tags and sorting are not applied here (`collectionView` applies them per request): `products` is the collection's product list as given, `filters` are the store's storefront filters over those products (`buildFilters`, in the view `currency` when given), built when first read and kept, so a store build does not pay for collections no page shows, `default_sort_by` is the collection's `sort_order` (`manual` when it has none) and `sort_options` lists the options the parity store lists, `Most relevant` included (fixture `probe-collection-all`). `tags` are read when asked. A collection of the store's has the tags of all its products, on any page and whatever the request's filters, as the parity store prints them (fixtures `probe-collection-suffix`, `probe-collection-suffix-page-3` and `probe-collection-suffix-filtered`: `featured` prints the same six tags on its first page, which holds no shoe, on its third, which holds one product, and under `filter.p.tag=women`, which shows two), although https://shopify.dev/docs/api/liquid/objects/collection#collection-tags says they do not "include tags for products that have been filtered out of the current view"; the fixture wins. A collection Shopify makes itself (`AUTOMATIC_COLLECTIONS`) has the tags of the products in `products`, so inside a `paginate` block the tags of the page's products, as the parity store prints them (fixtures `probe-collection-all`, `probe-collection-page-2`, `probe-collection-page-past`, where the page after the last has none, the `probe-collection-filter-*` fixtures and `probe-collection-vendors`). A store collection under a tag path or a sort is not recorded and takes the same rule.
+ * https://shopify.dev/docs/api/liquid/objects/collection, at its URL under `prefix`. Filtering, tags and sorting are not applied here (`collectionView` applies them per request): `products` is the collection's product list as given, `filters` are the store's storefront filters over those products (`buildFilters`, in the view `currency` when given), built when first read and kept, so a store build does not pay for collections no page shows, `default_sort_by` is the collection's `sort_order` (`manual` when it has none, or one that is no sort value) and `sort_options` lists the options the parity store lists, `Most relevant` included (fixture `probe-collection-all`). `tags` are read when asked. A collection of the store's has the tags of all its products, on any page and whatever the request's filters, as the parity store prints them (fixtures `probe-collection-suffix`, `probe-collection-suffix-page-3` and `probe-collection-suffix-filtered`: `featured` prints the same six tags on its first page, which holds no shoe, on its third, which holds one product, and under `filter.p.tag=women`, which shows two), although https://shopify.dev/docs/api/liquid/objects/collection#collection-tags says they do not "include tags for products that have been filtered out of the current view"; the fixture wins. A collection Shopify makes itself (`AUTOMATIC_COLLECTIONS`) has the tags of the products in `products`, so inside a `paginate` block the tags of the page's products, as the parity store prints them (fixtures `probe-collection-all`, `probe-collection-page-2`, `probe-collection-page-past`, where the page after the last has none, the `probe-collection-filter-*` fixtures and `probe-collection-vendors`). A store collection under a tag path or a sort is not recorded and takes the same rule.
  */
 export function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>, filters: FilterData[] | undefined, prefix: string, currency?: ViewCurrency): LiquidObject {
   const items = data.products.map(handle => HandleMap.get(products, handle)).filter((product): product is LiquidObject => !!product)
   // `products` lists the collection in its default order wherever it is read, not only on the collection page: https://shopify.dev/docs/api/liquid/objects/collection#collection-default_sort_by; the parity store lists `collections['all'].products` by title in the header's predictive search suggestions and the empty cart's featured collection (scenarios `page-home` and `page-cart-empty`), where the data's order is Slides, Sweatpants, Men's T-shirt, Hoodie. The store data's order is the manual one (`MANUAL_ORDER`), which the collection page's own sort starts from (`collectionView`).
+  // a `sort_order` that is none of the sort values reads as `manual`, the data's own order, and not as the order of the handles that `Array.sort` falls back to for a value it has no comparison for (final review B, M5). https://shopify.dev/docs/api/liquid/objects/collection#collection-default_sort_by lists manual, best-selling, title-ascending, price-ascending, price-descending, created-ascending and created-descending; `title-descending` is the sort option that page's `sort_options` lists besides. Nothing says the data may name another order, so one that does is read as the first value listed.
+  const sortOrder = data.sort_order !== undefined && SORT_VALUES.includes(data.sort_order) ? data.sort_order : 'manual'
   // sorted when first read and kept, as the filters are, so a store build does not pay for collections no page shows
   let listed: LiquidObject[] | undefined
   const ordered = () => {
-    listed ??= sortProducts(items, data.sort_order ?? 'manual', AUTOMATIC_COLLECTIONS.has(data.handle))
+    listed ??= sortProducts(items, sortOrder, AUTOMATIC_COLLECTIONS.has(data.handle))
     return listed
   }
   const collect = (key: string) => unique(items.flatMap(product => product[key] as string | string[]).filter(Boolean)).sort()
@@ -402,7 +431,7 @@ export function buildCollection (data: CollectionData, products: HandleMap<Liqui
       return computed
     },
     sort_by: '',
-    default_sort_by: data.sort_order ?? 'manual',
+    default_sort_by: sortOrder,
     sort_options: [
       { name: 'Featured', value: 'manual' },
       { name: 'Most relevant', value: 'most-relevant' },
@@ -828,32 +857,59 @@ function buildCustomer (data: CustomerData, products: HandleMap<LiquidObject>, p
   return customer
 }
 
-const built = new WeakMap<StoreData, Map<string, StoreObjects>>()
+/** The views built for one `data` object, least recently used first, and how many of them are kept. */
+interface ViewCache {
+  views: Map<string, StoreObjects>
+  size: number
+}
 
-/** The most views kept for one `data` object; the least recently used one is dropped past it. A store served under many base paths (one a preview session) would otherwise grow without bound. */
-const MAX_VIEWS = 64
+const built = new WeakMap<StoreData, ViewCache>()
 
 /**
- * The Liquid objects for `data` in `view`, built once per `data` object and view and reused, the 64 most recently used views of a `data` object kept. Without a view it is the one a request that says nothing renders in (`resolveView`): the primary market and language, no prefix. Every resource URL sits under the view's prefix (the base path, then the locale prefix), as the parity store prints them under a locale prefix (fixture `probe-page-fr-ca`). `shop` follows https://shopify.dev/docs/api/liquid/objects/shop; `shop.url` and `shop.secure_url` are `https://<domain>`, as shopify.dev gives no other form for a store without its own scheme.
+ * The views kept for one `data` object unless `setViewCacheSize` says otherwise; the least recently used one is dropped past it (final review B, I2). A view holds a full copy of the store's objects, because every URL in them sits under the view's prefix (the base path, then the locale prefix), so a store served under many base paths (one a preview session) builds a view for each. Measured on a store of 5,000 products and 45,000 variants, a view holds about 40 MB and takes about 120 ms to build: the 64 views kept before this limit came to about 2.6 GB for one data object, and 16 come to about 640 MB. The number of products and variants sets the size, about 8 KB per product with its nine variants.
+ *
+ * The base path stays in the built objects, because it cannot be applied where a URL is printed without changing every builder and what templates may do with a URL. It reaches the URL of every product, variant, collection, page, blog, article, menu link, cart line, route, filter, pagination and localization link (some 25 `withPrefix` calls in eight files), each a plain string that a template compares (`link.url == request.path`), cuts and hands to filters (`append`, `split`, `replace`, `url_encode`), so none of them can become a value that fills the prefix in when it is printed; and filling it in on the finished page would have to tell a URL from other text, in markup, in JSON and in scripts. The cache is bounded instead.
+ */
+export const DEFAULT_VIEW_CACHE_SIZE = 16
+
+/** The most views `data` keeps from now on: `size` rounded down, at least 1 (`0` and negative sizes are `1`), `Infinity` for no limit, and the default for a size that is not a number. Views beyond the limit are dropped at once, the least recently used first; the objects a render already holds stay valid, they are only no longer found by the next request. The limit belongs to the `data` object, so the latest call that names one decides, and a call that names none leaves it as it is. */
+export function setViewCacheSize (data: StoreData, size: number): void {
+  const cache = cacheOf(data)
+  cache.size = Number.isNaN(size) ? DEFAULT_VIEW_CACHE_SIZE : Math.max(1, Math.floor(size))
+  trim(cache)
+}
+
+function cacheOf (data: StoreData): ViewCache {
+  let cache = built.get(data)
+  if (!cache) {
+    cache = { views: new Map(), size: DEFAULT_VIEW_CACHE_SIZE }
+    built.set(data, cache)
+  }
+  return cache
+}
+
+/** Drops the least recently used views until the cache is within its size. */
+function trim (cache: ViewCache): void {
+  while (cache.views.size > cache.size) cache.views.delete(cache.views.keys().next().value as string)
+}
+
+/**
+ * The Liquid objects for `data` in `view`, built once per `data` object and view and reused, the `DEFAULT_VIEW_CACHE_SIZE` most recently used views of a `data` object kept (`setViewCacheSize`). Without a view it is the one a request that says nothing renders in (`resolveView`): the primary market and language, no prefix. Every resource URL sits under the view's prefix (the base path, then the locale prefix), as the parity store prints them under a locale prefix (fixture `probe-page-fr-ca`). `shop` follows https://shopify.dev/docs/api/liquid/objects/shop; `shop.url` and `shop.secure_url` are `https://<domain>`, as shopify.dev gives no other form for a store without its own scheme.
  */
 export function buildStore (data: StoreData, view?: StoreView): StoreObjects {
   const resolved = view ?? resolveView(data, {})
   const key = viewKey(resolved)
-  let views = built.get(data)
-  if (!views) {
-    views = new Map()
-    built.set(data, views)
-  }
-  const cached = views.get(key)
+  const cache = cacheOf(data)
+  const cached = cache.views.get(key)
   if (cached) {
     // read again, so it is now the most recently used
-    views.delete(key)
-    views.set(key, cached)
+    cache.views.delete(key)
+    cache.views.set(key, cached)
     return cached
   }
   const objects = buildObjects(data, resolved)
-  views.set(key, objects)
-  if (views.size > MAX_VIEWS) views.delete(views.keys().next().value as string)
+  cache.views.set(key, objects)
+  trim(cache)
   return objects
 }
 

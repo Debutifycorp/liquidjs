@@ -1,3 +1,4 @@
+import { boundQuery } from './filters'
 import type { FormOutcome, PredictiveRequest, RequestInput } from './globals'
 import type { MarketData, StoreData } from './types'
 import { defaultCountry } from './view'
@@ -102,7 +103,8 @@ export function requestFromUrl (url: string, data: StoreData, options: { basePat
     }
   }
   const params = parsed.searchParams
-  const query = [...params.entries()]
+  // the pairs a request keeps are bounded (`boundQuery`, final review B I1): every filter and page link repeats them, and the filters are tested against every product
+  const query = boundQuery([...params.entries()])
   const request: RequestInput = {
     // the path the shopper's browser shows, base path included, so `paginate` and other links built from it work under the base path; with no base path it is the path Shopify shows
     path: `${basePath}${localePrefix}${path === '/' && (basePath || localePrefix) ? '' : path}` || '/',

@@ -1,6 +1,7 @@
 import { renderPage, requestFromUrl, storefrontSampleData } from '../../src/shopify'
 import type { StoreData } from '../../src/shopify'
 import { buildStore } from '../../src/shopify/store/build'
+import { HandleMap } from '../../src/shopify/objects/handle-map'
 import { buildSearch } from '../../src/shopify/store/search'
 import { probeMatches } from './expect-probe'
 import { renderProbeHtml } from './probe'
@@ -174,5 +175,56 @@ describe('search beyond the recorded scenarios', () => {
     const url = '/search?q=sneakers&type=product&sort_by=price-descending&filter.p.vendor=Mock.shop&options%5Bunavailable_products%5D=show'
     const html = await searchPage(`${url}&page=1`, '{% paginate search.results by 2 %}{{ paginate.items }}|{{ paginate.pages }}|{{ paginate.next.url }}{% for r in search.results %}|{{ r.handle }}{% endfor %}{% endpaginate %}')
     expect(html).toBe('4|2|/search?filter.p.vendor=Mock.shop&options%5Bunavailable_products%5D=show&page=2&q=sneakers&sort_by=price-descending&type=product|gray-leather-sneakers|high-top-sneakers')
+  })
+})
+
+describe('search: the work a request causes (final review B, I1 and M3)', () => {
+  /** Counts the reads of `key` on every built product of `store`. */
+  const countReads = (store: ReturnType<typeof buildStore>, key: string) => {
+    const counter = { reads: 0 }
+    for (const product of HandleMap.values(store.products)) {
+      const value = product[key]
+      Object.defineProperty(product, key, { get () { counter.reads++; return value }, enumerable: true, configurable: true })
+    }
+    return counter
+  }
+
+  it('builds the filters when a template reads them, once, and not when it reads the count', () => {
+    const store = buildStore(structuredClone(storefrontSampleData) as StoreData)
+    // only the filters read a product's `options`: the matching and the sorting do not (a result's copy would, so the results are not read before)
+    const options = countReads(store, 'options')
+    const search = buildSearch(store, 'shirt', { query: [['q', 'shirt'], ['sort_by', 'price-ascending']] }) as any
+    expect(search.results_count).toBeGreaterThan(0)
+    expect(options.reads).toBe(0)
+    expect(search.filters.length).toBeGreaterThan(0)
+    const first = options.reads
+    expect(first).toBeGreaterThan(0)
+    expect(search.filters).toBe(search.filters)
+    expect(options.reads).toBe(first)
+    // the results are made when read, and kept
+    expect(search.results).toHaveLength(search.results_count)
+    expect(search.results).toBe(search.results)
+  })
+
+  it('tokenises a product once per built store, not on every search', () => {
+    const store = buildStore(structuredClone(storefrontSampleData) as StoreData)
+    // a term no word starts with finds nothing, so only the tokenising reads the description
+    const description = countReads(store, 'description')
+    buildSearch(store, 'zzzz')
+    const first = description.reads
+    expect(first).toBe(HandleMap.values(store.products).length)
+    buildSearch(store, 'zzzz')
+    buildSearch(store, 'qqqq')
+    expect(description.reads).toBe(first)
+  })
+
+  it('finds the same products on a second search, by whole word or by the start of the last word', () => {
+    const store = buildStore(storefrontSampleData)
+    const handles = (terms: string, request = {}) => (buildSearch(store, terms, request) as any).results.map((result: any) => result.handle)
+    for (let round = 0; round < 2; round++) {
+      expect(handles('sneak')).toEqual(expect.arrayContaining(['canvas-sneakers', 'high-top-sneakers']))
+      expect(handles('sneak', { search: { prefix: 'none' } })).toEqual([])
+      expect(handles('sneakers')).toEqual(expect.arrayContaining(['canvas-sneakers']))
+    }
   })
 })

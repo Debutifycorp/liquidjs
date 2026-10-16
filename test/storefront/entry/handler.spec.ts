@@ -1,4 +1,6 @@
-import { storefrontSampleData as data } from '../../../src/shopify'
+import { resolveView, storefrontSampleData as data } from '../../../src/shopify'
+import type { StoreData } from '../../../src/shopify'
+import { buildStore } from '../../../src/shopify/store/build'
 import { redirect, ROUTE_HANDLERS } from '../../../src/storefront/handler'
 import type { Context, RouteHandler } from '../../../src/storefront/handler'
 import { harness, VISITOR } from './harness'
@@ -300,5 +302,23 @@ describe('the notice page', () => {
     expect([redirected.status, redirected.headers.get('location'), redirected.headers.get('cache-control')]).toEqual([302, 'https://elsewhere.example/', 'private, no-store'])
     const failing = harness({ notice: () => { throw new Error('boom') } })
     expect((await failing.send('GET', '/checkout')).status).toBe(500)
+  })
+})
+
+describe('viewCacheSize (final review B, I2)', () => {
+  it('bounds the views kept for the data it serves, from the first answer on, whatever the route', async () => {
+    const own = { ...data } as StoreData
+    const { storefront } = harness({ data: own, viewCacheSize: 2 })
+    const get = (base: string, path: string) => storefront.handle(new Request(`https://store.invalid${base}${path}`), { visitor: VISITOR, basePath: base }).then(response => response.text())
+    const view = (base: string) => resolveView(own, { basePath: base })
+    // the first answers are Ajax answers, so the limit does not wait for a page
+    await get('/p/a', '/cart.js')
+    const a = buildStore(own, view('/p/a'))
+    await get('/p/b', '/cart.js')
+    await get('/p/c', '/')
+    expect(buildStore(own, view('/p/a'))).not.toBe(a)
+    const c = buildStore(own, view('/p/c'))
+    await get('/p/d', '/cart.js')
+    expect(buildStore(own, view('/p/c'))).toBe(c)
   })
 })

@@ -2,7 +2,7 @@ import { HandleMap } from '../objects/handle-map'
 import type { ImageDrop } from '../objects/image'
 import { SafeHtmlDrop } from '../objects/safe-html'
 import { escapeHtml } from '../util/html'
-import { AUTOMATIC_COLLECTIONS, buildCollection, copyObject, manualProductsOf } from './build'
+import { AUTOMATIC_COLLECTIONS, buildCollection, copyObject, lazy, manualProductsOf } from './build'
 import type { LiquidObject, StoreObjects } from './build'
 import { applyFilters, buildFilters, filterMatcher, requestQuery } from './filters'
 import type { RequestInput } from './globals'
@@ -41,8 +41,22 @@ export function collectionView (collection: LiquidObject, request: RequestInput,
     const media = variant?.featured_media as ImageDrop | null | undefined
     return variant ? copyOf(product, { url: variant.url, featured_media: media?.preview_image ?? product.featured_media }) : product
   }
-  const shown = active.some(([name]) => name.startsWith('filter.v.')) ? sorted.map(link) : sorted
-  return copyOf(collection, { products: shown, products_count: shown.length, sort_by: named ?? '', filters: buildFilters(storefrontFilters, tagged, path, query, currency) })
+  const linked = active.some(([name]) => name.startsWith('filter.v.'))
+  const view = copyOf(collection, { products_count: sorted.length, sort_by: named ?? '' })
+  // what a template reads is made when it reads it (final review B, I1): `products` links only the products that are read, and `filters` are built from the products before the filters, once, or are the collection's own when the request changes nothing: no tag path, no query and the collection's own address, where the filters are those the store already built for the collection (`buildCollection`)
+  lazy(view, 'products', () => linked ? linkedLazily(sorted, link) : sorted)
+  lazy(view, 'filters', () => !tags.length && !query.length && path === collection.url ? collection.filters : buildFilters(storefrontFilters, tagged, path, query, currency))
+  return view
+}
+
+/** `products` with `link` applied to each one when it is first read, and kept: an array of the same length whose elements are made on demand, so a page that shows 24 of 5,000 products copies 24. The elements are accessors, which `slice`, `map`, `for` and `json` read like any value. */
+function linkedLazily (products: Product[], link: (product: Product) => Product): Product[] {
+  const out = new Array<Product>(products.length)
+  products.forEach((product, at) => {
+    let linked: Product | undefined
+    Object.defineProperty(out, at, { get: () => (linked ??= link(product)), enumerable: true, configurable: true })
+  })
+  return out
 }
 
 /**

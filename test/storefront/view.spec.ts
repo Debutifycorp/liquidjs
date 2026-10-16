@@ -1,7 +1,7 @@
 import { runInNewContext } from 'vm'
-import { renderPage, storefrontSampleData as data, requestFromUrl, resolveView } from '../../src/shopify'
+import { renderPage, setViewCacheSize, storefrontSampleData as data, requestFromUrl, resolveView } from '../../src/shopify'
 import { HandleMap } from '../../src/shopify/objects/handle-map'
-import { buildLinklists, buildStore } from '../../src/shopify/store/build'
+import { buildLinklists, buildStore, DEFAULT_VIEW_CACHE_SIZE } from '../../src/shopify/store/build'
 import { ReportCollector } from '../../src/shopify/report'
 import { buildGlobals, buildRoutes, ROUTES } from '../../src/shopify/store/globals'
 import { buildSearch } from '../../src/shopify/store/search'
@@ -39,20 +39,66 @@ describe('views and the URL prefix', () => {
     const article = (store.blogs.liquidMethodMissing('news') as Record<string, any>).articles[0]
     expect(article.url).toMatch(/^\/fr-ca\/blogs\/news\/[^/]+$/)
   })
-  it('keeps at most 64 views per data object, dropping the least recently used', () => {
+  it('keeps at most 16 views per data object by default, dropping the least recently used (final review B, I2)', () => {
+    expect(DEFAULT_VIEW_CACHE_SIZE).toBe(16)
     const own = { ...data }
     const view = (n: number) => ({ market: 'us', language: 'en', prefix: `/v${n}` })
     const built = [buildStore(own, view(0)), buildStore(own, view(1)), buildStore(own, view(2))]
-    for (let n = 3; n < 64; n++) buildStore(own, view(n))
-    // 64 views are all kept; reading view 0 again makes it the most recently used, so view 1 is now the least recently used
+    for (let n = 3; n < 16; n++) buildStore(own, view(n))
+    // 16 views are all kept; reading view 0 again makes it the most recently used, so view 1 is now the least recently used
     expect(buildStore(own, view(0))).toBe(built[0])
     expect(buildStore(own, view(1))).toBe(built[1])
     expect(buildStore(own, view(0))).toBe(built[0])
-    // a 65th view drops the least recently used one (view 2), and only that one
-    buildStore(own, view(64))
+    // a 17th view drops the least recently used one (view 2), and only that one
+    buildStore(own, view(16))
     expect(buildStore(own, view(0))).toBe(built[0])
     expect(buildStore(own, view(1))).toBe(built[1])
     expect(buildStore(own, view(2))).not.toBe(built[2])
+  })
+  it('keeps the number of views `setViewCacheSize` names, and drops the surplus at once', () => {
+    const own = { ...data }
+    const view = (n: number) => ({ market: 'us', language: 'en', prefix: `/s${n}` })
+    setViewCacheSize(own, 40)
+    const built = Array.from({ length: 40 }, (_, n) => buildStore(own, view(n)))
+    expect(buildStore(own, view(0))).toBe(built[0])
+    expect(buildStore(own, view(39))).toBe(built[39])
+    // 0 and 39 were read last, so a smaller size drops the views before them
+    setViewCacheSize(own, 2)
+    expect(buildStore(own, view(0))).toBe(built[0])
+    expect(buildStore(own, view(39))).toBe(built[39])
+    expect(buildStore(own, view(38))).not.toBe(built[38])
+    setViewCacheSize(own, 1)
+    expect(buildStore(own, view(39))).not.toBe(built[39])
+  })
+  it('reads a size that is not a whole number of at least 1 as the nearest one, and none as the default', () => {
+    const own = { ...data }
+    const view = (n: number) => ({ market: 'us', language: 'en', prefix: `/n${n}` })
+    /** How many of the newest views are still the ones built, after `size` is set and 20 views are built. */
+    const kept = (size: number) => {
+      setViewCacheSize(own, size)
+      const built = Array.from({ length: 20 }, (_, n) => buildStore(own, view(n)))
+      let count = 0
+      for (let n = 19; n >= 0 && buildStore(own, view(n)) === built[n]; n--) count++
+      return count
+    }
+    expect(kept(0)).toBe(1)
+    expect(kept(-3)).toBe(1)
+    expect(kept(2.9)).toBe(2)
+    expect(kept(Number.NaN)).toBe(16)
+    expect(kept(Infinity)).toBe(20)
+  })
+  it('takes the size from the render options, and leaves it alone when they name none', async () => {
+    const own = { ...data }
+    const page = (basePath: string, viewCacheSize?: number) => renderPage({ theme: headerTheme('{{ content_for_layout }}'), templateName: 'index', data: own, request: { basePath }, viewCacheSize })
+    const view = (basePath: string) => resolveView(own, { basePath })
+    await page('/p/a', 2)
+    const a = buildStore(own, view('/p/a'))
+    await page('/p/b')
+    await page('/p/c')
+    expect(buildStore(own, view('/p/a'))).not.toBe(a)
+    const c = buildStore(own, view('/p/c'))
+    await page('/p/d')
+    expect(buildStore(own, view('/p/c'))).toBe(c)
   })
   it('puts a prefix before a root-relative path and leaves other URLs alone', () => {
     expect(withPrefix('/fr-ca', '/products/hoodie')).toBe('/fr-ca/products/hoodie')
