@@ -1,15 +1,20 @@
 import { createHash } from 'crypto'
-import { stripTags } from '../../filters/html'
+import { escapeHtml, stripTags } from '../../filters/html'
 import { HandleMap } from '../objects/handle-map'
 import type { ImageDrop } from '../objects/image'
 import { buildStore, hidden } from './build'
 import type { LiquidObject, StoreObjects } from './build'
-import type { CartData, ProductData, StoreData, VariantData } from './types'
+import { applyDiscounts, discountAllocationJson, discountApplicationJson, enteredCodes } from './discounts'
+import type { DiscountResult } from './discounts'
+import type { CartData, CollectionData, ProductData, StoreData, VariantData } from './types'
 import { resolveView, withPrefix } from './view'
 import type { StoreView } from './view'
 
 /** The hidden field that marks a cart built by `buildCartObject` for the `json` filter. */
 const CART_MARKER = '__cart'
+
+/** The hidden field that holds the `DiscountResult` of a cart built by `buildCartObject`, which says which entered codes were rejected. */
+const DISCOUNTS_FIELD = '__discounts'
 
 /** Whether `value` is a cart built by `buildCartObject`. */
 export const isBuiltCart = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject)[CART_MARKER] === true
@@ -111,7 +116,7 @@ function propertiesOf (properties: Record<string, string>): Record<string, strin
 }
 
 /**
- * One line item, https://shopify.dev/docs/api/liquid/objects/line_item, for a line of the cart, in the view's currency (the built variant is). `index` (0-based) is not a property of that page, but themes read it as a row number (`item.index | plus: 1`); the page does not pin its base. A line under a selling plan carries the plan's allocation and its price, and its `url` names the plan (`?selling_plan=71001&variant=43695710371862`, fixture `ajax-cart-session`); `original_price` is that price too, as the parity store prints it. `url_to_remove` is the cart change address of the line's key, under the view's prefix (fixtures `ajax-cart-session` and `ajax-cart-en-ca`). No discounts are applied here.
+ * One line item, https://shopify.dev/docs/api/liquid/objects/line_item, for a line of the cart, in the view's currency (the built variant is). `index` (0-based) is not a property of that page, but themes read it as a row number (`item.index | plus: 1`); the page does not pin its base. A line under a selling plan carries the plan's allocation and its price, and its `url` names the plan (`?selling_plan=71001&variant=43695710371862`, fixture `ajax-cart-session`); `original_price` is that price too, as the parity store prints it. `url_to_remove` is the cart change address of the line's key, under the view's prefix (fixtures `ajax-cart-session` and `ajax-cart-en-ca`). `title` is HTML-escaped, as the parity store's Liquid prints it (`Men&#39;s T-shirt - Small / Green`, fixture `ajax-discount-codes`, steps 2 and 8, in `/cart.js` and in `{{ cart | json }}` too; `product_title` is not, and the `title` in the answers of add, change and update is not either, step 1). The discounts are not applied here: `buildCartObject` does that and sets the prices and allocations the line then holds.
  */
 function lineItem (store: StoreObjects, state: CartLineState, index: number): LiquidObject | null {
   const found = builtVariant(store, state.variantId)
@@ -130,7 +135,7 @@ function lineItem (store: StoreObjects, state: CartLineState, index: number): Li
     variant,
     product_id: product.id,
     variant_id: variant.id,
-    title: defaultTitle ? product.title : `${product.title} - ${variant.title}`,
+    title: escapeHtml(String(defaultTitle ? product.title : `${product.title} - ${variant.title}`)),
     product_title: product.title,
     variant_title: defaultTitle ? null : variant.title,
     url: allocation ? `${product.url}?selling_plan=${state.sellingPlanId}&variant=${variant.id}` : variant.url,
@@ -162,37 +167,80 @@ function lineItem (store: StoreObjects, state: CartLineState, index: number): Li
   return item
 }
 
+const collectionIndexes = new WeakMap<CollectionData[], Map<string, Set<string>>>()
+const noCollections = new Map<string, Set<string>>()
+
+/** Each collection's handle with the handles of its products, which discounts name their items by; made once per list of collections. */
+export function collectionsOf (data: StoreData): Map<string, Set<string>> {
+  if (!data.collections) return noCollections
+  let index = collectionIndexes.get(data.collections)
+  if (!index) {
+    index = new Map(data.collections.map(collection => [collection.handle, new Set(collection.products)]))
+    collectionIndexes.set(data.collections, index)
+  }
+  return index
+}
+
+/** A line item with the discount allocations of its line: https://shopify.dev/docs/api/liquid/objects/line_item says `final_price` and `final_line_price` "include any line-level discounts", `line_level_discount_allocations` are "the discount allocations that apply directly to the line item", `discount_allocations` all of them, an order discount's share included (fixture `ajax-discount-codes`: WELCOME10 is in `discount_allocations` and not in `line_level_discount_allocations`, and leaves `final_line_price` alone), and `line_level_total_discount` is the sum of the line-level ones. `final_price` is the final line price per unit, rounded to the minor unit (no fixture has a line that does not divide). The deprecated `price`, `line_price` and `total_discount` stay as they were: the page says they leave automatic discounts and codes out. */
+function discountLine (item: LiquidObject, allocations: LiquidObject[], index: number): LiquidObject {
+  const lineLevel = allocations.filter(entry => (entry.discount_application as LiquidObject).target_selection !== 'all')
+  const lineLevelTotal = lineLevel.reduce((total, entry) => total + (entry.amount as number), 0)
+  item.index = index
+  item.discount_allocations = allocations
+  item.line_level_discount_allocations = lineLevel
+  item.line_level_total_discount = lineLevelTotal
+  item.final_line_price = (item.original_line_price as number) - lineLevelTotal
+  item.final_price = Math.round((item.final_line_price as number) / (item.quantity as number))
+  return item
+}
+
 /**
- * The `cart` object for a cart state, https://shopify.dev/docs/api/liquid/objects/cart, in the store's view (its prices, language and prefix). Lines naming a variant the store does not have, or holding less than one of it, are left out. `attributes` are the state's less the private ones, those whose name starts with `__`, which https://shopify.dev/docs/api/ajax/reference/cart says are "not available in the Liquid `cart.attributes` object or the Ajax API"; the object is a copy, so a template or a caller changing it leaves the state alone. `currency` has the view's `iso_code`, `symbol` and `name`. `token` is nil for a cart without one (`cartStateOf`). Totals add the lines' prices, `total_weight` their weight in grams times the quantity, and `requires_shipping` is true while a line requires it. No discounts are applied yet, so `total_discount` is 0 and the discount lists are empty.
+ * The `cart` object for a cart state, https://shopify.dev/docs/api/liquid/objects/cart, in the store's view (its prices, language and prefix). Lines naming a variant the store does not have, or holding less than one of it, are left out. `attributes` are the state's less the private ones, those whose name starts with `__`, which https://shopify.dev/docs/api/ajax/reference/cart says are "not available in the Liquid `cart.attributes` object or the Ajax API"; the object is a copy, so a template or a caller changing it leaves the state alone. `currency` has the view's `iso_code`, `symbol` and `name`. `token` is nil for a cart without one (`cartStateOf`). Totals add the lines' prices, `total_weight` their weight in grams times the quantity, and `requires_shipping` is true while a line requires it.
+ *
+ * The store's discounts and the cart's codes are applied (`applyDiscounts`): a Buy X Get Y that discounts some units of a line splits it into two lines of the same key and variant (fixture `ajax-discount-automatic-bxgy`), and `index` counts the lines after the split. `items_subtotal_price` is the sum of the final line prices, "after any line item discounts"; `total_price` takes the order discounts off it, `total_discount` is "the total amount of all discounts", which is what separates `original_total_price` from `total_price`; `discount_applications` lists every application and `cart_level_discount_applications` the order discounts (fixture `ajax-discount-codes`, steps 2, 4 and 6). The cart holds the result for `cartJson`'s `discount_codes`.
  */
 export function buildCartObject (store: StoreObjects, state: CartState): LiquidObject {
-  const items: LiquidObject[] = []
+  const whole: LiquidObject[] = []
+  const entries = new Map<LiquidObject, CartLineState>()
   for (const entry of state.lines) {
-    const item = lineItem(store, entry, items.length)
-    if (item) items.push(item)
+    const item = lineItem(store, entry, whole.length)
+    if (!item) continue
+    whole.push(item)
+    entries.set(item, entry)
   }
-  const subtotal = items.reduce((sum, item) => sum + (item.final_line_price as number), 0)
+  const discounts = applyDiscounts(whole, store.data.discounts ?? [], state.discountCodes, { collections: collectionsOf(store.data), currency: store.currency })
+  const items = discounts.lines.map((line, index) => {
+    const entry = entries.get(line.item) as CartLineState
+    const item = line.units === entry.quantity ? line.item : lineItem(store, { ...entry, quantity: line.units }, index) as LiquidObject
+    return discountLine(item, line.allocations, index)
+  })
+  const sum = (field: string) => items.reduce((total, item) => total + (item[field] as number), 0)
+  const subtotal = sum('final_line_price')
+  const original = sum('original_line_price')
+  const orderLevel = items.reduce((total, item) => total + (item.discount_allocations as LiquidObject[]).reduce((inner, entry) => inner + ((entry.discount_application as LiquidObject).target_selection === 'all' ? entry.amount as number : 0), 0), 0)
+  const total = subtotal - orderLevel
   const cart: LiquidObject = {
     token: state.token || null,
     items,
-    item_count: items.reduce((sum, item) => sum + (item.quantity as number), 0),
+    item_count: sum('quantity'),
     items_subtotal_price: subtotal,
-    original_total_price: items.reduce((sum, item) => sum + (item.original_line_price as number), 0),
-    total_price: subtotal,
-    checkout_charge_amount: subtotal,
-    total_discount: 0,
-    total_weight: items.reduce((sum, item) => sum + ((item.variant as LiquidObject).weight as number) * (item.quantity as number), 0),
+    original_total_price: original,
+    total_price: total,
+    checkout_charge_amount: total,
+    total_discount: original - total,
+    total_weight: items.reduce((weight, item) => weight + ((item.variant as LiquidObject).weight as number) * (item.quantity as number), 0),
     currency: { iso_code: store.currency.iso_code, symbol: store.currency.symbol, name: store.currency.name },
     note: state.note,
     attributes: Object.fromEntries(Object.entries(state.attributes).filter(([name]) => !name.startsWith('__'))),
     requires_shipping: items.some(item => item.requires_shipping),
-    cart_level_discount_applications: [],
-    discount_applications: [],
+    cart_level_discount_applications: discounts.cartLevel,
+    discount_applications: discounts.applications,
     taxes_included: false,
     duties_included: false,
     'empty?': items.length === 0
   }
   hidden(cart, CART_MARKER, true)
+  hidden(cart, DISCOUNTS_FIELD, discounts)
   return cart
 }
 
@@ -254,23 +302,28 @@ export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): 
   const product = item.product as LiquidObject
   const variant = item.variant as LiquidObject
   const allocation = item.selling_plan_allocation as LiquidObject | null
+  // the Ajax line prints the discounts of all allocations, an order discount's share included, where the Liquid line's final prices leave that share out (fixture `ajax-discount-codes`, step 2: `discounted_price` 9000 and `final_price` 10000 for the same beanie)
+  const allocations = item.discount_allocations as LiquidObject[]
+  const discount = allocations.reduce((total, entry) => total + (entry.amount as number), 0)
+  const linePrice = (item.original_line_price as number) - discount
+  const applicationForm = form === 'change' ? 'change' : 'cart'
   const fields: Record<string, unknown> = {
     id: item.id,
     properties: { ...(item.properties as Record<string, string>) },
     quantity: item.quantity,
     variant_id: item.variant_id,
     key: item.key,
-    title: item.title,
+    title: form !== 'change' ? item.title : item.variant_title ? `${item.product_title} - ${item.variant_title}` : item.product_title,
     product_title: item.product_title,
     variant_title: item.variant_title,
     price: item.price,
     original_price: item.original_price,
     presentment_price: (item.price as number) / 100,
-    discounted_price: item.final_price,
-    line_price: item.line_price,
+    discounted_price: Math.round(linePrice / (item.quantity as number)),
+    line_price: linePrice,
     original_line_price: item.original_line_price,
-    total_discount: item.total_discount,
-    discounts: [],
+    total_discount: discount,
+    discounts: allocations.map(entry => ({ amount: entry.amount, title: (entry.discount_application as LiquidObject).title })),
     sku: form === 'change' ? item.sku : textOrNull(item.sku),
     grams: item.grams,
     vendor: item.vendor,
@@ -291,7 +344,7 @@ export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): 
     untranslated_variant_title: item.variant_title,
     variant_options: variant.options,
     options_with_values: item.options_with_values,
-    line_level_discount_allocations: item.line_level_discount_allocations,
+    line_level_discount_allocations: (item.line_level_discount_allocations as LiquidObject[]).map(entry => discountAllocationJson(entry, applicationForm)),
     line_level_total_discount: item.line_level_total_discount,
     quantity_rule: variant.quantity_rule,
     has_components: false
@@ -318,14 +371,29 @@ export function cartJson (data: StoreData, state: CartState, view: StoreView = r
     requires_shipping: cart.requires_shipping,
     currency: (cart.currency as LiquidObject).iso_code,
     items_subtotal_price: cart.items_subtotal_price,
-    cart_level_discount_applications: cart.cart_level_discount_applications,
-    // the Cart API prints the list last (fixture `ajax-cart-session`, step 1: `[]`); the discount codes of Task 14 fill it
-    discount_codes: []
+    // `/cart.js` lists the applications as they are; the answers of add, change and update wrap each in its amount (fixture `ajax-discount-codes`, steps 1 and 8)
+    cart_level_discount_applications: (cart.cart_level_discount_applications as LiquidObject[]).map(application => form === 'change' ? { amount: application.total_allocated_amount, discount_application: discountApplicationJson(application, 'change') } : discountApplicationJson(application, 'cart')),
+    // the Cart API prints the list last (fixture `ajax-cart-session`, step 1)
+    discount_codes: codeStatus(cart, state)
   }
 }
 
+/** Each entered code with whether it applies: the codes that apply first and then the rejected ones, whatever order they were entered in (fixture `ajax-discount-codes`, step 8: `FREESHIP,WELCOME10` answers `WELCOME10` and then `FREESHIP`). */
+function codeStatus (cart: LiquidObject, state: CartState): Array<{ code: string, applicable: boolean }> {
+  const rejected = new Set((cart[DISCOUNTS_FIELD] as DiscountResult).rejectedCodes.map(code => code.toLowerCase()))
+  const codes = enteredCodes(state.discountCodes).map(code => ({ code, applicable: !rejected.has(code.toLowerCase()) }))
+  return [...codes.filter(entry => entry.applicable), ...codes.filter(entry => !entry.applicable)]
+}
+
 /**
- * What `{{ cart | json }}` prints for a built cart, as the parity store prints it (fixtures `ajax-cart-session`, step 10, and `ajax-cart-en-ca`, step 3: the `ajax` of the cart probe), which is neither the engine's cart object nor `/cart.js`: no `token` or `discount_codes` and a `checkout_charge_amount` last, lines of the `liquid` form (`lineItemJson`), and a line's `properties` as an object, where the line's own `properties | json` prints pairs. `cart_level_discount_applications` is the cart object's list as it is.
+ * The `discount_codes` of the Cart API's answers, https://shopify.dev/docs/api/ajax/reference/cart: each code of the cart with whether it applies to it. A code applies when it is a discount of the store that the cart qualifies for and that combines with the discounts Shopify picks for it (`applyDiscounts`); none does once the cart is empty (fixture `ajax-discount-codes`, step 14: `clear.js` keeps the codes). A code is read in any case and is answered as it was entered.
+ */
+export function discountCodeStatus (data: StoreData, state: CartState, view: StoreView = resolveView(data, {})): Array<{ code: string, applicable: boolean }> {
+  return codeStatus(buildCartObject(buildStore(data, view), state), state)
+}
+
+/**
+ * What `{{ cart | json }}` prints for a built cart, as the parity store prints it (fixtures `ajax-cart-session`, step 10, and `ajax-cart-en-ca`, step 3: the `ajax` of the cart probe), which is neither the engine's cart object nor `/cart.js`: no `token` or `discount_codes` and a `checkout_charge_amount` last, lines of the `liquid` form (`lineItemJson`), and a line's `properties` as an object, where the line's own `properties | json` prints pairs. `cart_level_discount_applications` are the applications in the form of `/cart.js` (fixture `ajax-discount-codes`, the `ajax` of step 2).
  */
 export function cartLiquidJson (cart: LiquidObject): Record<string, unknown> {
   return {
@@ -340,7 +408,7 @@ export function cartLiquidJson (cart: LiquidObject): Record<string, unknown> {
     requires_shipping: cart.requires_shipping,
     currency: (cart.currency as LiquidObject).iso_code,
     items_subtotal_price: cart.items_subtotal_price,
-    cart_level_discount_applications: cart.cart_level_discount_applications,
+    cart_level_discount_applications: (cart.cart_level_discount_applications as LiquidObject[]).map(application => discountApplicationJson(application, 'cart')),
     checkout_charge_amount: cart.checkout_charge_amount
   }
 }
