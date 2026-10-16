@@ -4,7 +4,7 @@ import type { LiquidOptions, RenderOptions } from '../liquid-options'
 import type { Template } from '../template'
 import type { ShopifyServices } from './services'
 import { createState, engineState, ShopifyState, STATE, stateFromDefaults } from './state'
-import { ThemeCache, ThemeFS } from './theme-fs'
+import { BaseTemplates, ThemeCache, ThemeFS } from './theme-fs'
 import { installFallbacks } from './fallbacks'
 import { registerShopifyFilters } from './filters'
 import { registerShopifyTags } from './tags'
@@ -31,6 +31,8 @@ export const SHOPIFY_DEFAULT_LIMITS = Object.freeze({
 export interface ShopifyLiquidOptions {
   /** The theme's files by path (`snippets/price.liquid`). `render`, `include` and layouts read them; nothing is read from disk. https://shopify.dev/docs/api/liquid/tags/render and https://shopify.dev/docs/api/liquid/tags/include. */
   files?: Record<string, string>
+  /** Advanced, for a theme laid over a base theme (`ThemeInput.base`): the parsed templates of the base. A file of `files` is the engine's own; every other file is read parsed from the base, so the engine parses only its own. */
+  base?: BaseTemplates
   services?: Partial<ShopifyServices>
   translator?: Translator
   moneyFormat?: string
@@ -74,7 +76,7 @@ class ShopifyLiquid extends Liquid {
  */
 export function createShopifyLiquid (options: ShopifyLiquidOptions = {}): Liquid {
   const files = options.files ?? {}
-  const cache = new ThemeCache(files)
+  const cache = new ThemeCache(files, options.base)
   const state = createState(options)
   const liquid = new ShopifyLiquid({
     numberSemantics: 'ruby',

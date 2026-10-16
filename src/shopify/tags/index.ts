@@ -9,6 +9,7 @@ import { SectionTag, SectionsTag } from './section'
 import { ContentForTag } from './content-for'
 import { ShopifyTablerowTag } from './tablerow'
 import { ShopifyRenderTag } from './render'
+import { ShopifyIncludeTag } from './include'
 import { registerBlankText } from './blank'
 
 /** Shopify's platform tags, by name. */
@@ -25,7 +26,8 @@ export const SHOPIFY_TAGS: Readonly<Record<string, TagClass>> = Object.freeze({
   sections: SectionsTag,
   content_for: ContentForTag,
   tablerow: ShopifyTablerowTag,
-  render: ShopifyRenderTag
+  render: ShopifyRenderTag,
+  include: ShopifyIncludeTag
 })
 
 export function registerShopifyTags (liquid: Liquid) {

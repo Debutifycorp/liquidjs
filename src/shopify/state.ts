@@ -1,4 +1,5 @@
 import type { Context } from '../context'
+import type { Liquid } from '../liquid'
 import { ReportCollector } from './report'
 import { resolveServices, ShopifyServices } from './services'
 import { emptyTranslator, SectionLocales, Translator } from './translations'
@@ -44,6 +45,8 @@ export interface ShopifyState {
   /** `{% stylesheet %}` and `{% javascript %}` bodies met while rendering, by file, in the order first rendered; `content_for_header` inlines them. https://shopify.dev/docs/api/liquid/tags/stylesheet and https://shopify.dev/docs/api/liquid/tags/javascript say how the bodies are loaded only by reference, and https://shopify.dev/docs/api/liquid/objects/content_for_header says only that it returns the scripts Shopify requires, so inlining the bodies there is Debutify's choice. */
   assets: { stylesheets: Map<string, string>, javascripts: Map<string, string> }
   runtime?: ThemeHooks
+  /** The engine of the page being rendered, through which `render` and `include` look snippets up: a section parsed once by a base theme's engine renders the snippet of the overlay being rendered, when the overlay replaces it. Unset for a render that is not a theme page: the tag then uses the engine that parsed it. Debutify's device for theme overlays; Shopify has no counterpart to cite. */
+  liquid?: Liquid
   /** Set by `{% layout %}`: a layout name, `null` for `none`, `undefined` when the template did not say, https://shopify.dev/docs/api/liquid/tags/layout. */
   layout?: string | null
 }
@@ -59,6 +62,8 @@ export interface StateInit {
   moneyWithCurrencyFormat?: string
   request?: Partial<ShopifyState['request']>
   runtime?: ThemeHooks
+  /** See `ShopifyState.liquid`. */
+  liquid?: Liquid
   /** Frames to start with, for rendering a snippet as if inside a section. */
   frames?: Frame[]
 }
@@ -72,7 +77,8 @@ export function createState (init: StateInit = {}): ShopifyState {
     request: { path: '/', origin: '', page: 1, prefix: '', ...init.request },
     frames: [...(init.frames ?? [])],
     assets: { stylesheets: new Map(), javascripts: new Map() },
-    runtime: init.runtime
+    runtime: init.runtime,
+    liquid: init.liquid
   }
 }
 

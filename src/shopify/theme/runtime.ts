@@ -1,4 +1,5 @@
 import { Context } from '../../context'
+import type { LookupType } from '../../fs/loader'
 import type { Liquid } from '../../liquid'
 import type { Template } from '../../template'
 import { toPromise } from '../../util/async'
@@ -17,6 +18,7 @@ import { buildGlobals, RequestInput } from '../store/globals'
 import { resolveView } from '../store/view'
 import type { StoreData } from '../store/types'
 import { SchemaTag } from '../tags/raw'
+import type { ThemeCache } from '../theme-fs'
 import { Translator } from '../translations'
 import type { BlockData, LocaleTree, SectionData } from '../types'
 import { escapeHtml } from '../util/html'
@@ -27,6 +29,8 @@ import { contentForHeader, newHeaderMarker } from './header'
 /** An Online Store 2.0 theme as a map of its files by path (`sections/header.liquid`). The package never reads the file system. */
 export interface ThemeInput {
   files: Record<string, string>
+  /** A theme this one is laid over: a file in `files` replaces the base's file at the same path, and every other file comes from the base. The base is parsed once and shared by every theme laid over it, so the AI builder's own sections (item 15) cost only their own parse. Edits to a base's files after an overlay is compiled reach the overlay only for files it takes from the base; give each version of a theme its own object. */
+  base?: ThemeInput
 }
 
 export interface RenderPageOptions {
@@ -214,25 +218,46 @@ function presetData (preset: Record<string, unknown>): { settings?: Record<strin
 /** One theme, parsed once: an engine over its files and its parsed JSON, both re-read only when a file's contents change. Of its members only `templates(path)` is public API; the rest serve `renderPage` and may change in any release. */
 export class CompiledTheme {
   public readonly liquid: Liquid
+  private readonly cache: ThemeCache
   private readonly jsonCache = new Map<string, { source: string, value: unknown }>()
 
-  public constructor (public readonly files: Record<string, string>, options: Pick<RenderPageOptions, 'parseLimit' | 'unknownTags'> = {}) {
-    this.liquid = createShopifyLiquid({ files, parseLimit: options.parseLimit, unknownTags: options.unknownTags })
+  /** `own` are the files this theme owns; with a `base`, every other file comes from it, parsed once by it. */
+  public constructor (public readonly own: Record<string, string>, options: Pick<RenderPageOptions, 'parseLimit' | 'unknownTags'> = {}, public readonly base?: CompiledTheme) {
+    this.liquid = createShopifyLiquid({ files: own, base: base && { cache: base.cache, parse: key => base.parseKey(key) }, parseLimit: options.parseLimit, unknownTags: options.unknownTags })
+    this.cache = this.liquid.options.cache as ThemeCache
+  }
+
+  /** The files this theme reads, its own over its base's, as a new map. */
+  public get files (): Record<string, string> {
+    return this.base ? { ...this.base.files, ...this.own } : this.own
+  }
+
+  /** How many files this theme parsed itself (cache writes): files it takes from its base cost the base's parse, not this theme's. For tests and reports. */
+  public get parseCount (): number {
+    return this.cache.writes
+  }
+
+  /** Parses one file by its cache key (`partials:price`) into this theme's cache. */
+  public parseKey (key: string): Template[] {
+    const sep = key.indexOf(':')
+    return this.liquid.parseFileSync(key.slice(sep + 1), key.slice(0, sep) as LookupType)
   }
 
   public has (path: string): boolean {
-    return hasOwn(this.files, path)
+    return hasOwn(this.own, path) || !!this.base?.has(path)
   }
 
-  /** Paths starting with `prefix`, in key order. */
+  /** Paths starting with `prefix`, in key order: the base's, then the overlay's own that the base lacks (the order of `{ ...base.files, ...own }`). */
   public paths (prefix: string): string[] {
-    return Object.keys(this.files).filter(path => path.startsWith(prefix))
+    const own = Object.keys(this.own).filter(path => path.startsWith(prefix))
+    const base = this.base
+    return base ? [...base.paths(prefix), ...own.filter(path => !base.has(path))] : own
   }
 
   /** The parsed JSON file, undefined when it does not exist. Throws when it is not valid JSON. */
   public json (path: string): unknown {
-    if (!this.has(path)) return undefined
-    const source = this.files[path]
+    if (!hasOwn(this.own, path)) return this.base?.json(path)
+    const source = this.own[path]
     const cached = this.jsonCache.get(path)
     if (cached && cached.source === source) return cached.value
     const value = parseThemeJson(source, path)
@@ -284,6 +309,8 @@ const compiled = new WeakMap<ThemeInput, Map<string, CompiledTheme>>()
  * The compiled form of `theme`, made on first use and kept as long as the theme object lives; `renderPage` and `renderSection` use it, so calling it first parses a theme ahead of its first render. Pass the same `parseLimit` and `unknownTags` the renders will get: a theme is compiled once for each combination. Editing `theme.files[path]` is picked up (the engine and the JSON cache compare each file's contents); replacing `theme.files` with a new map compiles the theme again.
  *
  * The compiled theme reads `theme.files` live, so a render that is still running when a file is edited can mix the old and new versions of different files. Give each saved version of a theme its own `theme` object (or its own `files` map) and do not edit a map a render is using.
+ *
+ * A theme with a `base` is compiled over the base's compiled theme (compiled first, with the same options, and shared by every theme laid over it): the overlay parses only its own files. Replacing `theme.files` or compiling a new base compiles the overlay again.
  */
 export function compileTheme (theme: ThemeInput, options: Pick<RenderPageOptions, 'parseLimit' | 'unknownTags'> = {}): CompiledTheme {
   const engine = { parseLimit: options.parseLimit ?? SHOPIFY_DEFAULT_LIMITS.parseLimit, unknownTags: options.unknownTags ?? 'report' }
@@ -293,9 +320,10 @@ export function compileTheme (theme: ThemeInput, options: Pick<RenderPageOptions
     byOptions = new Map()
     compiled.set(theme, byOptions)
   }
+  const base = theme.base && compileTheme(theme.base, engine)
   let result = byOptions.get(key)
-  if (!result || result.files !== theme.files) {
-    result = new CompiledTheme(theme.files, engine)
+  if (!result || result.own !== theme.files || result.base !== base) {
+    result = new CompiledTheme(theme.files, engine, base)
     byOptions.set(key, result)
   }
   return result
@@ -338,6 +366,7 @@ class PageRender implements ThemeHooks {
     const translator = theme.translator(locale, message => this.state.report.unsupported('locale_file', message))
     this.trust = { liquidSettings: !!options.trustLiquidSettings, htmlSettings: !!options.trustHtmlSettings }
     this.state = createState({
+      liquid: theme.liquid,
       services: options.services,
       translator,
       moneyFormat: store.currency.money_format,

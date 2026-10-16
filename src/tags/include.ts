@@ -27,8 +27,15 @@ export default class extends Tag {
 
     this.hash = new Hash(tokenizer, liquid.options.jekyllInclude || liquid.options.keyValueSeparator)
   }
+
+  /** The engine `include` looks the snippet up with: the one that parsed this tag. A subclass may answer the engine of the render instead. */
+  protected partialEngine (ctx: Context): Liquid { // eslint-disable-line @typescript-eslint/no-unused-vars
+    return this.liquid
+  }
+
   * render (ctx: Context, emitter: Emitter): Generator<unknown, void, unknown> {
-    const { liquid, hash, withVar } = this
+    const { hash, withVar } = this
+    const liquid = this.partialEngine(ctx)
     const { renderer } = liquid
     const filepath = (yield renderFilePath(this.file, ctx, liquid)) as string
     assert(filepath, () => `illegal file path "${filepath}"`)

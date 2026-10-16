@@ -42,20 +42,33 @@ export class ThemeFS implements FS {
   }
 }
 
+/** A base theme an overlay's cache reads from: its cache, and a way to parse one of its files (by cache key) into it. */
+export interface BaseTemplates {
+  cache: ThemeCache
+  parse: (key: string) => Template[]
+}
+
 /**
  * LiquidJS's parsed-partial cache, kept per theme and checked against the file's current source, so editing one snippet in the theme map re-parses that snippet only. This is Debutify's performance device and has no Shopify counterpart to cite.
+ *
+ * With a `base`, the cache belongs to an overlay: a file the overlay does not own is read parsed from the base's cache (parsed into it first when it is not there yet), so a theme laid over a base parses only its own files.
  */
 export class ThemeCache implements LiquidCache {
   private readonly entries = new Map<string, { source: string | undefined, value: Template[] | Promise<Template[]> }>()
   private liquid?: Liquid
+  /** Templates this cache's engine parsed itself: cache writes, not reads from the base. */
+  public writes = 0
 
-  public constructor (private readonly files: Record<string, string>) {}
+  /** `files` are the files this engine owns; with a `base`, every other file of the engine's file system comes parsed from the base. */
+  public constructor (private readonly files: Record<string, string>, private readonly base?: BaseTemplates) {}
 
   public attach (liquid: Liquid) {
     this.liquid = liquid
   }
 
-  public read (key: string) {
+  public read (key: string): Template[] | Promise<Template[]> | undefined {
+    const path = this.path(key)
+    if (this.base && path !== undefined && !hasOwn(this.files, path)) return this.base.cache.read(key) ?? this.base.parse(key)
     const entry = this.entries.get(key)
     if (!entry) return undefined
     if (entry.source !== this.source(key)) {
@@ -66,6 +79,7 @@ export class ThemeCache implements LiquidCache {
   }
 
   public write (key: string, value: Template[] | Promise<Template[]>) {
+    this.writes++
     this.entries.set(key, { source: this.source(key), value })
   }
 
@@ -74,11 +88,16 @@ export class ThemeCache implements LiquidCache {
   }
 
   private source (key: string): string | undefined {
+    const path = this.path(key)
+    return path !== undefined && hasOwn(this.files, path) ? this.files[path] : undefined
+  }
+
+  /** The theme path of a cache key (`partials:price` is `snippets/price.liquid`). */
+  private path (key: string): string | undefined {
     if (!this.liquid) return undefined
     const sep = key.indexOf(':')
     const type = key.slice(0, sep) as 'partials' | 'layouts' | 'root'
     const { fs, extname } = this.liquid.options
-    const path = fs.resolve(this.liquid.options[type][0] ?? '.', key.slice(sep + 1), extname)
-    return hasOwn(this.files, path) ? this.files[path] : undefined
+    return fs.resolve(this.liquid.options[type][0] ?? '.', key.slice(sep + 1), extname)
   }
 }
