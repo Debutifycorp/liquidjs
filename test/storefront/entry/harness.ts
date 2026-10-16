@@ -22,7 +22,10 @@ export function harnessTheme (): ThemeInput {
       'templates/cart.json': '{"sections":{},"order":[]}',
       'templates/search.json': '{"sections":{},"order":[]}',
       'templates/password.liquid': '{% form "storefront_password" %}{% if form.errors %}wrong{% endif %}{% endform %}',
-      'sections/cart-count.liquid': '{{ cart.item_count }}'
+      'sections/cart-count.liquid': '{{ cart.item_count }}',
+      // the private theme's sections that the parity store's cart answers bundle (fixture `ajax-cart-sections`)
+      'sections/cart-drawer.liquid': '{{ cart.item_count }}',
+      'sections/cart-icon-bubble.liquid': '{{ cart.item_count }}'
     }
   }
 }
