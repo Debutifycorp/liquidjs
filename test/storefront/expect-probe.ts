@@ -45,6 +45,10 @@ export const VOLATILE: ReadonlyArray<{ paths: string[], reason: string }> = [
     reason: 'A cart\'s token identifies the cart (its id); the fixtures hold the placeholder <token> and the engine makes its own.'
   },
   {
+    paths: ['shipping_rates[].markup'],
+    reason: 'A shipping rate\'s markup in a market with another currency is the printed price less the rate\'s base price converted at Shopify\'s live exchange rate (about 1.4175 for CAD and 0.89 for EUR fit every point of fixtures ajax-shipping-rates-en-ca and ajax-shipping-rates-en-eu to a cent, e.g. -0.17 for the Canadian Standard rate). The dataset holds no live rate, which changes daily, and the engine prints the shop currency\'s "0.00".'
+  },
+  {
     paths: ['items_added[].id'],
     reason: 'The id of an added line in a cart change is a UUID Shopify makes (the dataset ids are its variant_id and product_id).'
   },

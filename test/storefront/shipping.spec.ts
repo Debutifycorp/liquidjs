@@ -1,5 +1,6 @@
-import { resolveView, shippingRates, storefrontSampleData as data } from '../../src/shopify'
+import { requestFromUrl, resolveView, shippingRates, storefrontSampleData as data } from '../../src/shopify'
 import type { CartState, StoreData } from '../../src/shopify'
+import { maskVolatile } from './expect-probe'
 import { loadFixture } from './fixtures'
 
 const HOODIE = 43695847538710
@@ -7,6 +8,8 @@ const SNEAKERS = 43696961355798
 
 const cart = (lines: Array<[number, number]>, codes: string[] = []): CartState => ({ token: '<token>', lines: lines.map(([variantId, quantity]) => ({ variantId, quantity, properties: {}, sellingPlanId: null })), note: null, attributes: {}, discountCodes: codes })
 const withZones = (zones: NonNullable<StoreData['shipping_zones']>): StoreData => ({ ...data, shipping_zones: zones })
+/** A store whose only market is the United States, so that no market names the other countries. */
+const inUsMarketOnly = (zones: NonNullable<StoreData['shipping_zones']>): StoreData => ({ ...data, markets: data.markets?.filter(market => market.handle === 'us'), shipping_zones: zones })
 /** The rates' names and prices, to read a case at a glance. */
 const summary = (answer: unknown) => ((answer as { shipping_rates: Array<{ name: string, price: string }> }).shipping_rates).map(rate => `${rate.name} ${rate.price}`)
 
@@ -26,6 +29,32 @@ describe('shipping rates', () => {
     const rates = shippingRates(data, cart([[HOODIE, 1]]), { country: 'United States', province: 'CA', zip: '90210' })
     expect(JSON.stringify(rates)).toBe(JSON.stringify(fixture.steps[2].body))
     expect(JSON.stringify(shippingRates(data, cart([[HOODIE, 1]]), { country: 'Atlantis' }))).toBe(JSON.stringify(fixture.steps[9].body))
+  })
+
+  // the other markets' recordings: a rate's `markup` is volatile (`VOLATILE`), the rest of the answer, key order included, is compared
+  for (const name of ['ajax-shipping-rates-en-ca', 'ajax-shipping-rates-en-eu']) {
+    describe(`fixture ${name}`, () => {
+      const recorded = loadFixture(name)
+      const rated = recorded.steps.filter(step => step.method === 'GET' && step.url.includes('/cart/shipping_rates.json'))
+      it('records the rate steps', () => {
+        expect(rated.length).toBeGreaterThanOrEqual(3)
+      })
+      rated.forEach((step, n) => {
+        const query = new URL(step.url, 'https://x.invalid').searchParams
+        const address = { country: query.get('shipping_address[country]') ?? undefined, province: query.get('shipping_address[province]') ?? undefined, zip: query.get('shipping_address[zip]') ?? undefined }
+        it(`matches the answer for ${address.country} (rate step ${n + 1})`, () => {
+          const view = resolveView(data, requestFromUrl(step.url, data).request)
+          const answer = shippingRates(data, cart([[HOODIE, 1]]), address, view)
+          expect(maskVolatile(answer)).toEqual(maskVolatile(step.body))
+          expect(JSON.stringify(maskVolatile(answer))).toBe(JSON.stringify(maskVolatile(step.body)))
+        })
+      })
+    })
+  }
+  it('prints markup as 0.00 in every currency, where Shopify prints its live exchange rate\'s difference', () => {
+    const canada = shippingRates(data, cart([[HOODIE, 1]]), { country: 'Canada', province: 'ON', zip: 'K1A 0B1' }, resolveView(data, { market: 'ca', language: 'en', localePrefix: '/en-ca' })) as { shipping_rates: Array<{ markup: string }> }
+    expect(canada.shipping_rates.map(rate => rate.markup)).toEqual(['0.00'])
+    expect((loadFixture('ajax-shipping-rates-en-ca').steps[1].body as typeof canada).shipping_rates[0].markup).toBe('-0.17')
   })
 
   describe('the address', () => {
@@ -51,6 +80,38 @@ describe('shipping rates', () => {
       expect(shippingRates(only, cart([[HOODIE, 1]]), { country: 'France', zip: '75001' })).toEqual({ country: ['Country/region not supported'] })
       expect(shippingRates(only, cart([[HOODIE, 1]]), { country: 'Canada', zip: 'K1A 0B1' })).toHaveProperty('shipping_rates')
     })
+    it('reads the name of a country with a deprecated or special code of the same name as the real country', () => {
+      // a store whose markets do not list these countries, so only `Intl.DisplayNames` can name them (`United Kingdom` is also `UK`, `France` `FX`, `Russia` `SU`, `Serbia` `YU` and `CS`, `Congo - Kinshasa` `ZR`)
+      const store = inUsMarketOnly([
+        { name: 'UK', countries: [{ code: 'GB' }], rates: [{ name: 'GB rate', price: 100 }] },
+        { name: 'France', countries: [{ code: 'FR' }], rates: [{ name: 'FR rate', price: 200 }] },
+        { name: 'Russia', countries: [{ code: 'RU' }], rates: [{ name: 'RU rate', price: 300 }] },
+        { name: 'Serbia', countries: [{ code: 'RS' }], rates: [{ name: 'RS rate', price: 400 }] },
+        { name: 'Congo', countries: [{ code: 'CD' }], rates: [{ name: 'CD rate', price: 500 }] },
+        { name: 'Rest of world', countries: 'rest_of_world', rates: [{ name: 'World', price: 900 }] }
+      ])
+      const rated = (country: string) => summary(shippingRates(store, cart([[HOODIE, 1]]), { country, zip: '12345' }))
+      expect(rated('United Kingdom')).toEqual(['GB rate 1.00'])
+      expect(rated('France')).toEqual(['FR rate 2.00'])
+      expect(rated('Russia')).toEqual(['RU rate 3.00'])
+      expect(rated('Serbia')).toEqual(['RS rate 4.00'])
+      expect(rated('Congo - Kinshasa')).toEqual(['CD rate 5.00'])
+      for (const code of ['GB', 'FR', 'RU', 'RS', 'CD']) expect(rated(code)).toEqual(rated(code.toLowerCase()))
+      expect(rated('GB')).toEqual(['GB rate 1.00'])
+      expect(rated('Japan')).toEqual(['World 9.00'])
+    })
+    it('reads a two-letter code only when it is a country\'s, and UK as GB', () => {
+      const store = inUsMarketOnly([
+        { name: 'UK', countries: [{ code: 'GB' }], rates: [{ name: 'GB rate', price: 100 }] },
+        { name: 'Rest of world', countries: 'rest_of_world', rates: [{ name: 'World', price: 900 }] }
+      ])
+      const answer = (country: string) => shippingRates(store, cart([[HOODIE, 1]]), { country, zip: '12345' })
+      expect(summary(answer('UK'))).toEqual(['GB rate 1.00'])
+      expect(summary(answer('uk'))).toEqual(['GB rate 1.00'])
+      expect(summary(answer('JP'))).toEqual(['World 9.00'])
+      // XX, ZZ, EU, ZR and SU are no country
+      for (const code of ['XX', 'ZZ', 'EU', 'ZR', 'SU', 'AN']) expect(answer(code)).toEqual({ country: ['Country/region not supported'] })
+    })
     it('puts a province of a zone that lists provinces in that zone, and any other province in the next', () => {
       const zones = withZones([
         { name: 'West coast', countries: [{ code: 'US', provinces: ['CA', 'OR', 'WA'] }], rates: [{ name: 'Coast', price: 300 }] },
@@ -60,6 +121,10 @@ describe('shipping rates', () => {
       expect(summary(shippingRates(zones, cart([[HOODIE, 1]]), { country: 'United States', province: 'ca', zip: '90210' }))).toEqual(['Coast 3.00'])
       expect(summary(shippingRates(zones, cart([[HOODIE, 1]]), { country: 'United States', province: 'NY', zip: '10001' }))).toEqual(['Inland 9.00'])
       expect(summary(shippingRates(zones, cart([[HOODIE, 1]]), { country: 'United States', zip: '10001' }))).toEqual(['Inland 9.00'])
+      // the zone that lists a province wins for it, whatever order the zones are in
+      const reversed = withZones([zones.shipping_zones![1], zones.shipping_zones![0], zones.shipping_zones![2]])
+      expect(summary(shippingRates(reversed, cart([[HOODIE, 1]]), { country: 'United States', province: 'OR', zip: '97201' }))).toEqual(['Coast 3.00'])
+      expect(summary(shippingRates(reversed, cart([[HOODIE, 1]]), { country: 'United States', province: 'NY', zip: '10001' }))).toEqual(['Inland 9.00'])
       const strict = withZones([{ name: 'West coast', countries: [{ code: 'US', provinces: ['CA'] }], rates: [{ name: 'Coast', price: 300 }] }, { name: 'Rest of world', countries: 'rest_of_world', rates: [{ name: 'International', price: 2000 }] }])
       expect(summary(shippingRates(strict, cart([[HOODIE, 1]]), { country: 'United States', province: 'NY', zip: '10001' }))).toEqual(['International 20.00'])
     })
@@ -107,6 +172,20 @@ describe('shipping rates', () => {
       expect(summary(shippingRates(store, cart([[HOODIE, 1], [SNEAKERS, 1]]), world))).toEqual(['Everything 2.00'])
       const bySubtotal = { ...store, shipping_zones: [{ name: 'Rest of world', countries: 'rest_of_world' as const, rates: [{ name: 'Small', price: 100, max_subtotal: 100000 }, { name: 'Large', price: 200, min_subtotal: 100001 }] }] }
       expect(summary(shippingRates(bySubtotal, cart([[HOODIE, 1], [SNEAKERS, 1]]), world))).toEqual(['Small 1.00'])
+    })
+    it('holds the dataset\'s own bounds: 9999 against 10000 in the United States, 2000 g against 2001 g elsewhere, and FREESHIP at 10000', () => {
+      // the hoodie's price and weight varied in a copy of the data
+      const tweak = (price: number, weight: number): StoreData => ({ ...data, products: data.products?.map(product => ({ ...product, variants: product.variants.map(variant => variant.id === HOODIE ? { ...variant, price, weight } : variant) })) })
+      const us = { country: 'United States', province: 'CA', zip: '90210' }
+      expect(summary(shippingRates(tweak(9999, 600), cart([[HOODIE, 1]]), us))).toEqual(['Standard 5.00', 'Express 15.00'])
+      expect(summary(shippingRates(tweak(10000, 600), cart([[HOODIE, 1]]), us))).toEqual(['Free standard 0.00', 'Express 15.00'])
+      expect(summary(shippingRates(tweak(10001, 600), cart([[HOODIE, 1]]), us))).toEqual(['Free standard 0.00', 'Express 15.00'])
+      expect(summary(shippingRates(tweak(9999, 600), cart([[HOODIE, 1]], ['FREESHIP']), us))).toEqual(['Standard 5.00', 'Express 15.00'])
+      expect(summary(shippingRates(tweak(10000, 600), cart([[HOODIE, 1]], ['FREESHIP']), us))).toEqual(['Free standard 0.00', 'Express 0.00'])
+      expect(summary(shippingRates(tweak(9000, 1999), cart([[HOODIE, 1]]), world))).toEqual(['International 20.00'])
+      expect(summary(shippingRates(tweak(9000, 2000), cart([[HOODIE, 1]]), world))).toEqual(['International 20.00'])
+      expect(summary(shippingRates(tweak(9000, 2001), cart([[HOODIE, 1]]), world))).toEqual(['International heavy 40.00'])
+      expect(summary(shippingRates(tweak(9000, 2002), cart([[HOODIE, 1]]), world))).toEqual(['International heavy 40.00'])
     })
     it('takes the dataset\'s United States zone across its subtotal', () => {
       const us = { country: 'United States', province: 'CA', zip: '90210' }
