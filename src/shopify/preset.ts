@@ -65,7 +65,7 @@ class ShopifyLiquid extends Liquid {
     const given = renderOptions.globals as Record<symbol, ShopifyState | undefined> | undefined
     const defaults = engineState(this.options.globals)
     if (given?.[STATE] && given[STATE] !== defaults) return renderOptions
-    return { ...renderOptions, globals: { ...(given ?? this.options.globals), [STATE]: stateFromDefaults(defaults) } }
+    return { ...renderOptions, globals: { ...(given ?? this.options.globals), [STATE]: stateFromDefaults(defaults, { liquid: this }) } }
   }
 }
 

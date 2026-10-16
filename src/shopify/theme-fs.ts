@@ -67,8 +67,10 @@ export class ThemeCache implements LiquidCache {
   }
 
   public read (key: string): Template[] | Promise<Template[]> | undefined {
-    const path = this.path(key)
-    if (this.base && path !== undefined && !hasOwn(this.files, path)) return this.base.cache.read(key) ?? this.base.parse(key)
+    if (this.base) {
+      const path = this.path(key)
+      if (path !== undefined && !hasOwn(this.files, path)) return this.base.cache.read(key) ?? this.base.parse(key)
+    }
     const entry = this.entries.get(key)
     if (!entry) return undefined
     if (entry.source !== this.source(key)) {

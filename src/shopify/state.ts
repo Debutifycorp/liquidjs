@@ -89,6 +89,11 @@ export function shopifyState (ctx: Context): ShopifyState {
   return state
 }
 
+/** The Shopify state of the render `ctx` belongs to, or undefined for a context built without one (`shopifyState` throws there). For tags that behave as the plain engine does when no state is there. */
+export function peekShopifyState (ctx: Context): ShopifyState | undefined {
+  return (ctx.globals as Record<symbol, ShopifyState | undefined>)[STATE]
+}
+
 /** The state an engine made by `createShopifyLiquid` keeps in its `globals`: the defaults every render starts from, never a render's own state. */
 export function engineState (globals: object): ShopifyState | undefined {
   return (globals as Record<symbol, ShopifyState | undefined>)[STATE]
@@ -101,6 +106,7 @@ export function stateFromDefaults (defaults: ShopifyState | undefined, init: Sta
     moneyFormat: init.moneyFormat ?? defaults?.money.format,
     moneyWithCurrencyFormat: init.moneyWithCurrencyFormat ?? defaults?.money.withCurrencyFormat,
     runtime: init.runtime ?? defaults?.runtime,
+    liquid: init.liquid,
     request: init.request,
     frames: init.frames,
     services: { ...defaults?.services, ...init.services }

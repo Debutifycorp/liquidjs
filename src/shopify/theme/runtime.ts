@@ -227,11 +227,6 @@ export class CompiledTheme {
     this.cache = this.liquid.options.cache as ThemeCache
   }
 
-  /** The files this theme reads, its own over its base's, as a new map. */
-  public get files (): Record<string, string> {
-    return this.base ? { ...this.base.files, ...this.own } : this.own
-  }
-
   /** How many files this theme parsed itself (cache writes): files it takes from its base cost the base's parse, not this theme's. For tests and reports. */
   public get parseCount (): number {
     return this.cache.writes
@@ -314,13 +309,20 @@ const compiled = new WeakMap<ThemeInput, Map<string, CompiledTheme>>()
  */
 export function compileTheme (theme: ThemeInput, options: Pick<RenderPageOptions, 'parseLimit' | 'unknownTags'> = {}): CompiledTheme {
   const engine = { parseLimit: options.parseLimit ?? SHOPIFY_DEFAULT_LIMITS.parseLimit, unknownTags: options.unknownTags ?? 'report' }
+  return compileLaidOver(theme, engine, new Set())
+}
+
+/** `compileTheme` for options already read; `chain` holds the themes whose bases are being compiled, so a base that leads back to one of them fails instead of recursing without end. */
+function compileLaidOver (theme: ThemeInput, engine: { parseLimit: number, unknownTags: 'report' | 'error' }, chain: Set<ThemeInput>): CompiledTheme {
+  if (chain.has(theme)) throw new Error('theme base chain loops: a theme is laid over itself, directly or through its bases')
+  chain.add(theme)
   const key = `${engine.parseLimit}:${engine.unknownTags}`
   let byOptions = compiled.get(theme)
   if (!byOptions) {
     byOptions = new Map()
     compiled.set(theme, byOptions)
   }
-  const base = theme.base && compileTheme(theme.base, engine)
+  const base = theme.base && compileLaidOver(theme.base, engine, chain)
   let result = byOptions.get(key)
   if (!result || result.own !== theme.files || result.base !== base) {
     result = new CompiledTheme(theme.files, engine, base)

@@ -18,7 +18,7 @@ export async function renderLiquid (liquid: Liquid, source: string, scope: objec
 /** `renderLiquid` with `init` over the engine's default state, field by field (a request, frames that make the source render as if inside a section, theme hooks), and `filepath` as the source's file name. Internal: the package's tests use it. */
 export async function renderWithState (liquid: Liquid, source: string, scope: object = {}, init: StateInit = {}, filepath?: string): Promise<RenderLiquidResult> {
   const started = getPerformance().now()
-  const state = stateFromDefaults(engineState(liquid.options.globals), init)
+  const state = stateFromDefaults(engineState(liquid.options.globals), { liquid, ...init })
   const errors: LiquidError[] = []
   const templates = liquid.parse(source, filepath)
   const html = await toPromise(liquid._render(templates, scope, { globals: { ...liquid.options.globals, [STATE]: state }, errors, sync: false }))

@@ -2,6 +2,7 @@
 export * from '../index'
 export { createShopifyLiquid, SHOPIFY_DEFAULT_LIMITS } from './preset'
 export type { ShopifyLiquidOptions } from './preset'
+export type { BaseTemplates } from './theme-fs'
 export { renderLiquid } from './render-liquid'
 export type { RenderLiquidResult } from './render-liquid'
 export { compileTheme, renderPage, renderSection } from './theme/runtime'
