@@ -1,0 +1,588 @@
+{
+  "scenario": "probe-collection-suffix-filtered",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/collections/featured?filter.p.tag=women",
+      "status": 200,
+      "location": null,
+      "body": {
+        "handle": "featured",
+        "title": "Featured",
+        "url": "/collections/featured",
+        "template_suffix": "probe",
+        "template": {
+          "name": "collection",
+          "suffix": "probe"
+        },
+        "products": [
+          {
+            "handle": "women-crewneck",
+            "price": 12000,
+            "url": "/products/women-crewneck"
+          },
+          {
+            "handle": "women-t-shirt",
+            "price": 4000,
+            "url": "/products/women-t-shirt"
+          }
+        ],
+        "products_count": 2,
+        "all_products_count": 9,
+        "sort_by": "",
+        "default_sort_by": "manual",
+        "sort_options": [
+          {
+            "name": "Featured",
+            "value": "manual"
+          },
+          {
+            "name": "Most relevant",
+            "value": "most-relevant"
+          },
+          {
+            "name": "Best selling",
+            "value": "best-selling"
+          },
+          {
+            "name": "Alphabetically, A-Z",
+            "value": "title-ascending"
+          },
+          {
+            "name": "Alphabetically, Z-A",
+            "value": "title-descending"
+          },
+          {
+            "name": "Price, low to high",
+            "value": "price-ascending"
+          },
+          {
+            "name": "Price, high to low",
+            "value": "price-descending"
+          },
+          {
+            "name": "Date, old to new",
+            "value": "created-ascending"
+          },
+          {
+            "name": "Date, new to old",
+            "value": "created-descending"
+          }
+        ],
+        "current_tags": null,
+        "tags": [
+          "accessories",
+          "men",
+          "shoes",
+          "tops",
+          "unisex",
+          "women"
+        ],
+        "all_tags": [
+          "accessories",
+          "men",
+          "shoes",
+          "tops",
+          "unisex",
+          "women"
+        ],
+        "all_types": [
+          "Hoodies",
+          "Shoes",
+          "Sunglasses",
+          "Sweaters",
+          "T-shirts"
+        ],
+        "all_vendors": [
+          "Mock.shop"
+        ],
+        "paginate": {
+          "current_page": 1,
+          "pages": 1,
+          "items": 2,
+          "page_size": 4,
+          "next": null,
+          "previous": null
+        },
+        "filters": [
+          {
+            "label": "Availability",
+            "type": "list",
+            "param_name": "filter.v.availability",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/featured?filter.p.tag=women",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "In stock",
+                "value": "1",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.availability",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.availability=1",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "Out of stock",
+                "value": "0",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.availability",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.availability=0",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              }
+            ]
+          },
+          {
+            "label": "Price",
+            "type": "price_range",
+            "param_name": "filter.v.price",
+            "operator": null,
+            "presentation": null,
+            "url_to_remove": "/collections/featured?filter.p.tag=women",
+            "range_max": 100000,
+            "min_value": {
+              "param_name": "filter.v.price.gte",
+              "value": null
+            },
+            "max_value": {
+              "param_name": "filter.v.price.lte",
+              "value": null
+            },
+            "active_values": [],
+            "values": []
+          },
+          {
+            "label": "Brand",
+            "type": "list",
+            "param_name": "filter.p.vendor",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/featured?filter.p.tag=women",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Mock.shop",
+                "value": "Mock.shop",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.p.vendor",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.p.vendor=Mock.shop",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              }
+            ]
+          },
+          {
+            "label": "Product type",
+            "type": "list",
+            "param_name": "filter.p.product_type",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/featured?filter.p.tag=women",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Sweaters",
+                "value": "Sweaters",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/featured?filter.p.product_type=Sweaters&filter.p.tag=women",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "T-shirts",
+                "value": "T-shirts",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/featured?filter.p.product_type=T-shirts&filter.p.tag=women",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "Hoodies",
+                "value": "Hoodies",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/featured?filter.p.product_type=Hoodies&filter.p.tag=women",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "Shoes",
+                "value": "Shoes",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/featured?filter.p.product_type=Shoes&filter.p.tag=women",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "Sunglasses",
+                "value": "Sunglasses",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.product_type",
+                "url_to_add": "/collections/featured?filter.p.product_type=Sunglasses&filter.p.tag=women",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              }
+            ]
+          },
+          {
+            "label": "More filters",
+            "type": "list",
+            "param_name": "filter.p.tag",
+            "operator": "AND",
+            "presentation": "text",
+            "url_to_remove": "/collections/featured",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [
+              "women"
+            ],
+            "values": [
+              {
+                "label": "tops",
+                "value": "tops",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.p.tag=tops",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "women",
+                "value": "women",
+                "count": 2,
+                "active": true,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/featured?filter.p.tag=women",
+                "url_to_remove": "/collections/featured"
+              },
+              {
+                "label": "accessories",
+                "value": "accessories",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.p.tag=accessories",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "men",
+                "value": "men",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.p.tag=men",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "shoes",
+                "value": "shoes",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.p.tag=shoes",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "unisex",
+                "value": "unisex",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.tag",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.p.tag=unisex",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              }
+            ]
+          },
+          {
+            "label": "Color",
+            "type": "list",
+            "param_name": "filter.v.option.color",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/featured?filter.p.tag=women",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Green",
+                "value": "Green",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.color=Green",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "Ocean",
+                "value": "Ocean",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.color=Ocean",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "Olive",
+                "value": "Olive",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.color=Olive",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "Purple",
+                "value": "Purple",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.color=Purple",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "Red",
+                "value": "Red",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.color",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.color=Red",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              }
+            ]
+          },
+          {
+            "label": "Size",
+            "type": "list",
+            "param_name": "filter.v.option.size",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/featured?filter.p.tag=women",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Small",
+                "value": "Small",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.size=Small",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "Medium",
+                "value": "Medium",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.size=Medium",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "Large",
+                "value": "Large",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.size=Large",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "X-Large",
+                "value": "X-Large",
+                "count": 1,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.size=X-Large",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "4",
+                "value": "4",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.size=4",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "5",
+                "value": "5",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.size=5",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "6",
+                "value": "6",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.size=6",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "7",
+                "value": "7",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.size=7",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "8",
+                "value": "8",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.size=8",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "9",
+                "value": "9",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.size=9",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "10",
+                "value": "10",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.size=10",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "11",
+                "value": "11",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.size=11",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "12",
+                "value": "12",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.v.option.size",
+                "url_to_add": "/collections/featured?filter.p.tag=women&filter.v.option.size=12",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              }
+            ]
+          },
+          {
+            "label": "Material",
+            "type": "list",
+            "param_name": "filter.p.m.custom.material",
+            "operator": "OR",
+            "presentation": "text",
+            "url_to_remove": "/collections/featured?filter.p.tag=women",
+            "range_max": null,
+            "min_value": {
+              "param_name": null,
+              "value": null
+            },
+            "max_value": {
+              "param_name": null,
+              "value": null
+            },
+            "active_values": [],
+            "values": [
+              {
+                "label": "Cotton",
+                "value": "Cotton",
+                "count": 2,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/featured?filter.p.m.custom.material=Cotton&filter.p.tag=women",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "Canvas",
+                "value": "Canvas",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/featured?filter.p.m.custom.material=Canvas&filter.p.tag=women",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              },
+              {
+                "label": "Leather",
+                "value": "Leather",
+                "count": 0,
+                "active": false,
+                "param_name": "filter.p.m.custom.material",
+                "url_to_add": "/collections/featured?filter.p.m.custom.material=Leather&filter.p.tag=women",
+                "url_to_remove": "/collections/featured?filter.p.tag=women"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
