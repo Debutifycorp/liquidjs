@@ -1,5 +1,6 @@
 import { findVariant, lineKey, stockFor } from '../shopify'
 import type { CartLineState, ProductData, StoreData, VariantData } from '../shopify'
+import { UNSAFE } from './body'
 import type { Fields } from './body'
 import type { StorefrontLimits, VisitorState } from './types'
 
@@ -19,12 +20,12 @@ const failWord = (status: number, word: string, description: string, message = d
 const failed = (value: object): value is Failure => 'ok' in value
 
 /**
- * The statuses and texts of Shopify's cart errors (https://shopify.dev/docs/api/ajax/reference/cart), word for word as the parity store answers them where a fixture records them (`ajax-cart-errors`): `status` is the number 422 and `message` repeats the description, except where `message` is `Cart Error`, or `status` is a word (`unprocessable_entity`, `bad_request`). `cantAddMore` is shopify.dev's text for an add when the cart already holds all the stock ("You can't add more #{item.name} to the cart.", status 422, message `Cart Error`), `badPlan` the text Shopify's merchants report for a selling plan the variant lacks, and `noLine` shopify.dev's 400 for a change that names no line of the cart ("no valid id or line parameter"); none of the three is in a recording. `limit` is the storefront's own limit, at 422 with a text of its own.
+ * The statuses and texts of Shopify's cart errors (https://shopify.dev/docs/api/ajax/reference/cart), word for word as the parity store answers them where a fixture records them (`ajax-cart-errors`): `status` is the number 422 and `message` repeats the description, except where `message` is `Cart Error`, or `status` is a word (`unprocessable_entity`, `bad_request`). `cantAddMore` is shopify.dev's text for an add when the cart already holds all the stock ("You can't add more #{item.name} to the cart.", status 422, message `Cart Error`), `badPlan` the text merchants report from the live Cart API for a selling plan the variant lacks (`{"status":422,"message":"Cart Error","description":"Cannot apply selling plan to variant"}`: https://community.shopify.com/t/status-422-message-cart-error-description-cannot-apply-selling-plan-to-variant/229194, https://community.shopify.com/t/cannot-apply-selling-plan-to-variant/88766, https://community.shopify.com/t/cart-error-cannot-apply-selling-plan-to-variant/57624), and `noLine` shopify.dev's 400 for a change that names no line of the cart ("no valid id or line parameter"); none of the three is in a recording. `limit` is the storefront's own limit, at 422 with a text of its own.
  */
 export const CART_ERRORS = {
   soldOut: (name: string) => fail(422, `The product '${name}' is already sold out.`, `The product '${name}' is already sold out.`),
   tooMany: (left: number) => {
-    // a single unit has no recording; the plural is the recorded one
+    // the plural is the only recorded form (fixture `ajax-cart-errors`, step 1); the singular for one unit is this storefront's own text, no recording or page gives it
     const description = left === 1 ? 'Only 1 item was added to your cart due to availability.' : `Only ${left} items were added to your cart due to availability.`
     return fail(422, description, description)
   },
@@ -62,22 +63,23 @@ const title = (product: ProductData, variant: VariantData) => variant.title === 
 /** Whether the product sells `variant` under the selling plan `planId`: through a group that offers the variant (a group offers every variant of its product unless it lists some, as the engine builds `selling_plan_allocations`). https://shopify.dev/docs/api/liquid/objects/selling_plan_group */
 const offersPlan = (product: ProductData, variant: VariantData, planId: number) => (product.selling_plan_groups ?? []).some(group => (!group.variant_ids || group.variant_ids.includes(variant.id)) && group.selling_plans.some(plan => plan.id === planId))
 
-/** A line's properties as strings, in the limits; values that are not text (an object, a file field) are dropped. The result is wrapped, so a property named `ok` or `value` cannot pass for a failure. */
+/** A line's properties as strings, in the limits; values that are not text (an object, a file field) are dropped, and so are names that could reach a prototype (the ones the body parsers drop too). The names are counted before any value is read, so a body-sized object is refused at once. The result is wrapped, so a property named `ok` or `value` cannot pass for a failure. */
 function propertiesOf (value: unknown, limits: StorefrontLimits): { value: Record<string, string> } | Failure {
   const out: Record<string, string> = {}
   if (!isFields(value)) return { value: out }
-  for (const [name, raw] of Object.entries(value)) {
-    const entry = text(raw)
-    if (entry === undefined || name === '__proto__') continue
+  const names = Object.keys(value)
+  if (names.length > limits.properties) return CART_ERRORS.limit(`A line can have at most ${limits.properties} properties.`)
+  for (const name of names) {
+    const entry = text(value[name])
+    if (entry === undefined || UNSAFE.has(name)) continue
     if (name.length > limits.propertyLength || entry.length > limits.propertyLength) return CART_ERRORS.limit(`A line item property can be at most ${limits.propertyLength} characters.`)
     out[name] = entry
   }
-  if (Object.keys(out).length > limits.properties) return CART_ERRORS.limit(`A line can have at most ${limits.properties} properties.`)
   return { value: out }
 }
 
 /**
- * One line to hold, checked against the store: the variant exists, the quantity is within the storefront's limits, a selling plan is one the variant is sold under (and is there when the product requires one), and, when `checkStock` is set, the stock covers it. `inCart` is how many of the variant the cart holds in other lines. A variant that is sold out is "already sold out", one whose stock the cart already holds in full is "You can't add more", and a quantity over what is left is "Only N items were added" (the recording answers 422 and the plan adds nothing, fixture `ajax-cart-errors`, steps 0 and 1).
+ * One line to hold, checked against the store: the variant exists, the quantity is within the storefront's limits, a selling plan is one the variant is sold under (and is there when the product requires one), and, when `checkStock` is set, the stock covers it. `inCart` is how many of the variant the cart holds in other lines. A variant that is sold out is "already sold out", one whose stock the cart already holds in full is "You can't add more", and a quantity over what is left is "Only N items were added" (fixture `ajax-cart-errors`, steps 0 and 1, records the 422 and its text; whether the cart keeps the units that fit is unrecorded, and shopify.dev says it adds the maximum, so this storefront's own choice is to add nothing).
  */
 function lineFor (item: Fields, data: StoreData, limits: StorefrontLimits, inCart: number, checkStock: boolean): CartLineState | Failure {
   const id = whole(item.id)
@@ -139,7 +141,7 @@ export function addToCart (state: VisitorState, fields: Fields, data: StoreData,
 }
 
 /**
- * The indexes of the lines `change.js` names, https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-change-js: `line` (1-based; out of range is a 422, fixture `ajax-cart-errors`, step 4), or `id`, a line key (one line) or a variant id as a string (every line of that variant, fixture `ajax-cart-session`, step 7). An `id` that is a JSON number is a 400 (fixture `ajax-cart-errors`, step 8), and so is a string that is neither a variant id nor a key, by the pattern the recorded message names. An `id` that names no line, or no `id` or `line` at all, is the 400 "no valid id or line parameter" shopify.dev documents ("If the item that you're attempting to change isn't already in the cart, then change.js doesn't add it").
+ * The indexes of the lines `change.js` names, https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-change-js: `line` (1-based; out of range is a 422, fixture `ajax-cart-errors`, step 4), or `id`, a line key (one line) or a variant id as a string (every line of that variant, as the parity store sets them, fixture `ajax-cart-session`, step 7; shopify.dev says "you can change only one line item at a time", and the fixture wins). An `id` that is a JSON number is a 400 with the recorded type error (fixture `ajax-cart-errors`, step 8); the same answer stands for a list, an object or a boolean, which no recording reaches. An `id` that names no line, no `id` or `line` at all, and a string that is neither a variant id nor a key (a guess: no recording reaches it, and this is the documented text that says "no valid id") is the 400 "no valid id or line parameter" shopify.dev documents ("If the item that you're attempting to change isn't already in the cart, then change.js doesn't add it").
  */
 function lineIndexes (lines: CartLineState[], fields: Fields): number[] | Failure {
   if (!absent(fields.line)) {
@@ -148,7 +150,8 @@ function lineIndexes (lines: CartLineState[], fields: Fields): number[] | Failur
   }
   if (absent(fields.id)) return CART_ERRORS.noLine()
   const id = fields.id
-  if (typeof id !== 'string' || !(VARIANT_ID.test(id) || LINE_KEY.test(id))) return CART_ERRORS.badId()
+  if (typeof id !== 'string') return CART_ERRORS.badId()
+  if (!VARIANT_ID.test(id) && !LINE_KEY.test(id)) return CART_ERRORS.noLine()
   const byKey = LINE_KEY.test(id)
   const at = lines.flatMap((line, i) => (byKey ? lineKey(line) === id : line.variantId === Number(id)) ? [i] : [])
   return at.length > 0 ? at : CART_ERRORS.noLine()
@@ -174,7 +177,7 @@ function mergeLines (lines: CartLineState[], limits: StorefrontLimits): CartLine
 }
 
 /**
- * Sets the quantity of each line `fields` names (`lineIndexes`; 0 removes it), and its properties or selling plan when given. "Whenever a POST request includes properties, it overwrites the entire properties object" but "it's not possible to set a line item's properties property to an empty object once a value is set", so an empty object leaves them; a selling plan of `null` or an empty string removes the plan, and a change of selling plan without a quantity sets 1 ("If the quantity isn't specified, then it's assumed to be 1"), all https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-change-js. Nothing changes when one line fails. `checkStock` is off for `update.js`, which "doesn't validate the quantity on variants that are already in the cart" (https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-update-js).
+ * Sets the quantity of each line `fields` names (`lineIndexes`; 0 removes it), and its properties or selling plan when given. "Whenever a POST request includes properties, it overwrites the entire properties object" but "it's not possible to set a line item's properties property to an empty object once a value is set", so an empty object leaves them; a selling plan of `null` or an empty string removes the plan, and a change of selling plan without a quantity sets 1 ("If the quantity isn't specified, then it's assumed to be 1"), all https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-change-js. Nothing changes when one line fails. `checkStock` is off for `update.js`, which "doesn't validate the quantity on variants that are already in the cart" (https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-update-js); that can leave a line above its stock, so `change.js` checks the stock of a line only when it raises the quantity, and a change that lowers it, keeps it or only edits the line always works.
  */
 function setLines (state: VisitorState, fields: Fields, data: StoreData, limits: StorefrontLimits, checkStock: boolean): CartResult {
   const named = lineIndexes(state.cart.lines, fields)
@@ -194,7 +197,7 @@ function setLines (state: VisitorState, fields: Fields, data: StoreData, limits:
     if (quantity === undefined || quantity < 0 || quantity > limits.quantity) return quantityRange(0, limits.quantity)
     if (quantity === 0) continue
     const inCart = inCartOf(others, current.variantId) + inCartOf(touched, current.variantId)
-    const line = lineFor({ id: current.variantId, quantity, properties: properties ?? current.properties, selling_plan: planGiven ? fields.selling_plan : current.sellingPlanId }, data, limits, inCart, checkStock)
+    const line = lineFor({ id: current.variantId, quantity, properties: properties ?? current.properties, selling_plan: planGiven ? fields.selling_plan : current.sellingPlanId }, data, limits, inCart, checkStock && quantity > current.quantity)
     if (failed(line)) return line
     lines.push(line)
     touched.push(line)
@@ -248,9 +251,14 @@ export function updateCart (state: VisitorState, fields: Fields, data: StoreData
   }
   if (isFields(fields.attributes)) {
     const attributes = { ...cart.attributes }
-    for (const [name, raw] of Object.entries(fields.attributes)) {
+    // a request can usefully name the attributes the cart holds (to change or remove) and as many more as it can still take; the names are counted before any value is read
+    const names = Object.keys(fields.attributes)
+    const room = Object.keys(attributes).length + limits.properties
+    if (names.length > room) return CART_ERRORS.limit(`A request can name at most ${room} attributes.`)
+    for (const name of names) {
+      const raw = fields.attributes[name]
       const value = raw === null ? '' : text(raw)
-      if (value === undefined || name === '__proto__') continue
+      if (value === undefined || UNSAFE.has(name)) continue
       if (value === '') {
         delete attributes[name]
         continue

@@ -35,7 +35,7 @@ describe('cart operations', () => {
   it('replays the recorded session', () => replay('ajax-cart-session'))
   it('answers the recorded errors', () => replay('ajax-cart-errors'))
   it('keeps the note, attributes and codes on clear, as the recordings show', () => {
-    // `ajax-cart-session`, steps 12 and 13: the note `Gift wrap` and the attribute `gift` stay; `ajax-discount-codes`, step 15: the code stays
+    // `ajax-cart-session`, steps 11 and 12: the note `Gift wrap` and the attribute `gift` stay; `ajax-discount-codes`, step 14: the code stays
     const start = updateCart(emptyVisitor('<token>'), { note: 'Hi', attributes: { gift: 'yes' }, discount: 'WELCOME10' }, data, DEFAULT_LIMITS)
     if (!start.ok) throw new Error('update failed')
     const cleared = clearCart(start.state)
@@ -44,7 +44,7 @@ describe('cart operations', () => {
     expect(cleared.state.cart).toMatchObject({ note: 'Hi', attributes: { gift: 'yes' }, discountCodes: ['WELCOME10'] })
   })
   it('sets the note to an empty string on the first change, where an untouched cart has none', () => {
-    // `ajax-cart-session`: `note: null` at step 1, `""` from the first add on
+    // `ajax-cart-session`: `note: null` at step 0, `""` from the first add on
     expect(emptyVisitor('t').cart.note).toBeNull()
     const added = addToCart(emptyVisitor('t'), { id: 43695847538710, quantity: 1 }, data, DEFAULT_LIMITS)
     if (!added.ok) throw new Error('add failed')

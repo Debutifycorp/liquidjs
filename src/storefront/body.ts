@@ -7,7 +7,7 @@ export class BodyError extends Error {
   }
 }
 
-const UNSAFE = new Set(['__proto__', 'constructor', 'prototype'])
+export const UNSAFE = new Set(['__proto__', 'constructor', 'prototype'])
 
 // the names whose numeric parts are keys, not positions: `updates[<variant id>]` (https://shopify.dev/docs/api/ajax/reference/cart: "If you use the variant ID, then the key can be either an integer or a string"), and the free-form names of `properties` and `attributes`
 const KEYED = new Set(['updates', 'properties', 'attributes'])

@@ -224,11 +224,22 @@ describe('adding to the cart', () => {
     expect(ids(ok(addToCart(emptyVisitor('t'), fields, data, DEFAULT_LIMITS)).state)).toEqual([[GREEN, 2]])
   })
 
-  it('leaves a property named __proto__ out and the prototypes alone', () => {
-    const properties = JSON.parse('{"__proto__": "x", "a": "1"}')
+  it('leaves out a property named like a prototype key, as the body parsers do, and the prototypes alone', () => {
+    const properties = JSON.parse('{"__proto__": "x", "constructor": "y", "prototype": "z", "toString": "ok", "a": "1"}')
     const state = ok(addToCart(emptyVisitor('t'), { id: GREEN, properties }, data, DEFAULT_LIMITS)).state
-    expect(state.cart.lines[0].properties).toEqual({ a: '1' })
+    expect(state.cart.lines[0].properties).toEqual({ toString: 'ok', a: '1' })
     expect(Object.getPrototypeOf(state.cart.lines[0].properties)).toBe(Object.prototype)
+    expect(Object.prototype.hasOwnProperty.call(state.cart.lines[0].properties, 'constructor')).toBe(false)
+  })
+
+  it('counts the names of properties before it reads their values', () => {
+    const limits: StorefrontLimits = { ...DEFAULT_LIMITS, properties: 3 }
+    let reads = 0
+    const many = new Proxy(Object.fromEntries(Array.from({ length: 5000 }, (_, i) => [`p${i}`, 'x'])), { get (target, name) { reads++; return Reflect.get(target, name) } })
+    expect(fails(addToCart(emptyVisitor('t'), { id: GREEN, properties: many }, data, limits)).body.description).toBe('A line can have at most 3 properties.')
+    expect(reads).toBe(0)
+    // names that hold nothing a property can be still count as names
+    expect(fails(addToCart(emptyVisitor('t'), { id: GREEN, properties: { a: '1', b: { c: 1 }, d: [1], e: null } }, data, limits)).status).toBe(422)
   })
 })
 
@@ -262,7 +273,9 @@ describe('changing the cart', () => {
     expect(fails(changeCart(state, { quantity: 1 }, data, DEFAULT_LIMITS))).toEqual(noLine)
     expect(fails(changeCart(state, { id: '', quantity: 1 }, data, DEFAULT_LIMITS))).toEqual(noLine)
     for (const line of [0, -1, 'x', 1.5, 2]) expect(fails(changeCart(state, { line, quantity: 1 }, data, DEFAULT_LIMITS)).body.status).toBe('unprocessable_entity')
-    for (const id of ['abc', '12 34', `${GREEN}:short`, [GREEN], {}, true]) expect(fails(changeCart(state, { id, quantity: 1 }, data, DEFAULT_LIMITS)).body).toEqual(badId.body)
+    // a string that is not a variant id or a key is a guess (no recording): the documented "no valid id" answer; any other type is read as the recorded type error
+    for (const id of ['abc', '12 34', `${GREEN}:short`]) expect(fails(changeCart(state, { id, quantity: 1 }, data, DEFAULT_LIMITS))).toEqual(noLine)
+    for (const id of [[GREEN], {}, true]) expect(fails(changeCart(state, { id, quantity: 1 }, data, DEFAULT_LIMITS)).body).toEqual(badId.body)
   })
 
   it('takes the line over the id when both are named', () => {
@@ -287,6 +300,21 @@ describe('changing the cart', () => {
     // and what another line holds counts too
     expect(fails(changeCart(state, { line: 1, quantity: 42 }, data, DEFAULT_LIMITS)).body.description).toBe('Only 41 items were added to your cart due to availability.')
     expect(ids(ok(changeCart(state, { line: 1, quantity: 41 }, data, DEFAULT_LIMITS)).state)).toEqual([[GREEN, 41], [GREEN, 1]])
+  })
+
+  it('never refuses on stock a change that does not raise the quantity of a line above its stock', () => {
+    // `update.js` does not check the stock of a variant in the cart, so a line can stand above it (3 in stock, 8 in the cart); a change that goes down, stays or only edits the line must work, and only a rise is checked
+    const over = ok(updateCart(cartOf([THREE_LEFT, 1]), { updates: [8] }, data, DEFAULT_LIMITS)).state
+    expect(ids(ok(changeCart(over, { line: 1, quantity: 7 }, data, DEFAULT_LIMITS)).state)).toEqual([[THREE_LEFT, 7]])
+    expect(ids(ok(changeCart(over, { line: 1, quantity: 8 }, data, DEFAULT_LIMITS)).state)).toEqual([[THREE_LEFT, 8]])
+    expect(ok(changeCart(over, { line: 1, properties: { a: 'b' } }, data, DEFAULT_LIMITS)).state.cart.lines).toEqual([{ variantId: THREE_LEFT, quantity: 8, properties: { a: 'b' }, sellingPlanId: null }])
+    expect(ids(ok(changeCart(over, { id: String(THREE_LEFT), quantity: 1 }, data, DEFAULT_LIMITS)).state)).toEqual([[THREE_LEFT, 1]])
+    expect(ids(ok(changeCart(over, { line: 1, quantity: 0 }, data, DEFAULT_LIMITS)).state)).toEqual([])
+    expect(fails(changeCart(over, { line: 1, quantity: 9 }, data, DEFAULT_LIMITS)).body.description).toBe('Only 3 items were added to your cart due to availability.')
+    // the same for a variant that has since sold out
+    const sold: VisitorState = { cart: { ...emptyVisitor('t').cart, lines: [{ variantId: SOLD_OUT, quantity: 2, properties: {}, sellingPlanId: null }] } }
+    expect(ids(ok(changeCart(sold, { line: 1, quantity: 1 }, data, DEFAULT_LIMITS)).state)).toEqual([[SOLD_OUT, 1]])
+    expect(fails(changeCart(sold, { line: 1, quantity: 3 }, data, DEFAULT_LIMITS)).body.description).toBe("The product 'Hoodie - Clay / Small' is already sold out.")
   })
 
   it('overwrites the properties, but leaves them when the object is empty', () => {
@@ -407,9 +435,22 @@ describe('updating the cart', () => {
     expect(fails(updateCart(emptyVisitor('t'), { discount: 'A,B,C' }, data, limits)).status).toBe(422)
     expect(fails(updateCart(emptyVisitor('t'), { discount: 'TOOLONG' }, data, limits)).status).toBe(422)
     // a name that could reach a prototype does not
-    const polluted = ok(updateCart(emptyVisitor('t'), { attributes: JSON.parse('{"__proto__": "x", "a": "1"}') }, data, DEFAULT_LIMITS)).state
+    const polluted = ok(updateCart(emptyVisitor('t'), { attributes: JSON.parse('{"__proto__": "x", "constructor": "y", "prototype": "z", "a": "1"}') }, data, DEFAULT_LIMITS)).state
     expect(polluted.cart.attributes).toEqual({ a: '1' })
     expect(Object.getPrototypeOf(polluted.cart.attributes)).toBe(Object.prototype)
+    expect(Object.prototype.hasOwnProperty.call(polluted.cart.attributes, 'constructor')).toBe(false)
+  })
+
+  it('counts the names of attributes before it reads their values: the ones to change plus the ones the cart can still take', () => {
+    const limits: StorefrontLimits = { ...DEFAULT_LIMITS, properties: 2 }
+    const state = ok(updateCart(emptyVisitor('t'), { attributes: { a: '1', b: '2' } }, data, limits)).state
+    // two to remove and two to add fit; five names do not, even when they hold nothing
+    expect(ok(updateCart(state, { attributes: { a: '', b: '', c: '3', d: '4' } }, data, limits)).state.cart.attributes).toEqual({ c: '3', d: '4' })
+    expect(fails(updateCart(state, { attributes: { a: '', b: '', c: '', d: '', e: '' } }, data, limits)).body.description).toBe('A request can name at most 4 attributes.')
+    let reads = 0
+    const many = new Proxy(Object.fromEntries(Array.from({ length: 5000 }, (_, i) => [`p${i}`, 'x'])), { get (target, name) { reads++; return Reflect.get(target, name) } })
+    expect(fails(updateCart(emptyVisitor('t'), { attributes: many }, data, limits)).status).toBe(422)
+    expect(reads).toBe(0)
   })
 
   it('replaces the discount codes, trims them and empties them on an empty string', () => {
