@@ -8,6 +8,12 @@ import type { CartData, ProductData, StoreData, VariantData } from './types'
 import { resolveView, withPrefix } from './view'
 import type { StoreView } from './view'
 
+/** The hidden field that marks a cart built by `buildCartObject` for the `json` filter. */
+const CART_MARKER = '__cart'
+
+/** Whether `value` is a cart built by `buildCartObject`. */
+export const isBuiltCart = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject)[CART_MARKER] === true
+
 /** One line of a visitor's cart: a variant, how many of it, its line item properties and the selling plan it is bought under. */
 export interface CartLineState {
   variantId: number
@@ -29,9 +35,9 @@ export interface CartState {
 }
 
 /**
- * The shape the Ajax cart answers print a line in: `cart` for `/cart.js`, `change` for the lines in the answers of `/cart/add.js`, `/cart/change.js` and `/cart/update.js`, which hold `untranslated_product_title` and `untranslated_variant_title` where `/cart.js` holds `quantity_rule` and `has_components` (fixture `ajax-cart-session`).
+ * The shape a line is printed in: `cart` for `/cart.js`, `change` for the lines in the answers of `/cart/add.js`, `/cart/change.js` and `/cart/update.js`, which hold `untranslated_product_title` and `untranslated_variant_title` where `/cart.js` holds `quantity_rule` and `has_components`, and `liquid` for the lines of `{{ cart | json }}`, which hold neither pair nor `presentment_price` (fixtures `ajax-cart-session` and `ajax-cart-en-ca`: the steps of `/cart.js` and of the cart add and change answers, and the `ajax` of the cart probe).
  */
-export type LineItemForm = 'cart' | 'change'
+export type LineItemForm = 'cart' | 'change' | 'liquid'
 
 /** A line's key: the variant id and a hash of its properties and selling plan, so the same line keeps its key (https://shopify.dev/docs/api/ajax/reference/cart: "Items with different prices, properties, or selling plans become separate lines"); the hash is 32 hex digits, as the parity store's keys are (the recorded keys that fixture `ajax-cart-session` keeps as `<hash>`). The hash is the engine's own, not Shopify's, and does not depend on the order the properties were set in. */
 export function lineKey (line: CartLineState): string {
@@ -156,7 +162,7 @@ export function buildCartObject (store: StoreObjects, state: CartState): LiquidO
     if (item) items.push(item)
   }
   const subtotal = items.reduce((sum, item) => sum + (item.final_line_price as number), 0)
-  return {
+  const cart: LiquidObject = {
     token: state.token || null,
     items,
     item_count: items.reduce((sum, item) => sum + (item.quantity as number), 0),
@@ -176,6 +182,8 @@ export function buildCartObject (store: StoreObjects, state: CartState): LiquidO
     duties_included: false,
     'empty?': items.length === 0
   }
+  hidden(cart, CART_MARKER, true)
+  return cart
 }
 
 /** The text of a field the Ajax API writes as `null` when it is empty (a variant's `sku`), as the parity store does (fixture `ajax-cart-session`). */
@@ -195,7 +203,7 @@ function imageJson (image: ImageDrop | null | undefined, product: LiquidObject, 
   return form === 'cart' ? { aspect_ratio: aspectRatio, alt, ...rest } : { alt, aspect_ratio: aspectRatio, ...rest }
 }
 
-/** A line's selling plan allocation as the Ajax cart prints it: the allocation's prices and its plan, which `/cart.js` gives a `fixed_selling_plan` (false, the only value recorded) and the other answers a `checkout_charge` (fixture `ajax-cart-session`). */
+/** A line's selling plan allocation as the cart prints it: the allocation's prices and its plan, which `/cart.js` gives a `fixed_selling_plan` (false, the only value recorded) and the other Ajax answers a `checkout_charge`; `{{ cart | json }}` gives neither and ends the allocation with its `checkout_charge_amount` and `remaining_balance_charge_amount` (fixture `ajax-cart-session`: steps 4 and 5, and the `ajax` of step 10). */
 function allocationJson (allocation: LiquidObject, form: LineItemForm): Record<string, unknown> {
   const plan = allocation.selling_plan as LiquidObject
   const checkout = plan.checkout_charge as LiquidObject
@@ -213,7 +221,8 @@ function allocationJson (allocation: LiquidObject, form: LineItemForm): Record<s
       ...(form === 'cart' ? { fixed_selling_plan: false } : {}),
       price_adjustments: (plan.price_adjustments as LiquidObject[]).map(adjustment => ({ order_count: adjustment.order_count, position: adjustment.position, value_type: adjustment.value_type, value: adjustment.value })),
       ...(form === 'change' ? { checkout_charge: { value_type: checkout.value_type, value: checkout.value } } : {})
-    }
+    },
+    ...(form === 'liquid' ? { checkout_charge_amount: allocation.checkout_charge_amount, remaining_balance_charge_amount: allocation.remaining_balance_charge_amount } : {})
   }
 }
 
@@ -222,13 +231,16 @@ const CART_LINE_KEYS = [
   'id', 'properties', 'quantity', 'variant_id', 'key', 'title', 'price', 'original_price', 'presentment_price', 'discounted_price', 'line_price', 'original_line_price', 'total_discount', 'discounts', 'sku', 'grams', 'vendor', 'taxable', 'product_id', 'product_has_only_default_variant', 'gift_card', 'final_price', 'final_line_price', 'url', 'featured_image', 'image', 'handle', 'requires_shipping', 'product_type', 'product_title', 'product_description', 'variant_title', 'variant_options', 'options_with_values', 'line_level_discount_allocations', 'line_level_total_discount', 'quantity_rule', 'has_components'
 ] as const
 
+/** The fields of a line of `{{ cart | json }}`: those of `/cart.js` less `presentment_price`, `quantity_rule` and `has_components` (fixture `ajax-cart-session`, the `ajax` of step 10). */
+const LIQUID_LINE_KEYS = CART_LINE_KEYS.filter(key => key !== 'presentment_price' && key !== 'quantity_rule' && key !== 'has_components')
+
 /** The fields of a line in the answers of `add.js`, `change.js` and `update.js`, in the order the parity store prints them (fixture `ajax-cart-session`, step 2). */
 const CHANGE_LINE_KEYS = [
   'id', 'properties', 'quantity', 'variant_id', 'key', 'title', 'product_title', 'variant_title', 'price', 'original_price', 'discounted_price', 'line_price', 'original_line_price', 'presentment_price', 'total_discount', 'discounts', 'sku', 'grams', 'vendor', 'taxable', 'product_id', 'product_has_only_default_variant', 'gift_card', 'final_price', 'final_line_price', 'url', 'featured_image', 'image', 'handle', 'requires_shipping', 'product_type', 'untranslated_product_title', 'product_description', 'untranslated_variant_title', 'variant_options', 'options_with_values', 'line_level_discount_allocations', 'line_level_total_discount'
 ] as const
 
 /**
- * One line of the Ajax cart answers, from a line item of the `cart` object. Field names, order and forms follow the parity store's answers (fixtures `ajax-cart-session`, `ajax-cart-sections` and `ajax-cart-en-ca`): `form` `cart` (the default) is a line of `/cart.js`, `change` a line in the answers of `/cart/add.js`, `/cart/change.js` and `/cart/update.js`. `selling_plan_allocation` is present only on a line under a selling plan, `sku` is `null` in `/cart.js` when empty and `''` in the other answers, and `presentment_price` is the price in the currency's major unit.
+ * One line of the Ajax cart answers, from a line item of the `cart` object. Field names, order and forms follow the parity store's answers (fixtures `ajax-cart-session`, `ajax-cart-sections` and `ajax-cart-en-ca`): `form` `cart` (the default) is a line of `/cart.js`, `change` a line in the answers of `/cart/add.js`, `/cart/change.js` and `/cart/update.js`, `liquid` a line of `{{ cart | json }}`. `selling_plan_allocation` is present only on a line under a selling plan, `sku` is `null` when empty in `/cart.js` and `{{ cart | json }}` and `''` in the other answers, the `url` of a plan line in `{{ cart | json }}` is the variant's (the line's own `url` names the plan), and `presentment_price` is the price in the currency's major unit.
  */
 export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): Record<string, unknown> {
   const product = item.product as LiquidObject
@@ -251,7 +263,7 @@ export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): 
     original_line_price: item.original_line_price,
     total_discount: item.total_discount,
     discounts: [],
-    sku: form === 'cart' ? textOrNull(item.sku) : item.sku,
+    sku: form === 'change' ? item.sku : textOrNull(item.sku),
     grams: variant.weight,
     vendor: item.vendor,
     taxable: variant.taxable,
@@ -260,7 +272,7 @@ export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): 
     gift_card: item.gift_card,
     final_price: item.final_price,
     final_line_price: item.final_line_price,
-    url: item.url,
+    url: form === 'liquid' ? variant.url : item.url,
     featured_image: imageJson(item.image as ImageDrop | null, product, form),
     image: item.image ? String((item.image as ImageDrop).src) : null,
     handle: product.handle,
@@ -276,14 +288,14 @@ export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): 
     quantity_rule: variant.quantity_rule,
     has_components: false
   }
-  const line = Object.fromEntries((form === 'cart' ? CART_LINE_KEYS : CHANGE_LINE_KEYS).map(key => [key, fields[key]]))
+  const line = Object.fromEntries((form === 'cart' ? CART_LINE_KEYS : form === 'liquid' ? LIQUID_LINE_KEYS : CHANGE_LINE_KEYS).map(key => [key, fields[key]]))
   return allocation ? { ...line, selling_plan_allocation: allocationJson(allocation, form) } : line
 }
 
 /**
- * The `/cart.js` answer, https://shopify.dev/docs/api/ajax/reference/cart, built from the same cart object a page shows, in `view` (the primary market and language when omitted). `form` is the shape of its lines (`LineItemForm`): `cart` for `/cart.js`, `change` for the cart in the answers of `add.js`, `change.js` and `update.js`, whose extra fields (`items_added`, `items_removed`, `items_changelog`, `sections`) the storefront adds.
+ * The `/cart.js` answer, https://shopify.dev/docs/api/ajax/reference/cart, built from the same cart object a page shows, in `view` (the primary market and language when omitted). `form` is the shape of its lines (`LineItemForm`, less `liquid`): `cart` for `/cart.js`, `change` for the cart in the answers of `add.js`, `change.js` and `update.js`, whose extra fields (`items_added`, `items_removed`, `items_changelog`, `sections`) the storefront adds.
  */
-export function cartJson (data: StoreData, state: CartState, view: StoreView = resolveView(data, {}), form: LineItemForm = 'cart'): Record<string, unknown> {
+export function cartJson (data: StoreData, state: CartState, view: StoreView = resolveView(data, {}), form: Exclude<LineItemForm, 'liquid'> = 'cart'): Record<string, unknown> {
   const cart = buildCartObject(buildStore(data, view), state)
   return {
     token: cart.token,
@@ -301,5 +313,26 @@ export function cartJson (data: StoreData, state: CartState, view: StoreView = r
     cart_level_discount_applications: cart.cart_level_discount_applications,
     // the Cart API prints the list last (fixture `ajax-cart-session`, step 1: `[]`); the discount codes of Task 14 fill it
     discount_codes: []
+  }
+}
+
+/**
+ * What `{{ cart | json }}` prints for a built cart, as the parity store prints it (fixtures `ajax-cart-session`, step 10, and `ajax-cart-en-ca`, step 3: the `ajax` of the cart probe), which is neither the engine's cart object nor `/cart.js`: no `token` or `discount_codes` and a `checkout_charge_amount` last, lines of the `liquid` form (`lineItemJson`), and a line's `properties` as an object, where the line's own `properties | json` prints pairs. `cart_level_discount_applications` is the cart object's list as it is.
+ */
+export function cartLiquidJson (cart: LiquidObject): Record<string, unknown> {
+  return {
+    note: cart.note,
+    attributes: cart.attributes,
+    original_total_price: cart.original_total_price,
+    total_price: cart.total_price,
+    total_discount: cart.total_discount,
+    total_weight: cart.total_weight,
+    item_count: cart.item_count,
+    items: (cart.items as LiquidObject[]).map(item => lineItemJson(item, 'liquid')),
+    requires_shipping: cart.requires_shipping,
+    currency: (cart.currency as LiquidObject).iso_code,
+    items_subtotal_price: cart.items_subtotal_price,
+    cart_level_discount_applications: cart.cart_level_discount_applications,
+    checkout_charge_amount: cart.checkout_charge_amount
   }
 }

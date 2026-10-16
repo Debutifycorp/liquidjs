@@ -37,7 +37,37 @@ describe('cart', () => {
     const probe = fixture.steps[10]
     const cart = state([line(43696940613654, 1), line(43695710371862, 1, {}, 71001), line(43695847538710, 1, { Engraving: 'Hi' }), line(43695847538710, 1)], { note: 'Gift wrap', attributes: { gift: 'yes' } })
     const body = await renderProbe('cart.probe', { cart }) as any
-    expect(normaliseKeys(withoutAjax(body))).toEqual(normaliseKeys(withoutAjax(probe.body)))
+    expect(normaliseKeys(body)).toEqual(normaliseKeys(probe.body))
+  })
+
+  describe('{{ cart | json }}', () => {
+    const cart = state([line(BLACK_SUNNIES, 1), line(SLIDES_SMALL, 1, {}, 71001), line(HOODIE, 1, { Engraving: 'Hi' }), line(HOODIE, 1)], { note: 'Gift wrap', attributes: { gift: 'yes' } })
+    it('prints the cart as the parity store does, key order included (fixture ajax-cart-session, the ajax of step 11)', async () => {
+      const recorded = (loadFixture('ajax-cart-session').steps[10].body as any).ajax
+      const { ajax } = await renderProbe('cart.probe', { cart }) as any
+      expect(normaliseKeys(ajax)).toEqual(normaliseKeys(recorded))
+      expect(Object.keys(ajax)).toEqual(Object.keys(recorded))
+      for (const [i, item] of ajax.items.entries()) expect(Object.keys(item)).toEqual(Object.keys(recorded.items[i]))
+      expect(Object.keys(ajax.items[1].selling_plan_allocation)).toEqual(Object.keys(recorded.items[1].selling_plan_allocation))
+      expect(Object.keys(ajax.items[1].selling_plan_allocation.selling_plan)).toEqual(Object.keys(recorded.items[1].selling_plan_allocation.selling_plan))
+    })
+    it('prints a line\'s properties as an object, where the line\'s own properties print as pairs', async () => {
+      const { ajax, items } = await renderProbe('cart.probe', { cart }) as any
+      expect(ajax.items[2].properties).toEqual({ Engraving: 'Hi' })
+      expect(items[2].properties).toEqual([['Engraving', 'Hi']])
+    })
+    it('prints the Canadian cart (fixture ajax-cart-en-ca)', async () => {
+      const recorded = (loadFixture('ajax-cart-en-ca').steps[3].body as any).ajax
+      const { ajax } = await renderProbe('cart.probe', { cart: state([line(HOODIE, 1)], { note: '' }), request: { market: 'ca', language: 'en', localePrefix: '/en-ca' } }) as any
+      expect(normaliseKeys(ajax)).toEqual(normaliseKeys(recorded))
+    })
+    it('prints an empty cart, and leaves cartJson alone', async () => {
+      const theme = { files: { ...probeTheme().files, 'templates/cart.liquid': '{{ cart | json }}' } }
+      const printed = JSON.parse((await renderPage({ theme, templateName: 'cart', data, cart: state([]) })).html)
+      expect(printed).toMatchObject({ note: null, attributes: {}, item_count: 0, items: [], requires_shipping: false, currency: 'USD', checkout_charge_amount: 0 })
+      expect('token' in printed).toBe(false)
+      expect('token' in cartJson(data, state([]))).toBe(true)
+    })
   })
 
   describe('/cart.js', () => {
@@ -71,7 +101,7 @@ describe('cart', () => {
     it('renders the Canadian cart probe', async () => {
       const probe = loadFixture('ajax-cart-en-ca').steps[3]
       const body = await renderProbe('cart.probe', { cart: state([line(HOODIE, 1)], { note: '' }), request: { market: 'ca', language: 'en', localePrefix: '/en-ca' } }) as any
-      expect(normaliseKeys(withoutAjax(body))).toEqual(normaliseKeys(withoutAjax(probe.body)))
+      expect(normaliseKeys(body)).toEqual(normaliseKeys(probe.body))
     })
   })
 
@@ -181,13 +211,6 @@ describe('cart', () => {
     })
   })
 })
-
-/** The probe without `ajax` (`cart | json`): the filter prints a cart as the engine's cart object, and `cartJson` is compared in the test above, so the whole-body comparison leaves it out (Task 14 does the same). */
-function withoutAjax (body: any): unknown {
-  const rest = { ...body }
-  delete rest.ajax
-  return rest
-}
 
 /** Line-key hashes differ between Shopify and the engine; the fixture keeps `<hash>`. */
 function normaliseKeys (value: unknown): unknown {
