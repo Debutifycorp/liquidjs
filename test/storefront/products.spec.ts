@@ -9,7 +9,7 @@ import { maskVolatile, probeMatches } from './expect-probe'
 const pick = (b: any) => ({ selected_variant: b.selected_variant, selected_or_first_available_variant: b.selected_or_first_available_variant, first_available_variant: b.first_available_variant, options_with_values: b.options_with_values, variants: b.variants.map((v: any) => ({ id: v.id, selected: v.selected, available: v.available, inventory_policy: v.inventory_policy, inventory_management: v.inventory_management, inventory_quantity: v.inventory_quantity, weight: v.weight, url: v.url })) })
 
 describe('products per request', () => {
-  for (const name of ['probe-product-default', 'probe-product-variant', 'probe-product-sold-out-variant', 'probe-product-unknown-variant', 'probe-product-in-collection', 'probe-product-en-eu-hoodie']) {
+  for (const name of ['probe-product-default', 'probe-product-variant', 'probe-product-sold-out-variant', 'probe-product-unknown-variant', 'probe-product-in-collection', 'probe-product-en-eu-hoodie', 'probe-product-en-eu-leggings', 'probe-product-en-eu-workout-shirt']) {
     it(`matches ${name}`, async () => {
       const { actual, expected } = await probeMatches(name, pick)
       expect(actual).toEqual(expected)
@@ -31,6 +31,21 @@ describe('products per request', () => {
     expect(Object.keys(answer.variants[0].featured_media)).toEqual(Object.keys(recorded.variants[0].featured_media))
     expect(Object.keys(answer.media[0])).toEqual(Object.keys(recorded.media[0]))
   })
+  it('answers with objects of its own: changing one leaves the store and the next answer alone', () => {
+    const first = productJson(data, 'hoodie') as any
+    first.tags.push('changed')
+    first.variants[0].options.push('changed')
+    first.variants[0].quantity_rule.min = 9
+    first.options[0].values.pop()
+    const second = productJson(data, 'hoodie') as any
+    expect(second.tags).toEqual([])
+    expect(second.variants[0].options).toEqual(['Red', 'Small'])
+    expect(second.variants[0].quantity_rule.min).toBe(1)
+    expect(second.options[0].values).toEqual(['Red', 'Clay', 'Ocean', 'Purple', 'Green'])
+    const built = (buildStore(data).products as any as { liquidMethodMissing: (key: string) => any }).liquidMethodMissing('hoodie')
+    expect(built.tags).toEqual([])
+    expect(built.variants[0].options).toEqual(['Red', 'Small'])
+  })
   // `slides` has selling plans, which Task 7 builds: skipped here, turned on in Task 7
   it.skip('prints the product JSON of a product with selling plans', () => {
     expect(maskVolatile(productJson(data, 'slides'))).toEqual(maskVolatile(loadFixture('ajax-product-js').steps[1].body))
@@ -39,8 +54,8 @@ describe('products per request', () => {
   it('prints the product through the json filter as the parity store does', async () => {
     const { actual, expected } = await probeMatches('probe-product-default', (b: any) => b.ajax)
     expect(actual).toEqual(expected)
-    expect(Object.keys(actual as object)).toEqual(Object.keys(expected as object))
-    expect(Object.keys((actual as any).variants[0])).toEqual(Object.keys((expected as any).variants[0]))
+    // plain masked data, so the text compares the key order at every depth
+    expect(JSON.stringify(actual)).toBe(JSON.stringify(expected))
   })
   for (const name of ['probe-product-variant', 'probe-product-sold-out-variant', 'probe-product-in-collection']) {
     it(`prints a product with a selected variant through the json filter as well (${name})`, async () => {
@@ -72,6 +87,33 @@ describe('products per request', () => {
       expect(buildGlobals({ store, data, templateName: 'product', request: { resource: 'hoodie' }, locale: 'en', report: new ReportCollector() }).globals.product).toBe(shared)
       expect(buildGlobals({ store, data, templateName: 'product', request: { resource: 'hoodie', variant: 1 }, locale: 'en', report: new ReportCollector() }).globals.product).toBe(shared)
     })
+    it('leaves no trace of one selection in the next', () => {
+      const store = buildStore(data)
+      const shared = (store.products as any as { liquidMethodMissing: (key: string) => any }).liquidMethodMissing('hoodie')
+      const select = (variant?: number) => buildGlobals({ store, data, templateName: 'product', request: { resource: 'hoodie', variant }, locale: 'en', report: new ReportCollector() }).globals.product as any
+      const before = JSON.stringify(shared)
+      const first = select(43695846653974)
+      const second = select(43695847145494)
+      expect(first.variants.filter((v: any) => v.selected).map((v: any) => v.id)).toEqual([43695846653974])
+      expect(second.variants.filter((v: any) => v.selected).map((v: any) => v.id)).toEqual([43695847145494])
+      expect(first.selected_variant.id).toBe(43695846653974)
+      expect(second.selected_variant.id).toBe(43695847145494)
+      expect(first.options_with_values.map((o: any) => o.selected_value)).toEqual(['Red', 'Medium'])
+      expect(second.options_with_values.map((o: any) => o.selected_value)).toEqual(['Clay', 'Small'])
+      expect(second.selected_variant.available).toBe(false)
+      expect(JSON.stringify(shared)).toBe(before)
+      expect(select()).toBe(shared)
+    })
+    it('keeps every property of the product and of its variants, the hidden ones too', () => {
+      const store = buildStore(data)
+      const shared = (store.products as any as { liquidMethodMissing: (key: string) => any }).liquidMethodMissing('hoodie')
+      const chosen = buildGlobals({ store, data, templateName: 'product', request: { resource: 'hoodie', variant: 43695846653974 }, locale: 'en', report: new ReportCollector() }).globals.product as any
+      expect(Reflect.ownKeys(chosen).sort()).toEqual(Reflect.ownKeys(shared).sort())
+      expect(Object.keys(chosen)).toEqual(Object.keys(shared))
+      expect(Reflect.ownKeys(chosen.variants[0]).sort()).toEqual(Reflect.ownKeys(shared.variants[0]).sort())
+      expect(Object.keys(chosen.variants[0])).toEqual(Object.keys(shared.variants[0]))
+      expect(chosen.__product).toBe(true)
+    })
     it('is the one object everywhere the copy points at it', () => {
       const chosen = hoodie({ variant: 43695846653974 })
       expect(chosen.variants.filter((v: any) => v.selected).map((v: any) => v.id)).toEqual([43695846653974])
@@ -82,6 +124,23 @@ describe('products per request', () => {
       expect(chosen.options_by_name.size.selected_value).toBe('Medium')
       expect(chosen.options_by_name.size).toBe(chosen.options_with_values[1])
       expect(String(chosen)).toBe('hoodie')
+    })
+  })
+
+  describe('a product with every variant sold out', () => {
+    const leggings = () => (buildStore(data).products as any as { liquidMethodMissing: (key: string) => any }).liquidMethodMissing('leggings')
+    it('has no first available variant, and falls back to the first variant where the page says so', () => {
+      const product = leggings()
+      expect(product.variants.every((v: any) => !v.available)).toBe(true)
+      expect(product.available).toBe(false)
+      expect(product.first_available_variant).toBeNull()
+      expect(product.selected_or_first_available_variant).toBe(product.variants[0])
+      expect(product.options_with_values.map((o: any) => o.selected_value)).toEqual(product.variants[0].options)
+    })
+    it('still has none once a variant is selected', () => {
+      const chosen = buildGlobals({ store: buildStore(data), data, templateName: 'product', request: { resource: 'leggings', variant: leggings().variants[1].id }, locale: 'en', report: new ReportCollector() }).globals.product as any
+      expect(chosen.first_available_variant).toBeNull()
+      expect(chosen.selected_variant.id).toBe(leggings().variants[1].id)
     })
   })
 

@@ -1,7 +1,8 @@
 import { NullDrop } from '../../drop'
 import { filters as engineFilters } from '../../filters'
 import type { FilterImpl } from '../../template/filter-impl-options'
-import { isBuiltProduct, productLiquidJson } from '../store/product-json'
+import { isBuiltProduct } from '../store/build'
+import { productLiquidJson } from '../store/product-json'
 import type { ShopifyFilterSet } from './types'
 
 const ESCAPES: Record<string, string> = { '/': '\\/', '<': '\\u003c', '>': '\\u003e', '&': '\\u0026', '\u2028': '\\u2028', '\u2029': '\\u2029' }

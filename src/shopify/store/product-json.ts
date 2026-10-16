@@ -125,11 +125,9 @@ export function productLiquidJson (product: LiquidObject): Record<string, unknow
   }
 }
 
-/** Whether `value` is a product built by `buildProduct` (or selected by `selectProduct`), which carries a hidden marker. */
-export const isBuiltProduct = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject).__product === true
-
-/** The product `handle` as `/products/<handle>.js` answers it in `view` (the primary market and language when omitted), `productAjax` of the view's product; null for a handle the store does not have (the parity store answers 404, fixture `ajax-product-js`). */
+/** The product `handle` as `/products/<handle>.js` answers it in `view` (the primary market and language when omitted), `productAjax` of the view's product; null for a handle the store does not have (the parity store answers 404, fixture `ajax-product-js`). The answer is the caller's own: `buildStore` keeps the built products for the next request, and the answer shares no array or object with them, so a caller may change it. */
 export function productJson (data: StoreData, handle: string, view: StoreView = resolveView(data, {})): Record<string, unknown> | null {
   const product = HandleMap.get(buildStore(data, view).products, handle)
-  return product ? productAjax(product) : null
+  // plain data all the way down (strings, numbers, booleans, null, arrays, objects), so a JSON round trip is a deep copy
+  return product ? JSON.parse(JSON.stringify(productAjax(product))) : null
 }

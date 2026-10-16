@@ -48,6 +48,19 @@ function hidden (target: LiquidObject, key: string, value: unknown) {
   Object.defineProperty(target, key, { value, enumerable: false })
 }
 
+/** A copy of `object` with every own property as it has it, the hidden ones (`toString`, back references, markers) included, so a hidden property added to a builder travels with a copy of what it builds; `omit` names the properties left out, which the caller sets again. */
+function copyObject (object: LiquidObject, ...omit: string[]): LiquidObject {
+  const descriptors = Object.getOwnPropertyDescriptors(object)
+  for (const key of omit) delete descriptors[key]
+  return Object.create(Object.getPrototypeOf(object), descriptors)
+}
+
+/** The hidden field that marks a built product for the `json` filter. */
+const PRODUCT_MARKER = '__product'
+
+/** Whether `value` is a product built by `buildProduct` (or selected by `selectProduct`). */
+export const isBuiltProduct = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject)[PRODUCT_MARKER] === true
+
 /**
  * Makes `object` print as its handle: https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings says of the `product`, `collection`, `page`, `blog` and `article` settings that "outputting the setting directly will return the object's handle". Applied to the object itself, so a setting returns the store's own object and `==`, `contains` and the filters that take the object work as on any other; shopify.dev does not say what the object prints elsewhere (a `product_list` element, `{{ product }}` on a product page), so the same handle is printed there too, on the confirm-on-a-development-store list. The `toString` is not enumerable, so `json`, `inspect` and `for` do not see it.
  */
@@ -105,7 +118,7 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
 }
 
 /**
- * https://shopify.dev/docs/api/liquid/objects/product. The product's and its variants' URLs sit under `prefix` (the view's base path and locale prefix, as the parity store prints them, fixture `probe-page-fr-ca`). `price` is the lowest variant price and `compare_at_price` the lowest variant compare-at price, as that page documents them; `compare_at_price` is nil when no variant has one (shopify.dev does not pin that case, so dividing by it raises "divided by 0" as Ruby does). `first_available_variant`, `selected_or_first_available_variant` (no `?variant=` is known here, so the first available one), `options_with_values` and `has_only_default_variant` follow the same page. Selling plans are left out. Every price field is in the view's currency when `currency` is given, because the variants' are (`buildVariant`) and the product's are the lowest and highest of them; the parity store's product-level `compare_at_price` is the lowest converted variant compare-at price in the markets that show them (fixtures `probe-product-default` and `probe-product-en-ca`: 110.00 USD and 149.00 CAD, with one variant on sale) and nil in one that hides them, with `compare_at_price_min` and `compare_at_price_max` 0 as for any product without one (fixtures `probe-product-en-eu-hoodie` and `ajax-product-js`).
+ * https://shopify.dev/docs/api/liquid/objects/product. The product's and its variants' URLs sit under `prefix` (the view's base path and locale prefix, as the parity store prints them, fixture `probe-page-fr-ca`). `price` is the lowest variant price and `compare_at_price` the lowest variant compare-at price, as that page documents them; `compare_at_price` is nil when no variant has one (shopify.dev does not pin that case, so dividing by it raises "divided by 0" as Ruby does). `first_available_variant` is nil when no variant is available (the page: "The first available variant of the product"; fixture `probe-product-en-eu-leggings`, whose variants are all sold out, records null), while `selected_or_first_available_variant` (no `?variant=` is known here) then falls back to the first variant, as the page says, and so does each option's `selected_value` (the same fixture); `options_with_values` and `has_only_default_variant` follow the same page. Selling plans are left out. Every price field is in the view's currency when `currency` is given, because the variants' are (`buildVariant`) and the product's are the lowest and highest of them; the parity store's product-level `compare_at_price` is the lowest converted variant compare-at price in the markets that show them (fixtures `probe-product-default` and `probe-product-en-ca`: 110.00 USD and 149.00 CAD, with one variant on sale) and nil in one that hides them, with `compare_at_price_min` and `compare_at_price_max` 0 as for any product without one (fixtures `probe-product-en-eu-hoodie` and `ajax-product-js`).
  */
 export function buildProduct (data: ProductData, prefix = '', currency?: ViewCurrency): LiquidObject {
   const url = withPrefix(prefix, `/products/${data.handle}`)
@@ -117,12 +130,13 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
   const options = data.options ?? ['Title']
   const prices = variants.map(variant => variant.price as number)
   const compares = variants.map(variant => variant.compare_at_price as number | null).filter((price): price is number => typeof price === 'number')
-  const firstAvailable = variants.find(variant => variant.available) ?? variants[0] ?? null
+  const firstAvailable = variants.find(variant => variant.available) ?? null
+  const firstOrAvailable = firstAvailable ?? variants[0] ?? null
   const optionsWithValues = options.map((name, i) => ({
     name,
     position: i + 1,
     values: unique(variants.map(variant => (variant.options as string[])[i]).filter(value => value !== undefined)),
-    selected_value: firstAvailable ? (firstAvailable.options as string[])[i] ?? null : null
+    selected_value: firstOrAvailable ? (firstOrAvailable.options as string[])[i] ?? null : null
   }))
   const product: LiquidObject = {
     id: data.id,
@@ -154,7 +168,7 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
     variants,
     first_available_variant: firstAvailable,
     selected_variant: null,
-    selected_or_first_available_variant: firstAvailable,
+    selected_or_first_available_variant: firstOrAvailable,
     requires_selling_plan: false,
     selling_plan_groups: [],
     'gift_card?': false,
@@ -166,20 +180,20 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
     metafields: data.metafields ?? {}
   }
   for (const variant of variants) hidden(variant, 'product', product)
-  // marks a built product for the `json` filter, which prints it as `/products/<handle>.js` does (`productJson`)
-  hidden(product, '__product', true)
+  // marks a built product for the `json` filter, which prints it with `productLiquidJson`
+  hidden(product, PRODUCT_MARKER, true)
   return printsHandle(product)
 }
 
 /**
- * The product a request shows: `?variant=<id>` selects that variant (https://shopify.dev/docs/api/liquid/objects/product#product-selected_variant: "The currently selected variant of the product", "On product pages, it is based on the variant ID set in the variant URL parameter", nil when none is), which `selected_or_first_available_variant` then returns "regardless of its availability" (https://shopify.dev/docs/api/liquid/objects/product#product-selected_or_first_available_variant); the variant's `selected` is true (https://shopify.dev/docs/api/liquid/objects/variant#variant-selected) and each option's `selected_value` is the selected variant's (https://shopify.dev/docs/api/liquid/objects/product_option). An id the product does not have selects nothing, as the parity store renders it (fixture `probe-product-unknown-variant`). The built product is shared by every request of a view, so a selection returns a copy and leaves the shared one alone.
+ * The product a request shows: `?variant=<id>` selects that variant (https://shopify.dev/docs/api/liquid/objects/product#product-selected_variant: "The currently selected variant of the product", "On product pages, it is based on the variant ID set in the variant URL parameter", nil when none is), which `selected_or_first_available_variant` then returns "regardless of its availability" (https://shopify.dev/docs/api/liquid/objects/product#product-selected_or_first_available_variant); the variant's `selected` is true (https://shopify.dev/docs/api/liquid/objects/variant#variant-selected) and each option's `selected_value` is the selected variant's (https://shopify.dev/docs/api/liquid/objects/product_option). An id the product does not have selects nothing, as the parity store renders it (fixture `probe-product-unknown-variant`). The built product is shared by every request of a view, so a selection returns a copy (with its hidden properties) and leaves the shared one alone. On the confirm-on-a-development-store list: the copy is not the same object as the store's product, so `{% if product == all_products[product.handle] %}` and `collections.x.products contains product` are false on a product page with `?variant=` and true without it, and shopify.dev and the parity store's recordings do not say what Shopify answers.
  */
 export function selectProduct (product: LiquidObject, variantId: number | undefined): LiquidObject {
   const variants = product.variants as LiquidObject[]
   const chosen = variantId === undefined ? undefined : variants.find(variant => variant.id === variantId)
   if (!chosen) return product
-  const copy: LiquidObject = { ...product }
-  copy.variants = variants.map(variant => ({ ...variant, selected: variant === chosen }))
+  const copy = copyObject(product)
+  copy.variants = variants.map(variant => Object.assign(copyObject(variant, 'product'), { selected: variant === chosen }))
   for (const variant of copy.variants as LiquidObject[]) hidden(variant, 'product', copy)
   const copyOf = (variant: unknown) => variant ? (copy.variants as LiquidObject[]).find(entry => entry.id === (variant as LiquidObject).id) ?? null : null
   copy.selected_variant = copyOf(chosen)
@@ -187,8 +201,7 @@ export function selectProduct (product: LiquidObject, variantId: number | undefi
   copy.first_available_variant = copyOf(product.first_available_variant)
   copy.options_with_values = (product.options_with_values as LiquidObject[]).map((option, i) => ({ ...option, selected_value: (chosen.options as string[])[i] ?? null }))
   copy.options_by_name = Object.fromEntries((copy.options_with_values as LiquidObject[]).map(option => [String(option.name).toLowerCase(), option]))
-  hidden(copy, '__product', true)
-  return printsHandle(copy)
+  return copy
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/collection, at its URL under `prefix`. Filtering, tags and sorting are not applied: `products` is the collection's product list as given, `filters` are the store's storefront filters over those products (`buildFilters`), `tags` is empty and `sort_options` lists Shopify's standard options. */
