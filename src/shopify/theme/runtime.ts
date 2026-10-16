@@ -14,6 +14,7 @@ import type { ShopifyServices } from '../services'
 import { SettingDefinition, SettingsDrop, SettingsEnv } from '../settings'
 import { createState, currentFrame, Frame, ShopifyState, STATE, ThemeHooks } from '../state'
 import { buildStore, LiquidObject, StoreObjects } from '../store/build'
+import type { CartState } from '../store/cart'
 import { buildGlobals, RequestInput } from '../store/globals'
 import { resolveView } from '../store/view'
 import type { StoreData } from '../store/types'
@@ -42,6 +43,8 @@ export interface RenderPageOptions {
   /** The locale of the translations; defaults to the language `request.language` names when it names one, and to the shop's locale otherwise. `request.locale` and `Shopify.locale` are the language `request.language` names when it names one, and this locale otherwise. */
   locale?: string
   request?: RequestInput
+  /** The cart the page shows, in place of `data.cart`: a visitor's cart as the storefront keeps it (`CartState`). Its lines are priced in the currency of the request's market. */
+  cart?: CartState
   services?: Partial<ShopifyServices>
   /** Render the Liquid in `liquid` settings where they print. Off by default: they print as escaped text. Shopify renders them, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings, so off is Debutify's safety choice for settings it did not write. */
   trustLiquidSettings?: boolean
@@ -376,7 +379,7 @@ class PageRender implements ThemeHooks {
       runtime: this
     })
     this.state.currency = { iso_code: store.currency.iso_code, rate: store.currency.rate }
-    const page = buildGlobals({ store, data, templateName: this.templateName, request: options.request ?? {}, locale, report: this.state.report })
+    const page = buildGlobals({ store, data, templateName: this.templateName, request: options.request ?? {}, locale, report: this.state.report, cart: options.cart })
     this.state.request = page.request
     this.state.form = options.request?.form
     const env: SettingsEnv = { store, linklists: page.linklists, services: this.state.services, translator, report: this.state.report, trust: this.trust }

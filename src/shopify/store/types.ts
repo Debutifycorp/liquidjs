@@ -1,4 +1,5 @@
 import type { ImageData } from '../types'
+import type { CartState } from './cart'
 
 /** Metafields by namespace and key, https://shopify.dev/docs/api/liquid/objects/metafield. Plain values only: shopify.dev's metafield object (type-aware `value`, `list?`) is not built here. */
 export type Metafields = Record<string, Record<string, unknown>>
@@ -172,11 +173,14 @@ export interface LinkListData {
   links: LinkData[]
 }
 
-/** The cart as lines of products and variants by handle and id, https://shopify.dev/docs/api/liquid/objects/cart and https://shopify.dev/docs/api/liquid/objects/line_item. */
-export interface CartData {
+/** The cart as lines of products and variants by handle and id, https://shopify.dev/docs/api/liquid/objects/cart and https://shopify.dev/docs/api/liquid/objects/line_item. The variant id names the line; the handle is not read. The lines carry no properties or selling plan, which `CartState` adds. */
+export interface CartLinesData {
   items: Array<{ product_handle: string, variant_id: number, quantity: number }>
   note?: string
 }
+
+/** The cart of the store data: either lines by product handle and variant id (`CartLinesData`) or a visitor's cart as the storefront keeps it (`CartState`). */
+export type CartData = CartLinesData | CartState
 
 /** The data behind Shopify's `localization` object, https://shopify.dev/docs/api/liquid/objects/localization (`country`: https://shopify.dev/docs/api/liquid/objects/country, `language`: https://shopify.dev/docs/api/liquid/objects/language). */
 export interface LocalizationData {

@@ -3,6 +3,8 @@ import { TemplateDrop } from '../objects/template'
 import { own } from '../util/own'
 import type { ReportCollector } from '../report'
 import { buildLinklists, LiquidObject, selectProduct, selectSellingPlan, StoreObjects } from './build'
+import { buildCartObject } from './cart'
+import type { CartState } from './cart'
 import { collectionView, typeCollection, vendorCollection } from './collection-view'
 import { alternatesOf, buildLocalization, languageIn } from './markets'
 import { buildPredictiveSearch } from './predictive'
@@ -151,6 +153,8 @@ export interface GlobalsInput {
   request: RequestInput
   locale: string
   report: ReportCollector
+  /** The cart the page shows (`RenderPageOptions.cart`); the store data's cart when omitted. */
+  cart?: CartState
 }
 
 export interface PageGlobals {
@@ -204,10 +208,12 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   const linklists = buildLinklists(store.linklists, path, view.prefix)
   // the shopper's country is per request, so a request that names another country than the view's default gets its own localization
   const localization = request.country && request.country !== (store.localization.country as LiquidObject | null)?.iso_code ? buildLocalization(data, view, request.country) : store.localization
+  // the cart is per visitor, so one the caller hands in is built on the shared store's products, currency and prefix; recommendations leave out the products of that cart
+  const cart = input.cart ? buildCartObject(store, input.cart) : store.cart
   const globals: Record<string, unknown> = {
     shop: store.shop,
     settings: null,
-    cart: store.cart,
+    cart,
     customer: store.customer,
     localization,
     collections: store.collections,
@@ -237,7 +243,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     current_page: page,
     current_tags: pageType === 'collection' && request.tags?.length ? request.tags : null,
     search: buildSearch(store, request.searchTerms, request, view.prefix),
-    recommendations: buildRecommendations(store, request.recommendations, report),
+    recommendations: buildRecommendations({ ...store, cart }, request.recommendations, report),
     // https://shopify.dev/docs/api/liquid/objects/predictive_search: only a Predictive Search API request has it; any other page has none, and the recording prints nil (fixture `ajax-sections-page`)
     ...(request.predictive ? { predictive_search: buildPredictiveSearch(store, request.predictive, input.data) } : {}),
     powered_by_link: '',

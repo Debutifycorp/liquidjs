@@ -3,6 +3,7 @@ import { HandleMap } from '../objects/handle-map'
 import { DEFAULT_MONEY_FORMAT, DEFAULT_MONEY_WITH_CURRENCY_FORMAT } from '../state'
 import type { ImageData } from '../types'
 import { escapeHtml } from '../util/html'
+import { buildCartObject, cartStateOf } from './cart'
 import { buildFilters } from './filters'
 import { buildLocalization, currencyOf, enabledCurrencies } from './markets'
 import type { ViewCurrency } from './markets'
@@ -18,6 +19,10 @@ import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionD
 export type LiquidObject = Record<string, unknown>
 
 export interface StoreObjects {
+  /** The data the objects were built from, before `translateData`: the cart reads the store's default-language titles from it. */
+  data: StoreData
+  /** The view's URL prefix (the base path, then the locale prefix), which the cart puts before its own addresses. */
+  prefix: string
   shop: LiquidObject
   products: HandleMap<LiquidObject>
   collections: HandleMap<LiquidObject>
@@ -44,7 +49,7 @@ const image = (data: ImageData | null | undefined) => data ? new ImageDrop(data)
 const unique = <T>(items: T[]) => [...new Set(items)]
 
 /** A field Liquid can read but `json` and `for` do not walk, for back references such as `variant.product`. */
-function hidden (target: LiquidObject, key: string, value: unknown) {
+export function hidden (target: LiquidObject, key: string, value: unknown) {
   Object.defineProperty(target, key, { value, enumerable: false })
 }
 
@@ -468,7 +473,7 @@ export function buildLinklists (lists: LinkListData[], path: string, prefix = ''
   }))
 }
 
-/** The line items of `lines`, https://shopify.dev/docs/api/liquid/objects/line_item, for a cart or an order. Lines naming a product or variant the store does not have are skipped. No discounts, properties or selling plans are applied, so original, final and line prices are equal. */
+/** The line items of `lines`, https://shopify.dev/docs/api/liquid/objects/line_item, for an order (the cart builds its own, `buildCartObject`). Lines naming a product or variant the store does not have are skipped. No discounts, properties or selling plans are applied, so original, final and line prices are equal. */
 function buildLineItems (lines: Array<{ product_handle: string, variant_id: number, quantity: number }>, products: HandleMap<LiquidObject>): LiquidObject[] {
   const items: LiquidObject[] = []
   for (const line of lines) {
@@ -510,31 +515,6 @@ function buildLineItems (lines: Array<{ product_handle: string, variant_id: numb
     })
   }
   return items
-}
-
-/** https://shopify.dev/docs/api/liquid/objects/cart, with its line items (`buildLineItems`). */
-function buildCart (data: StoreData, products: HandleMap<LiquidObject>, currency: string): LiquidObject {
-  const items = buildLineItems(data.cart?.items ?? [], products)
-  const total = items.reduce((sum, item) => sum + (item.final_line_price as number), 0)
-  return {
-    items,
-    item_count: items.reduce((sum, item) => sum + (item.quantity as number), 0),
-    total_price: total,
-    items_subtotal_price: total,
-    original_total_price: total,
-    checkout_charge_amount: total,
-    total_discount: 0,
-    total_weight: 0,
-    currency: { iso_code: currency },
-    note: data.cart?.note ?? null,
-    attributes: {},
-    requires_shipping: items.length > 0,
-    cart_level_discount_applications: [],
-    discount_applications: [],
-    taxes_included: false,
-    duties_included: false,
-    'empty?': items.length === 0
-  }
 }
 
 /** The `<option>` tags of https://shopify.dev/docs/api/liquid/objects/country_option_tags, one a line as its example prints them: a `---` option first, then each country, its subregions JSON-encoded in `data-provinces` (an empty array when it has none). The page shows no example for https://shopify.dev/docs/api/liquid/objects/all_country_option_tags, which is printed the same way; whether it starts with `---` too is not pinned. */
@@ -805,6 +785,8 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   const shippingCountries = data.country_option_tags ?? [{ name: String((localization.country as LiquidObject | null)?.name ?? '') }]
   const articles = new HandleMap(HandleMap.values(blogs).flatMap(blog => (blog.articles as LiquidObject[]).map(article => [`${blog.handle}/${article.handle}`, article] as [string, LiquidObject])))
   const objects: StoreObjects = {
+    data,
+    prefix,
     shop: {
       name: source.shop.name,
       email: data.shop.email ?? '',
@@ -838,7 +820,7 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
     images: new HandleMap(Object.entries(data.images ?? {}).map(([name, img]) => [name, new ImageDrop(img)])),
     videos: Object.fromEntries(Object.entries(data.videos ?? {}).map(([name, video]) => [name, buildMedia(video) as LiquidObject])),
     linklists: source.linklists ?? [],
-    cart: buildCart(data, products, currency.iso_code),
+    cart: {},
     customer: data.customer ? buildCustomer(data.customer, products, prefix) : null,
     localization,
     currency,
@@ -847,5 +829,7 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
     gift_card: data.gift_card ? buildGiftCard(data.gift_card, products, data.shop.currency) : null,
     storefrontFilters: data.filters ?? []
   }
+  // the cart reads the products, the currency and the prefix of the objects above
+  objects.cart = buildCartObject(objects, cartStateOf(data.cart))
   return objects
 }

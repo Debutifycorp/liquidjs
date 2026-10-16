@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { renderPage, renderSection, storefrontSampleData } from '../../src/shopify'
-import type { RequestInput, StoreData, ThemeInput } from '../../src/shopify'
+import type { CartState, RequestInput, StoreData, ThemeInput } from '../../src/shopify'
 
 export const PROBE_DIR = join(__dirname, 'probes')
 
@@ -19,20 +19,20 @@ const theme = probeTheme()
 const sectionTheme: ThemeInput = { files: { ...theme.files, 'templates/index.json': '{"sections":{},"order":[]}' } }
 
 /** The HTML a probe template (or, with `section`, a probe section on the `index` page, without its wrapper) renders. */
-export async function renderProbeHtml (name: string, options: { request?: RequestInput, data?: StoreData, section?: boolean, templateName?: string, locale?: string } = {}): Promise<string> {
+export async function renderProbeHtml (name: string, options: { request?: RequestInput, data?: StoreData, section?: boolean, templateName?: string, locale?: string, cart?: CartState } = {}): Promise<string> {
   const data = options.data ?? storefrontSampleData
-  if (!options.section) return (await renderPage({ theme, templateName: name, data, request: options.request, locale: options.locale })).html
-  const { html } = await renderSection({ theme: sectionTheme, templateName: options.templateName ?? 'index', section: name, data, request: options.request, locale: options.locale })
+  if (!options.section) return (await renderPage({ theme, templateName: name, data, request: options.request, locale: options.locale, cart: options.cart })).html
+  const { html } = await renderSection({ theme: sectionTheme, templateName: options.templateName ?? 'index', section: name, data, request: options.request, locale: options.locale, cart: options.cart })
   return html.replace(/^<div[^>]*>/, '').replace(/<\/div>\s*$/, '')
 }
 
 /** Renders `templates/<template>.liquid` and parses its JSON; throws with the HTML when it is not JSON. */
-export async function renderProbe (template: string, options: { request?: RequestInput, data?: StoreData } = {}): Promise<unknown> {
+export async function renderProbe (template: string, options: { request?: RequestInput, data?: StoreData, cart?: CartState } = {}): Promise<unknown> {
   return parse(await renderProbeHtml(template, options), template)
 }
 
 /** Renders `sections/<section>.liquid` on the `index` page (or `templateName`) and parses its JSON. */
-export async function renderProbeSection (section: string, options: { request?: RequestInput, data?: StoreData, templateName?: string } = {}): Promise<unknown> {
+export async function renderProbeSection (section: string, options: { request?: RequestInput, data?: StoreData, templateName?: string, cart?: CartState } = {}): Promise<unknown> {
   return parse(await renderProbeHtml(section, { ...options, section: true }), section)
 }
 

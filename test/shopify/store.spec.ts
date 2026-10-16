@@ -729,7 +729,7 @@ describe('shopify/settings fidelity', () => {
       cart: { items: [{ product_handle: 'a', variant_id: 11, quantity: 1 }, { product_handle: 'gone', variant_id: 99, quantity: 1 }, { product_handle: 'b', variant_id: 22, quantity: 3 }] }
     }
     const cart = buildStore(data).cart
-    expect(await render('{% for item in cart.items %}{{ forloop.index0 }}:{{ item.index }}:{{ item.index | plus: 1 }}:{{ item.key }} {% endfor %}', { cart })).toBe('0:0:1:11:1 1:1:2:22:2 ')
+    expect(await render('{% for item in cart.items %}{{ forloop.index0 }}:{{ item.index }}:{{ item.index | plus: 1 }}:{{ item.key | split: ":" | first }} {% endfor %}', { cart })).toBe('0:0:1:11 1:1:2:22 ')
   })
   it('builds the customer\'s addresses and orders, and gives the customers/order template its order', async () => {
     const variant = (id: number, price: number) => ({ id, title: 'Default Title', price, available: true, option1: 'Default Title' })
