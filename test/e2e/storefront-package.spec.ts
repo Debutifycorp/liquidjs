@@ -29,7 +29,7 @@ describe('the built storefront entry', () => {
     const storefront = require('../../dist/storefront.node.js')
     expect(storefront.DEFAULT_LIMITS).toMatchObject({ body: 65536, lines: 100, quantity: 9999, properties: 25, propertyLength: 255, sections: 5, search: 256, visitors: 10000, idleMs: 86400000 })
     expect(Object.isFrozen(storefront.DEFAULT_LIMITS)).toBe(true)
-    expect(Object.keys(storefront).sort()).toEqual(['DEFAULT_LIMITS', 'createStorefront', 'memoryCartStore'])
+    expect(Object.keys(storefront).sort()).toEqual(['DEFAULT_LIMITS', 'createStorefront', 'memoryCartStore', 'storefrontClientScript'])
   })
 
   it('answers requests from dist, through the engine the package loads once', async () => {
@@ -46,5 +46,19 @@ describe('the built storefront entry', () => {
     const failed = await broken.handle(new Request('https://store.invalid/'), { visitor: 'dist-visitor-key-0001' })
     expect([failed.status, await failed.text()]).toEqual([500, expect.stringContaining('This page could not be shown.')])
     expect(reports).toHaveLength(2)
+  })
+
+  it('answers a sandboxed page from dist with the client script, and exports the script on its own', async () => {
+    const { createStorefront, storefrontClientScript } = require('../../dist/storefront.node.js')
+    const { storefrontSampleData } = require('../../dist/shopify.node.js')
+    const theme = { files: { 'config/settings_schema.json': '[]', 'config/settings_data.json': '{"current":{}}', 'layout/theme.liquid': '<html><head>{{ content_for_header }}</head><body>{{ content_for_layout }}</body></html>', 'templates/index.liquid': 'home' } }
+    const storefront = createStorefront({ theme, data: storefrontSampleData })
+    const sandbox = { visitor: 'dist-visitor-key-0001', basePath: '/p/tok', sandbox: true }
+    const preflight = await storefront.handle(new Request('https://store.invalid/p/tok/cart/add.js', { method: 'OPTIONS' }), sandbox)
+    expect([preflight.status, preflight.headers.get('access-control-allow-origin')]).toEqual([204, '*'])
+    const home = await storefront.handle(new Request('https://store.invalid/p/tok'), sandbox)
+    const html = await home.text()
+    expect([home.status, home.headers.get('access-control-allow-origin'), home.headers.get('set-cookie')]).toEqual([200, '*', null])
+    expect(html.startsWith(`<html><head><script>${storefrontClientScript({ basePath: '/p/tok' })}</script>`)).toBe(true)
   })
 })

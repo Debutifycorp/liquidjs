@@ -11,6 +11,7 @@ const cartJs = AJAX_HANDLERS.cart
 if (!cartJs) throw new Error('the Ajax unit has no cart handler')
 ROUTE_HANDLERS.cart = ctx => ctx.routed.route.kind === 'cart' && ctx.routed.route.format === 'form' ? cartForm(ctx) : cartJs(ctx)
 
+export { storefrontClientScript } from './client'
 export { createStorefront } from './handler'
 export { DEFAULT_LIMITS } from './types'
 export type { CartStore, HandleOptions, Storefront, StorefrontLimits, StorefrontOptions, StorefrontReport, VisitorState } from './types'

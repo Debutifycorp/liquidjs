@@ -2,6 +2,7 @@ import { resolveView } from '../shopify'
 import type { StoreData, StoreView, ThemeInput } from '../shopify'
 import { BodyError, readBody } from './body'
 import type { Fields } from './body'
+import { storefrontClientScript } from './client'
 import { errorPage, noticePage } from './html'
 import { pageForPath, renderPageResponse, renderSectionResponse, renderSectionsJson, resourceExists } from './pages'
 import { routeRequest } from './router'
@@ -27,8 +28,8 @@ export interface Context {
   fields: Fields
 }
 
-/** What a route answers: a response, and the visitor's new state when the route changed it. */
-export interface Answer { response: Response, state?: VisitorState }
+/** What a route answers: a response, the visitor's new state when the route changed it, and `fragment` when the response is a piece of a page (a section) and not a document, so a sandboxed page's client script is not added to it. */
+export interface Answer { response: Response, state?: VisitorState, fragment?: boolean }
 
 export type RouteHandler = (ctx: Context) => Promise<Answer>
 
@@ -88,7 +89,7 @@ async function answerPage (ctx: Context): Promise<Answer> {
   if (route.kind !== 'page') return { response: await renderPageResponse(ctx, pageForPath(ctx, `${ctx.routed.localePrefix}/404`), 404) }
   // a page that names a resource the store lacks is the 404 page, whatever sections it was asked for
   if (!resourceExists(ctx.data, route.page)) return { response: await renderPageResponse(ctx, route.page) }
-  if (route.sectionId) return { response: await renderSectionResponse(ctx, route.page, route.sectionId) }
+  if (route.sectionId) return { response: await renderSectionResponse(ctx, route.page, route.sectionId), fragment: true }
   if (route.sections) {
     // https://shopify.dev/docs/api/ajax/section-rendering: "up to five sections"; the parity store answers a sixth with 400 and an empty body (fixture `ajax-sections-page`, step 3)
     if (route.sections.length > ctx.limits.sections) return { response: new Response(null, { status: 400 }) }
@@ -121,6 +122,33 @@ function finish (response: Response, head: boolean, cookie?: string): Response {
   return new Response(head ? null : response.body, { status: response.status, statusText: response.statusText, headers })
 }
 
+/** Any origin may read a sandboxed page's answers: with `Content-Security-Policy: sandbox` the page's origin is opaque, so every request it makes to its own host is cross-origin. No credentials are allowed, so this exposes nothing a direct request would not: the token in the base path is the only key (the storefront spec's "Sandboxed pages"). */
+const CORS = { 'access-control-allow-origin': '*' }
+const PREFLIGHT = { ...CORS, 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type, accept, x-requested-with, x-storefront-page', 'access-control-max-age': '600' }
+
+/** The client script first in `<head>`. A document with no `<head>` gets it after its `<html>` tag, or its doctype, which the parser reads as the start of the head; before a doctype it would put the page in quirks mode. A fragment with none of the three gets it first. The tags are found by scanning, not by one pattern over the whole page, so a long page costs one pass. */
+function injectClient (html: string, basePath: string): string {
+  const tag = `<script>${storefrontClientScript({ basePath }).replace(/<\/script/gi, '<\\/script')}</script>`
+  const opening = /<head[\s>]/i.exec(html) ?? /<html[\s>]/i.exec(html) ?? /<!doctype[\s>]/i.exec(html)
+  const end = opening ? html.indexOf('>', opening.index) + 1 : 0
+  return html.slice(0, end) + tag + html.slice(end)
+}
+
+/** The last step of a sandboxed page's answer: any origin may read it, it sets no cookie (the visitor is the option's, never a cookie's), and a document gets the client script. The script is added to HTML that is a document and not a redirect, a `HEAD` answer or a fragment, never to JSON. */
+async function sandboxed (response: Response, basePath: string, fragment: boolean): Promise<Response> {
+  const headers = new Headers(response.headers)
+  headers.delete('set-cookie')
+  for (const [name, value] of Object.entries(CORS)) headers.set(name, value)
+  const body = response.body
+  const redirect = response.status >= 300 && response.status < 400
+  if (body && !fragment && !redirect && (headers.get('content-type') ?? '').toLowerCase().startsWith('text/html')) {
+    // the length of the page changes, and the caller's own `Content-Length` would cut it short
+    headers.delete('content-length')
+    return new Response(injectClient(await response.text(), basePath), { status: response.status, statusText: response.statusText, headers })
+  }
+  return new Response(body, { status: response.status, statusText: response.statusText, headers })
+}
+
 /** The answer for a request that failed: a body that breaks a rule is the client's (400 or 413, as JSON, https://shopify.dev/docs/api/ajax/reference/cart shows `status`, `message` and `description`); anything else is ours, and shows a plain page with no detail while the error goes to `onReport`. */
 function failure (error: unknown, options: StorefrontOptions, request: Request): Response {
   if (error instanceof BodyError) return Response.json({ status: error.status, message: error.status === 413 ? 'Payload Too Large' : 'Bad Request', description: error.message }, { status: error.status })
@@ -139,9 +167,16 @@ export function createStorefront (options: StorefrontOptions): Storefront {
   async function handle (request: Request, handleOptions: HandleOptions = {}): Promise<Response> {
     const sandbox = !!handleOptions.sandbox
     if (sandbox && !handleOptions.visitor) throw new TypeError('createStorefront: handle needs a visitor key with sandbox: true')
-    const basePath = cleanBase(handleOptions.basePath)
     const verb = request.method.toUpperCase()
+    // a preflight asks what the page may send, and holds no visitor state: it is answered before anything is read (the storefront spec's "Sandboxed pages")
+    if (sandbox && verb === 'OPTIONS') return new Response(null, { status: 204, headers: PREFLIGHT })
+    const basePath = cleanBase(handleOptions.basePath)
     const head = verb === 'HEAD'
+    // every answer leaves through here, the error pages too
+    const done = (response: Response, cookie?: string, fragment = false) => {
+      const finished = finish(response, head, cookie)
+      return sandbox ? sandboxed(finished, basePath, fragment) : finished
+    }
     try {
       const fromCookie = handleOptions.visitor ? undefined : cookieVisitor(request)
       const key = handleOptions.visitor ?? fromCookie ?? newVisitorKey()
@@ -160,18 +195,18 @@ export function createStorefront (options: StorefrontOptions): Storefront {
         const route = routed.route
         const passwordPage = route.kind === 'password' || (route.kind === 'page' && route.page.templateName === 'password' && !route.sectionId && !route.sections)
         const locked = data.shop.password_enabled && !visitor.unlocked && !passwordPage
-        if (locked) return finish(redirect(ctx, '/password'), head)
+        if (locked) return done(redirect(ctx, '/password'))
         const answer = await (ROUTE_HANDLERS[routed.route.kind] ?? answerPage)(ctx)
         // a `HEAD` request changes nothing, whatever the route does for a `GET`: HTTP makes it a safe method (https://www.rfc-editor.org/rfc/rfc9110#section-9.2.1), and a link-style route such as `/discount/<code>` is a `GET` that changes the cart while a link prefetcher sends `HEAD`
         if (answer.state && !head) {
           await store.set(key, answer.state)
-          return finish(answer.response, head, !handleOptions.visitor && !fromCookie ? visitorCookie(key, basePath) : undefined)
+          return done(answer.response, !handleOptions.visitor && !fromCookie ? visitorCookie(key, basePath) : undefined, answer.fragment)
         }
-        return finish(answer.response, head)
+        return done(answer.response, undefined, answer.fragment)
       }
       return head || !mutates(first) ? await run() : await queue.run(key, run)
     } catch (error) {
-      return finish(failure(error, options, request), head)
+      return done(failure(error, options, request))
     }
   }
 

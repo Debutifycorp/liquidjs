@@ -1,0 +1,96 @@
+/**
+ * The script a sandboxed storefront page runs first. Under `Content-Security-Policy: sandbox` the page has an opaque origin: storage and cookies throw or vanish, and its requests carry no cookies. The script gives the page in-memory `localStorage`, `sessionStorage` and `document.cookie`; adds the base path and the locale prefix (from `Shopify.routes.root`, once the header sets it) to root-relative addresses given to `fetch`, `XMLHttpRequest`, links and forms that lack them; and sends the page's own path in `X-Storefront-Page` on the store's own requests, which the storefront reads as the context of bundled sections. Plain ES5, so it runs before any theme code on every browser the theme supports.
+ *
+ * No shopify.dev page describes a sandboxed preview: this is Debutify's own, from the storefront spec's "Sandboxed pages". What it relies on is the platform's: a document's origin under `sandbox` is opaque (https://html.spec.whatwg.org/multipage/browsers.html#sandboxed-origin-browsing-context-flag), so `location.origin` reads `"null"` while `location.protocol` and `location.host` still name the host that served the page, which is what "the store's own host" means here; and the page's own path is the one in `location`, read when a request is made, since a theme moves the page's address with `history.replaceState` when a variant is picked.
+ *
+ * The base path is the only value written into the script. It is a JSON string with `<`, U+2028 and U+2029 escaped, so no base path can close the `<script>` element or break the string.
+ */
+export function storefrontClientScript (options: { basePath: string }): string {
+  const base = JSON.stringify(options.basePath.replace(/\/$/, '')).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')
+  return `(function () {
+  var base = ${base};
+  var own = Object.prototype.hasOwnProperty;
+  function memory () {
+    var keys = [], values = Object.create(null);
+    return {
+      get length () { return keys.length; },
+      key: function (i) { i = Number(i); return i >= 0 && i < keys.length ? keys[i] : null; },
+      getItem: function (k) { k = String(k); return own.call(values, k) ? values[k] : null; },
+      setItem: function (k, v) { k = String(k); if (!own.call(values, k)) keys.push(k); values[k] = String(v); },
+      removeItem: function (k) { k = String(k); if (own.call(values, k)) { delete values[k]; keys.splice(keys.indexOf(k), 1); } },
+      clear: function () { keys = []; values = Object.create(null); }
+    };
+  }
+  try { Object.defineProperty(window, 'localStorage', { configurable: true, value: memory() }); } catch (e) {}
+  try { Object.defineProperty(window, 'sessionStorage', { configurable: true, value: memory() }); } catch (e) {}
+  var jar = [], cookies = Object.create(null);
+  try {
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: function () { return jar.map(function (k) { return k + '=' + cookies[k]; }).join('; '); },
+      set: function (text) {
+        text = String(text);
+        var pair = text.split(';')[0], at = pair.indexOf('=');
+        if (at < 1) return;
+        var name = pair.slice(0, at).trim(), value = pair.slice(at + 1).trim();
+        var gone = /;\\s*max-age=(0|-)/i.test(text) || /;\\s*expires=[^;]*1970/i.test(text);
+        var known = own.call(cookies, name);
+        if (gone) { if (known) { delete cookies[name]; jar.splice(jar.indexOf(name), 1); } return; }
+        if (!known) jar.push(name);
+        cookies[name] = value;
+      }
+    });
+  } catch (e) {}
+  function prefix () {
+    var root = window.Shopify && window.Shopify.routes && window.Shopify.routes.root;
+    return (typeof root === 'string' && root.charAt(0) === '/' ? root : base + '/').replace(/\\/$/, '');
+  }
+  function local (url) { return typeof url === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/' && url.charAt(1) !== '\\\\'; }
+  function fix (url) {
+    if (!local(url)) return url;
+    var p = prefix();
+    if (!p) return url;
+    var under = function (q) { return q && (url === q || url.indexOf(q + '/') === 0 || url.indexOf(q + '?') === 0 || url.indexOf(q + '#') === 0); };
+    if (under(p) || under(base)) return url;
+    return p + url;
+  }
+  function page () { return location.pathname + location.search; }
+  var host = location.protocol + '//' + location.host;
+  var nativeFetch = window.fetch;
+  if (nativeFetch) {
+    window.fetch = function (input, init) {
+      var isRequest = typeof Request === 'function' && input instanceof Request;
+      if (!(typeof input === 'string' ? local(input) : isRequest && input.url.indexOf(host + '/') === 0)) return nativeFetch.apply(this, arguments);
+      var rebuilt = input;
+      try {
+        if (isRequest) { var u = new URL(input.url); rebuilt = new Request(host + fix(u.pathname + u.search + u.hash), input); }
+        else rebuilt = fix(input);
+      } catch (e) {
+        return nativeFetch.apply(this, arguments);
+      }
+      var options = {};
+      for (var name in init) options[name] = init[name];
+      var headers = new Headers(init && init.headers ? init.headers : (isRequest ? input.headers : undefined));
+      headers.set('X-Storefront-Page', page());
+      options.headers = headers;
+      return nativeFetch.call(this, rebuilt, options);
+    };
+  }
+  var open = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (method, url) {
+    var args = Array.prototype.slice.call(arguments);
+    if (typeof url === 'string') args[1] = fix(url);
+    var result = open.apply(this, args);
+    if (local(url)) { try { this.setRequestHeader('X-Storefront-Page', page()); } catch (e) {} }
+    return result;
+  };
+  document.addEventListener('click', function (event) {
+    var a = event.target && event.target.closest ? event.target.closest('a[href]') : null;
+    if (a) { var h = a.getAttribute('href'), f = fix(h); if (f !== h) a.setAttribute('href', f); }
+  }, true);
+  document.addEventListener('submit', function (event) {
+    var form = event.target;
+    if (form && form.getAttribute) { var h = form.getAttribute('action') || '', f = fix(h); if (h && f !== h) form.setAttribute('action', f); }
+  }, true);
+})();`
+}
