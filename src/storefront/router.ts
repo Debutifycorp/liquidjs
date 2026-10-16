@@ -27,7 +27,7 @@ export interface Routed {
   query: URLSearchParams
 }
 
-// https://shopify.dev/docs/api/ajax/reference/cart documents add, change, update and clear as POST at `/cart/<action>.js`, and its bundled section rendering lists `/cart/<action>` without an extension (the `routes` page's `cart_add_url`, `cart_change_url`, `cart_update_url` and `cart_clear_url`, https://shopify.dev/docs/api/liquid/objects/routes), the targets of forms and links. The `.json` spelling is not documented and no fixture pins it: it is accepted as the same endpoint as the `.js` one.
+// https://shopify.dev/docs/api/ajax/reference/cart documents add, change, update and clear as POST at `/cart/<action>.js`. The spellings without an extension, the targets of forms and links, come from https://shopify.dev/docs/api/liquid/objects/routes alone (`cart_add_url`, `cart_change_url`, `cart_update_url` and `cart_clear_url`). The `.json` spelling is not documented and no fixture pins it: it is accepted as the same endpoint as the `.js` one.
 const CART = /^\/cart\/(add|change|update|clear)(\.js|\.json)?$/
 
 /** One path segment with its percent escapes decoded; a malformed escape leaves the segment as the address wrote it, so a bad address names nothing rather than throwing. */
@@ -37,6 +37,11 @@ function decode (segment: string): string {
   } catch {
     return segment
   }
+}
+
+/** The path with its empty segments dropped, as the engine reads a page's address (`/products//hoodie` is `/products/hoodie`, `/cart/` is `/cart`). Linear in the path, which a visitor writes: a regex that trims trailing slashes is quadratic on a long run of them. */
+function squeeze (path: string): string {
+  return `/${path.split('/').filter(Boolean).join('/')}`
 }
 
 /** Whether `path` starts with `prefix`, a path of whole segments such as `/p/tok`, compared by decoded segment as the engine's reading of the address does. */
@@ -50,19 +55,20 @@ function within (path: string, prefix: string): boolean {
  * What a storefront request asks for, from its method and address: the routes of the spec's "Routes" table. The base path and the locale prefix are taken off first; a page is read by the engine's `requestFromUrl`. Pure: it renders nothing and does no input or output.
  */
 export function routeRequest (method: string, url: string, data: StoreData, options: { basePath: string, country?: string }): Routed {
-  const trimmedBase = options.basePath.replace(/^\/+|\/+$/g, '')
-  const basePath = trimmedBase ? `/${trimmedBase}` : ''
+  const squeezedBase = squeeze(options.basePath)
+  const basePath = squeezedBase === '/' ? '' : squeezedBase
   // an address that opens with `//` is a path, not a host (as `requestFromUrl` reads it)
   const parsed = new URL(url.replace(/^\/{2,}/, '/'), 'https://storefront.invalid')
   const query = parsed.searchParams
-  const page = requestFromUrl(url, data, { basePath, country: options.country })
+  // an address outside the base path is not the store's, whatever it says after it: its 404 page is the store's root read, with the primary market and language and no locale prefix
+  const outside = basePath !== '' && !within(parsed.pathname, basePath)
+  const page = requestFromUrl(outside ? basePath : url, data, { basePath, country: options.country })
   // the engine's reading of the address finds the locale prefix (engine Task 1) and keeps what follows it percent-encoded in `request.path`, after the base path and the prefix it has just taken off
   const localePrefix = page.request.localePrefix ?? ''
   const done = (route: Route): Routed => ({ route, localePrefix, market: page.request.market ?? 'default', language: page.request.language ?? page.locale, query })
   const notFound = (): Routed => done({ kind: 'not-found', page: { ...page, templateName: '404' } })
-  // an address outside the base path is not the store's, whatever it says after it
-  if (basePath && !within(parsed.pathname, basePath)) return notFound()
-  const path = (page.request.path ?? '/').slice(basePath.length + localePrefix.length).replace(/\/+$/, '') || '/'
+  if (outside) return notFound()
+  const path = squeeze((page.request.path ?? '/').slice(basePath.length + localePrefix.length))
   const verb = method.toUpperCase()
   const read = verb === 'GET' || verb === 'HEAD'
   // checkout and the customer account pages are Shopify's, not the storefront's (https://shopify.dev/docs/api/liquid/objects/routes lists `/account/login` and the other account links; checkout has no route there, and its address is Shopify's `/checkouts/cn/<token>`): the notice page answers them, whatever the method

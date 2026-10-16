@@ -2,6 +2,7 @@ import terser from '@rollup/plugin-terser'
 import typescript from 'rollup-plugin-typescript2'
 import replace from '@rollup/plugin-replace'
 import { createRequire } from 'module'
+import { dirname, isAbsolute, resolve } from 'path'
 
 const pkg = createRequire(import.meta.url)('./package.json')
 const version = process.env.VERSION || pkg.version
@@ -192,11 +193,21 @@ const shopifyEsm = {
   input: shopifyInput
 }
 
-// The storefront, `@debutify/liquidjs/storefront`: Node only. Its source imports the engine as `../shopify`; that import becomes the external module `@debutify/liquidjs/shopify`, so the engine is one copy per process (Node resolves the package's own name through its `exports`). A plugin names it external under that id: with `external` and `paths`, Rollup makes the relative id absolute first and writes a path relative to the bundle.
+// The storefront, `@debutify/liquidjs/storefront`: Node only. Its source imports the engine as `../shopify`; that import becomes the external module `@debutify/liquidjs/shopify`, so the engine is one copy per process (Node resolves the package's own name through its `exports`). A plugin names it external under that id: with `external` and `paths`, Rollup makes the relative id absolute first and writes a path relative to the bundle. The same plugin fails the build on any other import from `src/storefront` that is not a sibling file (`./…`) or `crypto`, which Rollup would otherwise inline (`../shopify/store/build`) or leave as a Node import (`fs`).
 const storefrontInput = './src/storefront/index.ts'
+const storefrontDir = resolve('src/storefront')
+const shopifyEntry = resolve('src/shopify/index.ts')
 const storefrontEngine = {
   name: 'storefront-engine-external',
-  resolveId: (source, importer) => source === '../shopify' && importer !== undefined && /[\\/]src[\\/]storefront[\\/]/.test(importer) ? { id: '@debutify/liquidjs/shopify', external: true } : null
+  resolveId (source, importer) {
+    if (importer === undefined || dirname(importer) !== storefrontDir) return null
+    if (source === '../shopify') return { id: '@debutify/liquidjs/shopify', external: true }
+    // for a file that imports only the engine's types, rpt2 hands Rollup the entry's absolute path: left alone, the module reads nothing the bundle uses and Rollup drops it
+    if (source === shopifyEntry) return null
+    // a sibling file, written as `./x` or, once rpt2 has resolved it, as its absolute path
+    if (source.startsWith('./') || (isAbsolute(source) && dirname(source) === storefrontDir)) return null
+    return this.error(`${importer} imports '${source}': src/storefront may import only './…', '../shopify' and 'crypto'`)
+  }
 }
 
 const storefrontCjs = {
@@ -206,8 +217,8 @@ const storefrontCjs = {
     esModule: true,
     banner
   }],
-  external: ['path', 'fs', 'stream', 'crypto'],
-  plugins: [storefrontEngine, versionInjection, typescript(tsconfig('ES2020'))],
+  external: ['crypto'],
+  plugins: [storefrontEngine, typescript(tsconfig('ES2020'))],
   treeshake,
   input: storefrontInput
 }
@@ -218,13 +229,8 @@ const storefrontEsm = {
     format: 'esm',
     banner
   }],
-  external: ['path', 'fs', 'stream', 'crypto'],
-  plugins: [
-    storefrontEngine,
-    versionInjection,
-    replace(esmRequire),
-    typescript(tsconfig('es6'))
-  ],
+  external: ['crypto'],
+  plugins: [storefrontEngine, typescript(tsconfig('es6'))],
   treeshake,
   input: storefrontInput
 }
