@@ -72,6 +72,7 @@ export interface RequestInput {
   localePrefix?: string
   /** The handle of the market the address belongs to, and its language: https://shopify.dev/docs/storefronts/themes/markets/multiple-currencies-languages */
   market?: string
+  /** The language the page is shown in: the store data's content translations for it (`StoreData.translations`) and, when `renderPage`'s `locale` is not given, the theme's locale file. */
   language?: string
   /** The shopper's country, ISO code. */
   country?: string

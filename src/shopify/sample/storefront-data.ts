@@ -125,7 +125,8 @@ export const storefrontSampleData: StoreData = freeze({
   languages: [{ iso_code: 'en', name: 'English', endonym_name: 'English' }, { iso_code: 'fr', name: 'French', endonym_name: 'français' }],
   translations: {
     fr: {
-      shop: { name: 'Debutify Parité', description: 'Des vêtements du quotidien, bien faits.' },
+      // the shop has no translatable name on Shopify (`TranslatableResourceType` SHOP translates the meta title and description), so only its description is French (fixtures `probe-page-fr-ca` and `probe-page-fr-eu`)
+      shop: { description: 'Des vêtements du quotidien, bien faits.' },
       products: { hoodie: { title: 'Sweat à capuche', description: '<p>Un sweat à capuche doux pour tous les jours.</p>' }, 'men-t-shirt': { title: 'T-shirt pour homme' } },
       collections: { tops: { title: 'Hauts', description: '<p>À porter en haut.</p>' } },
       pages: { about: { title: 'À propos', content: '<p>Nous fabriquons des vêtements du quotidien.</p>' } },

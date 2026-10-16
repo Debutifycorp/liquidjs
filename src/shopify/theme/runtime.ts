@@ -34,7 +34,7 @@ export interface RenderPageOptions {
   templateName: string
   /** Defaults to the package's public sample store. */
   data?: StoreData
-  /** The locale of the translations; defaults to the shop's locale. `request.locale` and `Shopify.locale` are the language `request.language` names when it names one, and this locale otherwise. */
+  /** The locale of the translations; defaults to the language `request.language` names when it names one, and to the shop's locale otherwise. `request.locale` and `Shopify.locale` are the language `request.language` names when it names one, and this locale otherwise. */
   locale?: string
   request?: RequestInput
   services?: Partial<ShopifyServices>
@@ -305,7 +305,8 @@ class PageRender implements ThemeHooks {
   public constructor (private readonly theme: CompiledTheme, private readonly options: RenderPageOptions) {
     const data = options.data ?? sampleStoreData
     const store = buildStore(data, resolveView(data, options.request ?? {}))
-    const locale = options.locale ?? String(store.shop.locale)
+    // the theme's locale file follows the language the request names, as `request.locale` does (https://shopify.dev/docs/storefronts/themes/architecture/locales: a theme holds one locale file per language, and the storefront shows the file of the language the shopper chose); a request that names none renders in the shop's locale
+    const locale = options.locale ?? options.request?.language ?? String(store.shop.locale)
     const translator = theme.translator(locale, message => this.state.report.unsupported('locale_file', message))
     this.trust = { liquidSettings: !!options.trustLiquidSettings, htmlSettings: !!options.trustHtmlSettings }
     this.state = createState({

@@ -7,10 +7,9 @@ import { buildLocalization, currencyOf, marketOf } from '../../src/shopify/store
 import type { StoreView } from '../../src/shopify/store/view'
 import { probeMatches } from './expect-probe'
 
-// `shop.description` is left out of the pick: the shop's description, and its translation, belong to the translations task.
 const pick = (b: any) => ({
   localization: b.localization,
-  shop: { name: b.shop.name, currency: b.shop.currency, enabled_currencies: b.shop.enabled_currencies, published_locales: b.shop.published_locales },
+  shop: { name: b.shop.name, description: b.shop.description, currency: b.shop.currency, enabled_currencies: b.shop.enabled_currencies, published_locales: b.shop.published_locales },
   cart_currency: b.cart_currency,
   money: b.money,
   money_with_currency: b.money_with_currency,

@@ -7,6 +7,7 @@ import { buildFilters } from './filters'
 import { buildLocalization, currencyOf, enabledCurrencies } from './markets'
 import type { ViewCurrency } from './markets'
 import { convert } from './pricing'
+import { translateData } from './translate'
 import { resolveView, viewKey, withoutPrefix, withPrefix } from './view'
 import type { StoreView } from './view'
 import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, ProductData, StoreData, TransactionData, VariantData } from './types'
@@ -635,22 +636,24 @@ export function buildStore (data: StoreData, view?: StoreView): StoreObjects {
   return objects
 }
 
+/** The objects of `data` in `view`: every resource is built from `source`, `data` in the view's language (`translateData`), while the market, its currency and the localization come from `data`, which the language does not change. */
 function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   const { prefix } = view
+  const source = translateData(data, view.language)
   const currency = currencyOf(data, view)
-  const products = new HandleMap((data.products ?? []).map(product => [product.handle, buildProduct(product, prefix, currency)]))
+  const products = new HandleMap((source.products ?? []).map(product => [product.handle, buildProduct(product, prefix, currency)]))
   // Every shop answers `collections.all` with all its products. https://shopify.dev/docs/api/liquid/objects/collections
-  const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (data.products ?? []).map(product => product.handle) }, products, data.filters, prefix)
-  const collections = new HandleMap((data.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters, prefix)]), [['all', all]])
-  const blogs = new HandleMap((data.blogs ?? []).map(blog => [blog.handle, buildBlog(blog, prefix)]))
+  const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (source.products ?? []).map(product => product.handle) }, products, data.filters, prefix)
+  const collections = new HandleMap((source.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters, prefix)]), [['all', all]])
+  const blogs = new HandleMap((source.blogs ?? []).map(blog => [blog.handle, buildBlog(blog, prefix)]))
   const localization = buildLocalization(data, view)
   const shippingCountries = data.country_option_tags ?? [{ name: String((localization.country as LiquidObject | null)?.name ?? '') }]
   const articles = new HandleMap(HandleMap.values(blogs).flatMap(blog => (blog.articles as LiquidObject[]).map(article => [`${blog.handle}/${article.handle}`, article] as [string, LiquidObject])))
   const objects: StoreObjects = {
     shop: {
-      name: data.shop.name,
+      name: source.shop.name,
       email: data.shop.email ?? '',
-      description: data.shop.description ?? '',
+      description: source.shop.description ?? '',
       domain: data.shop.domain,
       permanent_domain: data.shop.domain,
       url: `https://${data.shop.domain}`,
@@ -665,21 +668,21 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
       enabled_payment_types: data.shop.enabled_payment_types ?? [],
       customer_accounts_enabled: true,
       customer_accounts_optional: true,
-      products_count: data.products?.length ?? 0,
-      collections_count: data.collections?.length ?? 0,
-      types: unique((data.products ?? []).map(product => product.type ?? '').filter(Boolean)).sort(),
-      vendors: unique((data.products ?? []).map(product => product.vendor ?? '').filter(Boolean)).sort(),
+      products_count: source.products?.length ?? 0,
+      collections_count: source.collections?.length ?? 0,
+      types: unique((source.products ?? []).map(product => product.type ?? '').filter(Boolean)).sort(),
+      vendors: unique((source.products ?? []).map(product => product.vendor ?? '').filter(Boolean)).sort(),
       policies: [],
       metafields: data.shop.metafields ?? {}
     },
     products,
     collections,
-    pages: new HandleMap((data.pages ?? []).map(page => [page.handle, buildPage(page, prefix)])),
+    pages: new HandleMap((source.pages ?? []).map(page => [page.handle, buildPage(page, prefix)])),
     blogs,
     articles,
     images: new HandleMap(Object.entries(data.images ?? {}).map(([name, img]) => [name, new ImageDrop(img)])),
     videos: Object.fromEntries(Object.entries(data.videos ?? {}).map(([name, video]) => [name, buildMedia(video) as LiquidObject])),
-    linklists: data.linklists ?? [],
+    linklists: source.linklists ?? [],
     cart: buildCart(data, products, currency.iso_code),
     customer: data.customer ? buildCustomer(data.customer, products, prefix) : null,
     localization,
