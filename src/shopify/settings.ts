@@ -13,6 +13,7 @@ import { STATE } from './state'
 import type { ImageData } from './types'
 import type { LiquidObject, StoreObjects } from './store/build'
 import type { Translator } from './translations'
+import { withPrefix } from './store/view'
 import { escapeHtml } from './util/html'
 import { isRecord, own, PLAIN_ID } from './util/own'
 import { isSafeUrl, removeDocumentTags, sanitizeHtml } from './util/sanitize'
@@ -51,6 +52,8 @@ export interface SettingsEnv {
    * The theme's colour schemes, which `color_scheme` settings choose from. A `SettingsDrop` built from definitions that hold a `color_scheme_group` uses its own group; for the settings of sections and blocks, pass the global settings' group: `colorSchemes: SettingsDrop.colorSchemes(globalSettings)`. Without a group a `color_scheme` setting is nil and reported as unsupported, which is what shopify.dev gives for a theme without `color_scheme_group` data.
    */
   colorSchemes?: HandleMap<ColorSchemeDrop>
+  /** The prefix every URL of the page's view starts with (the base path, then the locale prefix; empty or absent for none), which a `url` setting that names a page of the shop takes. */
+  prefix?: string
 }
 
 /**
@@ -83,13 +86,13 @@ const TRUSTED = Symbol('trusted')
 const SCHEMES = Symbol('colorSchemes')
 const RESOURCE_URL = /^shopify:\/\/(collections|products|pages|blogs|policies)\/(.+)$/
 
-/** The storefront path a `url` setting's `shopify://` value points at; other values pass through, blanks are nil. shopify.dev documents the Liquid side only (a `url` setting is "a string that contains the selected URL", nil when empty, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings#url); the stored `shopify://` forms are taken from exported themes and are on the "confirm on a development store" list. */
-export function settingUrl (value: unknown): string | null {
+/** The storefront path a `url` setting's `shopify://` value points at, under `prefix`; other values pass through, blanks are nil. shopify.dev documents the Liquid side only (a `url` setting is "a string that contains the selected URL", nil when empty, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings#url); the stored `shopify://` forms are taken from exported themes and are on the "confirm on a development store" list. The prefix is the parity store's (scenario `page-home-fr-ca`: `shopify://collections/all` prints `/fr-ca/collections/all`); a path or an address written out is not a resource link and stays as written, which no recording pins. */
+export function settingUrl (value: unknown, prefix = ''): string | null {
   if (typeof value !== 'string' || !value) return null
-  if (value === 'shopify://search' || value === 'shopify://search/') return '/search'
-  if (value === 'shopify://cart') return '/cart'
+  if (value === 'shopify://search' || value === 'shopify://search/') return withPrefix(prefix, '/search')
+  if (value === 'shopify://cart') return withPrefix(prefix, '/cart')
   const match = RESOURCE_URL.exec(value)
-  return match ? `/${match[1]}/${match[2]}` : value
+  return match ? withPrefix(prefix, `/${match[1]}/${match[2]}`) : value
 }
 
 function fromFileReference (value: unknown, prefix: string): string | undefined {
@@ -154,7 +157,7 @@ const rawOptionValues = (definition: SettingDefinition): string[] => Array.isArr
 const optionValues = (definition: SettingDefinition): string[] => rawOptionValues(definition).filter(value => !UNSAFE_KEY_CHARACTER.test(value))
 
 /**
- * A `select`, `radio` or `text_alignment` value. Without a saved value, the setting's `default`; with no `default` either, the first option ("If `default` is unspecified, then the first option is selected by default", for `select` and `radio`; "If no default is set, `left` applies", for `text_alignment`). Untrusted themes only get one of the setting's options: a saved value that is not one is replaced by the default if that is an option, else (when the setting has no `default`) by the first option, else nil, and reported. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings (`select` and `radio` "return a string", the chosen option's `value`; `text_alignment` accepts `left`, `right` and `center`).
+ * A `select`, `radio` or `text_alignment` value. Without a saved value, the setting's `default`; with no `default` either, the first option ("If `default` is unspecified, then the first option is selected by default", for `select` and `radio`; "If no default is set, `left` applies", for `text_alignment`). Untrusted themes only get one of the setting's options, except that a `select` or `radio` keeps a saved value that is no longer an option when it is a plain token (`PLAIN_ID`, see below); any other saved value that is not an option is replaced by the default if that is an option, else (when the setting has no `default`) by the first option, else nil, and reported. https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings (`select` and `radio` "return a string", the chosen option's `value`; `text_alignment` accepts `left`, `right` and `center`).
  */
 function choice (definition: SettingDefinition, stored: unknown, env: SettingsEnv): unknown {
   const alignment = definition.type === 'text_alignment'
@@ -163,6 +166,8 @@ function choice (definition: SettingDefinition, stored: unknown, env: SettingsEn
   const fallback = definition.default === undefined ? first : !env.trust.htmlSettings && !(typeof definition.default === 'string' && options.includes(definition.default)) ? null : definition.default
   if (env.trust.htmlSettings) return stored === undefined ? fallback : stored
   if (typeof stored === 'string' && options.includes(stored)) return stored
+  // as the parity store renders it (scenario `page-faq`: the template stores `"layout": "none"` for a select whose options are `vertical` and `horizontal`, and the section prints `layout-none`): a saved value that is no longer an option still prints. Only a `select` or `radio` keeps one, and only a plain token, so nothing it carries can leave an attribute, a class name or a CSS selector
+  if (!alignment && typeof stored === 'string' && PLAIN_ID.test(stored)) return stored
   if (stored !== undefined) reject(env, 'invalid_setting', definition, 'has a value that is not one of its options and was replaced by its default')
   return fallback
 }
@@ -307,7 +312,7 @@ export function resolveSettingValue (definition: SettingDefinition, stored: unkn
       return url ? new VideoUrlDrop(url) : null
     }
     case 'url':
-      return safeUrl(definition, settingUrl(value), env)
+      return safeUrl(definition, settingUrl(value, env.prefix), env)
     case 'product':
       return lookup(env, definition, env.store.products, value, 'product')
     case 'collection':

@@ -378,7 +378,7 @@ class PageRender implements ThemeHooks {
     const page = buildGlobals({ store, data, templateName: this.templateName, request: options.request ?? {}, locale, report: this.state.report, cart: options.cart })
     this.state.request = page.request
     this.state.form = options.request?.form
-    const env: SettingsEnv = { store, linklists: page.linklists, services: this.state.services, translator, report: this.state.report, trust: this.trust }
+    const env: SettingsEnv = { store, linklists: page.linklists, services: this.state.services, translator, report: this.state.report, trust: this.trust, prefix: page.request.prefix }
     const settingsData = theme.json('config/settings_data.json') ?? {}
     if (!isRecord(settingsData)) throw new Error('config/settings_data.json: must be a JSON object')
     // `current` is an object on https://shopify.dev/docs/storefronts/themes/architecture/config/settings-data-json; a preset name there is the older shape, not pinned by shopify.dev

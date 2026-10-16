@@ -398,6 +398,19 @@ describe('shopify/settings colour schemes', () => {
     expect(await pick(undefined, undefined)).toBe('scheme-1|#336699')
     expect(await pick(['scheme-2'], 7)).toBe('scheme-1|#336699')
   })
+  // as the parity store renders it (scenario `page-home-fr-ca`: a `url` setting stored as `shopify://collections/all` prints `/fr-ca/collections/all`): a link to a page of the shop takes the view's prefix. A path or an address written out is not a resource link and stays as written (no recording pins it)
+  it('puts the view prefix before the page a url setting names', async () => {
+    const definitions = [{ type: 'url', id: 'link' }]
+    const link = (stored: string, prefix?: string) => render('{{ s.link }}', { s: new SettingsDrop(definitions, { link: stored }, env({ prefix })) })
+    expect(await link('shopify://collections/all', '/fr-ca')).toBe('/fr-ca/collections/all')
+    expect(await link('shopify://search', '/p/tok/fr-ca')).toBe('/p/tok/fr-ca/search')
+    expect(await link('shopify://products/hoodie', '/fr-ca')).toBe('/fr-ca/products/hoodie')
+    expect(await link('shopify://collections/all', '')).toBe('/collections/all')
+    expect(await link('shopify://collections/all')).toBe('/collections/all')
+    expect(await link('/pages/about', '/fr-ca')).toBe('/pages/about')
+    expect(await link('https://example.com/a', '/fr-ca')).toBe('https://example.com/a')
+    expect(await link('shopify://metaobjects/team/ada', '/fr-ca')).toBe('shopify://metaobjects/team/ada')
+  })
   it('gives sections the global schemes, and nil without a group', async () => {
     const globalSettings = new SettingsDrop(global, { color_schemes: schemes }, env())
     const section = new SettingsDrop([{ type: 'color_scheme', id: 'scheme', default: 'scheme-1' }], { scheme: 'scheme-2' }, env({ colorSchemes: SettingsDrop.colorSchemes(globalSettings) }))
@@ -436,15 +449,26 @@ describe('shopify/settings forms', () => {
     ['select', 'x" autofocus onfocus="y', 'left', ['has a value that is not one of its options and was replaced by its default']],
     ['select', 7, 'left', ['has a value that is not one of its options and was replaced by its default']],
     ['select', undefined, 'left', []],
-    ['radio', 'nope', 'left', ['has a value that is not one of its options and was replaced by its default']]
+    ['radio', 'nope" x', 'left', ['has a value that is not one of its options and was replaced by its default']],
+    ['select', 'no pe', 'left', ['has a value that is not one of its options and was replaced by its default']]
   ] as Array<[string, unknown, unknown, string[]]>)('holds a %s to its options: %p gives %p', (type, stored, expected, reasons) => {
     const result = one({ type, id: 'layout', options, default: 'left' }, stored)
     expect(result.value).toBe(expected)
     expect(result.unsupported).toEqual(reasons.map(reason => invalid(type, 'layout', reason)))
   })
+  // as the parity store renders it (scenario `page-faq`: the template stores `"layout": "none"` for a select whose options are `vertical` and `horizontal`, and the section prints `layout-none`): a saved value that is no longer one of the options still prints. Only a plain token passes (letters, digits, `-` and `_`), so nothing a stale value carries can leave an attribute, a class name or a CSS selector
+  it.each([
+    ['select', 'none'],
+    ['radio', 'image_second'],
+    ['select', 'h-0']
+  ])('keeps the saved value of a %s that is not one of its options when it is a plain token: %p', (type, stored) => {
+    const result = one({ type, id: 'layout', options, default: 'left' }, stored)
+    expect(result.value).toBe(stored)
+    expect(result.unsupported).toEqual([])
+  })
   it('gives a select nothing when neither its value nor its default is an option, and trusts nothing it must not print', () => {
-    expect(one({ type: 'select', id: 'layout', options, default: 'up' }, 'down').value).toBeNull()
-    expect(one({ type: 'select', id: 'layout', default: 'left' }, 'left').value).toBeNull()
+    expect(one({ type: 'select', id: 'layout', options, default: 'up' }, 'down" x').value).toBeNull()
+    expect(one({ type: 'select', id: 'layout', default: 'left' }, 'left" x').value).toBeNull()
     expect(one({ type: 'select', id: 'layout', options: [{ value: 'a"b', label: 'A' }, { value: 'ok', label: 'O' }], default: 'a"b' }, 'a"b').value).toBeNull()
     expect(one({ type: 'text_alignment', id: 'align', default: 'center' }, 'justify" x').value).toBe('center')
     expect(one({ type: 'text_alignment', id: 'align' }, 'right').value).toBe('right')
@@ -594,7 +618,7 @@ describe('shopify/settings fidelity', () => {
     return SettingsDrop.value(settings, 'x')
   }
 
-  it.each([['select', undefined], ['radio', undefined], ['select', 'nope'], ['radio', 'nope']])('reads a %s with no default as its first option (saved: %p)', (type, saved) => {
+  it.each([['select', undefined], ['radio', undefined], ['select', 'nope" x'], ['radio', 'nope" x']])('reads a %s with no default as its first option (saved: %p)', (type, saved) => {
     expect(read({ type, id: 'x', options }, saved)).toBe('left')
     // the first option of a theme trusted with html is the first option as written
     expect(read({ type, id: 'x', options: [{ value: 'a"b' }, { value: 'c' }] }, undefined, { trust: trusted })).toBe('a"b')
@@ -604,7 +628,7 @@ describe('shopify/settings fidelity', () => {
     expect(read({ type: 'select', id: 'x', options, default: 'right' }, undefined)).toBe('right')
     expect(read({ type: 'select', id: 'x', options, default: 'right' }, undefined, { trust: trusted })).toBe('right')
     expect(read({ type: 'select', id: 'x', options }, 'right')).toBe('right')
-    expect(read({ type: 'select', id: 'x', options, default: 'up' }, 'nope')).toBeNull()
+    expect(read({ type: 'select', id: 'x', options, default: 'up' }, 'nope" x')).toBeNull()
     expect(read({ type: 'select', id: 'x' }, undefined)).toBeNull()
     expect(read({ type: 'select', id: 'x', options: [] }, undefined, { trust: trusted })).toBeNull()
     expect(read({ type: 'select', id: 'x', options }, 'other', { trust: trusted })).toBe('other')

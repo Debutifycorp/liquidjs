@@ -230,6 +230,14 @@ describe('views and the URL prefix', () => {
     expect(html).toContain('action="/p/tok/fr-ca/contact#contact_form"')
     expect(html).toContain(`action="/p/tok/fr-ca/blogs/${article}/comments#comment_form"`)
   })
+  // as the parity store renders it (scenario `page-home-fr-ca`): a `url` setting stored as `shopify://collections/all` prints the locale prefix
+  it('puts the view prefix before the page a url setting names', async () => {
+    const files = { ...headerTheme('{{ settings.link }}|{{ content_for_layout }}').files, 'config/settings_schema.json': '[{"name":"x","settings":[{"type":"url","id":"link"}]}]', 'config/settings_data.json': '{"current":{"link":"shopify://collections/all"}}' }
+    const page = requestFromUrl('/p/tok/fr-ca', data, { basePath: '/p/tok' })
+    expect((await renderPage({ theme: { files }, templateName: 'index', data, request: page.request, locale: page.locale })).html).toContain('/p/tok/fr-ca/collections/all|')
+    const plain = requestFromUrl('/', data)
+    expect((await renderPage({ theme: { files }, templateName: 'index', data, request: plain.request, locale: plain.locale })).html).toContain('/collections/all|')
+  })
   it('sets Shopify.routes.root and defines Shopify.analytics in content_for_header', async () => {
     const theme = headerTheme('<head>{{ content_for_header }}</head>{{ content_for_layout }}')
     const page = requestFromUrl('/p/tok/fr-ca', data, { basePath: '/p/tok' })
