@@ -16,6 +16,7 @@ import { currentFrame, shopifyState } from '../state'
 import type { ShopifyState } from '../state'
 import type { FormOutcome } from '../store/globals'
 import { hasOwn } from '../util/own'
+import { SafeHtmlDrop } from '../objects/safe-html'
 
 type Resource = Record<string, unknown> | undefined
 
@@ -80,6 +81,11 @@ const hidden = (name: string, value: string) => `<input type="hidden" name="${es
 type PostedValue = 'email' | 'body' | 'name' | 'phone' | 'first_name' | 'last_name'
 const MORE_POSTED_VALUES = ['author', 'message', 'address1', 'address2', 'city', 'company', 'country', 'province', 'zip']
 
+/**
+ * A posted value as the form object hands it over: its text HTML-escaped and marked HTML-safe (`SafeHtmlDrop`), so `value="{{ form.email }}"` and `<textarea>{{ form.body }}</textarea>` print it inert and a theme that also writes `| escape` does not escape it a second time. Final review B, C1 (and final review A, C1): the values come from the visitor's post, which any website can make (`POST /contact` is a simple cross-site request), and a raw echo ran script on the store's origin. Shopify's own themes print these values with no filter, which is only safe if the platform escapes them: https://github.com/Shopify/dawn/blob/main/sections/contact-form.liquid prints `value="{% if form.email %}{{ form.email }}{% elsif customer %}{{ customer.email }}{% endif %}"` and `{{- form.body -}}` inside the textarea, and https://github.com/Shopify/Timber/blob/master/templates/page.contact.liquid does the same for the email and the message. https://shopify.dev/docs/api/liquid/objects/form does not say the values are escaped, and no recording holds it (the parity store's bot challenge answers every scripted contact post with 403), so this is the reading those two themes require, not a recorded behaviour. The error messages are not posted text (the storefront's own words, or the caller's) and stay as they are.
+ */
+const escaped = (value: unknown) => new SafeHtmlDrop(escapeHtml(value))
+
 /** The title of a field as a last resort: `first_name` is `First name`. */
 const capitalised = (field: string) => {
   const words = field.replace(/_/g, ' ')
@@ -134,25 +140,25 @@ export class FormErrorsDrop extends Drop {
 /**
  * The `form` object inside `{% form %}`. https://shopify.dev/docs/api/liquid/objects/form: `password_needed` is `true` for `customer_login`, `posted_successfully?` always `true` for `customer_address`, `id` is `new` and `set_as_default_checkbox` the single-quoted `<input type='checkbox' id='address_default_address_new' …>` in its example. The page's example key is `password_needed?` while its property list says `password_needed`, so only the latter exists here. `form.id` for the other form types is the markup's `id` (the page gives no example).
  *
- * A form of the type the request's outcome (`RequestInput.form`) names shows it: `posted_successfully?` is `posted`, `errors` is a `FormErrorsDrop` over the outcome's errors (`null` when it has none, as the page says "or nil if none"), and the posted values (`PostedValue`, `MORE_POSTED_VALUES`). Every other form is as nothing had been posted: not posted, no errors, and `null` for the six main fields and nil for the rest (the page shows address fields filled from the posted address, which a preview has none of). The properties are assigned in the order they had before a post was carried, so a form with no outcome prints through `json` as it did.
+ * A form of the type the request's outcome (`RequestInput.form`) names shows it: `posted_successfully?` is `posted`, `errors` is a `FormErrorsDrop` over the outcome's errors (`null` when it has none, as the page says "or nil if none"), and the posted values (`PostedValue`, `MORE_POSTED_VALUES`), HTML-escaped and HTML-safe (`escaped`). Every other form is as nothing had been posted: not posted, no errors, and `null` for the six main fields and nil for the rest (the page shows address fields filled from the posted address, which a preview has none of). The properties are assigned in the order they had before a post was carried, so a form with no outcome prints through `json` as it did.
  */
 export class FormDrop extends Drop {
   public readonly errors: FormErrorsDrop | null
   public readonly 'posted_successfully?': boolean
   public readonly id: string
-  public readonly email: string | null
-  public readonly body: string | null
-  public readonly name: string | null
-  public readonly phone: string | null
-  public readonly first_name: string | null
-  public readonly last_name: string | null
+  public readonly email: SafeHtmlDrop | null
+  public readonly body: SafeHtmlDrop | null
+  public readonly name: SafeHtmlDrop | null
+  public readonly phone: SafeHtmlDrop | null
+  public readonly first_name: SafeHtmlDrop | null
+  public readonly last_name: SafeHtmlDrop | null
   public readonly password_needed: boolean
   public readonly set_as_default_checkbox: string
 
   public constructor (public readonly formType: string, public readonly resource: Resource, id: string, outcome?: FormOutcome, translate: (field: string) => string = capitalised) {
     super()
     const values = outcome?.values ?? {}
-    const posted = (key: PostedValue) => (hasOwn(values, key) ? values[key] : null)
+    const posted = (key: PostedValue) => (hasOwn(values, key) ? escaped(values[key]) : null)
     this.errors = outcome?.errors && Object.keys(outcome.errors).length ? new FormErrorsDrop(outcome.errors, translate) : null
     this.email = posted('email')
     this.body = posted('body')
@@ -165,7 +171,7 @@ export class FormDrop extends Drop {
     this['posted_successfully?'] = formType === 'customer_address' || !!outcome?.posted
     this.set_as_default_checkbox = `<input type='checkbox' id='address_default_address_${escapeHtml(id)}' name='address[default]' value='1'>`
     for (const key of MORE_POSTED_VALUES) {
-      if (hasOwn(values, key)) this[key] = values[key]
+      if (hasOwn(values, key)) this[key] = escaped(values[key])
     }
   }
 }

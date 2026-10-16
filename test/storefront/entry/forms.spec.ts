@@ -1,7 +1,7 @@
 import { storefrontSampleData } from '../../../src/shopify'
 import type { StoreData } from '../../../src/shopify'
 import { loadFixture } from '../fixtures'
-import { harness } from './harness'
+import { harness, harnessTheme } from './harness'
 
 const form = (fields: Record<string, string>) => new URLSearchParams(fields).toString()
 
@@ -349,5 +349,51 @@ describe('the notice page\'s link back under a base path', () => {
     expect(await back('https://store.invalid/p/tok//evil.example')).toBe('/p/tok')
     expect(await back('https://store.invalid//evil.example')).toBe('/p/tok')
     expect(await back(undefined)).toBe('/p/tok')
+  })
+})
+
+// final review B, C1 and final review A, C1: `POST /contact` is a simple request any website can make, and an invalid email re-renders the page with what was posted, which a theme prints as Dawn does, with no filter
+describe('a hostile contact post', () => {
+  const SCRIPT = '"><script>alert(document.domain)</script>'
+  const TEXTAREA = '</textarea><img src=x onerror=alert(1)>'
+  const CROSS_SITE = { referer: 'https://evil.example/', origin: 'https://evil.example' }
+  // the contact form on a page of the store, and the newsletter form in the layout (a theme's footer), each printing what was posted the way Dawn does
+  const files = {
+    ...harnessTheme().files,
+    'layout/theme.liquid': '<!doctype html><html><head>{{ content_for_header }}</head><body>{{ content_for_layout }}<footer>{% form "customer" %}<input name="contact[email]" value="{{ form.email }}">{% endform %}</footer></body></html>',
+    'templates/page.echo.liquid': '{% form "contact" %}<input name="contact[name]" value="{% if form.name %}{{ form.name }}{% endif %}"><input name="contact[phone]" value="{{ form.phone | escape }}"><textarea name="contact[body]">{{ form.body }}</textarea><p>{{ form.email }}</p>{% endform %}',
+    'templates/index.liquid': 'home'
+  }
+  const hostile = (type: string) => form({ form_type: type, 'contact[email]': SCRIPT, 'contact[name]': SCRIPT, 'contact[phone]': SCRIPT, 'contact[body]': TEXTAREA })
+
+  it('stays inside the attribute, the textarea and the text node of the page it came from', async () => {
+    const { send } = harness({ theme: { files } })
+    const answer = await send('POST', '/contact', hostile('contact'), { referer: 'https://store.invalid/pages/about?view=echo' })
+    expect(answer.status).toBe(200)
+    // (the page's own header holds a script, so the hostile one is named)
+    expect(answer.text).not.toMatch(/<script>alert|<img/)
+    expect(answer.text).toContain('<input name="contact[name]" value="&quot;&gt;&lt;script&gt;alert(document.domain)&lt;/script&gt;">')
+    // an explicit `escape` leaves the escaped text as it is
+    expect(answer.text).toContain('<input name="contact[phone]" value="&quot;&gt;&lt;script&gt;alert(document.domain)&lt;/script&gt;">')
+    expect(answer.text).toContain('<textarea name="contact[body]">&lt;/textarea&gt;&lt;img src=x onerror=alert(1)&gt;</textarea>')
+    expect(answer.text).toContain('<p>&quot;&gt;&lt;script&gt;alert(document.domain)&lt;/script&gt;</p>')
+  })
+
+  it('stays inside the newsletter field of a layout, from a cross-site page that names no address of the store', async () => {
+    const { send } = harness({ theme: { files } })
+    for (const headers of [CROSS_SITE, {}]) {
+      const answer = await send('POST', '/contact', form({ form_type: 'customer', 'contact[email]': SCRIPT }), headers)
+      expect(answer.status).toBe(200)
+      expect(answer.text).not.toContain('<script>alert')
+      expect(answer.text).toContain('<input name="contact[email]" value="&quot;&gt;&lt;script&gt;alert(document.domain)&lt;/script&gt;">')
+    }
+  })
+
+  it('does not echo the password of a wrong storefront password', async () => {
+    const locked = { ...storefrontSampleData, shop: { ...storefrontSampleData.shop, password_enabled: true } } as StoreData
+    const { send } = harness({ data: locked, password: 'open' })
+    const answer = await send('POST', '/password', form({ password: SCRIPT }))
+    expect(answer.text).toContain('wrong')
+    expect(answer.text).not.toContain('alert(')
   })
 })

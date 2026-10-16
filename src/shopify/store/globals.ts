@@ -30,6 +30,7 @@ export interface FormOutcome {
   posted: boolean
   /** By field, as `form.errors` reads them. https://shopify.dev/docs/api/liquid/objects/form_errors */
   errors?: Record<string, string[]>
+  /** What the visitor posted, as they sent it (not escaped): the form object escapes it, so a theme prints `form.email` as it is. The error messages above are printed as given, so a message must not repeat posted text. */
   values?: Record<string, string>
 }
 

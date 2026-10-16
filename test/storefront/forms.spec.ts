@@ -159,6 +159,63 @@ describe('form object', () => {
   })
 })
 
+// final review B, C1 (and final review A, C1): a posted value reached the page raw, so `value="{{ form.email }}"` ran the script of a cross-site `POST /contact`. Shopify's own Dawn and Timber print these values with no filter, which only works if the platform hands them over escaped
+describe('posted values are HTML-safe', () => {
+  const ATTRIBUTE = '"><script>alert(document.domain)</script>'
+  const TEXTAREA = '</textarea><img src=x onerror=alert(1)>'
+  const ESCAPED_ATTRIBUTE = '&quot;&gt;&lt;script&gt;alert(document.domain)&lt;/script&gt;'
+  const ESCAPED_TEXTAREA = '&lt;/textarea&gt;&lt;img src=x onerror=alert(1)&gt;'
+  const MAIN = ['email', 'body', 'name', 'phone', 'first_name', 'last_name']
+  const MORE = ['author', 'message', 'address1', 'address2', 'city', 'company', 'country', 'province', 'zip']
+
+  /** A contact form that echoes every value the way Dawn does: in an attribute, in a textarea and in a text node. */
+  const ECHO = `{%- form 'contact' -%}${[...MAIN, ...MORE].map(key => `<input name="${key}" value="{{ form.${key} }}">`).join('')}<textarea>{{ form.body }}</textarea><p>{{ form.name }}</p>{%- endform -%}`
+  const rendered = async (values: Record<string, string>, template = ECHO) => {
+    const request = requestFromUrl('/', data, { form: { type: 'contact', posted: false, errors: { email: ['is invalid'] }, values } })
+    return (await renderPage({ theme: formTheme({ 'templates/index.liquid': template }), templateName: 'index', data, request: request.request })).html
+  }
+
+  it('keeps every posted value inside its attribute, its textarea and its text node', async () => {
+    const out = await rendered(Object.fromEntries([...MAIN, ...MORE].map(key => [key, key === 'body' ? TEXTAREA : ATTRIBUTE])))
+    expect(out).not.toMatch(/<script|<img/)
+    for (const key of [...MAIN, ...MORE]) {
+      expect(out).toContain(`<input name="${key}" value="${key === 'body' ? ESCAPED_TEXTAREA : ESCAPED_ATTRIBUTE}">`)
+    }
+    expect(out).toContain(`<textarea>${ESCAPED_TEXTAREA}</textarea>`)
+    expect(out).toContain(`<p>${ESCAPED_ATTRIBUTE}</p>`)
+  })
+
+  it('does not escape a value a second time when the theme writes escape', async () => {
+    const out = await rendered({ email: 'a&b "c"', body: '<b>' }, "{%- form 'contact' -%}[{{ form.email }}|{{ form.email | escape }}|{{ form.email | escape_once }}|{{ form.body | escape }}]{%- endform -%}")
+    expect(out.replace(/<form[^>]*>|<input[^>]*>|<\/form>/g, '')).toBe('[a&amp;b &quot;c&quot;|a&amp;b &quot;c&quot;|a&amp;b &quot;c&quot;|&lt;b&gt;]')
+  })
+
+  it('reads as the text it stands for to a test, a size and a filter', async () => {
+    const out = await rendered({ email: 'a@b', name: '', body: 'one\ntwo' }, "{%- form 'contact' -%}[{% if form.email == 'a@b' %}same{% endif %}|{% if form.name %}set{% else %}unset{% endif %}|{{ form.email | size }}|{{ form.body | newline_to_br }}|{{ form.email | upcase }}|{{ form.email | default: 'none' }}|{{ form.phone | default: 'none' }}]{%- endform -%}")
+    expect(out.replace(/<form[^>]*>|<input[^>]*>|<\/form>/g, '')).toBe('[same|set|3|one<br />\ntwo|A@B|a@b|none]')
+  })
+
+  it('prints through json as the escaped text, which cannot close a script block either', async () => {
+    const out = await rendered({ name: '</script><script>alert(1)</script>' }, "{%- form 'contact' -%}<script>var n = {{ form.name | json }}</script>{%- endform -%}")
+    // `json` escapes the `&` and `<` of the escaped text again for a script block, and the block still closes only where the theme closes it
+    expect(out).toContain('var n = "\\u0026lt;\\/script\\u0026gt;\\u0026lt;script\\u0026gt;alert(1)\\u0026lt;\\/script\\u0026gt;"')
+    expect(out.match(/<\/script>/g)).toHaveLength(1)
+  })
+
+  it('escapes the newsletter form too', async () => {
+    const request = requestFromUrl('/', data, { form: { type: 'customer', posted: false, errors: { email: ['is invalid'] }, values: { email: ATTRIBUTE } } })
+    const theme = formTheme({ 'templates/index.liquid': "{%- form 'customer' -%}<input name=\"contact[email]\" value=\"{{ form.email }}\">{%- endform -%}" })
+    const out = (await renderPage({ theme, templateName: 'index', data, request: request.request })).html
+    expect(out).toContain(`<input name="contact[email]" value="${ESCAPED_ATTRIBUTE}">`)
+    expect(out).not.toContain('<script')
+  })
+
+  it('leaves the error messages as they are given', async () => {
+    const out = await rendered({}, "{%- form 'contact' -%}{% for field in form.errors %}{{ form.errors.messages[field] }}{% endfor %}{%- endform -%}")
+    expect(out.replace(/<form[^>]*>|<input[^>]*>|<\/form>/g, '')).toBe('is invalid')
+  })
+})
+
 describe('form markup the page probes record', () => {
   for (const name of ['probe-page-home', 'probe-page-fr-eu']) {
     it(`returns the localization form to the page's whole address, its query too (${name})`, async () => {
