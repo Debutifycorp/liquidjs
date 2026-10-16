@@ -100,11 +100,11 @@
           "predictive_search_url": "/fr-ca/search/suggest",
           "product_recommendations_url": "/fr-ca/recommendations/products",
           "account_url": "/fr-ca/account",
-          "account_login_url": "https://medzreferralai2.myshopify.com/customer_authentication/redirect?locale=fr&region_country=CA"
+          "account_login_url": "https://debutify-sample.myshopify.com/customer_authentication/redirect?locale=fr&region_country=CA"
         },
         "request": {
           "path": "/fr-ca/pages/about",
-          "host": "medzreferralai2.myshopify.com",
+          "host": "debutify-sample.myshopify.com",
           "page_type": "page",
           "locale": "fr",
           "locale_root_url": "/fr-ca"
@@ -168,7 +168,7 @@
             "url": "/fr-ca/blogs/news"
           }
         ],
-        "canonical_url": "https://medzreferralai2.myshopify.com/fr-ca/pages/about",
+        "canonical_url": "https://debutify-sample.myshopify.com/fr-ca/pages/about",
         "template": {
           "name": "page",
           "suffix": "probe"

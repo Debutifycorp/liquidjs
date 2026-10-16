@@ -88,7 +88,7 @@ const pages: PageData[] = [
 
 /** The dataset the parity store is seeded from (item 22, `tools/shopify-parity/` in the Debutify repository): Shopify's mock.shop `demostore` catalogue (`mock-shop.ts`) with what the parity scenarios need on top, in a USD shop of its own: product types, weights, material metafields, compare-at prices, best-seller ranks, selling plans, template suffixes, three pages, the Home page collection, the six card types the store accepts, storefront filters, discounts, shipping zones, three markets, and French as a second language with its translations. Prices are USD cents. */
 export const storefrontSampleData: StoreData = freeze({
-  shop: { name: 'Debutify Parity', domain: 'medzreferralai2.myshopify.com', email: 'store@example.com', description: 'Everyday clothing, made well.', currency: 'USD', locale: 'en', money_format: '${{amount}}', money_with_currency_format: '${{amount}} USD', enabled_payment_types: ['visa', 'master', 'american_express', 'paypal', 'diners_club', 'discover'] }, // eslint-disable-line no-template-curly-in-string
+  shop: { name: 'Debutify Parity', domain: 'debutify-sample.myshopify.com', email: 'store@example.com', description: 'Everyday clothing, made well.', currency: 'USD', locale: 'en', money_format: '${{amount}}', money_with_currency_format: '${{amount}} USD', enabled_payment_types: ['visa', 'master', 'american_express', 'paypal', 'diners_club', 'discover'] }, // eslint-disable-line no-template-curly-in-string
   products: catalog.products,
   collections: catalog.collections,
   pages,
