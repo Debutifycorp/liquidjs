@@ -17,6 +17,26 @@ const CART_MARKER = '__cart'
 /** The hidden field that holds the `DiscountResult` of a cart built by `buildCartObject`, which says which entered codes were rejected. */
 const DISCOUNTS_FIELD = '__discounts'
 
+/**
+ * The hidden fields that hold the visitor's text of a cart, or of a line, as it was stored. The `cart` object a template reads holds it HTML-escaped (`escapedText`), so `/cart.js` and `{{ cart | json }}` read it from here. Fixture `ajax-cart-text`: the parity store keeps the note, the attributes and the line item properties raw (`/cart.js`, step 2) and prints them escaped in Liquid (`cart.note`, `cart.attributes.<name>` and the values of `item.properties`, step 3, and through `json`, step 4), except in `{{ cart | json }}`, which prints them raw (the `ajax` of step 4).
+ */
+const RAW_TEXT = '__raw_text'
+const RAW_PROPERTIES = '__raw_properties'
+
+interface RawText { note: string | null, attributes: Record<string, string> }
+
+/** A cart's note and attributes as the visitor stored them (a cart not built by `buildCartObject` has them as they are). */
+const rawTextOf = (cart: LiquidObject): RawText => (cart[RAW_TEXT] as RawText | undefined) ?? { note: cart.note as string | null, attributes: cart.attributes as Record<string, string> }
+
+/** A line's properties as the visitor stored them. */
+const rawPropertiesOf = (item: LiquidObject): Record<string, string> => (item[RAW_PROPERTIES] as Record<string, string> | undefined) ?? item.properties as Record<string, string>
+
+/**
+ * The visitor's text as a template reads it: HTML-escaped (`&lt;`, `&amp;`, `&quot;`, `&#39;`), and a plain string, so `| escape` escapes it once more, as Shopify's would (fixture `ajax-cart-text`, step 3: `note=&lt;/textarea&gt;&lt;b&gt;A &amp; &quot;B&quot;&lt;/b&gt;` for the note `</textarea><b>A & "B"</b>`). The cart's note, the values of its attributes and of a line's properties are the visitor's, set by a post any website can make, and a theme prints them with no filter (Dawn's `<textarea>{{ cart.note }}</textarea>`), so a raw print ran the script of a cross-site `POST /cart/update`. Names are not escaped: the recording holds only plain names, so how Shopify prints one with markup in it is not pinned. A missing note stays nil.
+ */
+const escapedText = <T extends string | null>(text: T): T => (text === null ? text : escapeHtml(text) as T)
+const escapedValues = (values: Record<string, string>): Record<string, string> => Object.fromEntries(Object.entries(values).map(([name, value]) => [name, escapedText(value)]))
+
 /** Whether `value` is a cart built by `buildCartObject`. */
 export const isBuiltCart = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject)[CART_MARKER] === true
 
@@ -111,8 +131,8 @@ function builtVariant (store: StoreObjects, variantId: number): BuiltVariant | u
 
 /** Line item properties as a template reads them: by name (`item.properties.Engraving`) and as pairs (`for property in item.properties`), and printed by `json` as the parity store prints them, a list of `[name, value]` pairs (`[]` for none, fixture `ajax-cart-session`, step 11). */
 function propertiesOf (properties: Record<string, string>): Record<string, string> {
-  const copy = { ...properties }
-  Object.defineProperty(copy, 'toJSON', { value: () => Object.entries(properties), enumerable: false })
+  const copy = escapedValues(properties)
+  Object.defineProperty(copy, 'toJSON', { value: () => Object.entries(copy), enumerable: false })
   return copy
 }
 
@@ -165,6 +185,7 @@ function lineItem (store: StoreObjects, state: CartLineState, index: number): Li
   }
   hidden(item, 'untranslated_product_title', untranslatedTitle)
   hidden(item, LINE_MARKER, true)
+  hidden(item, RAW_PROPERTIES, state.properties)
   return item
 }
 
@@ -220,6 +241,8 @@ export function buildCartObject (store: StoreObjects, state: CartState): LiquidO
   const original = sum('original_line_price')
   const orderLevel = items.reduce((total, item) => total + (item.discount_allocations as LiquidObject[]).reduce((inner, entry) => inner + ((entry.discount_application as LiquidObject).target_selection === 'all' ? entry.amount as number : 0), 0), 0)
   const total = subtotal - orderLevel
+  // the private attributes (`__…`) are left out of the object a template and the Ajax answers read
+  const attributes = Object.fromEntries(Object.entries(state.attributes).filter(([name]) => !name.startsWith('__')))
   const cart: LiquidObject = {
     token: state.token || null,
     items,
@@ -231,8 +254,8 @@ export function buildCartObject (store: StoreObjects, state: CartState): LiquidO
     total_discount: original - total,
     total_weight: items.reduce((weight, item) => weight + ((item.variant as LiquidObject).weight as number) * (item.quantity as number), 0),
     currency: { iso_code: store.currency.iso_code, symbol: store.currency.symbol, name: store.currency.name },
-    note: state.note,
-    attributes: Object.fromEntries(Object.entries(state.attributes).filter(([name]) => !name.startsWith('__'))),
+    note: escapedText(state.note),
+    attributes: escapedValues(attributes),
     requires_shipping: items.some(item => item.requires_shipping),
     cart_level_discount_applications: discounts.cartLevel,
     discount_applications: discounts.applications,
@@ -241,6 +264,7 @@ export function buildCartObject (store: StoreObjects, state: CartState): LiquidO
     'empty?': items.length === 0
   }
   hidden(cart, CART_MARKER, true)
+  hidden(cart, RAW_TEXT, { note: state.note, attributes } satisfies RawText)
   hidden(cart, DISCOUNTS_FIELD, discounts)
   return cart
 }
@@ -321,7 +345,7 @@ export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): 
   const applicationForm = form === 'change' ? 'change' : 'cart'
   const fields: Record<string, unknown> = {
     id: item.id,
-    properties: { ...(item.properties as Record<string, string>) },
+    properties: { ...rawPropertiesOf(item) },
     quantity: item.quantity,
     variant_id: item.variant_id,
     key: item.key,
@@ -370,10 +394,11 @@ export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): 
  */
 export function cartJson (data: StoreData, state: CartState, view: StoreView = resolveView(data, {}), form: Exclude<LineItemForm, 'liquid'> = 'cart'): Record<string, unknown> {
   const cart = buildCartObject(buildStore(data, view), state)
+  const text = rawTextOf(cart)
   return {
     token: cart.token,
-    note: cart.note,
-    attributes: cart.attributes,
+    note: text.note,
+    attributes: { ...text.attributes },
     original_total_price: cart.original_total_price,
     total_price: cart.total_price,
     total_discount: cart.total_discount,
@@ -408,9 +433,10 @@ export function discountCodeStatus (data: StoreData, state: CartState, view: Sto
  * What `{{ cart | json }}` prints for a built cart, as the parity store prints it (fixtures `ajax-cart-session`, step 10, and `ajax-cart-en-ca`, step 3: the `ajax` of the cart probe), which is neither the engine's cart object nor `/cart.js`: no `token` or `discount_codes` and a `checkout_charge_amount` last, lines of the `liquid` form (`lineItemJson`), and a line's `properties` as an object, where the line's own `properties | json` prints pairs. `cart_level_discount_applications` are the applications in the form of `/cart.js` (fixture `ajax-discount-codes`, the `ajax` of step 2).
  */
 export function cartLiquidJson (cart: LiquidObject): Record<string, unknown> {
+  const text = rawTextOf(cart)
   return {
-    note: cart.note,
-    attributes: cart.attributes,
+    note: text.note,
+    attributes: { ...text.attributes },
     original_total_price: cart.original_total_price,
     total_price: cart.total_price,
     total_discount: cart.total_discount,

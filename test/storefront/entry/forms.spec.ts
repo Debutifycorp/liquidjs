@@ -389,6 +389,21 @@ describe('a hostile contact post', () => {
     }
   })
 
+  it('keeps a note, an attribute and a property set by a cross-site post inside their textarea and text node, and still answers /cart.js with them as stored', async () => {
+    // fixture `ajax-cart-text`: Shopify prints the visitor's cart text HTML-escaped in Liquid and keeps it raw in the Ajax answers
+    const cartFiles: Record<string, string> = { ...files, 'templates/cart.liquid': '<textarea>{{ cart.note }}</textarea><i>{{ cart.attributes.gift }}</i>{% for item in cart.items %}{% for p in item.properties %}<b>{{ p.last }}</b>{% endfor %}{% endfor %}' }
+    delete cartFiles['templates/cart.json']
+    const { send } = harness({ theme: { files: cartFiles } })
+    await send('POST', '/cart/add', form({ id: '43695847538710', quantity: '1', 'properties[Engraving]': SCRIPT }), CROSS_SITE)
+    await send('POST', '/cart/update', form({ note: TEXTAREA, 'attributes[gift]': SCRIPT }), CROSS_SITE)
+    const page = await send('GET', '/cart')
+    expect(page.text).not.toMatch(/<script>alert|<img/)
+    expect(page.text).toContain('<textarea>&lt;/textarea&gt;&lt;img src=x onerror=alert(1)&gt;</textarea>')
+    expect(page.text).toContain('<i>&quot;&gt;&lt;script&gt;alert(document.domain)&lt;/script&gt;</i>')
+    expect(page.text).toContain('<b>&quot;&gt;&lt;script&gt;alert(document.domain)&lt;/script&gt;</b>')
+    expect(page.json ?? JSON.parse((await send('GET', '/cart.js')).text)).toMatchObject({ note: TEXTAREA, attributes: { gift: SCRIPT }, items: [{ properties: { Engraving: SCRIPT } }] })
+  })
+
   it('does not echo the password of a wrong storefront password', async () => {
     const locked = { ...storefrontSampleData, shop: { ...storefrontSampleData.shop, password_enabled: true } } as StoreData
     const { send } = harness({ data: locked, password: 'open' })

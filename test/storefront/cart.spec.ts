@@ -6,12 +6,13 @@ import { buildStore } from '../../src/shopify/store/build'
 import { buildGlobals } from '../../src/shopify/store/globals'
 import { resolveView } from '../../src/shopify/store/view'
 import { loadFixture } from './fixtures'
-import { probeTheme, renderProbe } from './probe'
+import { probeTheme, renderProbe, renderProbeHtml } from './probe'
 
 const state = (lines: CartState['lines'], extra: Partial<CartState> = {}): CartState => ({ token: '<token>', lines, note: null, attributes: {}, discountCodes: [], ...extra })
 const line = (variantId: number, quantity: number, properties: Record<string, string> = {}, sellingPlanId: number | null = null) => ({ variantId, quantity, properties, sellingPlanId })
 
 const HOODIE = 43695847538710
+const HOODIE_GREEN_SMALL = 43695847538710
 const SLIDES_SMALL = 43695710371862
 const BLACK_SUNNIES = 43696940613654
 const CA = { market: 'ca', language: 'en', prefix: '/en-ca' }
@@ -57,6 +58,39 @@ describe('cart answers are private copies', () => {
     const before = await render()
     scribble(cartJson(store, cart))
     expect(await render()).toBe(before)
+  })
+})
+
+// fixture `ajax-cart-text`: the parity store keeps the visitor's note, attribute and property text raw (`/cart.js`, step 2), prints it HTML-escaped in Liquid (`cart.note`, `cart.attributes.<name>` and the values of `item.properties`, step 3, and the probe's `cart.note | json`, `cart.attributes | json` and `item.properties | json`, step 4) and raw again in `{{ cart | json }}` (the probe's `ajax`, step 4). A raw print let a cross-site `POST /cart/update` put script into a theme's `<textarea>{{ cart.note }}</textarea>` (final review B, C1 and the settled cart-note concern of lane FA)
+describe('visitor text in the cart', () => {
+  const text = loadFixture('ajax-cart-text')
+  const MARKUP = { note: '</textarea><b>A & "B"</b>', attribute: '<i>x & "y"</i>', property: '<b>A & "B"</b>' }
+  const cart = state([line(HOODIE_GREEN_SMALL, 1, { Engraving: MARKUP.property })], { note: MARKUP.note, attributes: { gift: MARKUP.attribute } })
+
+  it('answers /cart.js with the text as it was stored', () => {
+    expect(normaliseKeys(cartJson(data, cart))).toEqual(normaliseKeys(text.steps[2].body))
+    expect(normaliseKeys(cartJson(data, cart, undefined, 'change'))).toMatchObject({ note: MARKUP.note, attributes: { gift: MARKUP.attribute }, items: [{ properties: { Engraving: MARKUP.property } }] })
+  })
+
+  it('prints the note, the attribute and the properties HTML-escaped in Liquid', async () => {
+    expect(await renderProbeHtml('cart.probe-text', { cart })).toBe((text.steps[3].body as { text: string }).text)
+  })
+
+  it('prints them escaped through json in Liquid and raw in the cart as a whole', async () => {
+    const body = await renderProbe('cart.probe', { cart }) as any
+    expect(normaliseKeys(body)).toEqual(normaliseKeys(text.steps[4].body))
+  })
+
+  it('holds the escaped strings as plain strings, so escape escapes them again as Shopify\'s would', async () => {
+    const html = (await renderPage({ theme: { files: { ...probeTheme().files, 'templates/cart.liquid': '{{ cart.note | escape }}|{{ cart.attributes.gift | escape }}|{% for item in cart.items %}{{ item.properties.Engraving | escape }}{% endfor %}|{{ cart.note | size }}' } }, templateName: 'cart', data, cart })).html
+    expect(html).toBe('&amp;lt;/textarea&amp;gt;&amp;lt;b&amp;gt;A &amp;amp; &amp;quot;B&amp;quot;&amp;lt;/b&amp;gt;|&amp;lt;i&amp;gt;x &amp;amp; &amp;quot;y&amp;quot;&amp;lt;/i&amp;gt;|&amp;lt;b&amp;gt;A &amp;amp; &amp;quot;B&amp;quot;&amp;lt;/b&amp;gt;|' + String(MARKUP.note.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').length))
+  })
+
+  it('keeps a missing note and attribute missing, and leaves plain text as it is', async () => {
+    const html = (await renderPage({ theme: { files: { ...probeTheme().files, 'templates/cart.liquid': '[{{ cart.note | json }}][{{ cart.attributes.gift | json }}][{% if cart.note %}note{% endif %}]' } }, templateName: 'cart', data, cart: state([]) })).html
+    expect(html).toBe('[null][null][]')
+    const plain = (await renderPage({ theme: { files: { ...probeTheme().files, 'templates/cart.liquid': '[{{ cart.note }}]' } }, templateName: 'cart', data, cart: state([], { note: 'Gift wrap' }) })).html
+    expect(plain).toBe('[Gift wrap]')
   })
 })
 
