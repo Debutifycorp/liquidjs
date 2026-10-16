@@ -1,4 +1,5 @@
 import { HandleMap } from '../objects/handle-map'
+import type { ImageDrop } from '../objects/image'
 import { articlesInDataOrder, printsHandle, type LiquidObject, type StoreObjects } from './build'
 import { sortProducts } from './collection-view'
 import { buildFilters, filterMatcher, requestQuery } from './filters'
@@ -69,7 +70,9 @@ export function buildSearch (store: StoreObjects, terms: string | undefined, req
   const linked = active.some(([name]) => name.startsWith('filter.v.'))
   const asProduct = (product: LiquidObject) => {
     const variant = linked ? matcher.firstVariant(product) : undefined
-    return { item: variant ? { ...product, url: variant.url, featured_media: variant.featured_media ?? product.featured_media } : product, kind: 'product' as Kind }
+    // the matching variant's media is the bare image, as on the collection page (`collectionView`; scenario `page-collection-filtered` records it there, search is not recorded with variant filters: the same mechanism is assumed)
+    const media = variant?.featured_media as ImageDrop | null | undefined
+    return { item: variant ? { ...product, url: variant.url, featured_media: media?.preview_image ?? product.featured_media } : product, kind: 'product' as Kind }
   }
   const pages = find(HandleMap.values(store.pages), 'page').map(page => ({ item: page, kind: 'page' as Kind }))
   // an article found by search has its blog in its handle, `news/liquidpeak-450` (fixtures `probe-search-shirt` and `probe-search-prefix`), where `article.handle` elsewhere is the article's own

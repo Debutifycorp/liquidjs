@@ -1,7 +1,7 @@
 import { HandleMap } from '../objects/handle-map'
 import type { ImageDrop } from '../objects/image'
 import { buildStore } from './build'
-import type { LiquidObject } from './build'
+import type { ImageRole, LiquidObject } from './build'
 import { resolveView } from './view'
 import type { StoreView } from './view'
 import type { StoreData } from './types'
@@ -22,6 +22,11 @@ const sameImage = (a: ImageDrop, b: ImageDrop) => a.id != null && b.id != null ?
 function previewImage (image: ImageDrop | null | undefined, shape: 'ajax' | 'liquid'): Record<string, unknown> | null {
   if (!image) return null
   return { aspect_ratio: image.aspect_ratio ? image.aspect_ratio.value : null, height: image.height, width: image.width, src: imageUrl(image, shape) }
+}
+
+/** A variant's `featured_media` in the variant's JSON: the media's alt, id, position and preview image (fixtures `ajax-product-js` and `probe-product-default`). */
+function variantMediaJson (media: ImageDrop, shape: 'ajax' | 'liquid'): Record<string, unknown> {
+  return { alt: altOf(media), id: media.id, position: media.position, preview_image: previewImage(media, shape) }
 }
 
 /** A variant's image as the Ajax API writes it: the product's image with its `position` in `product.images`, the ids of the variants that show it and its two timestamps, which the dataset does not hold, so they are the product's creation time (the parity store prints the moments it made the image, which the engine cannot reproduce: `VOLATILE` in `test/storefront/expect-probe.ts`). */
@@ -90,7 +95,7 @@ function variantJson (variant: LiquidObject, product: LiquidObject, shape: 'ajax
     compare_at_price: variant.compare_at_price,
     inventory_management: variant.inventory_management,
     barcode: variant.barcode ?? null,
-    featured_media: media ? { alt: altOf(media), id: media.id, position: media.position, preview_image: previewImage(media, shape) } : null
+    featured_media: media ? variantMediaJson(media, shape) : null
   }
   const plans = { requires_selling_plan: variant.requires_selling_plan ?? false, selling_plan_allocations: (variant.selling_plan_allocations as LiquidObject[]).map(allocationJson) }
   return shape === 'ajax'
@@ -103,6 +108,18 @@ function variantJson (variant: LiquidObject, product: LiquidObject, shape: 'ajax
  */
 export function variantLiquidJson (variant: LiquidObject): Record<string, unknown> {
   return variantJson(variant, variant.product as LiquidObject, 'liquid')
+}
+
+/**
+ * An image of a product, or a list of them (`product.media`, `product.images`, `product.featured_image`, `variant.featured_media`), as `{{ image | json }}` prints it: the form the same place has inside `product | json` (fixtures `probe-product-default` and `probe-product-en-ca`, scenario `page-product`): `product.images` and `product.featured_image` are the address (`src`), `product.media` and `product.featured_media` the media object (`mediaJson`), a variant's `featured_image` the image with its product and variant ids (`variantImage`) and its `featured_media` the short media object. No recording prints one of these alone, so the form of the place is what is assumed; the engine's own fields (`data` and the title that `alt` reads) are never printed, and `alt` is the image's own, `null` without one.
+ */
+export function imageLiquidJson (image: ImageDrop, place: ImageRole): unknown {
+  switch (place.role) {
+    case 'image': return imageUrl(image, 'liquid')
+    case 'media': return mediaJson(image as unknown as LiquidObject, 'liquid')
+    case 'variant_image': return variantImage(image, (place.variant as LiquidObject).product as LiquidObject, 'liquid')
+    default: return variantMediaJson(image, 'liquid')
+  }
 }
 
 /** A media entry as the Ajax API writes it. An image carries its own fields beside its `preview_image` (fixture `ajax-product-js`); the page shows no video, so a hosted or external video keeps the fields of its media object with the preview in the same compact form, which no recording pins. */

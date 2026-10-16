@@ -1,6 +1,8 @@
 import { createShopifyLiquid, renderLiquid, renderPage, requestFromUrl, storefrontSampleData } from '../../src/shopify'
 import type { StoreData } from '../../src/shopify'
+import { HandleMap } from '../../src/shopify/objects/handle-map'
 import { buildLinklists, buildStore } from '../../src/shopify/store/build'
+import { vendorCollection } from '../../src/shopify/store/collection-view'
 
 const THEME = { 'config/settings_schema.json': '[]', 'config/settings_data.json': '{"current":{}}', 'layout/theme.liquid': '{{ content_for_layout }}' }
 
@@ -34,6 +36,12 @@ describe('image alt (rows 21; scenarios page-product and page-collections)', () 
   it('shows the first matching variant\'s media as the bare image in a collection filtered by variant, with alt="" (scenario page-collection-filtered)', async () => {
     const out = await render('{% for p in collection.products %}{{ p.handle }}[{{ p.featured_media.alt }}] {% endfor %}', '/collections/all?filter.v.availability=1&filter.p.product_type=Shoes&sort_by=price-ascending')
     expect(out).toBe('gray-runners[Gray Runners] canvas-sneakers[Canvas Sneakers] white-leather-sneakers[White Leather Sneakers] high-top-sneakers[] gray-leather-sneakers[Gray Leather Sneakers] ')
+  })
+
+  it('shows the matching variant\'s media as the bare image in a search filtered by variant too (the same mechanism as the collection page; search is not recorded with variant filters)', async () => {
+    const out = await render('{% for r in search.results %}{{ r.handle }}[{{ r.featured_media.alt }}] {% endfor %}', '/search?q=sneakers&filter.v.availability=1&filter.p.product_type=Shoes')
+    expect(out).toContain('high-top-sneakers[] ')
+    expect(out).toMatch(/canvas-sneakers\[Canvas Sneakers\] /)
   })
 
   it('keeps the alt text an image has', async () => {
@@ -88,6 +96,31 @@ describe('the default order of a collection (row 22; scenarios page-home, page-c
     expect(await render(`${handles}|{{ collection.default_sort_by }}|{{ collection.sort_by }}`, '/collections/sold', data)).toBe('hoodie,beanie,slides,|best-selling|')
   })
 
+  it('sorts once, when first read, and keeps the list: the same array on every read', () => {
+    const { collections } = buildStore(storefrontSampleData)
+    const all = HandleMap.get(collections, 'all')!
+    expect(all.products).toBe(all.products)
+    expect((all.products as Array<{ handle: string }>)[0].handle).toBe('beanie')
+  })
+
+  it('lists the vendor and type collections by title too', () => {
+    const store = buildStore(storefrontSampleData)
+    const vendor = vendorCollection(store, 'mock.shop').products as Array<{ title: string }>
+    expect(vendor.map(p => p.title)).toEqual([...vendor.map(p => p.title)].sort(new Intl.Collator('en').compare))
+    expect(vendor).toHaveLength(29)
+  })
+
+  it('takes a collection\'s featured_image from its own image, else from its first product in the order it lists them (unrecorded: every collection of the sample data has an image)', async () => {
+    const [all, beanie, men, own] = (await render('{{ collections.all.featured_image.src }}|{{ all_products.beanie.featured_image.src }}|{{ collections.men.featured_image.src }}|{{ collections.men.image.src }}')).split('|')
+    expect(all).toBe(beanie)
+    expect(men).toBe(own)
+    const data = withData(d => {
+      d.products = [product(1, 'a', 'A', { images: [{ src: 'https://x.example/a.jpg' }] }), product(2, 'b', 'B', { images: [{ src: 'https://x.example/b.jpg' }] })]
+      d.collections = [{ id: 1, handle: 'bare', title: 'Bare', sort_order: 'title-descending', products: ['a', 'b'] }, { id: 2, handle: 'empty', title: 'Empty', products: [] }]
+    })
+    expect(await render('{{ collections.bare.featured_image.src }}|[{{ collections.empty.featured_image.src }}]', '/', data)).toBe('//x.example/b.jpg|[]')
+  })
+
   it('keeps the all collection\'s page order', async () => {
     expect(await render('{% for p in collection.products limit: 3 %}{{ p.handle }},{% endfor %}', '/collections/all')).toBe('beanie,black-sunnies,canvas-sneakers,')
     expect(await render('{% for p in collection.products limit: 3 %}{{ p.handle }},{% endfor %}', '/collections/all?sort_by=manual')).toBe('beanie,black-sunnies,canvas-sneakers,')
@@ -106,6 +139,12 @@ describe('the collections list (row 23; scenario page-collections)', () => {
       d.collections = [{ id: 1, handle: 'z', title: 'zebra', products: [] }, { id: 2, handle: 'm', title: 'Mid', products: ['a'] }, { id: 3, handle: 'a', title: 'Apple', products: [] }]
     })
     expect(await render('{% for c in collections %}{{ c.handle }},{% endfor %}{{ collections.size }}|{{ collections.all.products_count }}', '/', data)).toBe('a,m,z,3|1')
+  })
+
+  it('lists the collections by title when iterated and in the data\'s order through HandleMap.values, which engine code ranks ties by', () => {
+    const { collections } = buildStore(storefrontSampleData)
+    expect(HandleMap.values(collections).map(c => c.handle)).toEqual(['men', 'women', 'unisex', 'tops', 'bottoms', 'accessories', 'featured', 'shoes', 'frontpage'])
+    expect([...collections].map(c => c.handle)).toEqual(['accessories', 'bottoms', 'featured', 'frontpage', 'men', 'shoes', 'tops', 'unisex', 'women'])
   })
 
   it('does not invent a Home page collection the data does not have: a store may delete it, so it belongs to the sample data', () => {
@@ -179,9 +218,30 @@ describe('variants as JSON (row 27; scenarios page-product, page-product-variant
   })
 
   it('never prints the internal data key of an image', async () => {
-    const out = await render('{{ all_products.hoodie.variants | json }}|{{ all_products.hoodie.featured_image | json }}|{{ all_products.hoodie.media | json }}|{{ all_products.hoodie.images | json }}|{{ all_products.hoodie.variants[0].featured_media | json }}|{{ images | json }}')
+    const out = await render('{{ all_products.hoodie.variants | json }}|{{ all_products.hoodie.featured_image | json }}|{{ all_products.hoodie.media | json }}|{{ all_products.hoodie.images | json }}|{{ all_products.hoodie.variants[0].featured_media | json }}|{{ images | json }}|{{ collections.men.image | json }}')
     expect(out).not.toContain('"data"')
-    expect(JSON.parse(out.split('|')[1])).toMatchObject({ src: expect.stringContaining('https://') })
+    expect(JSON.parse(out.split('|')[6])).toMatchObject({ src: expect.stringContaining('//cdn.shopify.com/') })
+  })
+
+  it('prints an image of a product as the same place prints it inside product | json (the form of the place is assumed: no recording prints one alone)', async () => {
+    const parts = (await render('{{ all_products.hoodie | json }}|{{ all_products.hoodie.media | json }}|{{ all_products.hoodie.images | json }}|{{ all_products.hoodie.featured_image | json }}|{{ all_products.hoodie.featured_media | json }}|{{ all_products.hoodie.variants[0].featured_image | json }}|{{ all_products.hoodie.variants[0].image | json }}|{{ all_products.hoodie.variants[0].featured_media | json }}')).split('|').map(part => JSON.parse(part))
+    const [whole, media, images, featured, featuredMedia, variantImage, variantImageAlias, variantMedia] = parts
+    expect(media).toEqual(whole.media)
+    expect(images).toEqual(whole.images)
+    expect(featured).toEqual(whole.featured_image)
+    expect(featuredMedia).toEqual(whole.media[0])
+    expect(variantImage).toEqual(whole.variants[0].featured_image)
+    expect(variantImageAlias).toEqual(variantImage)
+    expect(variantMedia).toEqual(whole.variants[0].featured_media)
+    expect(media[0].alt).toBeNull()
+    expect(typeof images[0]).toBe('string')
+    expect(Object.keys(variantImage)).toEqual(['id', 'product_id', 'position', 'created_at', 'updated_at', 'alt', 'width', 'height', 'src', 'variant_ids'])
+  })
+
+  it('leaves the JSON of an image from anywhere else as its own fields', async () => {
+    const image = JSON.parse(await render('{{ collections.men.image | json }}')) as Record<string, unknown>
+    expect(Object.keys(image)).toContain('src')
+    expect(Object.keys(image)).not.toContain('data')
   })
 
   it('leaves a product page\'s variants alone', async () => {

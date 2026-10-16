@@ -72,6 +72,18 @@ const MANUAL_ORDER = 'manual_products'
 /** The products of a built collection in the order of the store data: what the collection page's `sort_by=manual` shows, and what its other sorts start from, so a tie keeps the data's order. */
 export const manualProductsOf = (collection: LiquidObject): LiquidObject[] => (collection[MANUAL_ORDER] as LiquidObject[] | undefined) ?? collection.products as LiquidObject[]
 
+/** The hidden field that says which place of a product an image was built for, so `json` prints it as the product prints that place inside `product | json` (`imageJsonRole`). */
+const IMAGE_ROLE = '__image_role'
+
+/** Where a product's image sits, which sets its form in JSON: `image` (`product.images`, `product.featured_image`: the address), `media` (`product.media`, `product.featured_media`), `variant_image` (`variant.featured_image`, `variant.image`) and `variant_media` (`variant.featured_media`). `variant` is the variant that holds a variant's image. */
+export interface ImageRole {
+  role: 'image' | 'media' | 'variant_image' | 'variant_media'
+  variant?: LiquidObject
+}
+
+/** The place of a product's image, or undefined for an image from anywhere else (`images['logo']`, a collection's, an article's), which `json` prints as the drop's own fields. */
+export const imageJsonRole = (value: unknown): ImageRole | undefined => typeof value === 'object' && value !== null ? (value as LiquidObject)[IMAGE_ROLE] as ImageRole | undefined : undefined
+
 /** The hidden field that marks a built product for the `json` filter. */
 const PRODUCT_MARKER = '__product'
 
@@ -95,7 +107,11 @@ export function printsHandle (object: LiquidObject): LiquidObject {
 /** Product media: images (https://shopify.dev/docs/api/liquid/objects/media), videos (https://shopify.dev/docs/api/liquid/objects/video) and external videos (https://shopify.dev/docs/api/liquid/objects/external_video). Only media images carry a `preview_image`, https://shopify.dev/docs/api/liquid/objects/image#image-preview_image. `index` is the media's place in `product.media`; it becomes the media's `position`, counted from 1 (https://shopify.dev/docs/api/liquid/objects/media#media-position). The media page and shopify.dev's image page (https://shopify.dev/docs/api/liquid/objects/image#image-position) both show `1` in their example for the first entry but neither states the base; the parity store counts from 1 (fixture `probe-product-default`: the hoodie's eight media print positions 1 to 8 in `product | json`). Media from anywhere else has no position. */
 function buildMedia (media: MediaData, index?: number, title = ''): unknown {
   const position = index === undefined ? null : index + 1
-  if (media.media_type === 'image') return new ImageDrop(media, true, position, title)
+  if (media.media_type === 'image') {
+    const drop = new ImageDrop(media, true, position, title)
+    hidden(drop as unknown as LiquidObject, IMAGE_ROLE, { role: 'media' } satisfies ImageRole)
+    return drop
+  }
   return { ...media, alt: media.alt ?? '', preview_image: image(media.preview_image), position }
 }
 
@@ -194,8 +210,10 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
     selected_selling_plan_allocation: null,
     quantity_rule: { min: 1, max: null, increment: 1 }
   }
-  // marks a built variant for the `json` filter, which prints it with `variantLiquidJson`
+  // marks a built variant for the `json` filter, which prints it with `variantLiquidJson`, and its images with the place they have in it
   hidden(built, VARIANT_MARKER, true)
+  if (featured) hidden(featured as unknown as LiquidObject, IMAGE_ROLE, { role: 'variant_image', variant: built } satisfies ImageRole)
+  if (built.featured_media) hidden(built.featured_media as LiquidObject, IMAGE_ROLE, { role: 'variant_media', variant: built } satisfies ImageRole)
   return built
 }
 
@@ -205,7 +223,11 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
 export function buildProduct (data: ProductData, prefix = '', currency?: ViewCurrency): LiquidObject {
   const url = withPrefix(prefix, `/products/${data.handle}`)
   // The image `position` counts from 1, which shopify.dev's image page does not state (its example shows 1 for the first image) and the parity store prints (fixture `probe-product-default`: the first variant's image, the hoodie's sixth, prints `position` 6 in `product | json`).
-  const images = (data.images ?? []).map((img, i) => new ImageDrop(img, false, i + 1, data.title))
+  const images = (data.images ?? []).map((img, i) => {
+    const drop = new ImageDrop(img, false, i + 1, data.title)
+    hidden(drop as unknown as LiquidObject, IMAGE_ROLE, { role: 'image' } satisfies ImageRole)
+    return drop
+  })
   const mediaData: MediaData[] = data.media ?? (data.images ?? []).map(img => ({ ...img, media_type: 'image' as const }))
   const media = mediaData.map((entry, i) => buildMedia(entry, i, data.title))
   // https://shopify.dev/docs/api/liquid/objects/product#product-selling_plan_groups lists "the selling plan groups that the variants of the product are included in", and the selling_plan_group page describes a group as one "that include[s] any of a product's variants": a group that offers none of the product's variants (`variant_ids` empty, or naming only variants the product lacks) is not listed
@@ -343,7 +365,12 @@ export function selectSellingPlan (product: LiquidObject, planId: number | undef
 export function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>, filters: FilterData[] | undefined, prefix: string, currency?: ViewCurrency): LiquidObject {
   const items = data.products.map(handle => HandleMap.get(products, handle)).filter((product): product is LiquidObject => !!product)
   // `products` lists the collection in its default order wherever it is read, not only on the collection page: https://shopify.dev/docs/api/liquid/objects/collection#collection-default_sort_by; the parity store lists `collections['all'].products` by title in the header's predictive search suggestions and the empty cart's featured collection (scenarios `page-home` and `page-cart-empty`), where the data's order is Slides, Sweatpants, Men's T-shirt, Hoodie. The store data's order is the manual one (`MANUAL_ORDER`), which the collection page's own sort starts from (`collectionView`).
-  const ordered = sortProducts(items, data.sort_order ?? 'manual', AUTOMATIC_COLLECTIONS.has(data.handle))
+  // sorted when first read and kept, as the filters are, so a store build does not pay for collections no page shows
+  let listed: LiquidObject[] | undefined
+  const ordered = () => {
+    listed ??= sortProducts(items, data.sort_order ?? 'manual', AUTOMATIC_COLLECTIONS.has(data.handle))
+    return listed
+  }
   const collect = (key: string) => unique(items.flatMap(product => product[key] as string | string[]).filter(Boolean)).sort()
   const own = image(data.image)
   const url = withPrefix(prefix, `/collections/${data.handle}`)
@@ -355,8 +382,13 @@ export function buildCollection (data: CollectionData, products: HandleMap<Liqui
     description: data.description ?? '',
     url,
     image: own,
-    featured_image: own ?? ordered[0]?.featured_image ?? null,
-    products: ordered,
+    // the collection's own image, else the image of its first product in the order the collection lists them, which is the order Shopify shows: an assumption, no recording prints a collection without an image (every collection of the sample data has one); on `all` it is the first product by title
+    get featured_image () {
+      return own ?? ordered()[0]?.featured_image ?? null
+    },
+    get products () {
+      return ordered()
+    },
     products_count: items.length,
     all_products_count: items.length,
     all_tags: collect('tags'),
@@ -495,6 +527,7 @@ function buildLink (data: LinkData, path: string, prefix: string): LiquidObject 
   const current = linkPath(data.url) === linkPath(here)
   const target = stripQuery(data.url)
   // the list of collections holds no page below it: a collection's page does not light `/collections`, as the parity store renders it (scenarios `page-collection` and `page-collection-filtered`), while a blog's link is active on its articles (scenario `page-article`)
+  // no recording renders a menu on a product reached through a collection (`/collections/<c>/products/<p>`), so the list of collections being inactive there is the same rule extended, not recorded
   const holdsPagesBelow = target !== '/' && target !== '/collections'
   const active = current || (holdsPagesBelow && stripQuery(here).startsWith(`${target}/`))
   return {

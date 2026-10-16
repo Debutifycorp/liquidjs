@@ -31,7 +31,7 @@ function limitOf (value: RecommendationsRequest['limit']): number {
   return value === undefined || value === null || value === '' || !Number.isFinite(limit) ? MAX_LIMIT : Math.min(MAX_LIMIT, Math.max(1, limit))
 }
 
-/** Debutify's related products, from what the store data holds: the products of the collections the product is in (collections in store order, products in collection order, `all` and `frontpage` left out as shopify.dev's related-collections rule says), then the products of the same product type in store order. Shopify ranks by purchase history and product descriptions first and uses related collections when those are not available; the store data has no purchase history, and the product type stands in for similar descriptions. */
+/** Debutify's related products, from what the store data holds: the products of the collections the product is in (collections in store order, products in the collection's default order, `all` and `frontpage` left out as shopify.dev's related-collections rule says), then the products of the same product type in store order. Shopify ranks by purchase history and product descriptions first and uses related collections when those are not available; the store data has no purchase history, and the product type stands in for similar descriptions. */
 function related (store: StoreObjects, product: LiquidObject): LiquidObject[] {
   const fromCollections = HandleMap.values(store.collections)
     .filter(collection => !SKIPPED_COLLECTIONS.has(String(collection.handle)) && (collection.products as LiquidObject[]).includes(product))
