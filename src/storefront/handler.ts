@@ -126,11 +126,12 @@ function finish (response: Response, head: boolean, cookie?: string): Response {
 const CORS = { 'access-control-allow-origin': '*' }
 const PREFLIGHT = { ...CORS, 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type, accept, x-requested-with, x-storefront-page', 'access-control-max-age': '600' }
 
-/** The client script first in `<head>`. A document with no `<head>` gets it after its `<html>` tag, or its doctype, which the parser reads as the start of the head; before a doctype it would put the page in quirks mode. A fragment with none of the three gets it first. The tags are found by scanning, not by one pattern over the whole page, so a long page costs one pass. */
+/** The client script first in `<head>` (the storefront spec's "Sandboxed pages"), or, in a document with no `<head>`, after its `<html>` tag or its doctype, where the parser starts the head: before a doctype the script would put the page in quirks mode. HTML with none of the three is not a page (a `{% layout none %}` alternate template read with `?view=`, or JSON or text served as `text/html`): it has no head to put a script in, and the script would be its first bytes, so it is returned as it is. The tag is the first textual match, so a `<head` inside an earlier comment takes the script, and the tag ends at the first `>`; the three are found by scanning, not by one pattern over the whole page, so a long page costs one pass. */
 function injectClient (html: string, basePath: string): string {
-  const tag = `<script>${storefrontClientScript({ basePath }).replace(/<\/script/gi, '<\\/script')}</script>`
   const opening = /<head[\s>]/i.exec(html) ?? /<html[\s>]/i.exec(html) ?? /<!doctype[\s>]/i.exec(html)
-  const end = opening ? html.indexOf('>', opening.index) + 1 : 0
+  if (!opening) return html
+  const tag = `<script>${storefrontClientScript({ basePath }).replace(/<\/script/gi, '<\\/script')}</script>`
+  const end = html.indexOf('>', opening.index) + 1
   return html.slice(0, end) + tag + html.slice(end)
 }
 

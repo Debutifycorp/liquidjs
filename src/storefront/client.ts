@@ -3,11 +3,14 @@
  *
  * No shopify.dev page describes a sandboxed preview: this is Debutify's own, from the storefront spec's "Sandboxed pages". What it relies on is the platform's: a document's origin under `sandbox` is opaque (https://html.spec.whatwg.org/multipage/browsers.html#sandboxed-origin-browsing-context-flag), so `location.origin` reads `"null"` while `location.protocol` and `location.host` still name the host that served the page, which is what "the store's own host" means here; and the page's own path is the one in `location`, read when a request is made, since a theme moves the page's address with `history.replaceState` when a variant is picked.
  *
+ * Limits, on purpose: the in-memory storage is an object with the `Storage` methods, so `localStorage.key = value` as a property is not storage; a cookie is removed by `max-age=0` (or negative) or an `expires` in 1970, and no other expiry, `path` or `domain` is read; links are fixed when clicked (`click`, not `auxclick` or a hover), and a form's `action` when it is submitted (a `formaction` on a button is not); an address given as an absolute URL, or a relative one without a leading slash, is the page's own to get right. The script runs once per window: a second run (the script included twice, or inside a fragment that a library inserts and runs) does nothing, so what the page stored is kept and nothing is wrapped twice.
+ *
  * The base path is the only value written into the script. It is a JSON string with `<`, U+2028 and U+2029 escaped, so no base path can close the `<script>` element or break the string.
  */
 export function storefrontClientScript (options: { basePath: string }): string {
   const base = JSON.stringify(options.basePath.replace(/\/$/, '')).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')
   return `(function () {
+  try { if (window.__storefrontClient) return; Object.defineProperty(window, '__storefrontClient', { value: true }); } catch (e) {}
   var base = ${base};
   var own = Object.prototype.hasOwnProperty;
   function memory () {
@@ -45,7 +48,7 @@ export function storefrontClientScript (options: { basePath: string }): string {
     var root = window.Shopify && window.Shopify.routes && window.Shopify.routes.root;
     return (typeof root === 'string' && root.charAt(0) === '/' ? root : base + '/').replace(/\\/$/, '');
   }
-  function local (url) { return typeof url === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/' && url.charAt(1) !== '\\\\'; }
+  function local (url) { return typeof url === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/' && url.charAt(1) !== '\\\\' && !/[\\u0000-\\u001f\\u007f]/.test(url); }
   function fix (url) {
     if (!local(url)) return url;
     var p = prefix();
@@ -59,21 +62,30 @@ export function storefrontClientScript (options: { basePath: string }): string {
   var nativeFetch = window.fetch;
   if (nativeFetch) {
     window.fetch = function (input, init) {
+      var self = this, args = arguments;
       var isRequest = typeof Request === 'function' && input instanceof Request;
-      if (!(typeof input === 'string' ? local(input) : isRequest && input.url.indexOf(host + '/') === 0)) return nativeFetch.apply(this, arguments);
-      var rebuilt = input;
-      try {
-        if (isRequest) { var u = new URL(input.url); rebuilt = new Request(host + fix(u.pathname + u.search + u.hash), input); }
-        else rebuilt = fix(input);
-      } catch (e) {
-        return nativeFetch.apply(this, arguments);
-      }
+      if (!(typeof input === 'string' ? local(input) : isRequest && input.url.indexOf(host + '/') === 0)) return nativeFetch.apply(self, args);
       var options = {};
       for (var name in init) options[name] = init[name];
       var headers = new Headers(init && init.headers ? init.headers : (isRequest ? input.headers : undefined));
       headers.set('X-Storefront-Page', page());
       options.headers = headers;
-      return nativeFetch.call(this, rebuilt, options);
+      if (!isRequest) return nativeFetch.call(self, fix(input), options);
+      if (input.bodyUsed) return nativeFetch.apply(self, args);
+      var address;
+      try { var u = new URL(input.url); address = host + fix(u.pathname + u.search + u.hash); } catch (e) { return nativeFetch.apply(self, args); }
+      var bytes = input.body ? input.clone().arrayBuffer() : Promise.resolve(null);
+      return bytes.then(function (body) {
+        var request;
+        try {
+          var spec = { method: input.method, headers: input.headers, mode: input.mode, credentials: input.credentials, cache: input.cache, redirect: input.redirect, referrer: input.referrer, referrerPolicy: input.referrerPolicy, integrity: input.integrity, keepalive: input.keepalive, signal: input.signal };
+          if (body) spec.body = body;
+          request = new Request(address, spec);
+        } catch (e) {
+          return nativeFetch.apply(self, args);
+        }
+        return nativeFetch.call(self, request, options);
+      });
     };
   }
   var open = XMLHttpRequest.prototype.open;

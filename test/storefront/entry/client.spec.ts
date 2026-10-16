@@ -1,4 +1,5 @@
 /** @jest-environment ./test/support/jsdom-environment.cjs */
+import { Linter } from 'eslint'
 import type { JSDOM as JSDOMType } from 'jsdom'
 import { storefrontClientScript } from '../../../src/storefront'
 import { harness, harnessTheme } from './harness'
@@ -181,6 +182,40 @@ describe('the client script: requests', () => {
       ['/p/tok/fr-ca/cart.js', '/p/tok/fr-ca/products/x?variant=2']
     ])
   })
+  it('prefixes a Request that carries a body, and the body arrives whole, where a stream body in the init is refused', async () => {
+    // the rule of Chrome's Request constructor, which Node's does not share: a stream given as `init.body` throws (it wants `duplex`, and a streaming upload needs HTTP/2). Emulated here, not observed in a browser.
+    const strict = (window: any) => {
+      window.Request = class extends Request {
+        constructor (input: any, init?: any) {
+          if (init?.body && typeof init.body.getReader === 'function') throw new TypeError('The `duplex` member must be specified for a request with a streaming body')
+          super(input, init)
+        }
+      }
+    }
+    const { window, fetched, header } = recordingWindow(PAGE, '/p/tok', strict)
+    window.Shopify = { routes: { root: '/p/tok/fr-ca/' } }
+    await window.fetch(new window.Request('https://preview.invalid/cart/add.js', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"id":1}' }))
+    const sent = fetched[0].input
+    expect([sent.url, sent.method, sent.headers.get('content-type'), await sent.text(), header(fetched[0])]).toEqual(['https://preview.invalid/p/tok/fr-ca/cart/add.js', 'POST', 'application/json', '{"id":1}', '/p/tok/fr-ca/products/x?variant=2'])
+  })
+  it('passes a Request whose body is spent to the browser as it is', async () => {
+    const { window, fetched } = recordingWindow(PAGE)
+    const request = new window.Request('https://preview.invalid/cart/add.js', { method: 'POST', body: 'x' })
+    await request.text()
+    await window.fetch(request)
+    expect(fetched[0].input).toBe(request)
+  })
+  it('does not take an address with a control character for the store\'s own: a browser reads it as another host', async () => {
+    const { window, fetched, header } = recordingWindow('https://preview.invalid/products/x', '')
+    for (const url of ['/\t/evil.example/x', '/\n/evil.example/x', '/\r/evil.example/x', '/\u0000/x', '/\u007f/x']) await window.fetch(url)
+    expect(fetched.map(call => call.input)).toEqual(['/\t/evil.example/x', '/\n/evil.example/x', '/\r/evil.example/x', '/\u0000/x', '/\u007f/x'])
+    expect(fetched.map(header)).toEqual([null, null, null, null, null])
+    const xhr = new window.XMLHttpRequest()
+    const sent: string[][] = []
+    xhr.setRequestHeader = (name: string, value: string) => sent.push([name, value])
+    xhr.open('GET', '/\t/evil.example/x')
+    expect(sent).toEqual([])
+  })
   it('passes a URL object through untouched', async () => {
     const { window, fetched } = recordingWindow(PAGE)
     const url = new URL('https://cdn.example/x.js')
@@ -207,6 +242,27 @@ describe('the client script: requests', () => {
   })
 })
 
+describe('the client script: run twice', () => {
+  it('keeps what the page stored, and wraps nothing a second time', async () => {
+    const { window, fetched, xhr } = recordingWindow('https://preview.invalid/p/tok/fr-ca/products/x')
+    window.localStorage.setItem('a', '1')
+    window.sessionStorage.setItem('b', '2')
+    window.document.cookie = 'seen=1'
+    const wrapped = { fetch: window.fetch, open: window.XMLHttpRequest.prototype.open }
+    const listeners: string[] = []
+    const add = window.document.addEventListener.bind(window.document)
+    window.document.addEventListener = (type: string, ...rest: unknown[]) => { listeners.push(type); return (add as any)(type, ...rest) }
+    // a fragment inserted by a script-running library, or a page that includes the script twice
+    window.eval(storefrontClientScript({ basePath: '/p/tok' }))
+    expect([window.localStorage.getItem('a'), window.sessionStorage.getItem('b'), window.document.cookie]).toEqual(['1', '2', 'seen=1'])
+    expect([window.fetch, window.XMLHttpRequest.prototype.open]).toEqual([wrapped.fetch, wrapped.open])
+    expect(listeners).toEqual([])
+    await window.fetch('/cart.js')
+    new window.XMLHttpRequest().open('GET', '/cart.js')
+    expect([fetched.length, xhr.filter(entry => entry[0] === 'header').length]).toEqual([1, 1])
+  })
+})
+
 describe('the client script: links and forms', () => {
   it('prefixes a link when it is clicked, also from a child element, and leaves other links alone', () => {
     const { window } = recordingWindow('https://preview.invalid/p/tok/fr-ca/')
@@ -226,9 +282,14 @@ describe('the client script: links and forms', () => {
 })
 
 describe('the client script text', () => {
-  it('is plain ES5: no arrow function, let, const, class, template literal or spread', () => {
-    const script = storefrontClientScript({ basePath: '/p/tok' })
-    expect(script).not.toMatch(/=>|\blet\b|\bconst\b|\bclass\b|`|\.\.\./)
+  // the script runs in every browser the theme supports, and nothing transpiles it: it is parsed here as ES5 by eslint's own parser, a direct dev dependency
+  const parseAsEs5 = (code: string) => new Linter().verify(code, { languageOptions: { ecmaVersion: 5, sourceType: 'script' } }).filter(message => message.fatal).map(message => message.message)
+
+  it('parses as ES5, for an ordinary, an empty and a hostile base path', () => {
+    for (const basePath of ['/p/tok', '', '/a</script><!--\u2028\u2029"\\']) expect([basePath, parseAsEs5(storefrontClientScript({ basePath }))]).toEqual([basePath, []])
+  })
+  it('has a parse check that rejects what ES5 lacks', () => {
+    for (const code of ['var f = () => 1;', 'let a = 1;', 'const a = 1;', 'var a = `x`;', 'class A {}', 'async function f () {}', 'var a = b?.c;', 'var a = b ?? c;', 'var o = { m () {} };', 'var { a } = b;', 'function f (a = 1) {}', 'for (var a of b) {}', 'f(...a);']) expect([code, parseAsEs5(code).length > 0]).toEqual([code, true])
   })
   it('holds the base path as a string that cannot close the script or break a line', () => {
     const script = storefrontClientScript({ basePath: '/p/tok/' })

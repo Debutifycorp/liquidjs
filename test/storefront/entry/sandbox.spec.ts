@@ -1,5 +1,5 @@
 import { storefrontClientScript } from '../../../src/storefront'
-import { harness, VISITOR } from './harness'
+import { harness, harnessTheme, VISITOR } from './harness'
 
 const sandbox = { visitor: 'preview-token-0000000001', basePath: '/p/tok', sandbox: true }
 const HOODIE = 43695847538710
@@ -113,6 +113,11 @@ describe('sandbox mode: where the client script goes', () => {
     expect((await send('GET', '/p/tok/fr-ca')).text).toContain('Shopify.routes.root = "/p/tok/fr-ca/";')
     expect((await send('GET', '/p/tok')).text).toContain('Shopify.routes.root = "/p/tok/";')
   })
+  it('goes at the first <head, <html or doctype in the text, which a comment or an attribute can mislead', async () => {
+    const odd = await harness({ notice: () => new Response('<!doctype html><!-- <head> --><html><head></head></html>', { headers: { 'content-type': 'text/html' } }) }, sandbox).send('GET', '/p/tok/checkout')
+    // the first textual match, as the pattern of any script injector is: the comment's `<head>` takes it
+    expect(odd.text.startsWith('<!doctype html><!-- <head><script>')).toBe(true)
+  })
   it('goes after the doctype and <html> of a document with no <head>, so its mode stays standards mode', async () => {
     const bare = (html: string) => harness({ notice: () => new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8', 'content-length': String(html.length) } }) }, sandbox)
     const withHtml = await bare('<!doctype html><html lang="en"><body>x</body></html>').send('GET', '/p/tok/checkout')
@@ -121,11 +126,31 @@ describe('sandbox mode: where the client script goes', () => {
     expect(withHtml.headers.get('content-length')).toBeNull()
     const doctypeOnly = await bare('<!DOCTYPE html><p>x</p>').send('GET', '/p/tok/checkout')
     expect(doctypeOnly.text.startsWith('<!DOCTYPE html><script>')).toBe(true)
-    const fragment = await bare('<p>x</p>').send('GET', '/p/tok/checkout')
-    expect(fragment.text.startsWith('<script>')).toBe(true)
     // `<header>` is no `<head>`
     const header = await bare('<!doctype html><html><body><header>x</header></body></html>').send('GET', '/p/tok/checkout')
     expect(header.text.startsWith('<!doctype html><html><script>')).toBe(true)
+  })
+  it('does not go into HTML with no <head>, <html> or doctype: a fragment, or JSON or text served as text/html', async () => {
+    const files = { ...harnessTheme().files, 'templates/product.quick.liquid': '{% layout none %}<div class="quick">{{ product.title }}</div>', 'templates/product.data.liquid': '{% layout none %}{"title": {{ product.title | json }}}' }
+    const { send } = harness({ theme: { files } }, sandbox)
+    // `?view=` names an alternate template, and `{% layout none %}` leaves out the layout: the stock way to fetch a fragment (a quick view, a mini cart) or to print JSON from Liquid
+    const quick = await send('GET', '/p/tok/products/black-sunnies?view=quick')
+    expect([quick.status, quick.headers.get('content-type'), quick.text, quick.headers.get('access-control-allow-origin')]).toEqual([200, expect.stringMatching(/^text\/html/), '<div class="quick">Black Sunnies</div>', '*'])
+    const data = await send('GET', '/p/tok/products/black-sunnies?view=data')
+    expect([data.status, data.headers.get('content-type'), data.json]).toEqual([200, expect.stringMatching(/^text\/html/), { title: 'Black Sunnies' }])
+    const served = (body: string) => harness({ notice: () => new Response(body, { headers: { 'content-type': 'text/html' } }) }, sandbox).send('GET', '/p/tok/checkout')
+    expect((await served('{"ok":true}')).text).toBe('{"ok":true}')
+    expect((await served('plain text')).text).toBe('plain text')
+    expect((await served('')).text).toBe('')
+    // a page of the same theme still gets it
+    expect((await send('GET', '/p/tok/products/black-sunnies')).text).toContain('X-Storefront-Page')
+  })
+  it('answers a body that breaks a rule with the JSON error, readable by any origin', async () => {
+    const { send } = harness({}, sandbox)
+    const big = await send('POST', '/p/tok/cart/add.js', JSON.stringify({ id: HOODIE, note: 'x'.repeat(70000) }), { 'content-type': 'application/json', origin: 'null' })
+    expect([big.status, big.headers.get('access-control-allow-origin'), big.headers.get('set-cookie'), big.text.includes('<script')]).toEqual([413, '*', null, false])
+    const broken = await send('POST', '/p/tok/cart/add.js', '{"id":', { 'content-type': 'application/json', origin: 'null' })
+    expect([broken.status, broken.headers.get('access-control-allow-origin'), broken.headers.get('set-cookie'), broken.text.includes('<script')]).toEqual([400, '*', null, false])
   })
   it('does not go into JSON, section answers, redirects or a HEAD answer', async () => {
     const { send } = harness({}, sandbox)
