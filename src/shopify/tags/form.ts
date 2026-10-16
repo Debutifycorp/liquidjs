@@ -21,6 +21,8 @@ type Resource = Record<string, unknown> | undefined
 
 interface FormType {
   action: (resource: Resource) => string
+  /** The action carries `#` and the form's id, as the parity store prints a contact or customer form (scenarios `page-home`, `page-contact`). */
+  anchored?: boolean
   /** The action is built from a resource URL that already sits under the view's prefix (`new_comment`), so the prefix is not put before it again. */
   prefixed?: boolean
   id?: (resource: Resource) => string
@@ -51,10 +53,10 @@ const READABLE_OBJECT = /^[\w\-.[\]()]+$/
 const FORM_TYPES: Record<string, FormType> = {
   activate_customer_password: { action: () => '/account/activate' },
   cart: { action: () => '/cart', id: () => 'cart_form', className: 'shopify-cart-form', multipart: true },
-  contact: { action: () => '/contact#contact_form', id: () => 'contact_form', className: 'contact-form' },
+  contact: { action: () => '/contact', anchored: true, id: () => 'contact_form', className: 'contact-form' },
   create_customer: { action: () => '/account', id: () => 'create_customer', extra: [['data-login-with-shop-sign-up', 'true']] },
   currency: { action: () => '/cart/update', id: () => 'currency_form', className: 'shopify-currency-form', multipart: true, before: request => [['return_to', pageAddress(request)]] },
-  customer: { action: () => '/contact#contact_form', id: () => 'contact_form', className: 'contact-form' },
+  customer: { action: () => '/contact', anchored: true, id: () => 'contact_form', className: 'contact-form' },
   customer_address: {
     action: address => (address && prop(address, 'id') ? `/account/addresses/${prop(address, 'id')}` : '/account/addresses'),
     id: address => (address && prop(address, 'id') ? `address_form_${prop(address, 'id')}` : 'address_form_new'),
@@ -227,7 +229,8 @@ export class FormTag extends Tag {
     const attributes = (yield this.hash.render(ctx)) as Record<string, unknown>
     const id = 'id' in attributes ? stringify(plainValue(attributes.id)) : spec.id?.(resource)
     const className = 'class' in attributes ? stringify(plainValue(attributes.class)) : spec.className
-    const action = spec.prefixed ? spec.action(resource) : withPrefix(state.request.prefix, spec.action(resource))
+    const path = spec.prefixed ? spec.action(resource) : withPrefix(state.request.prefix, spec.action(resource))
+    const action = spec.anchored && id !== undefined ? `${path}#${id}` : path
     let open = `<form method="post" action="${escapeHtml(action)}"`
     if (id !== undefined) open += attribute('id', id)
     open += ' accept-charset="UTF-8"'
