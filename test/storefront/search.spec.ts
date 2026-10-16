@@ -142,11 +142,11 @@ describe('search beyond the recorded scenarios', () => {
   })
 
   it('links a product the variant filters narrow to its first matching variant', async () => {
-    const results = await searchJson('/search?q=sneakers&filter.v.option.size=12', 'search.results')
-    expect(results.map((result: any) => [result.handle, result.url.replace(/\d+$/, '<id>')])).toEqual([['canvas-sneakers', '/products/canvas-sneakers?variant=<id>'], ['gray-leather-sneakers', '/products/gray-leather-sneakers?variant=<id>']])
+    // read as a template reads it: a product result prints through `json` as a built product does (final review B, M2), which has no `url`
+    const urls = (url: string) => searchPage(url, '{% for r in search.results %}{{ r.handle }}={{ r.url }};{% endfor %}')
+    expect((await urls('/search?q=sneakers&filter.v.option.size=12')).replace(/\d+(?=;)/g, '<id>')).toBe('canvas-sneakers=/products/canvas-sneakers?variant=<id>;gray-leather-sneakers=/products/gray-leather-sneakers?variant=<id>;')
     // a product whose every variant passes keeps its own address
-    const all = await searchJson('/search?q=sneakers&filter.v.availability=1', 'search.results')
-    expect(all.find((result: any) => result.handle === 'canvas-sneakers').url).toBe('/products/canvas-sneakers')
+    expect(await urls('/search?q=sneakers&filter.v.availability=1')).toContain('canvas-sneakers=/products/canvas-sneakers;')
   })
 
   it('extends the links of a request built by hand, with no query, in place', () => {

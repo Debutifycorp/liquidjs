@@ -1,6 +1,6 @@
 import { HandleMap } from '../objects/handle-map'
 import type { ImageDrop } from '../objects/image'
-import { articlesInDataOrder, printsHandle, type LiquidObject, type StoreObjects } from './build'
+import { articlesInDataOrder, copyObject, printsHandle, type LiquidObject, type StoreObjects } from './build'
 import { sortProducts } from './collection-view'
 import { buildFilters, filterMatcher, requestQuery } from './filters'
 import type { RequestInput } from './globals'
@@ -22,6 +22,15 @@ function searchable (item: LiquidObject, kind: 'product' | 'page' | 'article'): 
 function matches (found: string[], terms: string[], prefix: boolean): boolean {
   const all = new Set(found)
   return terms.every((term, at) => at < terms.length - 1 || !prefix ? all.has(term) : found.some(word => word.startsWith(term)))
+}
+
+/**
+ * A copy of a built object with `changes` set, as `collectionView` makes one of a product (`copyOf`): every own property as the object has it, the hidden ones and the accessors included, so the `json` filter still knows a product by its marker and its image roles (final review B, M2: the spread `{ ...product }` dropped them, and `search.results.first | json` printed the engine's raw key order, 45,650 characters, where `all_products[handle] | json` prints the parity store's form, 33,348). The object's `toString` is left out: it names the original's handle, and `printsHandle` sets the copy's own.
+ */
+function copyWith (object: LiquidObject, changes: LiquidObject): LiquidObject {
+  const copy = copyObject(object, 'toString')
+  for (const [key, value] of Object.entries(changes)) Object.defineProperty(copy, key, { value, enumerable: true, configurable: true, writable: true })
+  return copy
 }
 
 /** The search page's sort options, names and values, as the parity store prints them (fixture `probe-search-none`; https://shopify.dev/docs/api/liquid/objects/search gives no values). */
@@ -72,12 +81,12 @@ export function buildSearch (store: StoreObjects, terms: string | undefined, req
     const variant = linked ? matcher.firstVariant(product) : undefined
     // the matching variant's media is the bare image, as on the collection page (`collectionView`; scenario `page-collection-filtered` records it there, search is not recorded with variant filters: the same mechanism is assumed)
     const media = variant?.featured_media as ImageDrop | null | undefined
-    return { item: variant ? { ...product, url: variant.url, featured_media: media?.preview_image ?? product.featured_media } : product, kind: 'product' as Kind }
+    return { item: variant ? copyWith(product, { url: variant.url, featured_media: media?.preview_image ?? product.featured_media }) : product, kind: 'product' as Kind }
   }
   const pages = find(HandleMap.values(store.pages), 'page').map(page => ({ item: page, kind: 'page' as Kind }))
   // an article found by search has its blog in its handle, `news/liquidpeak-450` (fixtures `probe-search-shirt` and `probe-search-prefix`), where `article.handle` elsewhere is the article's own
   const articles = HandleMap.values(store.blogs)
-    .flatMap(blog => find(articlesInDataOrder(blog), 'article').map(article => ({ item: { ...article, handle: `${blog.handle}/${article.handle}` }, kind: 'article' as Kind })))
+    .flatMap(blog => find(articlesInDataOrder(blog), 'article').map(article => ({ item: copyWith(article, { handle: `${blog.handle}/${article.handle}` }), kind: 'article' as Kind })))
   // `last` sets the unavailable products apart, to follow every other result; a price order pushes the non-products to the end of the results, behind those products
   const apart = unavailable === 'last'
   const inOrder = (list: LiquidObject[]) => (sortBy === 'relevance' ? list : sortProducts(list, sortBy)).map(asProduct)
@@ -87,7 +96,7 @@ export function buildSearch (store: StoreObjects, terms: string | undefined, req
   const found = [...leading, ...(priced ? trailing : []), ...pages, ...articles, ...(priced ? [] : trailing)].slice(0, LIMIT)
   return {
     performed: true,
-    results: found.map(({ item, kind }) => printsHandle({ ...item, object_type: kind })),
+    results: found.map(({ item, kind }) => printsHandle(copyWith(item, { object_type: kind }))),
     results_count: found.length,
     filters: buildFilters(store.storefrontFilters, matching, request.query ? withPrefix(prefix, '/search') : withPrefix(prefix, `/search?q=${encodeURIComponent(terms)}`), query, store.currency),
     ...base
