@@ -37,13 +37,17 @@ function pluralize (count: unknown, singular: unknown, plural: unknown) {
   return Math.trunc(Number(plainValue(toValue(count)))) === 1 ? singular : plural
 }
 
-/** Matches both examples on https://shopify.dev/docs/api/liquid/filters/link_to: `title=""` when nothing else is given, extra attributes before `href`, `rel="nofollow"` last. The page does not explain `title=""` or `rel="nofollow"`; they are copied from its two outputs, and whether `rel="nofollow"` is dropped for links to the shop's own pages is not pinned by shopify.dev. */
+/** An address that stays on the shop: no scheme and not protocol-relative (`/`, `/fr-ca/products/hoodie`, `#top`, `products/x`). */
+const SHOP_PAGE = /^(?![a-z][a-z0-9+.-]*:|\/\/)/i
+
+/** Matches both examples on https://shopify.dev/docs/api/liquid/filters/link_to: `title=""` when nothing else is given, extra attributes before `href`, `rel="nofollow"` last. The page does not explain `title=""` or `rel="nofollow"`; they are copied from its two outputs, whose address is an external one (`https://www.shopify.com`). A link to a page of the shop carries no `rel`, as the parity store prints the shop name linked to `routes.root_url` (scenario `page-home`: `<a href="/" title="">Debutify Parity</a>`); `rel="nofollow"` is therefore added to an address with a scheme or a host only. What an absolute address on the shop's own host prints is not pinned by shopify.dev or a recording, and it counts as external here. */
 function linkTo (text: unknown, url: unknown, ...args: unknown[]) {
   const { positional, order } = splitArgs(args)
   const display = namedForDisplay(args)
   const extra = order.map(name => attribute(name, display[name])).join('')
   const title = positional.length ? attribute('title', positional[0]) : extra ? '' : ' title=""'
-  return `<a${extra} href="${escapeHtml(url)}"${title} rel="nofollow">${stringify(text)}</a>`
+  const rel = SHOP_PAGE.test(stringify(url)) ? '' : ' rel="nofollow"'
+  return `<a${extra} href="${escapeHtml(url)}"${title}${rel}>${stringify(text)}</a>`
 }
 
 /** A product URL under a collection's URL, https://shopify.dev/docs/api/liquid/filters/within (`/products/draught-of-immortality` within a collection prints `/collections/sale-potions/products/draught-of-immortality`). The page does not say what a collection without a URL does; the URL is returned unchanged here. */
@@ -56,14 +60,16 @@ function within (this: FilterImpl, url: unknown, collection: unknown) {
 
 /**
  * Shopify's built-in `format:` names. https://shopify.dev/docs/api/liquid/filters/date and https://shopify.dev/docs/api/liquid/filters/time_tag list `abbreviated_date`, `basic`, `date`, `date_at_time`, `default`, `on_date` and the deprecated `short` and `long`, but describe none of them: only `abbreviated_date` has an output (`Apr 14, 2022`), and the two tables https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files links for them (`/docs/api/liquid/filters/date-format` and `/docs/api/liquid/filters/time_tag-format`) returned 404 on 2026-10-13. The other strings follow Shopify's English storefront formats as best known and are not pinned by shopify.dev; each goes on the "confirm on a development store" list before any is marked exact. A theme's own `date_formats` in its locale file win over these.
+ *
+ * The day is not padded, as the parity store prints `format: 'date'` (scenarios `page-blog` and `page-article`: `February 7, 2023`, where the page's examples have a two-digit day and cannot tell). The recordings hold no other name, so the other formats that print a day (`abbreviated_date`, `date_at_time`, `default`, `on_date`) take the same unpadded day on the assumption that Shopify's English formats share it; `basic`, `short` and `long` are unchanged.
  */
 const DATE_FORMATS: Record<string, string> = {
-  abbreviated_date: '%b %d, %Y',
+  abbreviated_date: '%b %-d, %Y',
   basic: '%m/%d/%Y',
-  date: '%B %d, %Y',
-  date_at_time: '%B %d, %Y at %-l:%M %P',
-  default: '%a, %b %d, %Y, %-l:%M %P %z',
-  on_date: 'on %b %d, %Y',
+  date: '%B %-d, %Y',
+  date_at_time: '%B %-d, %Y at %-l:%M %P',
+  default: '%a, %b %-d, %Y, %-l:%M %P %z',
+  on_date: 'on %b %-d, %Y',
   short: '%d %b %H:%M',
   long: '%B %d, %Y %H:%M'
 }
@@ -159,12 +165,12 @@ function date (this: FilterImpl, input: unknown, ...args: unknown[]) {
   return engineDate.call(this, readable(this, input, timezone) as string | Date, format, timezone)
 }
 
-/** https://shopify.dev/docs/api/liquid/filters/time_tag: a `<time>` tag whose `datetime` is UTC `YYYY-MM-DDThh:mm:ssZ` by default (`2022-04-14 16:56:02 -0400` prints `2022-04-14T20:56:02Z`; the page infers UTC from its examples only), `datetime:` takes a strftime format, `format:` a name or `date_formats` key. Zone-less strings are read as `date` reads them. */
+/** https://shopify.dev/docs/api/liquid/filters/time_tag: a `<time>` tag whose `datetime` is UTC `YYYY-MM-DDThh:mm:ssZ` by default (`2022-04-14 16:56:02 -0400` prints `2022-04-14T20:56:02Z`; the page infers UTC from its examples only), `datetime:` takes a strftime format, `format:` a name or `date_formats` key; with neither, the text is the `date` format (not pinned by shopify.dev). Zone-less strings are read as `date` reads them. */
 function timeTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const when = resolveDate(this, input)
   if (!when) return ''
   const { positional, named } = splitArgs(args)
-  const format = positional.length ? stringify(positional[0]) : named.format !== undefined ? namedFormat(this, stringify(named.format)) : '%B %d, %Y'
+  const format = positional.length ? stringify(positional[0]) : named.format !== undefined ? namedFormat(this, stringify(named.format)) : DATE_FORMATS.date
   const utc = new LiquidDate(when.dateValue(), this.context.opts.locale, 0)
   const datetime = named.datetime !== undefined ? strftime(when, stringify(named.datetime)) : strftime(utc, '%Y-%m-%dT%H:%M:%SZ')
   return `<time datetime="${escapeHtml(datetime)}">${escapeHtml(strftime(when, format))}</time>`

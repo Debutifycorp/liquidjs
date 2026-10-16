@@ -109,6 +109,14 @@ describe('text filters', () => {
     expect(await render("{{ 'Shopify' | link_to: 'https://www.shopify.com' }}")).toBe('<a href="https://www.shopify.com" title="" rel="nofollow">Shopify</a>')
     expect(await render("{{ 'Shopify' | link_to: 'https://www.shopify.com', class: 'link-class' }}")).toBe('<a class="link-class" href="https://www.shopify.com" rel="nofollow">Shopify</a>')
   })
+  // as the parity store renders it (scenario `page-home`, the shop name linked to `routes.root_url`): a link to a page of the shop carries no `rel`, where the page's external examples above carry `rel="nofollow"`
+  it('links to a page of the shop without rel nofollow', async () => {
+    expect(await render("{{ 'Debutify Parity' | link_to: routes.root_url }}", { routes: { root_url: '/' } })).toBe('<a href="/" title="">Debutify Parity</a>')
+    expect(await render("{{ 'Hoodie' | link_to: '/fr-ca/products/hoodie', class: 'link-class' }}")).toBe('<a class="link-class" href="/fr-ca/products/hoodie">Hoodie</a>')
+    expect(await render("{{ 'Hoodie' | link_to: '/products/hoodie', 'My title' }}")).toBe('<a href="/products/hoodie" title="My title">Hoodie</a>')
+    expect(await render("{{ 'Top' | link_to: '#top' }}")).toBe('<a href="#top" title="">Top</a>')
+    expect(await render("{{ 'Shopify' | link_to: '//www.shopify.com' }}")).toBe('<a href="//www.shopify.com" title="" rel="nofollow">Shopify</a>')
+  })
   it('escapes once the page input with a bare ampersand', async () => expect(await render(`{{ "&lt;p&gt;Text to be escaped.&lt;/p&gt; & some additional text" | escape_once }}`)).toBe('&lt;p&gt;Text to be escaped.&lt;/p&gt; &amp; some additional text'))
   it('links with a title and with a Ruby decimal attribute', async () => {
     expect(await render("{{ 'Shopify' | link_to: 'https://www.shopify.com', 'My title' }}")).toBe('<a href="https://www.shopify.com" title="My title" rel="nofollow">Shopify</a>')
@@ -132,6 +140,14 @@ describe('text filters', () => {
     expect(await render("{{ article.created_at | time_tag: format: 'abbreviated_date' }}", scope)).toBe('<time datetime="2022-04-14T20:56:02Z">Apr 14, 2022</time>')
     expect(await render("{{ article.created_at | time_tag: '%B %d, %Y', datetime: '%Y-%m-%d' }}", scope)).toBe('<time datetime="2022-04-14">April 14, 2022</time>')
     expect(await render("{{ article.created_at | time_tag: format: 'month_day_year' }}", scope)).toBe('<time datetime="2022-04-14T20:56:02Z">April 14, 2022</time>')
+  })
+  // as the parity store renders it (scenarios `page-blog`, `page-article`: `February 7, 2023`, with `format: 'date'`): the day is not padded. The shopify.dev examples above print `14` and cannot tell
+  it('does not pad the day of the built-in formats', async () => {
+    const scope = { article: { created_at: '2023-02-07 16:28:25 +0000' } }
+    expect(await render("{{ article.created_at | time_tag: format: 'date' }}", scope)).toBe('<time datetime="2023-02-07T16:28:25Z">February 7, 2023</time>')
+    expect(await render('{{ article.created_at | time_tag }}', scope)).toBe('<time datetime="2023-02-07T16:28:25Z">February 7, 2023</time>')
+    expect(await render("{{ article.created_at | date: format: 'date' }}|{{ article.created_at | date: format: 'abbreviated_date' }}|{{ article.created_at | date: format: 'on_date' }}", scope)).toBe('February 7, 2023|Feb 7, 2023|on Feb 7, 2023')
+    expect(await render("{{ article.created_at | date: format: 'date_at_time' }}|{{ article.created_at | date: format: 'default' }}", scope)).toBe('February 7, 2023 at 4:28 pm|Tue, Feb 7, 2023, 4:28 pm +0000')
   })
   // https://shopify.dev/docs/api/liquid/filters/date: 'now' and 'today' output the current timestamp
   it('reads now from the clock service', async () => {
