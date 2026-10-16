@@ -61,7 +61,7 @@ describe('selling plans', () => {
     })
   })
 
-  for (const name of ['probe-product-plans', 'probe-product-plan-selected', 'probe-product-requires-plan', 'probe-product-en-eu', 'probe-product-fr-eu', 'probe-product-default']) {
+  for (const name of ['probe-product-plans', 'probe-product-plan-selected', 'probe-product-plan-second', 'probe-product-plan-variant', 'probe-product-requires-plan', 'probe-product-en-eu', 'probe-product-fr-eu', 'probe-product-default']) {
     it(`matches ${name}`, async () => {
       const { actual, expected } = await probeMatches(name, pick)
       expect(actual).toEqual(expected)

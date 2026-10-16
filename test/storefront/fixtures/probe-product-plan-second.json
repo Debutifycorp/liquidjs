@@ -1,0 +1,606 @@
+{
+  "scenario": "probe-product-plan-second",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/products/slides?view=probe&selling_plan=71002",
+      "status": 200,
+      "location": null,
+      "body": {
+        "id": 7982853619734,
+        "title": "Slides",
+        "description": "<p data-mce-fragment=\"1\">Simple, minimal and comfortable, these slides feature a classic design in the perfect shade of iron. Whether you're just lounging around the house or running errands, these slides will offer all-day comfort.</p>",
+        "url": "/products/slides",
+        "template_suffix": null,
+        "template": {
+          "name": "product",
+          "suffix": "probe"
+        },
+        "price": 2500,
+        "price_min": 2500,
+        "price_max": 2500,
+        "compare_at_price": null,
+        "money": "$25.00",
+        "money_with_currency": "$25.00 USD",
+        "selected_variant": null,
+        "selected_or_first_available_variant": 43695710371862,
+        "first_available_variant": 43695710371862,
+        "requires_selling_plan": false,
+        "selected_selling_plan": 71002,
+        "selected_or_first_available_selling_plan_allocation": 71001,
+        "options_with_values": [
+          {
+            "name": "Size",
+            "selected_value": "Small"
+          }
+        ],
+        "variants": [
+          {
+            "id": 43695710371862,
+            "title": "Small",
+            "price": 2500,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 48,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/products/slides?variant=43695710371862",
+            "selected_selling_plan_allocation": null,
+            "allocations": [
+              {
+                "selling_plan": 71001,
+                "group": "8dc695b2245258bba889d6dbbc6c4157d87a16cb",
+                "price": 2250,
+                "compare_at_price": 2500,
+                "per_delivery_price": 2250,
+                "price_adjustments": [
+                  {
+                    "position": 1,
+                    "price": 2250
+                  }
+                ]
+              },
+              {
+                "selling_plan": 71002,
+                "group": "8dc695b2245258bba889d6dbbc6c4157d87a16cb",
+                "price": 2300,
+                "compare_at_price": 2500,
+                "per_delivery_price": 2300,
+                "price_adjustments": [
+                  {
+                    "position": 1,
+                    "price": 2300
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": 43695710404630,
+            "title": "Medium",
+            "price": 2500,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 49,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/products/slides?variant=43695710404630",
+            "selected_selling_plan_allocation": null,
+            "allocations": [
+              {
+                "selling_plan": 71001,
+                "group": "8dc695b2245258bba889d6dbbc6c4157d87a16cb",
+                "price": 2250,
+                "compare_at_price": 2500,
+                "per_delivery_price": 2250,
+                "price_adjustments": [
+                  {
+                    "position": 1,
+                    "price": 2250
+                  }
+                ]
+              },
+              {
+                "selling_plan": 71002,
+                "group": "8dc695b2245258bba889d6dbbc6c4157d87a16cb",
+                "price": 2300,
+                "compare_at_price": 2500,
+                "per_delivery_price": 2300,
+                "price_adjustments": [
+                  {
+                    "position": 1,
+                    "price": 2300
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": 43695710437398,
+            "title": "Large",
+            "price": 2500,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 50,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/products/slides?variant=43695710437398",
+            "selected_selling_plan_allocation": null,
+            "allocations": [
+              {
+                "selling_plan": 71001,
+                "group": "8dc695b2245258bba889d6dbbc6c4157d87a16cb",
+                "price": 2250,
+                "compare_at_price": 2500,
+                "per_delivery_price": 2250,
+                "price_adjustments": [
+                  {
+                    "position": 1,
+                    "price": 2250
+                  }
+                ]
+              },
+              {
+                "selling_plan": 71002,
+                "group": "8dc695b2245258bba889d6dbbc6c4157d87a16cb",
+                "price": 2300,
+                "compare_at_price": 2500,
+                "per_delivery_price": 2300,
+                "price_adjustments": [
+                  {
+                    "position": 1,
+                    "price": 2300
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "selling_plan_groups": [
+          {
+            "id": "8dc695b2245258bba889d6dbbc6c4157d87a16cb",
+            "name": "Subscribe and save",
+            "app_id": null,
+            "selected": null,
+            "options": [
+              {
+                "name": "Delivery every",
+                "position": 1,
+                "values": [
+                  "2 weeks",
+                  "Month"
+                ],
+                "selected_value": "Month"
+              }
+            ],
+            "selling_plans": [
+              {
+                "id": 71001,
+                "name": "Every 2 weeks, 10% off",
+                "description": null,
+                "recurring_deliveries": true,
+                "selected": false,
+                "group_id": "8dc695b2245258bba889d6dbbc6c4157d87a16cb",
+                "options": [
+                  {
+                    "name": "Delivery every",
+                    "position": 1,
+                    "value": "2 weeks"
+                  }
+                ],
+                "price_adjustments": [
+                  {
+                    "order_count": null,
+                    "position": 1,
+                    "value": 10,
+                    "value_type": "percentage"
+                  }
+                ]
+              },
+              {
+                "id": 71002,
+                "name": "Every month, $2.00 off",
+                "description": null,
+                "recurring_deliveries": true,
+                "selected": true,
+                "group_id": "8dc695b2245258bba889d6dbbc6c4157d87a16cb",
+                "options": [
+                  {
+                    "name": "Delivery every",
+                    "position": 1,
+                    "value": "Month"
+                  }
+                ],
+                "price_adjustments": [
+                  {
+                    "order_count": null,
+                    "position": 1,
+                    "value": 200,
+                    "value_type": "fixed_amount"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "ajax": {
+          "id": 7982853619734,
+          "title": "Slides",
+          "handle": "slides",
+          "description": "<p data-mce-fragment=\"1\">Simple, minimal and comfortable, these slides feature a classic design in the perfect shade of iron. Whether you're just lounging around the house or running errands, these slides will offer all-day comfort.</p>",
+          "published_at": "2026-10-15T13:02:07-04:00",
+          "created_at": "2026-10-15T13:02:04-04:00",
+          "vendor": "Mock.shop",
+          "type": "Sandals",
+          "tags": [
+            "accessories",
+            "shoes",
+            "unisex"
+          ],
+          "price": 2500,
+          "price_min": 2500,
+          "price_max": 2500,
+          "available": true,
+          "price_varies": false,
+          "compare_at_price": null,
+          "compare_at_price_min": 0,
+          "compare_at_price_max": 0,
+          "compare_at_price_varies": false,
+          "variants": [
+            {
+              "id": 43695710371862,
+              "title": "Small",
+              "option1": "Small",
+              "option2": null,
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774608687126,
+                "product_id": 7982853619734,
+                "position": 1,
+                "created_at": "2026-10-15T13:44:47-04:00",
+                "updated_at": "2026-10-15T13:44:49-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+                "variant_ids": [
+                  43695710371862,
+                  43695710404630,
+                  43695710437398
+                ]
+              },
+              "available": true,
+              "name": "Slides - Small",
+              "public_title": "Small",
+              "options": [
+                "Small"
+              ],
+              "price": 2500,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774608687126,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [
+                {
+                  "price_adjustments": [
+                    {
+                      "position": 1,
+                      "price": 2250
+                    }
+                  ],
+                  "price": 2250,
+                  "compare_at_price": 2500,
+                  "per_delivery_price": 2250,
+                  "selling_plan_id": 71001,
+                  "selling_plan_group_id": "8dc695b2245258bba889d6dbbc6c4157d87a16cb"
+                },
+                {
+                  "price_adjustments": [
+                    {
+                      "position": 1,
+                      "price": 2300
+                    }
+                  ],
+                  "price": 2300,
+                  "compare_at_price": 2500,
+                  "per_delivery_price": 2300,
+                  "selling_plan_id": 71002,
+                  "selling_plan_group_id": "8dc695b2245258bba889d6dbbc6c4157d87a16cb"
+                }
+              ],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695710404630,
+              "title": "Medium",
+              "option1": "Medium",
+              "option2": null,
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774608687126,
+                "product_id": 7982853619734,
+                "position": 1,
+                "created_at": "2026-10-15T13:44:47-04:00",
+                "updated_at": "2026-10-15T13:44:49-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+                "variant_ids": [
+                  43695710371862,
+                  43695710404630,
+                  43695710437398
+                ]
+              },
+              "available": true,
+              "name": "Slides - Medium",
+              "public_title": "Medium",
+              "options": [
+                "Medium"
+              ],
+              "price": 2500,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774608687126,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [
+                {
+                  "price_adjustments": [
+                    {
+                      "position": 1,
+                      "price": 2250
+                    }
+                  ],
+                  "price": 2250,
+                  "compare_at_price": 2500,
+                  "per_delivery_price": 2250,
+                  "selling_plan_id": 71001,
+                  "selling_plan_group_id": "8dc695b2245258bba889d6dbbc6c4157d87a16cb"
+                },
+                {
+                  "price_adjustments": [
+                    {
+                      "position": 1,
+                      "price": 2300
+                    }
+                  ],
+                  "price": 2300,
+                  "compare_at_price": 2500,
+                  "per_delivery_price": 2300,
+                  "selling_plan_id": 71002,
+                  "selling_plan_group_id": "8dc695b2245258bba889d6dbbc6c4157d87a16cb"
+                }
+              ],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43695710437398,
+              "title": "Large",
+              "option1": "Large",
+              "option2": null,
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774608687126,
+                "product_id": 7982853619734,
+                "position": 1,
+                "created_at": "2026-10-15T13:44:47-04:00",
+                "updated_at": "2026-10-15T13:44:49-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+                "variant_ids": [
+                  43695710371862,
+                  43695710404630,
+                  43695710437398
+                ]
+              },
+              "available": true,
+              "name": "Slides - Large",
+              "public_title": "Large",
+              "options": [
+                "Large"
+              ],
+              "price": 2500,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774608687126,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [
+                {
+                  "price_adjustments": [
+                    {
+                      "position": 1,
+                      "price": 2250
+                    }
+                  ],
+                  "price": 2250,
+                  "compare_at_price": 2500,
+                  "per_delivery_price": 2250,
+                  "selling_plan_id": 71001,
+                  "selling_plan_group_id": "8dc695b2245258bba889d6dbbc6c4157d87a16cb"
+                },
+                {
+                  "price_adjustments": [
+                    {
+                      "position": 1,
+                      "price": 2300
+                    }
+                  ],
+                  "price": 2300,
+                  "compare_at_price": 2500,
+                  "per_delivery_price": 2300,
+                  "selling_plan_id": 71002,
+                  "selling_plan_group_id": "8dc695b2245258bba889d6dbbc6c4157d87a16cb"
+                }
+              ],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            }
+          ],
+          "images": [
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
+          ],
+          "featured_image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+          "options": [
+            "Size"
+          ],
+          "media": [
+            {
+              "alt": null,
+              "id": 39774608687126,
+              "position": 1,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+              "width": 4096
+            }
+          ],
+          "requires_selling_plan": false,
+          "selling_plan_groups": [
+            {
+              "id": "8dc695b2245258bba889d6dbbc6c4157d87a16cb",
+              "name": "Subscribe and save",
+              "options": [
+                {
+                  "name": "Delivery every",
+                  "position": 1,
+                  "values": [
+                    "2 weeks",
+                    "Month"
+                  ]
+                }
+              ],
+              "selling_plans": [
+                {
+                  "id": 71001,
+                  "name": "Every 2 weeks, 10% off",
+                  "description": null,
+                  "options": [
+                    {
+                      "name": "Delivery every",
+                      "position": 1,
+                      "value": "2 weeks"
+                    }
+                  ],
+                  "recurring_deliveries": true,
+                  "price_adjustments": [
+                    {
+                      "order_count": null,
+                      "position": 1,
+                      "value_type": "percentage",
+                      "value": 10
+                    }
+                  ],
+                  "checkout_charge": {
+                    "value_type": "percentage",
+                    "value": 100
+                  }
+                },
+                {
+                  "id": 71002,
+                  "name": "Every month, $2.00 off",
+                  "description": null,
+                  "options": [
+                    {
+                      "name": "Delivery every",
+                      "position": 1,
+                      "value": "Month"
+                    }
+                  ],
+                  "recurring_deliveries": true,
+                  "price_adjustments": [
+                    {
+                      "order_count": null,
+                      "position": 1,
+                      "value_type": "fixed_amount",
+                      "value": 200
+                    }
+                  ],
+                  "checkout_charge": {
+                    "value_type": "percentage",
+                    "value": 100
+                  }
+                }
+              ],
+              "app_id": null
+            }
+          ],
+          "content": "<p data-mce-fragment=\"1\">Simple, minimal and comfortable, these slides feature a classic design in the perfect shade of iron. Whether you're just lounging around the house or running errands, these slides will offer all-day comfort.</p>"
+        }
+      }
+    }
+  ]
+}
