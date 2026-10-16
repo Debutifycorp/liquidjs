@@ -28,7 +28,7 @@ function fontUrl (this: FilterImpl, input: unknown, format: unknown) {
 }
 
 /**
- * The `@font-face` rule, laid out as on https://shopify.dev/docs/api/liquid/filters/font_face, from the `fontUrl` service unless a `fontFace` service writes the whole rule. System fonts (the `font` object's `system?`, https://shopify.dev/docs/api/liquid/objects/font) need no rule and render empty; shopify.dev does not say what Shopify prints for one.
+ * The `@font-face` rule, laid out as on https://shopify.dev/docs/api/liquid/filters/font_face, from the `fontUrl` service unless a `fontFace` service writes the whole rule. The rule ends with a line break, as the parity store prints it (scenario `page-home`: the last rule of the font block is followed by `\n:root`, and each rule by `\n` before the theme's own line break), where shopify.dev's example cannot show one. System fonts (the `font` object's `system?`, https://shopify.dev/docs/api/liquid/objects/font) need no rule and render empty; shopify.dev does not say what Shopify prints for one.
  */
 function fontFace (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const state = shopifyState(this.context)
@@ -44,7 +44,7 @@ function fontFace (this: FilterImpl, input: unknown, ...args: unknown[]) {
     (fontDisplay ? `  font-display: ${fontDisplay};\n` : '') +
     `  src: url("${state.services.fontUrl(font.info, 'woff2')}") format("woff2"),\n` +
     `       url("${state.services.fontUrl(font.info, 'woff')}") format("woff");\n` +
-    '}'
+    '}\n'
 }
 
 const WEIGHT_KEYWORDS: Record<string, number> = { normal: 400, bold: 700 }

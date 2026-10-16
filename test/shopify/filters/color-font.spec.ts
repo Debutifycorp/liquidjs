@@ -119,10 +119,11 @@ describe('shopify/filters/font', () => {
   const assistant = new FontDrop(library.assistant_n4, handle => library[handle])
   const settings = { type_header_font: assistant, type_body_font: assistant }
 
-  // https://shopify.dev/docs/api/liquid/filters/font_face
+  // https://shopify.dev/docs/api/liquid/filters/font_face; the rule ends with a line break, as the parity store prints it (scenario `page-home`: the last rule of the font block is followed by `\n:root`, so the storefront's `}:root {` was `} :root {` on Shopify)
   it('font_face', async () => {
-    expect(await render('{{ settings.type_header_font | font_face }}', { settings }, liquid)).toBe(`@font-face {\n  font-family: Assistant;\n  font-weight: 400;\n  font-style: normal;\n  src: url("${urls.woff2}") format("woff2"),\n       url("${urls.woff}") format("woff");\n}`)
-    expect(await render("{{ settings.type_header_font | font_face: font_display: 'swap' }}", { settings }, liquid)).toBe(`@font-face {\n  font-family: Assistant;\n  font-weight: 400;\n  font-style: normal;\n  font-display: swap;\n  src: url("${urls.woff2}") format("woff2"),\n       url("${urls.woff}") format("woff");\n}`)
+    expect(await render('{{ settings.type_header_font | font_face }}', { settings }, liquid)).toBe(`@font-face {\n  font-family: Assistant;\n  font-weight: 400;\n  font-style: normal;\n  src: url("${urls.woff2}") format("woff2"),\n       url("${urls.woff}") format("woff");\n}\n`)
+    expect(await render("{{ settings.type_header_font | font_face: font_display: 'swap' }}", { settings }, liquid)).toBe(`@font-face {\n  font-family: Assistant;\n  font-weight: 400;\n  font-style: normal;\n  font-display: swap;\n  src: url("${urls.woff2}") format("woff2"),\n       url("${urls.woff}") format("woff");\n}\n`)
+    expect(await render('{{ settings.type_header_font | font_face }}:root', { settings }, liquid)).toContain('format("woff");\n}\n:root')
   })
   // https://shopify.dev/docs/api/liquid/filters/font_url
   it('font_url', async () => {

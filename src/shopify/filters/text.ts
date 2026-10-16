@@ -37,8 +37,8 @@ function pluralize (count: unknown, singular: unknown, plural: unknown) {
   return Math.trunc(Number(plainValue(toValue(count)))) === 1 ? singular : plural
 }
 
-/** An address that stays on the shop: no scheme and not protocol-relative (`/`, `/fr-ca/products/hoodie`, `#top`, `products/x`). */
-const SHOP_PAGE = /^(?![a-z][a-z0-9+.-]*:|\/\/)/i
+/** An address that stays on the shop: no scheme and not protocol-relative (`/`, `/fr-ca/products/hoodie`, `#top`, `products/x`). A browser reads `\` as `/`, so `/\evil.example` is protocol-relative too, and it ignores the spaces before an address. */
+const SHOP_PAGE = /^(?![a-z][a-z0-9+.-]*:|[/\\]{2})/i
 
 /** Matches both examples on https://shopify.dev/docs/api/liquid/filters/link_to: `title=""` when nothing else is given, extra attributes before `href`, `rel="nofollow"` last. The page does not explain `title=""` or `rel="nofollow"`; they are copied from its two outputs, whose address is an external one (`https://www.shopify.com`). A link to a page of the shop carries no `rel`, as the parity store prints the shop name linked to `routes.root_url` (scenario `page-home`: `<a href="/" title="">Debutify Parity</a>`); `rel="nofollow"` is therefore added to an address with a scheme or a host only. What an absolute address on the shop's own host prints is not pinned by shopify.dev or a recording, and it counts as external here. */
 function linkTo (text: unknown, url: unknown, ...args: unknown[]) {
@@ -46,7 +46,7 @@ function linkTo (text: unknown, url: unknown, ...args: unknown[]) {
   const display = namedForDisplay(args)
   const extra = order.map(name => attribute(name, display[name])).join('')
   const title = positional.length ? attribute('title', positional[0]) : extra ? '' : ' title=""'
-  const rel = SHOP_PAGE.test(stringify(url)) ? '' : ' rel="nofollow"'
+  const rel = SHOP_PAGE.test(stringify(url).trim()) ? '' : ' rel="nofollow"'
   return `<a${extra} href="${escapeHtml(url)}"${title}${rel}>${stringify(text)}</a>`
 }
 

@@ -230,7 +230,7 @@ export class FormTag extends Tag {
     const id = 'id' in attributes ? stringify(plainValue(attributes.id)) : spec.id?.(resource)
     const className = 'class' in attributes ? stringify(plainValue(attributes.class)) : spec.className
     const path = spec.prefixed ? spec.action(resource) : withPrefix(state.request.prefix, spec.action(resource))
-    const action = spec.anchored && id !== undefined ? `${path}#${id}` : path
+    const action = spec.anchored && id ? `${path}#${id}` : path
     let open = `<form method="post" action="${escapeHtml(action)}"`
     if (id !== undefined) open += attribute('id', id)
     open += ' accept-charset="UTF-8"'

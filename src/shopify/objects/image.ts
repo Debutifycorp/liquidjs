@@ -21,7 +21,10 @@ export class FocalPointDrop extends Drop {
   }
 }
 
-/** Shopify's `image` object over `ImageData`. Printed on its own it is its `src`. https://shopify.dev/docs/api/liquid/objects/image */
+/** An address without its protocol (`https://host/a.jpg` is `//host/a.jpg`), the form the parity store prints for an image on its CDN: `image_url` and the other image filters (scenario `page-product`: every `srcset` candidate starts `//host/cdn/shop/files/`) and the `src` of an image object (the same scenario's `product | json`: `"src":"\/\/host\/cdn\/shop\/files\/…"`). Other addresses stay as they are. */
+export const withoutProtocol = (url: string): string => url.replace(/^https?:(?=\/\/)/i, '')
+
+/** Shopify's `image` object over `ImageData`. Printed on its own it is its `src`, which has no protocol (`withoutProtocol`); the Ajax answers print the data's own address (`data.src`) instead, as the parity store does. https://shopify.dev/docs/api/liquid/objects/image */
 export class ImageDrop extends Drop {
   public readonly src: string
   public readonly width: number | null
@@ -42,7 +45,7 @@ export class ImageDrop extends Drop {
     super()
     this[AS_MEDIA] = asMedia
     this.position = position
-    this.src = data.src
+    this.src = withoutProtocol(data.src)
     this.width = data.width ?? null
     this.height = data.height ?? null
     this.aspect_ratio = data.width && data.height ? new LiquidFloat(data.width / data.height) : null

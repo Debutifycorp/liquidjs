@@ -56,6 +56,15 @@ describe('products per request', () => {
     // plain masked data, so the text compares the key order at every depth
     expect(JSON.stringify(actual)).toBe(JSON.stringify(expected))
   })
+  // as the parity store prints them: `product | json` without a protocol (scenario `page-product`: `"src":"\/\/host\/cdn\/shop\/files\/…"`), `/products/<handle>.js` with it (fixture `ajax-product-js`)
+  it('prints image addresses without a protocol through the json filter, and with one in the Ajax answer', async () => {
+    const { actual } = await probeMatches('probe-product-default', (b: any) => b.ajax)
+    const liquid = actual as any
+    const addresses = (product: any) => [product.featured_image, ...product.images, product.variants[0].featured_image.src, product.variants[0].featured_media.preview_image.src, product.media[0].src, product.media[0].preview_image.src]
+    expect(addresses(liquid)).toHaveLength(13)
+    for (const address of addresses(liquid)) expect(address).toMatch(/^\/\/cdn\.shopify\.com\//)
+    for (const address of addresses(productJson(data, 'hoodie'))) expect(address).toMatch(/^https:\/\/cdn\.shopify\.com\//)
+  })
   for (const name of ['probe-product-variant', 'probe-product-sold-out-variant', 'probe-product-in-collection']) {
     it(`prints a product with a selected variant through the json filter as well (${name})`, async () => {
       const { actual, expected } = await probeMatches(name, (b: any) => b.ajax)

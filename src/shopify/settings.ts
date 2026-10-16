@@ -166,8 +166,8 @@ function choice (definition: SettingDefinition, stored: unknown, env: SettingsEn
   const fallback = definition.default === undefined ? first : !env.trust.htmlSettings && !(typeof definition.default === 'string' && options.includes(definition.default)) ? null : definition.default
   if (env.trust.htmlSettings) return stored === undefined ? fallback : stored
   if (typeof stored === 'string' && options.includes(stored)) return stored
-  // as the parity store renders it (scenario `page-faq`: the template stores `"layout": "none"` for a select whose options are `vertical` and `horizontal`, and the section prints `layout-none`): a saved value that is no longer an option still prints. Only a `select` or `radio` keeps one, and only a plain token, so nothing it carries can leave an attribute, a class name or a CSS selector
-  if (!alignment && typeof stored === 'string' && PLAIN_ID.test(stored)) return stored
+  // as the parity store renders it (scenario `page-faq`: the template stores `"layout": "none"` for a select whose options are `vertical` and `horizontal`, and the section prints `layout-none`): a saved value that is no longer an option still prints. Only a `select` or `radio` keeps one, and only a plain token that is no member name of every object (`__proto__`, `constructor`), so nothing it carries can leave an attribute, a class name or a CSS selector, or reach a prototype when a theme uses the value as a key
+  if (!alignment && typeof stored === 'string' && PLAIN_ID.test(stored) && !(stored in Object.prototype)) return stored
   if (stored !== undefined) reject(env, 'invalid_setting', definition, 'has a value that is not one of its options and was replaced by its default')
   return fallback
 }

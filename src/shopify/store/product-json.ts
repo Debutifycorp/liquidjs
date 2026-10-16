@@ -6,8 +6,8 @@ import { resolveView } from './view'
 import type { StoreView } from './view'
 import type { StoreData } from './types'
 
-/** An image's URL as the parity store answers it: the full `https://` address of the dataset, not the protocol-relative `//cdn.shopify.com/…` that https://shopify.dev/docs/api/ajax/reference/product shows (fixture `ajax-product-js`). */
-const imageUrl = (image: ImageDrop | null | undefined) => image ? String(image.src) : null
+/** An image's URL as the parity store answers it: in the Ajax answer the full `https://` address of the dataset, not the protocol-relative `//cdn.shopify.com/…` that https://shopify.dev/docs/api/ajax/reference/product shows (fixture `ajax-product-js`), and in `product | json` the image's `src`, protocol-relative (scenario `page-product`: `"src":"\/\/host\/cdn\/shop\/files\/…"`). */
+const imageUrl = (image: ImageDrop | null | undefined, shape: 'ajax' | 'liquid') => image ? (shape === 'ajax' ? image.data.src : image.src) : null
 
 /** The text of a field the Ajax API writes as `null` when it is empty (an image's `alt`, a variant's `sku`), as the parity store does (fixture `ajax-product-js`). */
 const textOrNull = (text: unknown) => text === '' || text === undefined || text === null ? null : text
@@ -16,15 +16,15 @@ const textOrNull = (text: unknown) => text === '' || text === undefined || text 
 const sameImage = (a: ImageDrop, b: ImageDrop) => a.id != null && b.id != null ? a.id === b.id : a.src === b.src
 
 /** An image as the `preview_image` of a media entry or a variant's `featured_media` (fixture `ajax-product-js`: `aspect_ratio`, `height`, `width`, `src`). */
-function previewImage (image: ImageDrop | null | undefined): Record<string, unknown> | null {
+function previewImage (image: ImageDrop | null | undefined, shape: 'ajax' | 'liquid'): Record<string, unknown> | null {
   if (!image) return null
-  return { aspect_ratio: image.aspect_ratio ? image.aspect_ratio.value : null, height: image.height, width: image.width, src: imageUrl(image) }
+  return { aspect_ratio: image.aspect_ratio ? image.aspect_ratio.value : null, height: image.height, width: image.width, src: imageUrl(image, shape) }
 }
 
 /** A variant's image as the Ajax API writes it: the product's image with its `position` in `product.images`, the ids of the variants that show it and its two timestamps, which the dataset does not hold, so they are the product's creation time (the parity store prints the moments it made the image, which the engine cannot reproduce: `VOLATILE` in `test/storefront/expect-probe.ts`). */
-function variantImage (image: ImageDrop, product: LiquidObject): Record<string, unknown> {
+function variantImage (image: ImageDrop, product: LiquidObject, shape: 'ajax' | 'liquid'): Record<string, unknown> {
   const variantIds = (product.variants as LiquidObject[]).filter(other => other.featured_image && sameImage(other.featured_image as ImageDrop, image)).map(other => other.id)
-  return { id: image.id, product_id: product.id, position: image.position, created_at: product.created_at ?? null, updated_at: product.created_at ?? null, alt: textOrNull(image.alt), width: image.width, height: image.height, src: imageUrl(image), variant_ids: variantIds }
+  return { id: image.id, product_id: product.id, position: image.position, created_at: product.created_at ?? null, updated_at: product.created_at ?? null, alt: textOrNull(image.alt), width: image.width, height: image.height, src: imageUrl(image, shape), variant_ids: variantIds }
 }
 
 /** The answer's form of a selling plan allocation, the same in the Ajax answer and in `product | json` (fixtures `ajax-product-js` and `probe-product-plans`): the allocation's price fields with the ids of its plan and group in place of the objects. */
@@ -77,7 +77,7 @@ function variantJson (variant: LiquidObject, product: LiquidObject, shape: 'ajax
     sku: textOrNull(variant.sku),
     requires_shipping: variant.requires_shipping,
     taxable: variant.taxable,
-    featured_image: featured ? variantImage(featured, product) : null,
+    featured_image: featured ? variantImage(featured, product, shape) : null,
     available: variant.available,
     name: variant.title === 'Default Title' ? product.title : `${product.title} - ${variant.title}`,
     public_title: variant.title === 'Default Title' ? null : variant.title,
@@ -87,7 +87,7 @@ function variantJson (variant: LiquidObject, product: LiquidObject, shape: 'ajax
     compare_at_price: variant.compare_at_price,
     inventory_management: variant.inventory_management,
     barcode: variant.barcode ?? null,
-    featured_media: media ? { alt: textOrNull(media.alt), id: media.id, position: media.position, preview_image: previewImage(media) } : null
+    featured_media: media ? { alt: textOrNull(media.alt), id: media.id, position: media.position, preview_image: previewImage(media, shape) } : null
   }
   const plans = { requires_selling_plan: variant.requires_selling_plan ?? false, selling_plan_allocations: (variant.selling_plan_allocations as LiquidObject[]).map(allocationJson) }
   return shape === 'ajax'
@@ -96,12 +96,12 @@ function variantJson (variant: LiquidObject, product: LiquidObject, shape: 'ajax
 }
 
 /** A media entry as the Ajax API writes it. An image carries its own fields beside its `preview_image` (fixture `ajax-product-js`); the page shows no video, so a hosted or external video keeps the fields of its media object with the preview in the same compact form, which no recording pins. */
-function mediaJson (media: LiquidObject): Record<string, unknown> {
+function mediaJson (media: LiquidObject, shape: 'ajax' | 'liquid'): Record<string, unknown> {
   if (media.media_type === 'image') {
     const image = media as unknown as ImageDrop
-    return { alt: textOrNull(image.alt), id: image.id, position: image.position, preview_image: previewImage(image), aspect_ratio: image.aspect_ratio ? image.aspect_ratio.value : null, height: image.height, media_type: 'image', src: imageUrl(image), width: image.width }
+    return { alt: textOrNull(image.alt), id: image.id, position: image.position, preview_image: previewImage(image, shape), aspect_ratio: image.aspect_ratio ? image.aspect_ratio.value : null, height: image.height, media_type: 'image', src: imageUrl(image, shape), width: image.width }
   }
-  return { ...media, alt: textOrNull(media.alt), preview_image: previewImage(media.preview_image as ImageDrop | null) }
+  return { ...media, alt: textOrNull(media.alt), preview_image: previewImage(media.preview_image as ImageDrop | null, shape) }
 }
 
 /** The fields both answers start with, in their order (fixtures `ajax-product-js` and `probe-product-default`). */
@@ -135,11 +135,11 @@ export function productAjax (product: LiquidObject): Record<string, unknown> {
   return {
     ...productHead(product),
     variants: (product.variants as LiquidObject[]).map(variant => variantJson(variant, product, 'ajax')),
-    images: (product.images as ImageDrop[]).map(imageUrl),
-    featured_image: imageUrl(product.featured_image as ImageDrop | null),
+    images: (product.images as ImageDrop[]).map(image => imageUrl(image, 'ajax')),
+    featured_image: imageUrl(product.featured_image as ImageDrop | null, 'ajax'),
     options: (product.options_with_values as LiquidObject[]).map(option => ({ name: option.name, position: option.position, values: option.values })),
     url: product.url,
-    media: (product.media as LiquidObject[]).map(mediaJson),
+    media: (product.media as LiquidObject[]).map(media => mediaJson(media, 'ajax')),
     requires_selling_plan: product.requires_selling_plan,
     selling_plan_groups: (product.selling_plan_groups as LiquidObject[]).map(group => sellingPlanGroupJson(group, 'ajax'))
   }
@@ -152,10 +152,10 @@ export function productLiquidJson (product: LiquidObject): Record<string, unknow
   return {
     ...productHead(product),
     variants: (product.variants as LiquidObject[]).map(variant => variantJson(variant, product, 'liquid')),
-    images: (product.images as ImageDrop[]).map(imageUrl),
-    featured_image: imageUrl(product.featured_image as ImageDrop | null),
+    images: (product.images as ImageDrop[]).map(image => imageUrl(image, 'liquid')),
+    featured_image: imageUrl(product.featured_image as ImageDrop | null, 'liquid'),
     options: product.options,
-    media: (product.media as LiquidObject[]).map(mediaJson),
+    media: (product.media as LiquidObject[]).map(media => mediaJson(media, 'liquid')),
     requires_selling_plan: product.requires_selling_plan,
     selling_plan_groups: (product.selling_plan_groups as LiquidObject[]).map(group => sellingPlanGroupJson(group, 'liquid')),
     content: product.content

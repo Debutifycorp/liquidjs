@@ -115,7 +115,7 @@ const decimal = (cents: unknown) => (Number(cents) / 100).toFixed(2)
 /** An image as the API writes it, `{ alt, aspect_ratio, height, url, width }` (fixture `ajax-suggest-json`); an image without its own `alt` takes the title of the resource it belongs to, as the fixture shows. */
 function imageJson (image: ImageDrop | null | undefined, title: unknown): Record<string, unknown> | null {
   if (!image) return null
-  return { alt: image.alt || title, aspect_ratio: image.aspect_ratio ? image.aspect_ratio.value : null, height: image.height, url: image.src, width: image.width }
+  return { alt: image.alt || title, aspect_ratio: image.aspect_ratio ? image.aspect_ratio.value : null, height: image.height, url: image.data.src, width: image.width }
 }
 
 /** A result's URL with the tracking parameters the parity store adds, in its order (fixture `ajax-suggest-json`): `_pos` (the result's place in its list, from 1), `_psq` (the typed text), `_psid` (`trackingId`) and `_ss` (`e`). */
@@ -145,7 +145,7 @@ function productResult (product: LiquidObject, position: number, request: Predic
     type: product.type,
     url: tracked(variant ? `${product.url}?variant=${variant.id}` : product.url, position, request),
     variants: variant
-      ? [{ available: variant.available, compare_at_price: variant.compare_at_price == null ? null : decimal(variant.compare_at_price), id: variant.id, image: variantImage ? variantImage.src : null, price: decimal(variant.price), title: variant.title, url: variant.url, featured_image: imageJson(variantImage, product.title) }]
+      ? [{ available: variant.available, compare_at_price: variant.compare_at_price == null ? null : decimal(variant.compare_at_price), id: variant.id, image: variantImage ? variantImage.data.src : null, price: decimal(variant.price), title: variant.title, url: variant.url, featured_image: imageJson(variantImage, product.title) }]
       : [],
     vendor: product.vendor,
     featured_image: featured
@@ -157,7 +157,7 @@ function contentResult (type: string, item: LiquidObject, position: number, requ
   const url = tracked(item.url, position, request)
   if (type === 'collection') return { body: item.description, handle: item.handle, id: item.id, featured_image: imageJson(item.image as ImageDrop | null, item.title), published_at: null, title: item.title, url }
   if (type === 'page') return { author: item.author ?? '', body: item.content, handle: item.handle, id: item.id, published_at: item.published_at ?? null, title: item.title, url }
-  return { author: item.author, body: item.content, handle: item.handle, id: item.id, image: item.image ? (item.image as ImageDrop).src : null, published_at: item.published_at, summary_html: item.excerpt, tags: [...(item.tags as string[])], title: item.title, url }
+  return { author: item.author, body: item.content, handle: item.handle, id: item.id, image: item.image ? (item.image as ImageDrop).data.src : null, published_at: item.published_at, summary_html: item.excerpt, tags: [...(item.tags as string[])], title: item.title, url }
 }
 
 /**

@@ -1,6 +1,7 @@
 import type { FontInfo, ImageData, ImageUrlParams } from './types'
 import { escapeHtml } from './util/html'
 import { placeholderArt } from './placeholder-art'
+import { withoutProtocol } from './objects/image'
 
 /**
  * Everything the Shopify layer needs from outside the theme: URLs, artwork, the font library and the clock. The package never fetches anything and never hard-codes a host; the caller supplies these. shopify.dev describes what each filter does but not the URLs, artwork or font data Shopify serves, so those come from the caller.
@@ -10,7 +11,7 @@ export interface ShopifyServices {
   assetUrl: (path: string) => string
   /** `shopify_asset_url`: the URL of one of Shopify's global assets (`option_selection.js`), https://shopify.dev/docs/api/liquid/filters/shopify_asset_url. */
   shopifyAssetUrl: (path: string) => string
-  /** `image_url`, `image_tag`, `img_url`: the URL of `image` with the CDN parameters `params`, https://shopify.dev/docs/api/liquid/filters/image_url, https://shopify.dev/docs/api/liquid/filters/image_tag and https://shopify.dev/docs/api/liquid/filters/img_url. */
+  /** `image_url`, `image_tag`, `img_url`: the URL of `image` with the CDN parameters `params`, https://shopify.dev/docs/api/liquid/filters/image_url, https://shopify.dev/docs/api/liquid/filters/image_tag and https://shopify.dev/docs/api/liquid/filters/img_url. The default service answers without a protocol (`//host/files/a.jpg?width=450`), as the parity store does, so a theme's `prepend: "https:"` makes a valid address; a service that wraps it sees that form. */
   imageUrl: (image: ImageData, params: ImageUrlParams) => string
   /** `font_url` and the default `font_face`: the URL of a font file, https://shopify.dev/docs/api/liquid/filters/font_url and https://shopify.dev/docs/api/liquid/filters/font_face. */
   fontUrl: (font: FontInfo, format: 'woff2' | 'woff') => string
@@ -54,7 +55,7 @@ function withSizeSuffix (path: string, size: string): string {
 export function cdnStyleImageUrl (image: ImageData, params: ImageUrlParams): string {
   const at = image.src.indexOf('?')
   // the address has no protocol, as the parity store prints it (scenario `page-product`: srcset candidates start `//host/cdn/shop/files/`, and the theme's `image_url | prepend: "https:"` makes the JSON-LD `https:\/\/host\/cdn\/shop\/files\/…`, not `https:https:`)
-  let base = (at === -1 ? image.src : image.src.slice(0, at)).replace(/^https?:(?=\/\/)/i, '')
+  let base = withoutProtocol(at === -1 ? image.src : image.src.slice(0, at))
   const query = new Map<string, string>()
   if (at !== -1) {
     for (const part of image.src.slice(at + 1).split('&')) {

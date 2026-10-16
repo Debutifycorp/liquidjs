@@ -75,6 +75,23 @@ export function maskVolatile (value: unknown, path = ''): unknown {
   return out
 }
 
+/** The dataset's image addresses, which the fixture cut put in place of the store's own CDN address. */
+const DATASET_IMAGE = /^https:(?=\/\/cdn\.shopify\.com\/mock-shop-production-media\/)/
+
+const withoutProtocol = (value: unknown): unknown => Array.isArray(value)
+  ? value.map(withoutProtocol)
+  : value !== null && typeof value === 'object'
+    ? Object.fromEntries(Object.entries(value).map(([key, child]) => [key, withoutProtocol(child)]))
+    : typeof value === 'string' ? value.replace(DATASET_IMAGE, '') : value
+
+/**
+ * A recorded probe body with the protocol dropped from the image addresses under its `ajax` key, which is `{{ product | json }}`. The parity store prints them protocol-relative there (`//host/cdn/shop/files/…`, scenario `page-product` and the recordings of these probes), and the fixture cut wrote the dataset's absolute address in their place; the Ajax answers (`/products/<handle>.js`, fixture `ajax-product-js`) really are absolute, and are not touched.
+ */
+function liquidJsonImages (body: unknown): unknown {
+  if (body === null || typeof body !== 'object' || Array.isArray(body) || !('ajax' in body)) return body
+  return { ...body, ajax: withoutProtocol((body as Record<string, unknown>).ajax) }
+}
+
 /** The step a probe renders: the last request for a page (`?view=` or `section_id=`) of a fixture that has one, otherwise its last step (`/collections/featured` and the like, whose template the store picks). */
 function probeStep (steps: FixtureStep[]): FixtureStep {
   for (let i = steps.length - 1; i >= 0; i--) {
@@ -88,7 +105,7 @@ function probeStep (steps: FixtureStep[]): FixtureStep {
  */
 export async function probeMatches (name: string, pick: (body: any) => unknown = body => body, data: StoreData = storefrontSampleData): Promise<{ actual: unknown, expected: unknown }> {
   const step = probeStep(loadFixture(name).steps)
-  const expected = pick(maskVolatile(step.body))
+  const expected = pick(liquidJsonImages(maskVolatile(step.body)))
   if (expected === undefined || expected === VOLATILE_PLACEHOLDER) throw new Error(`pick found nothing in the recorded body of ${name} (or only a volatile value)`)
   const page = requestFromUrl(step.url, data)
   const section = new URL(step.url, 'https://x.invalid').searchParams.get('section_id')

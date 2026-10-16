@@ -256,7 +256,7 @@ function imageJson (image: ImageDrop | null | undefined, product: LiquidObject, 
   if (!image) return null
   const aspectRatio = image.aspect_ratio ? image.aspect_ratio.value : null
   const alt = image.alt || product.title
-  const rest = { height: image.height, url: String(image.src), width: image.width }
+  const rest = { height: image.height, url: image.data.src, width: image.width }
   return form === 'cart' ? { aspect_ratio: aspectRatio, alt, ...rest } : { alt, aspect_ratio: aspectRatio, ...rest }
 }
 
@@ -336,7 +336,7 @@ export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): 
     final_line_price: item.final_line_price,
     url: form === 'liquid' ? variant.url : item.url,
     featured_image: imageJson(item.image as ImageDrop | null, product, form),
-    image: item.image ? String((item.image as ImageDrop).src) : null,
+    image: item.image ? (item.image as ImageDrop).data.src : null,
     handle: product.handle,
     requires_shipping: item.requires_shipping,
     product_type: product.type,

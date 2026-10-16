@@ -104,6 +104,15 @@ describe('shopify/filters/media', () => {
     expect(tag).toContain('srcset="//cdn.test/files/a.jpg?v=1&amp;width=352 352w"')
     expect(tag).not.toContain('https:')
   })
+  // as the parity store renders it (scenario `page-product`: `product | json` prints `"src":"\/\/host\/cdn\/shop\/files\/…"`): an image object's `src` has no protocol either; an address that is not `http(s)://` stays as it is, and the data keeps its own address
+  it('prints the src of an image object without its protocol', async () => {
+    const data = { src: 'https://cdn.test/files/a.jpg?v=1', width: 3000, height: 2000, alt: 'Hoodie' }
+    const image = new ImageDrop(data)
+    expect(await render('{{ image.src }}|{{ image }}', { image })).toBe('//cdn.test/files/a.jpg?v=1|//cdn.test/files/a.jpg?v=1')
+    expect(await render('{{ image.src }}', { image: new ImageDrop({ ...data, src: 'http://cdn.test/a.jpg' }) })).toBe('//cdn.test/a.jpg')
+    expect(await render('{{ image.src }}|{{ other.src }}', { image: new ImageDrop({ ...data, src: '/hero.jpg' }), other: new ImageDrop({ ...data, src: '//cdn.test/b.jpg' }) })).toBe('/hero.jpg|//cdn.test/b.jpg')
+    expect(image.data.src).toBe('https://cdn.test/files/a.jpg?v=1')
+  })
   it('image_url on nothing renders nothing', async () => {
     expect(await render('{{ nothing | image_url }}', {})).toBe('')
   })

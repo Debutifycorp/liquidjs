@@ -171,7 +171,7 @@ describe('shopify/theme settings safety through renderPage', () => {
     expect(document.querySelector('.banner')?.getAttribute('style')).toBe('--pad: 40px')
     expect(Array.from(document.querySelectorAll('.banner a')).map(a => a.getAttribute('href'))).toEqual(['/collections/apparel', 'https://x.example/a?b=c&d=e', '/pages/about#team', 'mailto:hello@x.example', 'https://www.youtube.com/watch?v=abcdefg'])
     expect(document.querySelector('input')?.getAttribute('data-flag')).toBe('true')
-    expect(Array.from(document.querySelectorAll('img')).map(img => img.getAttribute('src'))).toEqual(['//cdn.example/a.png?width=10', '//cdn.example/a.png?width=10', 'https://cdn.example/a.png', '/b.png'])
+    expect(Array.from(document.querySelectorAll('img')).map(img => img.getAttribute('src'))).toEqual(['//cdn.example/a.png?width=10', '//cdn.example/a.png?width=10', '//cdn.example/a.png', '/b.png'])
     expect(document.body.getAttribute('data-accent')).toBe('#336699')
   })
   it('is a real check: the same page with html trusted does hold script-capable nodes', async () => {
@@ -258,7 +258,7 @@ describe('shopify/theme keys and image alt through renderPage', () => {
   it('keeps the image when only its alt is dropped', async () => {
     const { html } = await render({}, theme)
     const image = dom(html).document.querySelector('#Banner-template--index__main img')
-    expect([image?.getAttribute('src'), image?.getAttribute('alt')]).toEqual(['https://cdn.example/a.png', ''])
+    expect([image?.getAttribute('src'), image?.getAttribute('alt')]).toEqual(['//cdn.example/a.png', ''])
   })
   it('is a real check: the same page with html trusted does hold script-capable nodes', async () => {
     const { html } = await render({ trustHtmlSettings: true }, theme)

@@ -116,6 +116,10 @@ describe('text filters', () => {
     expect(await render("{{ 'Hoodie' | link_to: '/products/hoodie', 'My title' }}")).toBe('<a href="/products/hoodie" title="My title">Hoodie</a>')
     expect(await render("{{ 'Top' | link_to: '#top' }}")).toBe('<a href="#top" title="">Top</a>')
     expect(await render("{{ 'Shopify' | link_to: '//www.shopify.com' }}")).toBe('<a href="//www.shopify.com" title="" rel="nofollow">Shopify</a>')
+    // a browser ignores the spaces before an address and reads a backslash as a slash, so these leave the shop too
+    expect(await render("{{ 'Shopify' | link_to: url }}", { url: ' https://www.shopify.com' })).toContain(' rel="nofollow">')
+    expect(await render("{{ 'Shopify' | link_to: url }}", { url: '/\\evil.example' })).toContain(' rel="nofollow">')
+    expect(await render("{{ 'Shopify' | link_to: url }}", { url: '\\\\evil.example' })).toContain(' rel="nofollow">')
   })
   it('escapes once the page input with a bare ampersand', async () => expect(await render(`{{ "&lt;p&gt;Text to be escaped.&lt;/p&gt; & some additional text" | escape_once }}`)).toBe('&lt;p&gt;Text to be escaped.&lt;/p&gt; &amp; some additional text'))
   it('links with a title and with a Ruby decimal attribute', async () => {
