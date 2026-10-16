@@ -239,7 +239,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     search: buildSearch(store, request.searchTerms, request, view.prefix),
     recommendations: buildRecommendations(store, request.recommendations, report),
     // https://shopify.dev/docs/api/liquid/objects/predictive_search: only a Predictive Search API request has it; any other page has none, and the recording prints nil (fixture `ajax-sections-page`)
-    ...(request.predictive ? { predictive_search: buildPredictiveSearch(store, request.predictive) } : {}),
+    ...(request.predictive ? { predictive_search: buildPredictiveSearch(store, request.predictive, input.data) } : {}),
     powered_by_link: '',
     additional_checkout_buttons: false,
     content_for_additional_checkout_buttons: '',

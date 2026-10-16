@@ -24,19 +24,23 @@ const plain = (html: unknown) => String(html ?? '').replace(/<[^>]*>/g, ' ').rep
 const hasTerm = (found: string[], term: string, last: boolean) => last ? found.some(word => word.startsWith(term)) : found.includes(term)
 const matches = (found: string[], terms: string[]) => terms.length > 0 && terms.every((term, at) => hasTerm(found, term, at === terms.length - 1))
 
-/** The words of a product's searchable `fields` (`resources[options][fields]`: `title`, `product_type`, `vendor`, `tag`, `body`, `variants.title`, `variants.sku`; `variants.barcode` and the product category are not in the store data). */
-function productWords (product: LiquidObject, fields: string[]): string[] {
+/** The words of a product that a partly typed last term can start: its title, type, vendor and variant titles, the fields https://shopify.dev/docs/api/ajax/reference/predictive-search lists for typo tolerance. The words of a product's description, tags and variant SKUs, which are searched too, are matched whole (`wholeWords`). */
+function partialWords (product: LiquidObject): string[] {
   const variants = product.variants as LiquidObject[]
-  return fields.flatMap(field => {
-    if (field === 'title') return words(String(product.title))
-    if (field === 'product_type') return words(String(product.type))
-    if (field === 'vendor') return words(String(product.vendor))
-    if (field === 'tag') return (product.tags as string[]).flatMap(words)
-    if (field === 'body') return words(plain(product.description))
-    if (field === 'variants.title') return variants.flatMap(variant => words(String(variant.title)))
-    if (field === 'variants.sku') return variants.flatMap(variant => words(String(variant.sku)))
-    return []
-  })
+  return [...words(String(product.title)), ...words(String(product.type)), ...words(String(product.vendor)), ...variants.flatMap(variant => words(String(variant.title)))]
+}
+
+/** The words of a product's description, tags and variant SKUs, which must be typed whole (see `partialWords`). The variant barcode and the product category, the other fields that page lists, are not in the store data. */
+function wholeWords (product: LiquidObject): string[] {
+  const variants = product.variants as LiquidObject[]
+  return [...words(plain(product.description)), ...(product.tags as string[]).flatMap(words), ...variants.flatMap(variant => words(String(variant.sku)))]
+}
+
+/** Whether a product is found: every term is one of its words, the last also as the start of a word of `partialWords`. */
+function matchesProduct (product: LiquidObject, terms: string[]): boolean {
+  const partial = partialWords(product)
+  const whole = wholeWords(product)
+  return terms.length > 0 && terms.every((term, at) => hasTerm(partial, term, at === terms.length - 1) || whole.includes(term))
 }
 
 /** The words of a page's or an article's searchable `fields`: https://shopify.dev/docs/api/ajax/reference/predictive-search lists `author`, `body` and `title` for pages and also `tag` for articles. A collection is found by its title alone, the only property that page lists for it. */
@@ -66,19 +70,19 @@ function bestVariant (product: LiquidObject, terms: string[]): LiquidObject | un
 }
 
 /**
- * What a predictive request finds, by list. Not performed without terms (no recording shows a blank term), so every list is empty. Products match on the request's `fields` (shopify.dev says a product always searches title, body, type, tags, vendor and variant title, SKU and barcode and ignores the option, but the parity store does not find the products whose descriptions hold a word that starts "ca" for `q=ca`, fixture `probe-predictive-prefix`, so the description is searched only when `fields` names it), pages and articles on theirs, collections on their titles; unavailable products follow `unavailable` (`last` puts them after the available ones, `hide` drops them). Results are in store order, Debutify's choice in place of Shopify's relevance ranking. Each list stops at `limit`, and with `limit_scope` `all` the types share it (`FILL_ORDER`). There are no query suggestions: Shopify makes them from the store's search history, which the dataset does not hold, and the parity store lists none for `shirt` or `ca` (fixtures `probe-predictive-shirt` and `probe-predictive-prefix`).
+ * What a predictive request finds, by list. Not performed without terms, so every list is empty: the `predictive_search` page says `performed` is true inside a section rendered through the API with no condition on the terms, and no recording has a blank term, so a blank `q` is Debutify's choice. Products ignore `resources[options][fields]` and search every product field, as https://shopify.dev/docs/api/ajax/reference/predictive-search says ("Product results always search all product fields"): the last term may start a word of the title, type, vendor and variant titles, the fields that page lists for partial matching, and every other term, and the last one too for the description, tags and variant SKUs, must be a whole word. The fixtures agree with that rule: `shirt` finds the three T-shirts (fixtures `probe-predictive-shirt` and `ajax-suggest-json`) and `ca` finds `canvas-sneakers` but not `frontpack`, `black-sunnies`, `gray-runners`, `clear-sunnies`, `high-top-sneakers` or `beanie`, whose descriptions hold only `carry`, `can`, `casual` and `cashmere` (fixture `probe-predictive-prefix`). The page's typo tolerance (one letter, after four correct ones) is not modelled. Pages and articles match on the `title`, `author` and `body` (articles also `tag`) that `fields` names; collections on their title in the store's primary language (the page: "Collection suggestions are based on the store's primary language", `collectionTitle`). Unavailable products follow `unavailable` (`last` puts them after the available ones, `hide` drops them). Results are in store order, Debutify's choice in place of Shopify's relevance ranking. Each list stops at `limit`, and with `limit_scope` `all` the types share it (`FILL_ORDER`). There are no query suggestions: Shopify makes them from the store's search history, which the dataset does not hold, and the parity store lists none for `shirt` or `ca` (fixtures `probe-predictive-shirt` and `probe-predictive-prefix`). The parity store's `ca` also finds `hoodie`, first, for a reason nothing in the dataset gives (possibly the product category, which the page lists and the dataset lacks).
  */
-function search (store: StoreObjects, request: PredictiveRequest): Record<ResourceKey, LiquidObject[]> {
+function search (store: StoreObjects, request: PredictiveRequest, collectionTitle: (collection: LiquidObject) => string): Record<ResourceKey, LiquidObject[]> {
   const found: Record<ResourceKey, LiquidObject[]> = { products: [], collections: [], pages: [], articles: [], queries: [] }
   const terms = words(request.q)
   if (!request.q.trim()) return found
   const lists: Record<string, () => LiquidObject[]> = {
     query: () => [],
     product: () => {
-      const products = HandleMap.values(store.products).filter(product => matches(productWords(product, request.fields), terms))
+      const products = HandleMap.values(store.products).filter(product => matchesProduct(product, terms))
       return request.unavailable === 'hide' ? products.filter(product => product.available) : request.unavailable === 'last' ? [...products.filter(product => product.available), ...products.filter(product => !product.available)] : products
     },
-    collection: () => HandleMap.values(store.collections).filter(collection => collection.handle !== 'all' && matches(words(String(collection.title)), terms)),
+    collection: () => HandleMap.values(store.collections).filter(collection => collection.handle !== 'all' && matches(words(collectionTitle(collection)), terms)),
     page: () => HandleMap.values(store.pages).filter(page => matches(contentWords(page, request.fields, 'page'), terms)),
     article: () => HandleMap.values(store.articles).filter(article => matches(contentWords(article, request.fields, 'article'), terms))
   }
@@ -92,11 +96,17 @@ function search (store: StoreObjects, request: PredictiveRequest): Record<Resour
   return found
 }
 
+/** A collection's title in the store's primary language, which is what a predictive search compares a term with (https://shopify.dev/docs/api/ajax/reference/predictive-search: "A customer's search won't be compared to a collection's translated content"): the title in `data`, which is not translated, or the built collection's own when no data is given. */
+function primaryTitles (data: StoreData | undefined): (collection: LiquidObject) => string {
+  const titles = new Map((data?.collections ?? []).map(collection => [collection.handle, collection.title]))
+  return collection => titles.get(String(collection.handle)) ?? String(collection.title)
+}
+
 /**
- * The `predictive_search` object, https://shopify.dev/docs/api/liquid/objects/predictive_search, for one Predictive Search API request (`search`). `performed` is true for a request with terms; `terms` are the typed text and `types` the requested types in alphabetical order, as the parity store prints them (fixture `probe-predictive-shirt`: a request for `product,collection,page,article,query` gives `article, collection, page, product, query`). `resources` has all five lists, empty for a type that was not asked for. A page that is not a predictive search has no `predictive_search` (`buildGlobals`).
+ * The `predictive_search` object, https://shopify.dev/docs/api/liquid/objects/predictive_search, for one Predictive Search API request (`search`). `performed` is true for a request with terms; `terms` are the typed text and `types` the requested types in alphabetical order, as the parity store prints them (fixture `probe-predictive-shirt`: a request for `product,collection,page,article,query` gives `article, collection, page, product, query`). `resources` has all five lists, empty for a type that was not asked for, and holds the store's own objects: unlike `predictiveJson`, a product that a variant title matched does not take that variant's image and URL (the Ajax page has `url` and `featured_media` follow the variant for Section Rendering), and no URL carries the tracking parameters. `data` is the store data the objects were built from, so collections are found by their title in the primary language. A page that is not a predictive search has no `predictive_search` (`buildGlobals`).
  */
-export function buildPredictiveSearch (store: StoreObjects, request: PredictiveRequest): LiquidObject {
-  return { performed: !!request.q.trim(), terms: request.q, types: [...new Set(request.types)].sort(), resources: search(store, request) }
+export function buildPredictiveSearch (store: StoreObjects, request: PredictiveRequest, data?: StoreData): LiquidObject {
+  return { performed: !!request.q.trim(), terms: request.q, types: [...new Set(request.types)].sort(), resources: search(store, request, primaryTitles(data)) }
 }
 
 /** An amount in the minor unit as the API prints prices, a decimal string (`4000` is `"40.00"`, fixture `ajax-suggest-json`). */
@@ -130,7 +140,7 @@ function productResult (product: LiquidObject, position: number, request: Predic
     price: decimal(product.price),
     price_max: decimal(product.price_max),
     price_min: decimal(product.price_min),
-    tags: product.tags,
+    tags: [...(product.tags as string[])],
     title: product.title,
     type: product.type,
     url: tracked(variant ? `${product.url}?variant=${variant.id}` : product.url, position, request),
@@ -147,14 +157,14 @@ function contentResult (type: string, item: LiquidObject, position: number, requ
   const url = tracked(item.url, position, request)
   if (type === 'collection') return { body: item.description, handle: item.handle, id: item.id, featured_image: imageJson(item.image as ImageDrop | null, item.title), published_at: null, title: item.title, url }
   if (type === 'page') return { author: item.author ?? '', body: item.content, handle: item.handle, id: item.id, published_at: item.published_at ?? null, title: item.title, url }
-  return { author: item.author, body: item.content, handle: item.handle, id: item.id, image: item.image ? (item.image as ImageDrop).src : null, published_at: item.published_at, summary_html: item.excerpt, tags: item.tags, title: item.title, url }
+  return { author: item.author, body: item.content, handle: item.handle, id: item.id, image: item.image ? (item.image as ImageDrop).src : null, published_at: item.published_at, summary_html: item.excerpt, tags: [...(item.tags as string[])], title: item.title, url }
 }
 
 /**
  * The `/search/suggest.json` answer, https://shopify.dev/docs/api/ajax/reference/predictive-search: `resources.results` with a list for each requested type, in the order the request names them (fixture `ajax-suggest-json`: `products, collections, pages, articles, queries` for `product,collection,page,article,query`, and `collections, pages, products, queries` for a request without `resources[type]`, whose default types `requestFromUrl` lists that way). `view` is the market and language the request is in (the primary ones when omitted).
  */
 export function predictiveJson (data: StoreData, request: PredictiveRequest, view: StoreView = resolveView(data, {})): Record<string, unknown> {
-  const found = search(buildStore(data, view), request)
+  const found = search(buildStore(data, view), request, primaryTitles(data))
   const results: Record<string, unknown[]> = {}
   for (const type of new Set(request.types)) {
     const key = own(KEYS, type)
