@@ -1,0 +1,1334 @@
+{
+  "scenario": "probe-product-en-eu-leggings",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/en-eu/products/leggings?view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "id": 7983593422870,
+        "title": "Leggings",
+        "description": "<p data-mce-fragment=\"1\">These sporty and lightweight leggings are designed for comfort and ease of movement. Its moisture-wicking fabric and strong seams keep you feeling cool and secure. Available in an array of colors, these leggings are an ideal choice to look stylish while exercising.</p>",
+        "url": "/en-eu/products/leggings",
+        "template_suffix": null,
+        "template": {
+          "name": "product",
+          "suffix": "probe"
+        },
+        "price": 1895,
+        "price_min": 1895,
+        "price_max": 1895,
+        "compare_at_price": null,
+        "money": "€18,95",
+        "money_with_currency": "€18,95 EUR",
+        "selected_variant": null,
+        "selected_or_first_available_variant": 43696935927830,
+        "first_available_variant": null,
+        "requires_selling_plan": false,
+        "selected_selling_plan": null,
+        "selected_or_first_available_selling_plan_allocation": null,
+        "options_with_values": [
+          {
+            "name": "Size",
+            "selected_value": "Small"
+          },
+          {
+            "name": "Color",
+            "selected_value": "Green"
+          }
+        ],
+        "variants": [
+          {
+            "id": 43696935927830,
+            "title": "Small / Green",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696935927830",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696935895062,
+            "title": "Small / Olive",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696935895062",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696935960598,
+            "title": "Small / Ocean",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696935960598",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696935993366,
+            "title": "Small / Purple",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696935993366",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696936026134,
+            "title": "Small / Red",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696936026134",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696964108310,
+            "title": "Medium / Green",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696964108310",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696964141078,
+            "title": "Medium / Olive",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696964141078",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696964173846,
+            "title": "Medium / Ocean",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696964173846",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696964206614,
+            "title": "Medium / Purple",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696964206614",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696964239382,
+            "title": "Medium / Red",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696964239382",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696964272150,
+            "title": "Large / Green",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696964272150",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696964304918,
+            "title": "Large / Olive",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696964304918",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696964337686,
+            "title": "Large / Ocean",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696964337686",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696964370454,
+            "title": "Large / Purple",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696964370454",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696964403222,
+            "title": "Large / Red",
+            "price": 1895,
+            "compare_at_price": null,
+            "available": false,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 0,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/leggings?variant=43696964403222",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          }
+        ],
+        "selling_plan_groups": [],
+        "ajax": {
+          "id": 7983593422870,
+          "title": "Leggings",
+          "handle": "leggings",
+          "description": "<p data-mce-fragment=\"1\">These sporty and lightweight leggings are designed for comfort and ease of movement. Its moisture-wicking fabric and strong seams keep you feeling cool and secure. Available in an array of colors, these leggings are an ideal choice to look stylish while exercising.</p>",
+          "published_at": "2026-10-15T13:03:34-04:00",
+          "created_at": "2026-10-15T13:03:31-04:00",
+          "vendor": "Mock.shop",
+          "type": "Pants",
+          "tags": [
+            "bottoms",
+            "women"
+          ],
+          "price": 1895,
+          "price_min": 1895,
+          "price_max": 1895,
+          "available": false,
+          "price_varies": false,
+          "compare_at_price": null,
+          "compare_at_price_min": 0,
+          "compare_at_price_max": 0,
+          "compare_at_price_varies": false,
+          "variants": [
+            {
+              "id": 43696935927830,
+              "title": "Small / Green",
+              "option1": "Small",
+              "option2": "Green",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604754966,
+                "product_id": 7983593422870,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/36b42e474080383395e8126a08daafcfcfe2509d2b4b6855f376350ba71b9233.jpg",
+                "variant_ids": [
+                  43696935927830,
+                  43696964108310,
+                  43696964272150
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Small / Green",
+              "public_title": "Small / Green",
+              "options": [
+                "Small",
+                "Green"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604754966,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/36b42e474080383395e8126a08daafcfcfe2509d2b4b6855f376350ba71b9233.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696935895062,
+              "title": "Small / Olive",
+              "option1": "Small",
+              "option2": "Olive",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604689430,
+                "product_id": 7983593422870,
+                "position": 3,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/30f65636b6fd077323bb460888cee510611f2e4a2d2053d84ffe679855fc4b2a.jpg",
+                "variant_ids": [
+                  43696935895062,
+                  43696964141078,
+                  43696964304918
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Small / Olive",
+              "public_title": "Small / Olive",
+              "options": [
+                "Small",
+                "Olive"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604689430,
+                "position": 3,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/30f65636b6fd077323bb460888cee510611f2e4a2d2053d84ffe679855fc4b2a.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696935960598,
+              "title": "Small / Ocean",
+              "option1": "Small",
+              "option2": "Ocean",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604820502,
+                "product_id": 7983593422870,
+                "position": 5,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a2f7928af86df1e93fbfc73a554884904545d04424bd08629e3bcbf4a1365db5.jpg",
+                "variant_ids": [
+                  43696935960598,
+                  43696964173846,
+                  43696964337686
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Small / Ocean",
+              "public_title": "Small / Ocean",
+              "options": [
+                "Small",
+                "Ocean"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604820502,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a2f7928af86df1e93fbfc73a554884904545d04424bd08629e3bcbf4a1365db5.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696935993366,
+              "title": "Small / Purple",
+              "option1": "Small",
+              "option2": "Purple",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604886038,
+                "product_id": 7983593422870,
+                "position": 7,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7da25cb582553d651caf5b5734f266191b5ccd404e1a0645de59c81a7c3d462f.jpg",
+                "variant_ids": [
+                  43696935993366,
+                  43696964206614,
+                  43696964370454
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Small / Purple",
+              "public_title": "Small / Purple",
+              "options": [
+                "Small",
+                "Purple"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604886038,
+                "position": 7,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7da25cb582553d651caf5b5734f266191b5ccd404e1a0645de59c81a7c3d462f.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696936026134,
+              "title": "Small / Red",
+              "option1": "Small",
+              "option2": "Red",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604984342,
+                "product_id": 7983593422870,
+                "position": 9,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/1874f9ca61a998366cfc33a5e1797c2331cbbec88d5b48206029eae46c2b256d.jpg",
+                "variant_ids": [
+                  43696936026134,
+                  43696964239382,
+                  43696964403222
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Small / Red",
+              "public_title": "Small / Red",
+              "options": [
+                "Small",
+                "Red"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604984342,
+                "position": 9,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/1874f9ca61a998366cfc33a5e1797c2331cbbec88d5b48206029eae46c2b256d.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696964108310,
+              "title": "Medium / Green",
+              "option1": "Medium",
+              "option2": "Green",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604754966,
+                "product_id": 7983593422870,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/36b42e474080383395e8126a08daafcfcfe2509d2b4b6855f376350ba71b9233.jpg",
+                "variant_ids": [
+                  43696935927830,
+                  43696964108310,
+                  43696964272150
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Medium / Green",
+              "public_title": "Medium / Green",
+              "options": [
+                "Medium",
+                "Green"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604754966,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/36b42e474080383395e8126a08daafcfcfe2509d2b4b6855f376350ba71b9233.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696964141078,
+              "title": "Medium / Olive",
+              "option1": "Medium",
+              "option2": "Olive",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604689430,
+                "product_id": 7983593422870,
+                "position": 3,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/30f65636b6fd077323bb460888cee510611f2e4a2d2053d84ffe679855fc4b2a.jpg",
+                "variant_ids": [
+                  43696935895062,
+                  43696964141078,
+                  43696964304918
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Medium / Olive",
+              "public_title": "Medium / Olive",
+              "options": [
+                "Medium",
+                "Olive"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604689430,
+                "position": 3,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/30f65636b6fd077323bb460888cee510611f2e4a2d2053d84ffe679855fc4b2a.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696964173846,
+              "title": "Medium / Ocean",
+              "option1": "Medium",
+              "option2": "Ocean",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604820502,
+                "product_id": 7983593422870,
+                "position": 5,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a2f7928af86df1e93fbfc73a554884904545d04424bd08629e3bcbf4a1365db5.jpg",
+                "variant_ids": [
+                  43696935960598,
+                  43696964173846,
+                  43696964337686
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Medium / Ocean",
+              "public_title": "Medium / Ocean",
+              "options": [
+                "Medium",
+                "Ocean"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604820502,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a2f7928af86df1e93fbfc73a554884904545d04424bd08629e3bcbf4a1365db5.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696964206614,
+              "title": "Medium / Purple",
+              "option1": "Medium",
+              "option2": "Purple",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604886038,
+                "product_id": 7983593422870,
+                "position": 7,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7da25cb582553d651caf5b5734f266191b5ccd404e1a0645de59c81a7c3d462f.jpg",
+                "variant_ids": [
+                  43696935993366,
+                  43696964206614,
+                  43696964370454
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Medium / Purple",
+              "public_title": "Medium / Purple",
+              "options": [
+                "Medium",
+                "Purple"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604886038,
+                "position": 7,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7da25cb582553d651caf5b5734f266191b5ccd404e1a0645de59c81a7c3d462f.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696964239382,
+              "title": "Medium / Red",
+              "option1": "Medium",
+              "option2": "Red",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604984342,
+                "product_id": 7983593422870,
+                "position": 9,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/1874f9ca61a998366cfc33a5e1797c2331cbbec88d5b48206029eae46c2b256d.jpg",
+                "variant_ids": [
+                  43696936026134,
+                  43696964239382,
+                  43696964403222
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Medium / Red",
+              "public_title": "Medium / Red",
+              "options": [
+                "Medium",
+                "Red"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604984342,
+                "position": 9,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/1874f9ca61a998366cfc33a5e1797c2331cbbec88d5b48206029eae46c2b256d.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696964272150,
+              "title": "Large / Green",
+              "option1": "Large",
+              "option2": "Green",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604754966,
+                "product_id": 7983593422870,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/36b42e474080383395e8126a08daafcfcfe2509d2b4b6855f376350ba71b9233.jpg",
+                "variant_ids": [
+                  43696935927830,
+                  43696964108310,
+                  43696964272150
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Large / Green",
+              "public_title": "Large / Green",
+              "options": [
+                "Large",
+                "Green"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604754966,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/36b42e474080383395e8126a08daafcfcfe2509d2b4b6855f376350ba71b9233.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696964304918,
+              "title": "Large / Olive",
+              "option1": "Large",
+              "option2": "Olive",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604689430,
+                "product_id": 7983593422870,
+                "position": 3,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/30f65636b6fd077323bb460888cee510611f2e4a2d2053d84ffe679855fc4b2a.jpg",
+                "variant_ids": [
+                  43696935895062,
+                  43696964141078,
+                  43696964304918
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Large / Olive",
+              "public_title": "Large / Olive",
+              "options": [
+                "Large",
+                "Olive"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604689430,
+                "position": 3,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/30f65636b6fd077323bb460888cee510611f2e4a2d2053d84ffe679855fc4b2a.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696964337686,
+              "title": "Large / Ocean",
+              "option1": "Large",
+              "option2": "Ocean",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604820502,
+                "product_id": 7983593422870,
+                "position": 5,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a2f7928af86df1e93fbfc73a554884904545d04424bd08629e3bcbf4a1365db5.jpg",
+                "variant_ids": [
+                  43696935960598,
+                  43696964173846,
+                  43696964337686
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Large / Ocean",
+              "public_title": "Large / Ocean",
+              "options": [
+                "Large",
+                "Ocean"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604820502,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a2f7928af86df1e93fbfc73a554884904545d04424bd08629e3bcbf4a1365db5.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696964370454,
+              "title": "Large / Purple",
+              "option1": "Large",
+              "option2": "Purple",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604886038,
+                "product_id": 7983593422870,
+                "position": 7,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7da25cb582553d651caf5b5734f266191b5ccd404e1a0645de59c81a7c3d462f.jpg",
+                "variant_ids": [
+                  43696935993366,
+                  43696964206614,
+                  43696964370454
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Large / Purple",
+              "public_title": "Large / Purple",
+              "options": [
+                "Large",
+                "Purple"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604886038,
+                "position": 7,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7da25cb582553d651caf5b5734f266191b5ccd404e1a0645de59c81a7c3d462f.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696964403222,
+              "title": "Large / Red",
+              "option1": "Large",
+              "option2": "Red",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774604984342,
+                "product_id": 7983593422870,
+                "position": 9,
+                "created_at": "2026-10-15T13:46:01-04:00",
+                "updated_at": "2026-10-15T13:46:03-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/1874f9ca61a998366cfc33a5e1797c2331cbbec88d5b48206029eae46c2b256d.jpg",
+                "variant_ids": [
+                  43696936026134,
+                  43696964239382,
+                  43696964403222
+                ]
+              },
+              "available": false,
+              "name": "Leggings - Large / Red",
+              "public_title": "Large / Red",
+              "options": [
+                "Large",
+                "Red"
+              ],
+              "price": 1895,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774604984342,
+                "position": 9,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/1874f9ca61a998366cfc33a5e1797c2331cbbec88d5b48206029eae46c2b256d.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            }
+          ],
+          "images": [
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/36b42e474080383395e8126a08daafcfcfe2509d2b4b6855f376350ba71b9233.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2610280a469e3020f934d8ebae2d79d519ca69fc4deb660dcee0da9dbac6849f.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/30f65636b6fd077323bb460888cee510611f2e4a2d2053d84ffe679855fc4b2a.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2d6ee426e87085f8a2a74676d2e6a1ef2e27efb5182da333c6c07dc9df5b19f6.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a2f7928af86df1e93fbfc73a554884904545d04424bd08629e3bcbf4a1365db5.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c76cc0ed2b11317f092a668bafcb1f99415a93a8f565ad39246c77816c9fcd4e.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7da25cb582553d651caf5b5734f266191b5ccd404e1a0645de59c81a7c3d462f.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e96f13289a46aeff5c96b6b934a40711982e6de89d30f52fe8f7ec6b03a9c147.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/1874f9ca61a998366cfc33a5e1797c2331cbbec88d5b48206029eae46c2b256d.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d7889c76e28aa18549e5602359625307d5ea0a0ac5c51988a75590508cccc1a3.jpg"
+          ],
+          "featured_image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/36b42e474080383395e8126a08daafcfcfe2509d2b4b6855f376350ba71b9233.jpg",
+          "options": [
+            "Size",
+            "Color"
+          ],
+          "media": [
+            {
+              "alt": null,
+              "id": 39774604754966,
+              "position": 1,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/36b42e474080383395e8126a08daafcfcfe2509d2b4b6855f376350ba71b9233.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/36b42e474080383395e8126a08daafcfcfe2509d2b4b6855f376350ba71b9233.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774604787734,
+              "position": 2,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2610280a469e3020f934d8ebae2d79d519ca69fc4deb660dcee0da9dbac6849f.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2610280a469e3020f934d8ebae2d79d519ca69fc4deb660dcee0da9dbac6849f.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774604689430,
+              "position": 3,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/30f65636b6fd077323bb460888cee510611f2e4a2d2053d84ffe679855fc4b2a.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/30f65636b6fd077323bb460888cee510611f2e4a2d2053d84ffe679855fc4b2a.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774604722198,
+              "position": 4,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2d6ee426e87085f8a2a74676d2e6a1ef2e27efb5182da333c6c07dc9df5b19f6.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2d6ee426e87085f8a2a74676d2e6a1ef2e27efb5182da333c6c07dc9df5b19f6.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774604820502,
+              "position": 5,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a2f7928af86df1e93fbfc73a554884904545d04424bd08629e3bcbf4a1365db5.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a2f7928af86df1e93fbfc73a554884904545d04424bd08629e3bcbf4a1365db5.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774604853270,
+              "position": 6,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c76cc0ed2b11317f092a668bafcb1f99415a93a8f565ad39246c77816c9fcd4e.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c76cc0ed2b11317f092a668bafcb1f99415a93a8f565ad39246c77816c9fcd4e.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774604886038,
+              "position": 7,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7da25cb582553d651caf5b5734f266191b5ccd404e1a0645de59c81a7c3d462f.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/7da25cb582553d651caf5b5734f266191b5ccd404e1a0645de59c81a7c3d462f.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774604951574,
+              "position": 8,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e96f13289a46aeff5c96b6b934a40711982e6de89d30f52fe8f7ec6b03a9c147.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/e96f13289a46aeff5c96b6b934a40711982e6de89d30f52fe8f7ec6b03a9c147.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774604984342,
+              "position": 9,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/1874f9ca61a998366cfc33a5e1797c2331cbbec88d5b48206029eae46c2b256d.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/1874f9ca61a998366cfc33a5e1797c2331cbbec88d5b48206029eae46c2b256d.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774605017110,
+              "position": 10,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d7889c76e28aa18549e5602359625307d5ea0a0ac5c51988a75590508cccc1a3.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d7889c76e28aa18549e5602359625307d5ea0a0ac5c51988a75590508cccc1a3.jpg",
+              "width": 4096
+            }
+          ],
+          "requires_selling_plan": false,
+          "selling_plan_groups": [],
+          "content": "<p data-mce-fragment=\"1\">These sporty and lightweight leggings are designed for comfort and ease of movement. Its moisture-wicking fabric and strong seams keep you feeling cool and secure. Available in an array of colors, these leggings are an ideal choice to look stylish while exercising.</p>"
+        }
+      }
+    }
+  ]
+}

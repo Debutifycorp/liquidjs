@@ -1,0 +1,1249 @@
+{
+  "scenario": "probe-product-en-eu-workout-shirt",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/en-eu/products/workout-shirt?view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "id": 7983594962966,
+        "title": "Workout Shirt",
+        "description": "<p data-mce-fragment=\"1\">This high-performance workout shirt made from high-quality <strong>Nylon</strong> is designed with comfort and durability in mind. Its breathable mesh construction keeps your body temperature regulated while you exercise, while the antistatic and antibacterial finish ensures it will remain light and soft to the touch, wash after wash. With its lightweight design and adjustable straps, it's sure to stay in place during even the toughest workouts.</p>",
+        "url": "/en-eu/products/workout-shirt",
+        "template_suffix": null,
+        "template": {
+          "name": "product",
+          "suffix": "probe"
+        },
+        "price": 995,
+        "price_min": 995,
+        "price_max": 995,
+        "compare_at_price": null,
+        "money": "€9,95",
+        "money_with_currency": "€9,95 EUR",
+        "selected_variant": null,
+        "selected_or_first_available_variant": 43696939499542,
+        "first_available_variant": 43696939499542,
+        "requires_selling_plan": false,
+        "selected_selling_plan": null,
+        "selected_or_first_available_selling_plan_allocation": null,
+        "options_with_values": [
+          {
+            "name": "Size",
+            "selected_value": "Small"
+          },
+          {
+            "name": "Color",
+            "selected_value": "Green"
+          }
+        ],
+        "variants": [
+          {
+            "id": 43696939499542,
+            "title": "Small / Green",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 999,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696939499542",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696939466774,
+            "title": "Small / Olive",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 1000,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696939466774",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696939532310,
+            "title": "Small / Ocean",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 999,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696939532310",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696939565078,
+            "title": "Small / Purple",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 1000,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696939565078",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696939597846,
+            "title": "Small / Red",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 1000,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696939597846",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696970137622,
+            "title": "Medium / Green",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 1000,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696970137622",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696970170390,
+            "title": "Medium / Olive",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 1000,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696970170390",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696970203158,
+            "title": "Medium / Ocean",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 1000,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696970203158",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696970235926,
+            "title": "Medium / Purple",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 1000,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696970235926",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696970268694,
+            "title": "Medium / Red",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 999,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696970268694",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696970301462,
+            "title": "Large / Green",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 1000,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696970301462",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696970334230,
+            "title": "Large / Olive",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 1000,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696970334230",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696970366998,
+            "title": "Large / Ocean",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 999,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696970366998",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696970399766,
+            "title": "Large / Purple",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 1000,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696970399766",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          },
+          {
+            "id": 43696970432534,
+            "title": "Large / Red",
+            "price": 995,
+            "compare_at_price": null,
+            "available": true,
+            "selected": false,
+            "inventory_policy": "deny",
+            "inventory_management": "shopify",
+            "inventory_quantity": 1000,
+            "weight": 300,
+            "requires_selling_plan": false,
+            "url": "/en-eu/products/workout-shirt?variant=43696970432534",
+            "selected_selling_plan_allocation": null,
+            "allocations": []
+          }
+        ],
+        "selling_plan_groups": [],
+        "ajax": {
+          "id": 7983594962966,
+          "title": "Workout Shirt",
+          "handle": "workout-shirt",
+          "description": "<p data-mce-fragment=\"1\">This high-performance workout shirt made from high-quality <strong>Nylon</strong> is designed with comfort and durability in mind. Its breathable mesh construction keeps your body temperature regulated while you exercise, while the antistatic and antibacterial finish ensures it will remain light and soft to the touch, wash after wash. With its lightweight design and adjustable straps, it's sure to stay in place during even the toughest workouts.</p>",
+          "published_at": "2026-10-15T13:04:06-04:00",
+          "created_at": "2026-10-15T13:04:02-04:00",
+          "vendor": "Mock.shop",
+          "type": "T-shirts",
+          "tags": [
+            "tops",
+            "women"
+          ],
+          "price": 995,
+          "price_min": 995,
+          "price_max": 995,
+          "available": true,
+          "price_varies": false,
+          "compare_at_price": null,
+          "compare_at_price_min": 0,
+          "compare_at_price_max": 0,
+          "compare_at_price_varies": false,
+          "variants": [
+            {
+              "id": 43696939499542,
+              "title": "Small / Green",
+              "option1": "Small",
+              "option2": "Green",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607736854,
+                "product_id": 7983594962966,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:25-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23e2d44fd51df6adb548fd353a5bd9388a96d0c8352cec564e13c4c089b252e2.jpg",
+                "variant_ids": [
+                  43696939499542,
+                  43696970137622,
+                  43696970301462
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Small / Green",
+              "public_title": "Small / Green",
+              "options": [
+                "Small",
+                "Green"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607736854,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23e2d44fd51df6adb548fd353a5bd9388a96d0c8352cec564e13c4c089b252e2.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696939466774,
+              "title": "Small / Olive",
+              "option1": "Small",
+              "option2": "Olive",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607704086,
+                "product_id": 7983594962966,
+                "position": 2,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:25-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a35b6af325d6259c0a5966ff36c5971b818aad621006ceee26a2725820d4484f.jpg",
+                "variant_ids": [
+                  43696939466774,
+                  43696970170390,
+                  43696970334230
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Small / Olive",
+              "public_title": "Small / Olive",
+              "options": [
+                "Small",
+                "Olive"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607704086,
+                "position": 2,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a35b6af325d6259c0a5966ff36c5971b818aad621006ceee26a2725820d4484f.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696939532310,
+              "title": "Small / Ocean",
+              "option1": "Small",
+              "option2": "Ocean",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607671318,
+                "product_id": 7983594962966,
+                "position": 3,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:25-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d65f70f70fde270d61fc7e9c645817bb6711180d73294caebe64dc02d1b9ca0f.jpg",
+                "variant_ids": [
+                  43696939532310,
+                  43696970203158,
+                  43696970366998
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Small / Ocean",
+              "public_title": "Small / Ocean",
+              "options": [
+                "Small",
+                "Ocean"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607671318,
+                "position": 3,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d65f70f70fde270d61fc7e9c645817bb6711180d73294caebe64dc02d1b9ca0f.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696939565078,
+              "title": "Small / Purple",
+              "option1": "Small",
+              "option2": "Purple",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607802390,
+                "product_id": 7983594962966,
+                "position": 4,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:25-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bca30a1c03e9655a658e5890f23ca1579d9e381570052ae16970662b6465fe6a.jpg",
+                "variant_ids": [
+                  43696939565078,
+                  43696970235926,
+                  43696970399766
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Small / Purple",
+              "public_title": "Small / Purple",
+              "options": [
+                "Small",
+                "Purple"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607802390,
+                "position": 4,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bca30a1c03e9655a658e5890f23ca1579d9e381570052ae16970662b6465fe6a.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696939597846,
+              "title": "Small / Red",
+              "option1": "Small",
+              "option2": "Red",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607769622,
+                "product_id": 7983594962966,
+                "position": 5,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:26-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/90981267f90e273b718ce1afb30afc1b5d10ee660fdef7f01da3729e08a146fb.jpg",
+                "variant_ids": [
+                  43696939597846,
+                  43696970268694,
+                  43696970432534
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Small / Red",
+              "public_title": "Small / Red",
+              "options": [
+                "Small",
+                "Red"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607769622,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/90981267f90e273b718ce1afb30afc1b5d10ee660fdef7f01da3729e08a146fb.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696970137622,
+              "title": "Medium / Green",
+              "option1": "Medium",
+              "option2": "Green",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607736854,
+                "product_id": 7983594962966,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:25-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23e2d44fd51df6adb548fd353a5bd9388a96d0c8352cec564e13c4c089b252e2.jpg",
+                "variant_ids": [
+                  43696939499542,
+                  43696970137622,
+                  43696970301462
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Medium / Green",
+              "public_title": "Medium / Green",
+              "options": [
+                "Medium",
+                "Green"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607736854,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23e2d44fd51df6adb548fd353a5bd9388a96d0c8352cec564e13c4c089b252e2.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696970170390,
+              "title": "Medium / Olive",
+              "option1": "Medium",
+              "option2": "Olive",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607704086,
+                "product_id": 7983594962966,
+                "position": 2,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:25-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a35b6af325d6259c0a5966ff36c5971b818aad621006ceee26a2725820d4484f.jpg",
+                "variant_ids": [
+                  43696939466774,
+                  43696970170390,
+                  43696970334230
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Medium / Olive",
+              "public_title": "Medium / Olive",
+              "options": [
+                "Medium",
+                "Olive"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607704086,
+                "position": 2,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a35b6af325d6259c0a5966ff36c5971b818aad621006ceee26a2725820d4484f.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696970203158,
+              "title": "Medium / Ocean",
+              "option1": "Medium",
+              "option2": "Ocean",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607671318,
+                "product_id": 7983594962966,
+                "position": 3,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:25-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d65f70f70fde270d61fc7e9c645817bb6711180d73294caebe64dc02d1b9ca0f.jpg",
+                "variant_ids": [
+                  43696939532310,
+                  43696970203158,
+                  43696970366998
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Medium / Ocean",
+              "public_title": "Medium / Ocean",
+              "options": [
+                "Medium",
+                "Ocean"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607671318,
+                "position": 3,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d65f70f70fde270d61fc7e9c645817bb6711180d73294caebe64dc02d1b9ca0f.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696970235926,
+              "title": "Medium / Purple",
+              "option1": "Medium",
+              "option2": "Purple",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607802390,
+                "product_id": 7983594962966,
+                "position": 4,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:25-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bca30a1c03e9655a658e5890f23ca1579d9e381570052ae16970662b6465fe6a.jpg",
+                "variant_ids": [
+                  43696939565078,
+                  43696970235926,
+                  43696970399766
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Medium / Purple",
+              "public_title": "Medium / Purple",
+              "options": [
+                "Medium",
+                "Purple"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607802390,
+                "position": 4,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bca30a1c03e9655a658e5890f23ca1579d9e381570052ae16970662b6465fe6a.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696970268694,
+              "title": "Medium / Red",
+              "option1": "Medium",
+              "option2": "Red",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607769622,
+                "product_id": 7983594962966,
+                "position": 5,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:26-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/90981267f90e273b718ce1afb30afc1b5d10ee660fdef7f01da3729e08a146fb.jpg",
+                "variant_ids": [
+                  43696939597846,
+                  43696970268694,
+                  43696970432534
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Medium / Red",
+              "public_title": "Medium / Red",
+              "options": [
+                "Medium",
+                "Red"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607769622,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/90981267f90e273b718ce1afb30afc1b5d10ee660fdef7f01da3729e08a146fb.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696970301462,
+              "title": "Large / Green",
+              "option1": "Large",
+              "option2": "Green",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607736854,
+                "product_id": 7983594962966,
+                "position": 1,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:25-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23e2d44fd51df6adb548fd353a5bd9388a96d0c8352cec564e13c4c089b252e2.jpg",
+                "variant_ids": [
+                  43696939499542,
+                  43696970137622,
+                  43696970301462
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Large / Green",
+              "public_title": "Large / Green",
+              "options": [
+                "Large",
+                "Green"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607736854,
+                "position": 1,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23e2d44fd51df6adb548fd353a5bd9388a96d0c8352cec564e13c4c089b252e2.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696970334230,
+              "title": "Large / Olive",
+              "option1": "Large",
+              "option2": "Olive",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607704086,
+                "product_id": 7983594962966,
+                "position": 2,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:25-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a35b6af325d6259c0a5966ff36c5971b818aad621006ceee26a2725820d4484f.jpg",
+                "variant_ids": [
+                  43696939466774,
+                  43696970170390,
+                  43696970334230
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Large / Olive",
+              "public_title": "Large / Olive",
+              "options": [
+                "Large",
+                "Olive"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607704086,
+                "position": 2,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a35b6af325d6259c0a5966ff36c5971b818aad621006ceee26a2725820d4484f.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696970366998,
+              "title": "Large / Ocean",
+              "option1": "Large",
+              "option2": "Ocean",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607671318,
+                "product_id": 7983594962966,
+                "position": 3,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:25-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d65f70f70fde270d61fc7e9c645817bb6711180d73294caebe64dc02d1b9ca0f.jpg",
+                "variant_ids": [
+                  43696939532310,
+                  43696970203158,
+                  43696970366998
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Large / Ocean",
+              "public_title": "Large / Ocean",
+              "options": [
+                "Large",
+                "Ocean"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607671318,
+                "position": 3,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d65f70f70fde270d61fc7e9c645817bb6711180d73294caebe64dc02d1b9ca0f.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696970399766,
+              "title": "Large / Purple",
+              "option1": "Large",
+              "option2": "Purple",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607802390,
+                "product_id": 7983594962966,
+                "position": 4,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:25-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bca30a1c03e9655a658e5890f23ca1579d9e381570052ae16970662b6465fe6a.jpg",
+                "variant_ids": [
+                  43696939565078,
+                  43696970235926,
+                  43696970399766
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Large / Purple",
+              "public_title": "Large / Purple",
+              "options": [
+                "Large",
+                "Purple"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607802390,
+                "position": 4,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bca30a1c03e9655a658e5890f23ca1579d9e381570052ae16970662b6465fe6a.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            },
+            {
+              "id": 43696970432534,
+              "title": "Large / Red",
+              "option1": "Large",
+              "option2": "Red",
+              "option3": null,
+              "sku": null,
+              "requires_shipping": true,
+              "taxable": true,
+              "featured_image": {
+                "id": 39774607769622,
+                "product_id": 7983594962966,
+                "position": 5,
+                "created_at": "2026-10-15T13:46:23-04:00",
+                "updated_at": "2026-10-15T13:46:26-04:00",
+                "alt": null,
+                "width": 4096,
+                "height": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/90981267f90e273b718ce1afb30afc1b5d10ee660fdef7f01da3729e08a146fb.jpg",
+                "variant_ids": [
+                  43696939597846,
+                  43696970268694,
+                  43696970432534
+                ]
+              },
+              "available": true,
+              "name": "Workout Shirt - Large / Red",
+              "public_title": "Large / Red",
+              "options": [
+                "Large",
+                "Red"
+              ],
+              "price": 995,
+              "weight": 300,
+              "compare_at_price": null,
+              "inventory_management": "shopify",
+              "barcode": null,
+              "featured_media": {
+                "alt": null,
+                "id": 39774607769622,
+                "position": 5,
+                "preview_image": {
+                  "aspect_ratio": 1,
+                  "height": 4096,
+                  "width": 4096,
+                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/90981267f90e273b718ce1afb30afc1b5d10ee660fdef7f01da3729e08a146fb.jpg"
+                }
+              },
+              "requires_selling_plan": false,
+              "selling_plan_allocations": [],
+              "quantity_rule": {
+                "min": 1,
+                "max": null,
+                "increment": 1
+              }
+            }
+          ],
+          "images": [
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23e2d44fd51df6adb548fd353a5bd9388a96d0c8352cec564e13c4c089b252e2.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a35b6af325d6259c0a5966ff36c5971b818aad621006ceee26a2725820d4484f.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d65f70f70fde270d61fc7e9c645817bb6711180d73294caebe64dc02d1b9ca0f.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bca30a1c03e9655a658e5890f23ca1579d9e381570052ae16970662b6465fe6a.jpg",
+            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/90981267f90e273b718ce1afb30afc1b5d10ee660fdef7f01da3729e08a146fb.jpg"
+          ],
+          "featured_image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23e2d44fd51df6adb548fd353a5bd9388a96d0c8352cec564e13c4c089b252e2.jpg",
+          "options": [
+            "Size",
+            "Color"
+          ],
+          "media": [
+            {
+              "alt": null,
+              "id": 39774607736854,
+              "position": 1,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23e2d44fd51df6adb548fd353a5bd9388a96d0c8352cec564e13c4c089b252e2.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/23e2d44fd51df6adb548fd353a5bd9388a96d0c8352cec564e13c4c089b252e2.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774607704086,
+              "position": 2,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a35b6af325d6259c0a5966ff36c5971b818aad621006ceee26a2725820d4484f.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/a35b6af325d6259c0a5966ff36c5971b818aad621006ceee26a2725820d4484f.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774607671318,
+              "position": 3,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d65f70f70fde270d61fc7e9c645817bb6711180d73294caebe64dc02d1b9ca0f.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/d65f70f70fde270d61fc7e9c645817bb6711180d73294caebe64dc02d1b9ca0f.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774607802390,
+              "position": 4,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bca30a1c03e9655a658e5890f23ca1579d9e381570052ae16970662b6465fe6a.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/bca30a1c03e9655a658e5890f23ca1579d9e381570052ae16970662b6465fe6a.jpg",
+              "width": 4096
+            },
+            {
+              "alt": null,
+              "id": 39774607769622,
+              "position": 5,
+              "preview_image": {
+                "aspect_ratio": 1,
+                "height": 4096,
+                "width": 4096,
+                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/90981267f90e273b718ce1afb30afc1b5d10ee660fdef7f01da3729e08a146fb.jpg"
+              },
+              "aspect_ratio": 1,
+              "height": 4096,
+              "media_type": "image",
+              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/90981267f90e273b718ce1afb30afc1b5d10ee660fdef7f01da3729e08a146fb.jpg",
+              "width": 4096
+            }
+          ],
+          "requires_selling_plan": false,
+          "selling_plan_groups": [],
+          "content": "<p data-mce-fragment=\"1\">This high-performance workout shirt made from high-quality <strong>Nylon</strong> is designed with comfort and durability in mind. Its breathable mesh construction keeps your body temperature regulated while you exercise, while the antistatic and antibacterial finish ensures it will remain light and soft to the touch, wash after wash. With its lightweight design and adjustable straps, it's sure to stay in place during even the toughest workouts.</p>"
+        }
+      }
+    }
+  ]
+}
