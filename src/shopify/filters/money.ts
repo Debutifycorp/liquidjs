@@ -65,7 +65,7 @@ function money (this: FilterImpl, input: unknown) {
   return amount === undefined ? '' : formatMoney(amount, shopifyState(this.context).money.format)
 }
 
-/** The price in the shop's "HTML with currency" format (`shop.money_with_currency_format`), https://shopify.dev/docs/api/liquid/filters/money_with_currency. Any space between amount and currency code comes from the format string; whether Shopify writes a space or a no-break space there is not pinned by shopify.dev. */
+/** The price in the shop's "HTML with currency" format (`shop.money_with_currency_format`), https://shopify.dev/docs/api/liquid/filters/money_with_currency. The space between amount and currency code comes from the format string, a plain space, as the parity store prints it (fixtures `probe-page-*`: `$19.99 USD`, `$19.99 CAD`, `€19,99 EUR`), where shopify.dev does not say whether it is a space or a no-break space. */
 function moneyWithCurrency (this: FilterImpl, input: unknown) {
   const amount = cents(this, input)
   return amount === undefined ? '' : formatMoney(amount, shopifyState(this.context).money.withCurrencyFormat)

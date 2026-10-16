@@ -204,7 +204,7 @@ describe('views and the URL prefix', () => {
     expect(buildRoutes('/fr-ca').account_login_url).toBe('/fr-ca/account/login')
   })
   it('prefixes form actions', async () => {
-    // only the localization form is compared: Shopify prints nothing for `{% form 'product', all_products['hoodie'] %}` on a page template (the probes' `product_form` is `""`), a difference carried to a later task
+    // only the localization form is compared: Shopify prints nothing for `{% form 'product', all_products['hoodie'] %}` (the probes' `product_form` is `""`), which the engine reproduces (forms.spec.ts)
     const pick = (b: any) => b.localization_form.match(/action="[^"]*"/)?.[0]
     for (const name of PROBES) {
       const { actual, expected } = await probeMatches(name, pick)
@@ -212,7 +212,8 @@ describe('views and the URL prefix', () => {
     }
   })
   it('prefixes a product form with the cart route of the view', async () => {
-    const theme = headerTheme('{% form \'product\', all_products[\'hoodie\'] %}{% endform %}{{ content_for_layout }}')
+    // the product is a variable: a quoted key in the tag is no product to Shopify, which then prints nothing (fixtures `probe-page-*`)
+    const theme = headerTheme('{% assign hoodie = all_products[\'hoodie\'] %}{% form \'product\', hoodie %}{% endform %}{{ content_for_layout }}')
     const page = requestFromUrl('/fr-ca', data)
     const { html } = await renderPage({ theme, templateName: 'index', data, request: page.request, locale: page.locale })
     const step = loadFixture('probe-page-fr-ca').steps[0]

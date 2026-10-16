@@ -6,7 +6,6 @@ import { toPromise } from '../../util/async'
 import { LiquidError } from '../../util/error'
 import { isLimitError } from '../../util/inline-error'
 import { getPerformance } from '../../util/performance'
-import { HandleMap } from '../objects/handle-map'
 import { createShopifyLiquid, SHOPIFY_DEFAULT_LIMITS } from '../preset'
 import { errorMessage, RenderReport, UnsupportedFeature } from '../report'
 import { sampleStoreData } from '../sample/sample-data'
@@ -15,7 +14,7 @@ import { SettingDefinition, SettingsDrop, SettingsEnv } from '../settings'
 import { createState, currentFrame, Frame, ShopifyState, STATE, ThemeHooks } from '../state'
 import { buildStore, LiquidObject, StoreObjects } from '../store/build'
 import type { CartState } from '../store/cart'
-import { buildGlobals, RequestInput } from '../store/globals'
+import { buildGlobals, requestedResource, RequestInput } from '../store/globals'
 import { resolveView } from '../store/view'
 import type { StoreData } from '../store/types'
 import { SchemaTag } from '../tags/raw'
@@ -40,7 +39,7 @@ export interface RenderPageOptions {
   templateName: string
   /** Defaults to the package's public sample store. */
   data?: StoreData
-  /** The locale of the translations; defaults to the language `request.language` names when it names one, and to the shop's locale otherwise. `request.locale` and `Shopify.locale` are the language `request.language` names when it names one, and this locale otherwise. */
+  /** The locale of the theme's translations (its `locales/` files, which `t` reads); defaults to the language `request.language` names when it names one, and to the shop's locale otherwise. `request.locale` and `Shopify.locale` are the language `request.language` names when it names one, and this locale otherwise. The store data's content translations (`StoreData.translations`) follow `request.language`, not this option: `locale: 'fr'` with no request gives French `t` strings and the default language's content. */
   locale?: string
   request?: RequestInput
   /** The cart the page shows, in place of `data.cart`: a visitor's cart as the storefront keeps it (`CartState`). Its lines are priced in the currency of the request's market. */
@@ -78,16 +77,13 @@ export interface RenderSectionResult extends RenderPageResult {
   assets: { stylesheets: string[], javascripts: string[] }
 }
 
-/** The kinds of resource that carry a `template_suffix` (https://shopify.dev/docs/api/liquid/objects/product, https://shopify.dev/docs/api/liquid/objects/collection and https://shopify.dev/docs/api/liquid/objects/page), by the template that shows them and the store map that holds them. */
-const SUFFIXED_RESOURCES = { product: 'products', collection: 'collections', page: 'pages' } as const
+/** The templates whose resource carries a `template_suffix` (https://shopify.dev/docs/api/liquid/objects/product, https://shopify.dev/docs/api/liquid/objects/collection and https://shopify.dev/docs/api/liquid/objects/page). */
+const SUFFIXED_TEMPLATES = new Set(['product', 'collection', 'page'])
 
-/** The `template_suffix` of the resource the base template `name` shows: the request's `resource`, or the first one in the store when it names none, as `buildGlobals` picks it. Undefined for a template without such a resource, or when the store has none. */
+/** The `template_suffix` of the resource the base template `name` shows, the one `buildGlobals` shows (`requestedResource`). Undefined for a template without such a resource, or when the store has none. */
 function suffixOf (store: StoreObjects, name: string, resource: string | undefined): string | null | undefined {
-  const kind = own(SUFFIXED_RESOURCES, name)
-  if (!kind) return undefined
-  const map = store[kind] as HandleMap<LiquidObject>
-  const found = resource ? HandleMap.get(map, resource) : HandleMap.values(map)[0]
-  return found?.template_suffix as string | null | undefined
+  if (!SUFFIXED_TEMPLATES.has(name)) return undefined
+  return requestedResource(store, name, resource)?.template_suffix as string | null | undefined
 }
 
 /** The template a page renders: `templates/<name>.<suffix>` for the request's `view`, else for the resource's `template_suffix`, when the theme has it (JSON or Liquid); `name` otherwise. https://shopify.dev/docs/storefronts/themes/architecture/templates/alternate-templates. The page names the two ways to apply an alternate template (assign it to a resource in the admin, or `?view=<suffix>`) but not which wins when both apply, nor what a `view` that names no template does, so the order (view first, then the suffix, then the base template) is Debutify's, on the confirm-on-a-development-store list; no fixture holds both. `view` applies to every base template (cart, search, 404, `customers/*` and the rest, not only product, collection and page), as the page lists no supported types. A `view` or suffix holding `/` names no template (a suffix is a plain part of a file name, and a `/` would read as a directory in `template.name`), so it falls back to the base template. A name that already has a suffix (`page.contact`) is rendered as given. */
@@ -366,7 +362,7 @@ class PageRender implements ThemeHooks {
     const data = options.data ?? sampleStoreData
     const store = buildStore(data, resolveView(data, options.request ?? {}))
     this.templateName = chooseTemplate(theme, options.templateName, options.request?.view, suffixOf(store, options.templateName, options.request?.resource))
-    // the theme's locale file follows the language the request names, as `request.locale` does (https://shopify.dev/docs/storefronts/themes/architecture/locales: a theme holds one locale file per language, and the storefront shows the file of the language the shopper chose); a request that names none renders in the shop's locale
+    // the theme's locale file is "the locale file for the active language" (https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files), the language the page is shown in, which is the one the request names, as the parity store prints it in `request.locale` (fixtures `probe-page-fr-ca` and `probe-page-fr-eu`: `fr`); a request that names none renders in the shop's locale
     const locale = options.locale ?? options.request?.language ?? String(store.shop.locale)
     const translator = theme.translator(locale, message => this.state.report.unsupported('locale_file', message))
     this.trust = { liquidSettings: !!options.trustLiquidSettings, htmlSettings: !!options.trustHtmlSettings }

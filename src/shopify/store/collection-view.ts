@@ -1,5 +1,5 @@
 import { HandleMap } from '../objects/handle-map'
-import { buildCollection, copyObject } from './build'
+import { AUTOMATIC_COLLECTIONS, buildCollection, copyObject, tagsOf } from './build'
 import type { LiquidObject, StoreObjects } from './build'
 import { applyFilters, buildFilters, filterMatcher, requestQuery } from './filters'
 import type { RequestInput } from './globals'
@@ -17,9 +17,6 @@ const stamp = (product: Product) => {
   return Number.isNaN(time) ? -Infinity : time
 }
 const sold = (product: Product) => typeof product.sales_rank === 'number' ? product.sales_rank : Infinity
-
-/** The collections Shopify makes itself: the catalogue and the vendor and type collections. They have no manual order, and `manual` shows their default one, by title (fixture `probe-collection-sort-manual`). */
-const AUTOMATIC = new Set(['all', 'vendors', 'types'])
 
 /** The `sort_by` values of https://shopify.dev/docs/api/liquid/objects/collection#collection-sort_by. */
 export const SORT_VALUES = ['manual', 'best-selling', 'title-ascending', 'title-descending', 'price-ascending', 'price-descending', 'created-ascending', 'created-descending']
@@ -59,7 +56,7 @@ function copyOf (object: LiquidObject, changes: LiquidObject): LiquidObject {
 }
 
 /**
- * The collection a request shows, https://shopify.dev/docs/api/liquid/objects/collection: its products narrowed to the tag path's tags (every tag, https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/tag-filtering), then to the active filters, then sorted by the request's `sort_by` (the collection's default order when it names none or a value the sort options do not list). `products_count` counts the result and `all_products_count` stays the collection's size, as the parity store prints them (fixture `probe-collection-tag`: 6 of 29); `sort_by` is the requested value, empty when the request names none (fixture `probe-collection-all`); `filters` come from the products before the filters, with the active ones marked (`buildFilters`). Under variant filters a product's `url` and `featured_media` are those of its first matching variant (`Matcher.firstVariant`). The built collection is shared by every request of a view, so this returns a copy, and its `tags` follow its `products` (inside a `paginate` block, the page's). `path` is the address the filters' links extend, without its query.
+ * The collection a request shows, https://shopify.dev/docs/api/liquid/objects/collection: its products narrowed to the tag path's tags (every tag, https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/tag-filtering), then to the active filters, then sorted by the request's `sort_by` (the collection's default order when it names none or a value the sort options do not list). `products_count` counts the result and `all_products_count` stays the collection's size, as the parity store prints them (fixture `probe-collection-tag`: 6 of 29); `sort_by` is the requested value, empty when the request names none (fixture `probe-collection-all`); `filters` come from the products before the filters, with the active ones marked (`buildFilters`). Under variant filters a product's `url` and `featured_media` are those of its first matching variant (`Matcher.firstVariant`). The built collection is shared by every request of a view, so this returns a copy. Its `tags` are those of every product it shows for a collection of the store's, on any page (fixture `probe-collection-suffix`), and those of its `products` for one Shopify makes (inside a `paginate` block, the page's: fixtures `probe-collection-all` and `probe-collection-page-2`), as `buildCollection` says. `path` is the address the filters' links extend, without its query.
  */
 export function collectionView (collection: LiquidObject, request: RequestInput, storefrontFilters: FilterData[], currency: ViewCurrency, path: string): LiquidObject {
   const all = collection.products as Product[]
@@ -68,13 +65,17 @@ export function collectionView (collection: LiquidObject, request: RequestInput,
   const { query, active } = requestQuery(request)
   const named = request.sortBy && SORT_VALUES.includes(request.sortBy) ? request.sortBy : undefined
   const matcher = filterMatcher(active, currency, storefrontFilters)
-  const sorted = sortProducts(tagged.filter(matcher.test), named ?? String(collection.default_sort_by), AUTOMATIC.has(String(collection.handle)))
+  const automatic = AUTOMATIC_COLLECTIONS.has(String(collection.handle))
+  const sorted = sortProducts(tagged.filter(matcher.test), named ?? String(collection.default_sort_by), automatic)
   const link = (product: Product) => {
     const variant = matcher.firstVariant(product)
     return variant ? copyOf(product, { url: variant.url, featured_media: variant.featured_media ?? product.featured_media }) : product
   }
   const shown = active.some(([name]) => name.startsWith('filter.v.')) ? sorted.map(link) : sorted
-  return copyOf(collection, { products: shown, products_count: shown.length, sort_by: named ?? '', filters: buildFilters(storefrontFilters, tagged, path, query, currency) })
+  const view = copyOf(collection, { products: shown, products_count: shown.length, sort_by: named ?? '', filters: buildFilters(storefrontFilters, tagged, path, query, currency) })
+  // a collection of the store's has the tags of every product the request shows, on any page (fixture `probe-collection-suffix`); one Shopify makes keeps the accessor that follows its `products`
+  if (!automatic) Object.defineProperty(view, 'tags', { get: () => tagsOf(shown), enumerable: true, configurable: true })
+  return view
 }
 
 /**

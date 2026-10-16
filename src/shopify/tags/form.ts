@@ -31,12 +31,21 @@ interface FormType {
   /** Attributes Shopify adds after `accept-charset` (`data-login-with-shop-sign-in`). */
   extra?: Array<[string, string]>
   /** Hidden inputs after `form_type` and `utf8`. */
-  before?: (request: { path: string }) => Array<[string, string]>
+  before?: (request: { path: string, query?: ReadonlyArray<readonly [string, string]> }) => Array<[string, string]>
   /** Hidden inputs after the form's content; `section` is the id of the section being rendered, if any. */
   after?: (resource: Resource, section?: string) => Array<[string, string]>
 }
 
 const prop = (resource: Resource, key: string) => (resource ? stringify(toValue(resource[key])) : '')
+
+/** The address of the page being rendered, its query included: where a `localization` form returns the shopper, as the parity store prints it (fixtures `probe-page-home` and `probe-page-fr-eu`: `/pages/about?view=probe` and `/fr-eu/pages/about?view=probe` while `request.path` is `/pages/about`). The pairs keep the address's order, each name and value encoded with `encodeURIComponent`; the fixtures hold one pair, so the order and encoding of several are not pinned. The deprecated `currency` form, which no fixture records, returns the same way. */
+const pageAddress = (request: { path: string, query?: ReadonlyArray<readonly [string, string]> }) => {
+  const pairs = request.query ?? []
+  return pairs.length ? `${request.path}?${pairs.map(([name, value]) => `${encodeURIComponent(name)}=${encodeURIComponent(value)}`).join('&')}` : request.path
+}
+
+/** Liquid's `VariableSignature`, repeated: how Shopify's `form` tag reads its object (`FORM_FORMAT` in Shopify's theme-check, lib/theme_check/tags.rb, which parses the tag as the storefront does): a name with dots and square brackets around unquoted keys, so `all_products['hoodie']` is no object it can read. */
+const READABLE_OBJECT = /^[\w\-.[\]()]+$/
 
 /** The form types and their markup, from the examples on https://shopify.dev/docs/api/liquid/tags/form. `customer_address` for an existing address is not documented there and is approximate. An action is the unprefixed path; `render` puts the view's prefix before it (the base path and locale prefix: the parity store posts its localization form to `/fr-ca/localization` under `/fr-ca`, fixture `probe-page-fr-ca`, and shopify.dev's examples show only the unprefixed actions), except for an action built from an article's URL, which carries it already (`prefixed`). */
 const FORM_TYPES: Record<string, FormType> = {
@@ -44,7 +53,7 @@ const FORM_TYPES: Record<string, FormType> = {
   cart: { action: () => '/cart', id: () => 'cart_form', className: 'shopify-cart-form', multipart: true },
   contact: { action: () => '/contact#contact_form', id: () => 'contact_form', className: 'contact-form' },
   create_customer: { action: () => '/account', id: () => 'create_customer', extra: [['data-login-with-shop-sign-up', 'true']] },
-  currency: { action: () => '/cart/update', id: () => 'currency_form', className: 'shopify-currency-form', multipart: true, before: request => [['return_to', request.path]] },
+  currency: { action: () => '/cart/update', id: () => 'currency_form', className: 'shopify-currency-form', multipart: true, before: request => [['return_to', pageAddress(request)]] },
   customer: { action: () => '/contact#contact_form', id: () => 'contact_form', className: 'contact-form' },
   customer_address: {
     action: address => (address && prop(address, 'id') ? `/account/addresses/${prop(address, 'id')}` : '/account/addresses'),
@@ -54,7 +63,7 @@ const FORM_TYPES: Record<string, FormType> = {
   },
   customer_login: { action: () => '/account/login', id: () => 'customer_login', extra: [['data-login-with-shop-sign-in', 'true']] },
   guest_login: { action: () => '/account/login', id: () => 'customer_login_guest', after: () => [['guest', 'true']] },
-  localization: { action: () => '/localization', id: () => 'localization_form', className: 'shopify-localization-form', multipart: true, before: request => [['_method', 'put'], ['return_to', request.path]] },
+  localization: { action: () => '/localization', id: () => 'localization_form', className: 'shopify-localization-form', multipart: true, before: request => [['_method', 'put'], ['return_to', pageAddress(request)]] },
   new_comment: { action: article => `${prop(article, 'url')}/comments#comment_form`, prefixed: true, id: () => 'comment_form', className: 'comment-form' },
   // `section-id` is not on shopify.dev, whose example renders outside a section; Shopify's Dawn demo store prints it after `product-id` in a product form inside a section, and no Dawn file prints it
   product: { action: () => '/cart/add', id: product => `product_form_${prop(product, 'id')}`, className: 'shopify-product-form', multipart: true, after: (product, section) => [['product-id', prop(product, 'id')], ...(section === undefined ? [] : [['section-id', section] as [string, string]])] },
@@ -167,10 +176,16 @@ function fieldName (state: ShopifyState, formType: string, field: string): strin
   return typeof text === 'string' ? text : capitalised(field)
 }
 
-/** `{% form 'type', resource, attribute: value %}`. https://shopify.dev/docs/api/liquid/tags/form */
+/**
+ * `{% form 'type', resource, attribute: value %}`. https://shopify.dev/docs/api/liquid/tags/form
+ *
+ * A `product` form whose object is written in a way Shopify's form tag cannot read as one (`READABLE_OBJECT`: a quoted key, `all_products['hoodie']`) prints nothing at all, as the parity store prints `{% form 'product', all_products['hoodie'] %}` on a page (fixtures `probe-page-*`: `product_form` is `""`); the page says only that the product form "requires a product object as a parameter". The other form types, which no fixture records with such an object, read the whole expression.
+ */
 export class FormTag extends Tag {
   private readonly type: ValueToken
   private readonly resource?: ValueToken
+  /** The object is written in a form Shopify's tag does not read as one. */
+  private readonly unreadable: boolean = false
   private readonly hash: Hash
   private readonly templates: Template[] = []
 
@@ -188,7 +203,10 @@ export class FormTag extends Tag {
       tokenizer.skipBlank()
       const isAttribute = name.content !== '' && tokenizer.peek() === ':'
       tokenizer.p = begin
-      if (!isAttribute) this.resource = tokenizer.readValue()
+      if (!isAttribute) {
+        this.resource = tokenizer.readValue()
+        this.unreadable = !!this.resource && !READABLE_OBJECT.test(this.resource.getText())
+      }
     }
     this.hash = new Hash(tokenizer, liquid.options.keyValueSeparator)
     while (remainTokens.length) {
@@ -204,6 +222,7 @@ export class FormTag extends Tag {
     const formType = stringify(yield evalToken(this.type, ctx))
     const spec = FORM_TYPES[formType]
     if (!spec) throw new Error(`Unknown form type: ${formType}`)
+    if (formType === 'product' && this.unreadable) return
     const resource = this.resource ? toValue(yield evalToken(this.resource, ctx)) as Resource : undefined
     const attributes = (yield this.hash.render(ctx)) as Record<string, unknown>
     const id = 'id' in attributes ? stringify(plainValue(attributes.id)) : spec.id?.(resource)

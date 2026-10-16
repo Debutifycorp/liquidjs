@@ -23,6 +23,7 @@ function matches (found: string[], terms: string[], prefix: boolean): boolean {
   return terms.every((term, at) => at < terms.length - 1 || !prefix ? all.has(term) : found.some(word => word.startsWith(term)))
 }
 
+/** The search page's sort options, names and values, as the parity store prints them (fixture `probe-search-none`; https://shopify.dev/docs/api/liquid/objects/search gives no values). */
 const SORT_OPTIONS = [{ name: 'Relevance', value: 'relevance' }, { name: 'Price, low to high', value: 'price-ascending' }, { name: 'Price, high to low', value: 'price-descending' }]
 const LIMIT = 1000
 

@@ -30,7 +30,7 @@ export interface Paginate {
   previous: PaginatePart | null
 }
 
-/** The most items `paginate` reaches. https://shopify.dev/docs/api/liquid/tags/paginate ("to the 25,000th item in the array and no further") and https://shopify.dev/docs/api/liquid/objects/paginate (`items`, `pages` and `current_page` are limited to 25,000, `current_offset` to 24,999). What Shopify does with a `?page=` past the limit is not pinned by shopify.dev: this package shows the last page it reaches. */
+/** The most items `paginate` reaches. https://shopify.dev/docs/api/liquid/tags/paginate ("to the 25,000th item in the array and no further") and https://shopify.dev/docs/api/liquid/objects/paginate (`items`, `pages` and `current_page` are limited to 25,000, `current_offset` to 24,999). What Shopify does with a `?page=` past the limit is not pinned by shopify.dev: this package shows the last page it reaches. A page past the last page (within the limit) shows no items, with `current_page` the page asked for, `previous` the last page and no `next`, as the parity store prints it (fixture `probe-collection-page-past`: page 9 of 8). */
 export const PAGINATION_LIMIT = 25000
 
 /**

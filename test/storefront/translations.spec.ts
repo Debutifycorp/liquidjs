@@ -90,6 +90,26 @@ describe('content translations', () => {
     // a data object with no translations builds as it did
     expect(buildStore(legacySampleData, { market: 'default', language: 'fr', prefix: '' }).shop.name).toBe(legacySampleData.shop.name)
   })
+  it('builds one store per language of a market, keyed by the language alone', () => {
+    const english = buildStore(data, { market: 'ca', language: 'en', prefix: '' })
+    const french = buildStore(data, { market: 'ca', language: 'fr', prefix: '' })
+    const hoodie = (store: ReturnType<typeof buildStore>) => (store.products.liquidMethodMissing('hoodie') as Record<string, any>).title
+    expect(french).not.toBe(english)
+    expect([hoodie(english), hoodie(french)]).toEqual(['Hoodie', 'Sweat à capuche'])
+    expect(buildStore(data, { market: 'ca', language: 'en', prefix: '' })).toBe(english)
+  })
+  it('ignores an empty translation everywhere, as one that does not exist', () => {
+    const store: StoreData = {
+      shop: { ...data.shop, name: 'Shop', description: 'Default description' },
+      products: [{ ...data.products![0], handle: 'tee', title: 'Tee', description: 'A tee' }],
+      linklists: [{ handle: 'main-menu', title: 'Main menu', links: [{ title: 'Shop', url: '/collections/all' }, { title: 'News', url: '/blogs/news' }] }],
+      translations: { fr: { shop: { name: '', description: '' }, products: { tee: { title: '', description: 'Un tee' } }, menus: { 'main-menu': ['', 'Actualités'] } } }
+    }
+    const fr = translateData(store, 'fr')
+    expect([fr.shop.name, fr.shop.description]).toEqual(['Shop', 'Default description'])
+    expect([fr.products![0].title, fr.products![0].description]).toEqual(['Tee', 'Un tee'])
+    expect(fr.linklists![0].links.map(l => l.title)).toEqual(['Shop', 'Actualités'])
+  })
   it('matches the parity store in French and in English', async () => {
     const pick = (b: any) => ({ shop: [b.shop.name, b.shop.description], product: b.product.title, collection: b.collection.title, page: [b.page.title, b.page.content], menu: b.menu.map((l: any) => l.title) })
     for (const name of ['probe-page-fr-ca', 'probe-page-fr-eu', 'probe-page-en-ca', 'probe-page-en-eu', 'probe-page-home']) {

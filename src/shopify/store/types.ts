@@ -455,9 +455,10 @@ export interface ResourceTranslations {
   excerpt?: string
 }
 
-/** Content translations by locale. Menus are by handle, each a list of link titles in the order the menu lists its links, children after their parent. */
+/** Content translations by locale. Menus are by handle, each a list of link titles in the order the menu lists its links, children after their parent. An empty translation is ignored, as one that does not exist (`translateData`). */
 export interface TranslationsData {
   [locale: string]: {
+    /** `description` is the shop's meta description. `name` is not translatable on Shopify (https://shopify.dev/docs/api/admin-graphql/latest/enums/TranslatableResourceType lists a shop's meta title and meta description only), so the parity store's data has none; `translateData` applies it only when a caller's data gives one. */
     shop?: { name?: string, description?: string }
     products?: Record<string, ResourceTranslations>
     collections?: Record<string, ResourceTranslations>

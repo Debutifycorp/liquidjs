@@ -1,6 +1,7 @@
 import { renderPage, renderSection, requestFromUrl, storefrontSampleData as data } from '../../src/shopify'
 import { FormErrorsDrop } from '../../src/shopify/tags/form'
 import type { FormOutcome } from '../../src/shopify'
+import { probeMatches } from './expect-probe'
 import { probeTheme, renderProbe } from './probe'
 
 describe('posted forms', () => {
@@ -155,5 +156,29 @@ describe('form object', () => {
     expect(await inContact(template, undefined, values)).toBe('Ann|Happy birthday|1 Main St|Suite 2|Calgary|Potions|Canada|Alberta|T1X 0L3')
     expect(await inContact(template)).toBe('||||||||')
     expect(await inContact('{{ form.author | json }}|{{ form.zip | json }}')).toBe('null|null')
+  })
+})
+
+describe('form markup the page probes record', () => {
+  for (const name of ['probe-page-home', 'probe-page-fr-eu']) {
+    it(`returns the localization form to the page's whole address, its query too (${name})`, async () => {
+      const { actual, expected } = await probeMatches(name, (b: any) => b.localization_form)
+      expect(actual).toBe(expected)
+      expect(actual).toContain('?view=probe" />')
+    })
+  }
+
+  it('prints nothing for a product form whose product is written with a quoted key, as the parity store does', async () => {
+    const { actual, expected } = await probeMatches('probe-page-home', (b: any) => b.product_form)
+    expect([actual, expected]).toEqual(['', ''])
+  })
+
+  it('prints a product form for a product written as a variable, also with a bracket key that is a variable', async () => {
+    const render = async (template: string) => (await renderPage({ theme: formTheme({ 'templates/index.liquid': template }), templateName: 'index', data })).html
+    expect(await render("{%- form 'product', all_products[\"hoodie\"] -%}x{%- endform -%}")).toBe('')
+    const byVariable = await render("{%- assign p = all_products['hoodie'] -%}{%- form 'product', p -%}x{%- endform -%}")
+    expect(byVariable).toMatch(/^<form method="post" action="\/cart\/add" id="product_form_\d+"[^>]*>.*x<input type="hidden" name="product-id" value="\d+" \/><\/form>$/)
+    expect(await render("{%- assign h = 'hoodie' -%}{%- form 'product', all_products[h] -%}x{%- endform -%}")).toBe(byVariable)
+    expect(await render("{%- assign p = all_products['hoodie'] -%}{%- form 'product', p, id: 'pf' -%}x{%- endform -%}")).toContain('id="pf"')
   })
 })

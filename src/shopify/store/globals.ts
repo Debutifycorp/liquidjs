@@ -125,6 +125,14 @@ const TERM_COLLECTIONS: Record<string, typeof vendorCollection> = { vendors: ven
 
 const RESOURCE_TYPES: Record<string, keyof StoreObjects> = { product: 'products', collection: 'collections', page: 'pages', blog: 'blogs', article: 'articles' }
 
+/** The resource a page of the base template `name` (`product`, `collection`, `page`, `blog`, `article`) shows from the store: the one the request's `resource` names, or the first in the store when it names none, so a template renders with something to show. Undefined for another template, a handle the store does not have, or a store with none. `buildGlobals` sets it as the page's global and the theme runtime reads its `template_suffix` to pick the alternate template. */
+export function requestedResource (store: StoreObjects, name: string, resource: string | undefined): LiquidObject | undefined {
+  const kind = own(RESOURCE_TYPES, name)
+  if (!kind) return undefined
+  const map = store[kind] as HandleMap<LiquidObject>
+  return resource ? HandleMap.get(map, resource) : HandleMap.values(map)[0]
+}
+
 const PATHS: Record<string, string> = { index: '/', cart: '/cart', search: '/search', 'list-collections': '/collections', 404: '/404', password: '/password', gift_card: '/gift_cards/sample' }
 
 /** The path a template is served from when the caller gives none: the resource's own URL (already under the view's prefix), or the storefront path of the template under `prefix`. shopify.dev's request page (https://shopify.dev/docs/api/liquid/objects/request) documents `path` as the page's path but not the path of each template, so the account and gift card paths here are the conventional ones and are not pinned. */
@@ -169,7 +177,7 @@ export interface PageGlobals {
 /**
  * The global objects of one page, each following its page under https://shopify.dev/docs/api/liquid/objects: `shop`, `cart`, `customer`, `localization`, `collections`, `all_products`, `pages`, `blogs`, `articles`, `linklists`, `images`, `routes`, `template`, `request` (`page_type`, `path`, `host`, `origin`, `locale`, `design_mode`, `visual_preview_mode`), `page_title`, `page_description`, `canonical_url`, `handle`, `current_page`, `current_tags`, `search`, `recommendations`, `predictive_search`, `powered_by_link`, `additional_checkout_buttons`, `content_for_additional_checkout_buttons`, `metaobjects`, `country_option_tags`, `all_country_option_tags`, `gift_card` on the `gift_card` template (https://shopify.dev/docs/api/liquid/objects/gift_card, nil when the store data issues none), `order` on the `customers/order` template (https://shopify.dev/docs/api/liquid/objects/order, the customer's order `orderFor` picks), and the template's resource under its own name (`product`, `collection`, `page`, `blog`, `article`; an article also sets `blog`).
  *
- * Choices shopify.dev does not pin, for the "confirm on a development store" list: `canonical_url` is the origin plus the path, with no query string or page number (the page says only that it is the canonical URL of the current page); `page_title` is the resource's title or the shop's name, without the shop-name suffix a live store adds; `powered_by_link` is empty because the link points at shopify.com, which a Debutify store does not show; `search` runs only when the request has `searchTerms` (`buildSearch`, whose matching is Debutify's), `recommendations` is performed only for a request's `recommendations` (`buildRecommendations`, whose related products are Debutify's) and carries `performed` beside `performed?` (shopify.dev names only `performed?`, but liquid-spec's recorded Shopify environments hold both, so a template that reads `recommendations.performed` takes the same branch as on a store), and `metaobjects` is empty.
+ * Choices shopify.dev does not pin, for the "confirm on a development store" list: `canonical_url` is the origin plus the path, with no query string, as the parity store prints it (fixtures `probe-page-*`: `/pages/about?view=probe` has `https://<host>/pages/about`), and no page number, which no fixture records (the page says only that it is the canonical URL of the current page); `page_title` is the resource's title or the shop's name, without the shop-name suffix a live store adds; `powered_by_link` is empty because the link points at shopify.com, which a Debutify store does not show; `search` runs only when the request has `searchTerms` (`buildSearch`, whose matching is Debutify's), `recommendations` is performed only for a request's `recommendations` (`buildRecommendations`, whose related products are Debutify's) and carries `performed` beside `performed?` (shopify.dev names only `performed?`, but liquid-spec's recorded Shopify environments hold both, so a template that reads `recommendations.performed` takes the same branch as on a store), and `metaobjects` is empty.
  */
 export function buildGlobals (input: GlobalsInput): PageGlobals {
   const { store, request, report } = input
@@ -182,10 +190,9 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   const resources: Record<string, LiquidObject | null> = {}
   const kind = own(RESOURCE_TYPES, template.name)
   if (kind) {
-    const map = store[kind] as HandleMap<LiquidObject>
     // `/collections/vendors?q=` and `/collections/types?q=` are collections Shopify makes from the term
     const automatic = template.name === 'collection' ? own(TERM_COLLECTIONS, request.resource ?? '') : undefined
-    const found = automatic ? automatic(store, request.searchTerms ?? '', view.prefix) : request.resource ? HandleMap.get(map, request.resource) : HandleMap.values(map)[0]
+    const found = automatic ? automatic(store, request.searchTerms ?? '', view.prefix) : requestedResource(store, template.name, request.resource)
     if (request.resource && !found) report.missing('resource', `${template.name} ${request.resource}`)
     // a product page shows the variant `?variant=` names (`selectProduct`) and the selling plan `?selling_plan=` names (`selectSellingPlan`); the built product is shared by every request, so a selection is a copy
     resources[template.name] = found && template.name === 'product' ? selectSellingPlan(selectProduct(found, request.variant), request.sellingPlan) : found ?? null
