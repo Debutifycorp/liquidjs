@@ -864,7 +864,9 @@ describe('shopify/util/sanitize', () => {
     ['<p title="a&quot;b">x</p>', '<p title="a&quot;b">x</p>'],
     ['ok<img src="x', 'ok'],
     ['<p>a</p><!-- open', '<p>a</p>'],
-    ['<br/><IMG SRC=x onerror=y />', '<br><img src="x">'],
+    // a void tag keeps the closing it was written with, as the parity store prints the `<br/>` a theme stores (scenario `page-product`)
+    ['<br/><IMG SRC=x onerror=y />', '<br/><img src="x" />'],
+    ['<br><img src=/x/><img src="/y/"/>', '<br><img src="/x/"><img src="/y/"/>'],
     // attribute breakout, and the references a browser decodes before it reads a scheme
     ['<a title=\'x" onmouseover="y\'>t</a>', '<a title="x&quot; onmouseover=&quot;y">t</a>'],
     ['<a href="java&Tab;script:alert(1)">x</a>', '<a>x</a>'],

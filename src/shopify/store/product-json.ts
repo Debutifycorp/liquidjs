@@ -18,10 +18,13 @@ const altOf = (image: ImageDrop) => textOrNull(image.data.alt)
 /** Whether two variants show the same image: matched by `id` when both have one, by `src` otherwise (as the product's images are). */
 const sameImage = (a: ImageDrop, b: ImageDrop) => a.id != null && b.id != null ? a.id === b.id : a.src === b.src
 
+/** An image's aspect ratio as the answer writes it: in `product | json` the decimal itself, which the `json` filter writes with its point, `1.0` (scenarios `page-product`, `page-product-variant`, `page-product-subscription`, `page-product-requires-plan` and `page-product-en-eu`: `"aspect_ratio":1.0`), and in the Ajax answer the number, which `JSON.stringify` writes as `1` (the comparison reads that answer as JSON, where the two are one value, fixture `ajax-product-js`). */
+const aspectRatio = (image: ImageDrop, shape: 'ajax' | 'liquid') => image.aspect_ratio ? (shape === 'ajax' ? image.aspect_ratio.value : image.aspect_ratio) : null
+
 /** An image as the `preview_image` of a media entry or a variant's `featured_media` (fixture `ajax-product-js`: `aspect_ratio`, `height`, `width`, `src`). */
 function previewImage (image: ImageDrop | null | undefined, shape: 'ajax' | 'liquid'): Record<string, unknown> | null {
   if (!image) return null
-  return { aspect_ratio: image.aspect_ratio ? image.aspect_ratio.value : null, height: image.height, width: image.width, src: imageUrl(image, shape) }
+  return { aspect_ratio: aspectRatio(image, shape), height: image.height, width: image.width, src: imageUrl(image, shape) }
 }
 
 /** A variant's `featured_media` in the variant's JSON: the media's alt, id, position and preview image (fixtures `ajax-product-js` and `probe-product-default`). */
@@ -126,7 +129,7 @@ export function imageLiquidJson (image: ImageDrop, place: ImageRole): unknown {
 function mediaJson (media: LiquidObject, shape: 'ajax' | 'liquid'): Record<string, unknown> {
   if (media.media_type === 'image') {
     const image = media as unknown as ImageDrop
-    return { alt: altOf(image), id: image.id, position: image.position, preview_image: previewImage(image, shape), aspect_ratio: image.aspect_ratio ? image.aspect_ratio.value : null, height: image.height, media_type: 'image', src: imageUrl(image, shape), width: image.width }
+    return { alt: altOf(image), id: image.id, position: image.position, preview_image: previewImage(image, shape), aspect_ratio: aspectRatio(image, shape), height: image.height, media_type: 'image', src: imageUrl(image, shape), width: image.width }
   }
   return { ...media, alt: textOrNull(media.alt), preview_image: previewImage(media.preview_image as ImageDrop | null, shape) }
 }
@@ -162,8 +165,9 @@ export function productAjax (product: LiquidObject): Record<string, unknown> {
   return {
     ...productHead(product),
     variants: (product.variants as LiquidObject[]).map(variant => variantJson(variant, product, 'ajax')),
-    images: (product.images as ImageDrop[]).map(image => imageUrl(image, 'ajax')),
-    featured_image: imageUrl(product.featured_image as ImageDrop | null, 'ajax'),
+    // `featured_image` and `images` have no protocol in the parity store's answer, where the `src` of the media and of a variant's image have `https://` (fixture `ajax-product-js`)
+    images: (product.images as ImageDrop[]).map(image => imageUrl(image, 'liquid')),
+    featured_image: imageUrl(product.featured_image as ImageDrop | null, 'liquid'),
     options: (product.options_with_values as LiquidObject[]).map(option => ({ name: option.name, position: option.position, values: option.values })),
     url: product.url,
     media: (product.media as LiquidObject[]).map(media => mediaJson(media, 'ajax')),

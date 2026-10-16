@@ -1,5 +1,6 @@
 import type { FontInfo, ImageData, ImageUrlParams } from './types'
 import { escapeHtml } from './util/html'
+import { own } from './util/own'
 import { placeholderArt } from './placeholder-art'
 import { withoutProtocol } from './objects/image'
 
@@ -75,6 +76,18 @@ export function cdnStyleImageUrl (image: ImageData, params: ImageUrlParams): str
   return keys.length ? `${base}?${keys.map(key => `${key}=${query.get(key)}`).join('&')}` : base
 }
 
+/** The names Shopify gives the cards of `shop.enabled_payment_types` in the `<title>` of their icons, as https://shopify.dev/docs/api/liquid/filters/payment_type_svg_tag names them (and scenarios `page-home` and `ajax-cart-sections` print them). A type not listed keeps its key. */
+const PAYMENT_TITLES: Readonly<Record<string, string>> = Object.freeze({ visa: 'Visa', master: 'Mastercard', american_express: 'American Express', paypal: 'PayPal', diners_club: 'Diners Club', discover: 'Discover' })
+/** The icons whose file Shopify ends with a line break after `</svg>`: the page's example shows an empty line after the first three and none after the others, and `page-home` and `ajax-cart-sections` print `</svg>\n` for Visa, Mastercard and American Express only. The icons of other types are not recorded; they end at `</svg>`. */
+const PAYMENT_ICONS_WITH_LINE_BREAK = new Set(['visa', 'master', 'american_express'])
+
+/** A neutral payment icon box (Debutify's own artwork, not Shopify's), titled and ended as Shopify's icon of the type is. */
+function neutralPaymentIcon (type: string): string {
+  const key = escapeHtml(type)
+  const title = escapeHtml(own(PAYMENT_TITLES, type) ?? type)
+  return `<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 38 24" width="38" height="24" aria-labelledby="pi-${key}"><title id="pi-${key}">${title}</title><rect x=".5" y=".5" width="37" height="23" rx="2.5" fill="#fff" stroke="#000" stroke-opacity=".07"/></svg>${PAYMENT_ICONS_WITH_LINE_BREAK.has(type) ? '\n' : ''}`
+}
+
 /** Deterministic stand-ins (Debutify's, not Shopify's output): relative URLs, Debutify's own placeholder line art, neutral payment icon boxes, Shopify-shaped image URLs and the system clock. Callers replace them through the `services` option, one service at a time; the object itself is frozen, as every engine and render reads it. */
 export const defaultServices: Readonly<ShopifyServices> = Object.freeze<ShopifyServices>({
   assetUrl: path => `/assets/${path}`,
@@ -83,7 +96,7 @@ export const defaultServices: Readonly<ShopifyServices> = Object.freeze<ShopifyS
   fontUrl: (font, format) => `/fonts/${font.handle}.${format}`,
   fontInfo: parseFontHandle,
   placeholderSvg: placeholderArt,
-  paymentTypeSvg: type => `<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 38 24" width="38" height="24" aria-labelledby="pi-${escapeHtml(type)}"><title id="pi-${escapeHtml(type)}">${escapeHtml(type)}</title><rect x=".5" y=".5" width="37" height="23" rx="2.5" fill="#fff" stroke="#000" stroke-opacity=".07"/></svg>`,
+  paymentTypeSvg: neutralPaymentIcon,
   currentTime: () => new Date()
 })
 

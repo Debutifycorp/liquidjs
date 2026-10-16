@@ -3,7 +3,7 @@ import type { PredictiveRequest } from '../../src/shopify'
 import { HandleMap } from '../../src/shopify/objects/handle-map'
 import { buildStore } from '../../src/shopify/store/build'
 import { loadFixture } from './fixtures'
-import { maskVolatile, probeMatches } from './expect-probe'
+import { ajaxProductImages, maskVolatile, probeMatches } from './expect-probe'
 import { renderProbeSection } from './probe'
 
 type ResultKey = 'products' | 'collections' | 'pages' | 'articles' | 'queries'
@@ -185,13 +185,13 @@ describe('/recommendations/products.json', () => {
     for (const product of recorded.products) {
       const path = product.url.split('?')[0]
       const engine = productJson(data, product.handle)!
-      same({ ...engine, url: path }, { ...product, url: path })
+      same({ ...engine, url: path }, { ...(ajaxProductImages(product) as object), url: path })
     }
   })
 
   it('prints the product the engine and the parity store both recommend as the parity store does', () => {
     const jam = answer.products.find(product => product.handle === 'soft-cotton-hoodie-in-jam')!
-    same(jam, recorded.products.find(product => product.handle === 'soft-cotton-hoodie-in-jam'))
+    same(jam, ajaxProductImages(recorded.products.find(product => product.handle === 'soft-cotton-hoodie-in-jam')))
   })
 
   it('adds the tracking parameters in the parity store\'s order, with one id for the whole answer', () => {

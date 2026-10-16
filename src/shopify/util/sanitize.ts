@@ -96,6 +96,17 @@ interface Tag {
   attributes: string
 }
 
+/**
+ * The self-closing mark of a void tag that was written `<br/>` or `<br />`: `/` or ` /`, to be written back as it was, which is how the parity store prints the `<br/>` a theme stores in a richtext setting (scenarios `page-product`, `page-product-variant`, `page-product-subscription`, `page-product-requires-plan` and `page-product-en-eu`). `attributes` is the tag's source after its name, ending with the `/`. A slash that ends an unquoted attribute value belongs to the value (`<img src=/x/>` reads `src` as `/x/`), so it is no mark.
+ */
+function selfClosingMark (attributes: string): string {
+  const slash = attributes.length - 1
+  let start = slash
+  while (start > 0 && /\s/.test(attributes[start - 1])) start--
+  if (start === slash && slash > 0 && attributes[slash - 1] !== '"' && attributes[slash - 1] !== "'") return ''
+  return start < slash ? ' /' : '/'
+}
+
 /** The end of a construct that runs to `terminator`, or the end of the input when it never closes (a browser drops such a construct together with the rest of the input). */
 function endOf (html: string, from: number, terminator: string): number {
   const end = html.indexOf(terminator, from)
@@ -203,7 +214,7 @@ export function sanitizeHtml (html: string): string {
         const index = open.lastIndexOf('a')
         if (index !== -1) closeTo(index)
       }
-      out += `<${name}${cleanAttributes(name, token.attributes)}>`
+      out += `<${name}${cleanAttributes(name, token.attributes)}${isVoid && token.selfClosing ? selfClosingMark(token.attributes) : ''}>`
       if (!isVoid) open.push(name)
     }
   }

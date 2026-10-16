@@ -20,6 +20,26 @@ describe('numberSemantics: ruby', () => {
     it('compares a decimal with a whole number', async () => expect(await render('{% if 2.0 == 2 %}yes{% endif %}')).toBe('yes'))
     it('appends a decimal as Ruby prints it', async () => expect(await render('{{ 2.0 | append: "x" }}')).toBe('2.0x'))
     it('serialises a decimal as a JSON number', async () => expect(await render('{{ 2.5 | json }}')).toBe('2.5'))
+    // Shopify writes a Ruby Float in JSON as Float#to_s does: the point stays on a whole value (scenario page-product, `"price" : {{ price | divided_by: 100.00 | json }}` prints `90.0`)
+    it('serialises a whole-valued decimal with its point', async () => {
+      expect(await render('{{ 2.0 | json }}')).toBe('2.0')
+      expect(await render('{{ 9000 | divided_by: 100.0 | json }}')).toBe('90.0')
+    })
+    it('serialises a whole number without a point', async () => {
+      expect(await render('{{ 2 | json }}')).toBe('2')
+      expect(await render('{{ 9000 | divided_by: 100 | json }}')).toBe('90')
+      expect(await render('{{ x | json }}', { x: 3 })).toBe('3')
+    })
+    it('serialises a decimal inside an array or a hash with its point', async () => {
+      expect(await render('{{ list | json }}', { list: [new LiquidFloat(1), 1, { ratio: new LiquidFloat(2) }] })).toBe('[1.0,1,{"ratio":2.0}]')
+    })
+    it('keeps the indent of json with a space', async () => {
+      expect(await render('{{ list | json: 1 }}', { list: [new LiquidFloat(1)] })).toBe('[\n 1.0\n]')
+    })
+    it('serialises a decimal that is not finite as null, as JSON.stringify does', async () => expect(await render('{{ 10.0 | divided_by: 0.0 | json }}')).toBe('null'))
+    it('serialises a decimal in jsonify the same way', async () => expect(await render('{{ 2.0 | jsonify }}')).toBe('2.0'))
+    it('leaves a decimal of the default number semantics a plain number', async () => expect(await js.parseAndRender('{{ 2.0 | json }}')).toBe('2'))
+    it('keeps a string that looks like a decimal a string', async () => expect(await render('{{ "2.0" | json }}')).toBe('"2.0"'))
   })
   describe('divided_by', () => {
     it('rounds down whole-number division', async () => expect(await render('{{ 10 | divided_by: 4 }}')).toBe('2'))

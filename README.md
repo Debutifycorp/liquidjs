@@ -6,7 +6,7 @@ Debutify's fork of [LiquidJS](https://github.com/harttle/liquidjs) for rendering
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `numberSemantics` | `'js'` | `'ruby'` keeps whole numbers and decimals apart as Shopify Liquid does (`{{ 10 \| divided_by: 4 }}` is `2`, `{{ 2.0 }}` prints `2.0`, decimal arithmetic is exact). |
+| `numberSemantics` | `'js'` | `'ruby'` keeps whole numbers and decimals apart as Shopify Liquid does (`{{ 10 \| divided_by: 4 }}` is `2`, `{{ 2.0 }}` prints `2.0`, `{{ 2.0 \| json }}` is `2.0`, decimal arithmetic is exact). |
 | `rawTags` | `['raw']` | Tags whose bodies are never parsed; register a `RawBodyTag` subclass for each new name. A listed `comment` nests. The list replaces the default, so include `raw` to keep `{% raw %}` raw. |
 | `inlineErrors` | `false` | Write render errors inline (`Liquid error (line 1): …`) and keep rendering; collect them with `render(tpl, scope, { errors })`. |
 | `topLevelSize` | `true` | `false` makes an undefined top-level `size` print nothing, as Ruby Liquid does, instead of the number of keys in the render's globals as upstream LiquidJS does; a `size` that a scope or the globals define, and the `size` of a value (`list.size`), are not affected. The Shopify preset sets it to `false`. |
@@ -234,7 +234,7 @@ The package never fetches anything and names no host of its own: the only litera
 | `fontFace(font, options)` | `font_face` | Shopify's `@font-face` rule built from `fontUrl` |
 | `fontInfo(handle)` | `font_picker` settings, `font_modify` | parsed from the handle (`assistant_n4`) |
 | `placeholderSvg(name)` | `placeholder_svg_tag` | Debutify's own line drawing for each name the filter's page lists, with no background |
-| `paymentTypeSvg(type)` | `payment_type_svg_tag` | a plain card outline |
+| `paymentTypeSvg(type)` | `payment_type_svg_tag` | a plain card outline, titled with the card's name (`Visa`, `Mastercard`) and ended as Shopify's icon is |
 | `currentTime()` | `'now' \| date`, `time_tag` | the system clock |
 
 ### The render report
@@ -397,7 +397,7 @@ shopify.dev does not pin these outputs, or pins only part of the filter, tag or 
 - [`image_url`](https://shopify.dev/docs/api/liquid/filters/image_url) without a width or height returns the image's original URL with no size parameters, although the page's Caution says an error is returned; Dawn, Shopify's reference theme, prints the sizeless form as the last `srcset` candidate.
 - `image_url: 'master'` (a positional size, read as omitted) and a nil or `0` `width:` or `height:` (also read as omitted).
 - `image_url`, `img_url` and the `srcset` of `image_tag` print the default service's address without its protocol (`//host/files/a.jpg?width=450`), as the parity store does, so a theme's `image_url | prepend: "https:"` makes a valid address; a caller's own `imageUrl` service returns what it likes. An image object's `src` (and `product | json`) has no protocol either, where the Ajax answers (`/products/<handle>.js`, `/cart.js`, the suggest answer) print the data's own address, as the parity store does.
-- `image_url` clamps `width` and `height` to the image's own size and to 5760, scales an oversized two-sided request proportionally, clamps `quality` to 10 to 90, and sorts the query keys.
+- `image_url` keeps the `width` and `height` the template asked for in the address, even past the image's own size (the CDN serves nothing larger than the original, and the parity store prints `width=1500` for an image 1024 wide), clamps them to 5760, scales an oversized two-sided request proportionally, clamps `quality` to 10 to 90, and sorts the query keys; `image_tag` writes its size and `srcset` within the image's own size.
 - [`img_url`](https://shopify.dev/docs/api/liquid/filters/img_url): the default size (`small`, read from the page's no-argument example), an unknown or empty size (`small`), `original` and `master` as 1024x1024 (the page has one table row for both), and `crop`, `format` and `scale` changing nothing in the default service.
 - [`video_tag`](https://shopify.dev/docs/api/liquid/filters/video_tag): `m3u8` sources when not looping, where `loading` goes, the section index for lazy loading, and the product-title fallback for `aria-label` (and for [`external_video_tag`](https://shopify.dev/docs/api/liquid/filters/external_video_tag)'s `title`), which reads the `product` variable in scope.
 - `media_tag` on an image renders `image_tag` at the image's own width (1100 when it has none); the page has no image example.

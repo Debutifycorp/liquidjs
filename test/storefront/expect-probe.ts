@@ -78,7 +78,7 @@ export function maskVolatile (value: unknown, path = ''): unknown {
 /** The dataset's image addresses, which the fixture cut put in place of the store's own CDN address. */
 const DATASET_IMAGE = /^https:(?=\/\/cdn\.shopify\.com\/mock-shop-production-media\/)/
 
-const withoutProtocol = (value: unknown): unknown => Array.isArray(value)
+export const withoutProtocol = (value: unknown): unknown => Array.isArray(value)
   ? value.map(withoutProtocol)
   : value !== null && typeof value === 'object'
     ? Object.fromEntries(Object.entries(value).map(([key, child]) => [key, withoutProtocol(child)]))
@@ -87,7 +87,7 @@ const withoutProtocol = (value: unknown): unknown => Array.isArray(value)
 /**
  * A recorded probe body with the protocol dropped from the image addresses under its `ajax` key, which is `{{ product | json }}`. The parity store prints them protocol-relative there (`//host/cdn/shop/files/…`, scenario `page-product` and the recordings of these probes), and the fixture cut wrote the dataset's absolute address in their place; the Ajax answers (`/products/<handle>.js`, fixture `ajax-product-js`) really are absolute, and are not touched.
  */
-function liquidJsonImages (body: unknown): unknown {
+export function liquidJsonImages (body: unknown): unknown {
   if (body === null || typeof body !== 'object' || Array.isArray(body) || !('ajax' in body)) return body
   return { ...body, ajax: withoutProtocol((body as Record<string, unknown>).ajax) }
 }
@@ -114,4 +114,17 @@ export async function probeMatches (name: string, pick: (body: any) => unknown =
   const templateName = section ? 'index' : page.templateName
   const html = await renderProbeHtml(section ?? templateName, { request: page.request, data, section: !!section, templateName, locale: page.locale })
   return { actual: pick(maskVolatile(JSON.parse(html))), expected }
+}
+
+/**
+ * A recorded Ajax product (`/products/<handle>.js`, or a product of `/recommendations/products.json`) with the protocol dropped from `featured_image` and `images`. The parity store writes those two without one (`//cdn.shopify.com/…`) and the `src` of its media and of a variant's image with `https:` (scenarios `ajax-product-js` and `ajax-recommendations-json`); the fixture cut wrote `https:` on all of them.
+ */
+export function ajaxProductImages (product: unknown): unknown {
+  if (product === null || typeof product !== 'object' || Array.isArray(product)) return product
+  const body = product as Record<string, unknown>
+  return {
+    ...body,
+    ...('featured_image' in body ? { featured_image: withoutProtocol(body.featured_image) } : {}),
+    ...(Array.isArray(body.images) ? { images: withoutProtocol(body.images) } : {})
+  }
 }

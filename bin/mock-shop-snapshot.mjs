@@ -25,6 +25,8 @@ const QUERY = `{
 const nodes = connection => connection.edges.map(edge => edge.node)
 const gidNumber = gid => Number(gid.split('?')[0].split('/').pop())
 const cents = amount => Math.round(Number(amount) * 100)
+// The Storefront API gives a collection's `descriptionHtml` with its apostrophes as `&#39;`, where the store holds a plain `'` (a product's comes with it plain), which is what the parity store prints (scenario `page-collections`: `Liquid's athletic wear`), so the snapshot keeps the `'`
+const storedHtml = html => html.replaceAll('&#39;', "'")
 const image = img => img ? { src: img.url, width: img.width, height: img.height, alt: img.altText ?? '', id: gidNumber(img.id) } : null
 const path = url => url.startsWith(HOST) ? url.slice(HOST.length) || '/' : url
 const link = item => ({ title: item.title, url: path(item.url), ...(item.items?.length ? { links: item.items.map(link) } : {}) })
@@ -89,7 +91,7 @@ function uniqueVariantIds (products) {
 
 const catalog = {
   products: uniqueVariantIds(nodes(data.products).map(product)),
-  collections: nodes(data.collections).map(c => ({ id: gidNumber(c.id), handle: c.handle, title: c.title, description: c.descriptionHtml, image: image(c.image), products: nodes(c.products).map(p => p.handle) })),
+  collections: nodes(data.collections).map(c => ({ id: gidNumber(c.id), handle: c.handle, title: c.title, description: storedHtml(c.descriptionHtml), image: image(c.image), products: nodes(c.products).map(p => p.handle) })),
   pages: nodes(data.pages).map(p => ({ id: gidNumber(p.id), handle: p.handle, title: p.title, content: p.body, published_at: p.createdAt })),
   blogs: nodes(data.blogs).map(b => ({
     id: gidNumber(b.id),

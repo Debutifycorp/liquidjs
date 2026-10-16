@@ -282,12 +282,12 @@ const textOrNull = (text: unknown) => text === '' || text === undefined || text 
 /** A product's description as the Ajax cart prints it: the text without its tags (`<p>` is gone in fixture `ajax-cart-session`, whose products' descriptions are paragraphs). */
 const plainText = (html: unknown) => stripTags(String(html ?? ''))
 
-/** A line's image as the Ajax cart prints it: `url` is the full `https://` address of the dataset, the `alt` the image's, or the product's title when it has none (fixtures `ajax-cart-session` and `ajax-cart-sections`: the dataset's images have none), and the keys' order differs by form. */
+/** A line's image as the Ajax cart prints it: `url` is the full `https://` address of the dataset, the `alt` the image's, or the product's title when it has none (fixtures `ajax-cart-session` and `ajax-cart-sections`: the dataset's images have none), and the keys' order differs by form. In `{{ cart | json }}` (`liquid`) the address has no protocol and the aspect ratio keeps its point (scenarios `ajax-cart-session`, step 11, `ajax-discount-codes`, `ajax-discount-automatic-bxgy` and `ajax-cart-en-ca`: `"url":"\/\/cdn…"`, `"aspect_ratio":1.0`), where the Ajax answers print `https://` and the number. */
 function imageJson (image: ImageDrop | null | undefined, product: LiquidObject, form: LineItemForm): Record<string, unknown> | null {
   if (!image) return null
-  const aspectRatio = image.aspect_ratio ? image.aspect_ratio.value : null
+  const aspectRatio = image.aspect_ratio ? (form === 'liquid' ? image.aspect_ratio : image.aspect_ratio.value) : null
   const alt = image.alt || product.title
-  const rest = { height: image.height, url: image.data.src, width: image.width }
+  const rest = { height: image.height, url: lineImageAddress(image, form), width: image.width }
   return form === 'cart' ? { aspect_ratio: aspectRatio, alt, ...rest } : { alt, aspect_ratio: aspectRatio, ...rest }
 }
 
@@ -301,6 +301,9 @@ function own<T> (value: T): T {
   }
   return value
 }
+
+/** The address of a line's image: the dataset's `https://` address in the Ajax answers, the one without a protocol in `{{ cart | json }}`. */
+const lineImageAddress = (image: ImageDrop, form: LineItemForm) => form === 'liquid' ? image.src : image.data.src
 
 /** A line's selling plan allocation as the cart prints it: the allocation's prices and its plan, which `/cart.js` gives a `fixed_selling_plan` (false, the only value recorded) and the other Ajax answers a `checkout_charge`; `{{ cart | json }}` gives neither and ends the allocation with its `checkout_charge_amount` and `remaining_balance_charge_amount` (fixture `ajax-cart-session`: steps 4 and 5, and the `ajax` of step 10). */
 function allocationJson (allocation: LiquidObject, form: LineItemForm): Record<string, unknown> {
@@ -378,7 +381,7 @@ export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): 
     final_line_price: item.final_line_price,
     url: form === 'liquid' ? variant.url : item.url,
     featured_image: imageJson(item.image as ImageDrop | null, product, form),
-    image: item.image ? (item.image as ImageDrop).data.src : null,
+    image: item.image ? lineImageAddress(item.image as ImageDrop, form) : null,
     handle: product.handle,
     requires_shipping: item.requires_shipping,
     product_type: product.type,

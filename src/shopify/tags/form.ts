@@ -34,17 +34,18 @@ interface FormType {
   /** Attributes Shopify adds after `accept-charset` (`data-login-with-shop-sign-in`). */
   extra?: Array<[string, string]>
   /** Hidden inputs after `form_type` and `utf8`. */
-  before?: (request: { path: string, query?: ReadonlyArray<readonly [string, string]> }) => Array<[string, string]>
+  before?: (request: { path: string, query?: ReadonlyArray<readonly [string, string]> }) => Array<[string, string, boolean?]>
   /** Hidden inputs after the form's content; `section` is the id of the section being rendered, if any. */
   after?: (resource: Resource, section?: string) => Array<[string, string]>
 }
 
 const prop = (resource: Resource, key: string) => (resource ? stringify(toValue(resource[key])) : '')
 
-/** The address of the page being rendered, its query included: where a `localization` form returns the shopper, as the parity store prints it (fixtures `probe-page-home` and `probe-page-fr-eu`: `/pages/about?view=probe` and `/fr-eu/pages/about?view=probe`, the page's path, prefix included, as `request.path` prints it, then the query). The pairs keep the address's order, each name and value encoded with `encodeURIComponent`; the fixtures hold one pair, so the order and encoding of several are not pinned. The deprecated `currency` form, which no fixture records, returns the same way. */
+/** The address of the page being rendered, its query included: where a `localization` form returns the shopper, as the parity store prints it (fixtures `probe-page-home` and `probe-page-fr-eu`: `/pages/about?view=probe` and `/fr-eu/pages/about?view=probe`, the page's path, prefix included, as `request.path` prints it, then the query). The pairs keep the address's order, each name and value encoded with `encodeURIComponent`; the fixtures hold one pair, so the order and encoding of several are not pinned. The deprecated `currency` form, which no fixture records, returns the same way. The input is printed with the address as it is, the `&` between the parameters raw (scenario `page-collection-filtered`: `value="/collections/all?filter.v.availability=1&filter.p.product_type=Shoes&sort_by=price-ascending"`, where a `&amp;` would be the one difference), so the address leaves nothing that can end the attribute: a `"`, `<` or `>` in the path, which the encoded query never holds, is percent-encoded. */
 const pageAddress = (request: { path: string, query?: ReadonlyArray<readonly [string, string]> }) => {
   const pairs = request.query ?? []
-  return pairs.length ? `${request.path}?${pairs.map(([name, value]) => `${encodeURIComponent(name)}=${encodeURIComponent(value)}`).join('&')}` : request.path
+  const address = pairs.length ? `${request.path}?${pairs.map(([name, value]) => `${encodeURIComponent(name)}=${encodeURIComponent(value)}`).join('&')}` : request.path
+  return address.replace(/["<>]/g, ch => encodeURIComponent(ch))
 }
 
 /** Liquid's `VariableSignature`, repeated: the characters `FORM_FORMAT` in Shopify's theme-check (lib/theme_check/tags.rb, whose header says its tag parsing was copied from the storefront renderer) allows in a form's object, a name with dots and square brackets, so `all_products['hoodie']` falls outside it. theme-check agrees on the character set only: its anchored pattern raises a syntax error for such an object, where the storefront printed an empty string, so the rule built on it is Debutify's inference. */
@@ -56,7 +57,7 @@ const FORM_TYPES: Record<string, FormType> = {
   cart: { action: () => '/cart', id: () => 'cart_form', className: 'shopify-cart-form', multipart: true },
   contact: { action: () => '/contact', anchored: true, id: () => 'contact_form', className: 'contact-form' },
   create_customer: { action: () => '/account', id: () => 'create_customer', extra: [['data-login-with-shop-sign-up', 'true']] },
-  currency: { action: () => '/cart/update', id: () => 'currency_form', className: 'shopify-currency-form', multipart: true, before: request => [['return_to', pageAddress(request)]] },
+  currency: { action: () => '/cart/update', id: () => 'currency_form', className: 'shopify-currency-form', multipart: true, before: request => [['return_to', pageAddress(request), true]] },
   customer: { action: () => '/contact', anchored: true, id: () => 'contact_form', className: 'contact-form' },
   customer_address: {
     action: address => (address && prop(address, 'id') ? `/account/addresses/${prop(address, 'id')}` : '/account/addresses'),
@@ -66,7 +67,7 @@ const FORM_TYPES: Record<string, FormType> = {
   },
   customer_login: { action: () => '/account/login', id: () => 'customer_login', extra: [['data-login-with-shop-sign-in', 'true']] },
   guest_login: { action: () => '/account/login', id: () => 'customer_login_guest', after: () => [['guest', 'true']] },
-  localization: { action: () => '/localization', id: () => 'localization_form', className: 'shopify-localization-form', multipart: true, before: request => [['_method', 'put'], ['return_to', pageAddress(request)]] },
+  localization: { action: () => '/localization', id: () => 'localization_form', className: 'shopify-localization-form', multipart: true, before: request => [['_method', 'put'], ['return_to', pageAddress(request), true]] },
   new_comment: { action: article => `${prop(article, 'url')}/comments#comment_form`, prefixed: true, id: () => 'comment_form', className: 'comment-form' },
   // `section-id` is not on shopify.dev, whose example renders outside a section; Shopify's Dawn demo store prints it after `product-id` in a product form inside a section, and no Dawn file prints it
   product: { action: () => '/cart/add', id: product => `product_form_${prop(product, 'id')}`, className: 'shopify-product-form', multipart: true, after: (product, section) => [['product-id', prop(product, 'id')], ...(section === undefined ? [] : [['section-id', section] as [string, string]])] },
@@ -75,7 +76,8 @@ const FORM_TYPES: Record<string, FormType> = {
   storefront_password: { action: () => '/password', id: () => 'login_form', className: 'storefront-password-form' }
 }
 
-const hidden = (name: string, value: string) => `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}" />`
+/** A hidden input. A `verbatim` value is written as it is: the caller has made it safe inside a double-quoted attribute. */
+const hidden = (name: string, value: string, verbatim = false) => `<input type="hidden" name="${escapeHtml(name)}" value="${verbatim ? value : escapeHtml(value)}" />`
 
 /** The values a form keeps from a post, https://shopify.dev/docs/api/liquid/objects/form: `email`, `body`, `name`, `phone`, `first_name` and `last_name` (`null` when not posted), and the others the page lists (`author` of `new_comment`, `message` of the gift card in a `product` form, and the address fields of `customer_address`), which are nil when not posted and so are not set then. */
 type PostedValue = 'email' | 'body' | 'name' | 'phone' | 'first_name' | 'last_name'
@@ -255,7 +257,7 @@ export class FormTag extends Tag {
       if (existing === -1) before.push(returnTo)
       else before[existing] = returnTo
     }
-    for (const [name, value] of before) open += hidden(name, value)
+    for (const [name, value, verbatim] of before) open += hidden(name, value, verbatim)
     emitter.write(open)
     // the outcome of the post belongs to the form of its type; any other form on the page is as nothing was posted
     const outcome = state.form?.type === formType ? state.form : undefined

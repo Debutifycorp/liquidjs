@@ -1986,7 +1986,7 @@ export const mockShopCatalog: Required<Pick<StoreData, 'products' | 'collections
       id: 429493780502,
       handle: 'men',
       title: 'Men',
-      description: '<p>High-quality men&#39;s clothing, expertly designed to marry style with comfort. From elegantly tailored office wear to chic casual pieces perfect for a weekend getaway.</p>',
+      description: '<p>High-quality men\'s clothing, expertly designed to marry style with comfort. From elegantly tailored office wear to chic casual pieces perfect for a weekend getaway.</p>',
       image: {
         src: 'https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/1685d5abe3e11df2a5ae2017646441bafb1f815893bbcc953296c3040175eb4f.png',
         width: 1024,
@@ -2000,7 +2000,7 @@ export const mockShopCatalog: Required<Pick<StoreData, 'products' | 'collections
       id: 429493813270,
       handle: 'women',
       title: 'Women',
-      description: '<p>High-quality women&#39;s clothing, expertly designed to marry style with comfort. From elegantly tailored office wear to chic casual pieces perfect for a weekend getaway.</p>',
+      description: '<p>High-quality women\'s clothing, expertly designed to marry style with comfort. From elegantly tailored office wear to chic casual pieces perfect for a weekend getaway.</p>',
       image: {
         src: 'https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2df0f75738a7a6e959e1e11f6227ee470802bf466ba7c52fb41819fbaac53e21.png',
         width: 1024,
@@ -2070,7 +2070,7 @@ export const mockShopCatalog: Required<Pick<StoreData, 'products' | 'collections
       id: 429512622102,
       handle: 'featured',
       title: 'Featured',
-      description: '<p>Discover the pinnacle of Liquid&#39;s athletic wear in our Featured collection. These pieces encapsulate our commitment to sustainable fashion, merging comfort, style, and eco-consciousness.</p>',
+      description: '<p>Discover the pinnacle of Liquid\'s athletic wear in our Featured collection. These pieces encapsulate our commitment to sustainable fashion, merging comfort, style, and eco-consciousness.</p>',
       image: {
         src: 'https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/4186bc9c24a92995f6781986fd5756050712459e8c773ae9aa6918ac46a054f6.png',
         width: 2048,
@@ -2084,7 +2084,7 @@ export const mockShopCatalog: Required<Pick<StoreData, 'products' | 'collections
       id: 429531037718,
       handle: 'shoes',
       title: 'Shoes',
-      description: '<p>Step into sustainable fashion with Liquid&#39;s Shoes collection. Crafted for comfort and style, our shoes are the perfect complement to your eco-conscious wardrobe.</p>',
+      description: '<p>Step into sustainable fashion with Liquid\'s Shoes collection. Crafted for comfort and style, our shoes are the perfect complement to your eco-conscious wardrobe.</p>',
       image: {
         src: 'https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/1a2a779c63f3e232e86d053402fcfd434b87dbddb40ebf594084c38269392081.png',
         width: 1024,

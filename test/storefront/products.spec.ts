@@ -4,7 +4,7 @@ import { buildStore } from '../../src/shopify/store/build'
 import { buildGlobals } from '../../src/shopify/store/globals'
 import type { RequestInput } from '../../src/shopify'
 import { loadFixture } from './fixtures'
-import { maskVolatile, probeMatches } from './expect-probe'
+import { ajaxProductImages, maskVolatile, probeMatches } from './expect-probe'
 
 const pick = (b: any) => ({ selected_variant: b.selected_variant, selected_or_first_available_variant: b.selected_or_first_available_variant, first_available_variant: b.first_available_variant, options_with_values: b.options_with_values, variants: b.variants.map((v: any) => ({ id: v.id, selected: v.selected, available: v.available, inventory_policy: v.inventory_policy, inventory_management: v.inventory_management, inventory_quantity: v.inventory_quantity, weight: v.weight, url: v.url })) })
 
@@ -17,9 +17,9 @@ describe('products per request', () => {
   }
   it('prints the product JSON the parity store answers at /products/<handle>.js', () => {
     const fixture = loadFixture('ajax-product-js')
-    expect(maskVolatile(productJson(data, 'hoodie'))).toEqual(maskVolatile(fixture.steps[0].body))
+    expect(maskVolatile(productJson(data, 'hoodie'))).toEqual(maskVolatile(ajaxProductImages(fixture.steps[0].body)))
     expect(productJson(data, 'nope')).toBeNull()
-    expect(maskVolatile(productJson(data, 'hoodie', { market: 'eu', language: 'en', prefix: '/en-eu' }))).toEqual(maskVolatile(fixture.steps[3].body))
+    expect(maskVolatile(productJson(data, 'hoodie', { market: 'eu', language: 'en', prefix: '/en-eu' }))).toEqual(maskVolatile(ajaxProductImages(fixture.steps[3].body)))
   })
   it('keeps the keys of the answer in the order the parity store prints them', () => {
     const fixture = loadFixture('ajax-product-js')
@@ -47,7 +47,7 @@ describe('products per request', () => {
     expect(built.variants[0].options).toEqual(['Red', 'Small'])
   })
   it('prints the product JSON of a product with selling plans', () => {
-    expect(maskVolatile(productJson(data, 'slides'))).toEqual(maskVolatile(loadFixture('ajax-product-js').steps[1].body))
+    expect(maskVolatile(productJson(data, 'slides'))).toEqual(maskVolatile(ajaxProductImages(loadFixture('ajax-product-js').steps[1].body)))
   })
   // the parity store prints `product | json` in a shape of its own, not the `.js` answer: option names, no `url`, `content` last (fixture `probe-product-default`)
   it('prints the product through the json filter as the parity store does', async () => {
@@ -56,14 +56,16 @@ describe('products per request', () => {
     // plain masked data, so the text compares the key order at every depth
     expect(JSON.stringify(actual)).toBe(JSON.stringify(expected))
   })
-  // as the parity store prints them: `product | json` without a protocol (scenario `page-product`: `"src":"\/\/host\/cdn\/shop\/files\/…"`), `/products/<handle>.js` with it (fixture `ajax-product-js`)
-  it('prints image addresses without a protocol through the json filter, and with one in the Ajax answer', async () => {
+  // as the parity store prints them: `product | json` without a protocol (scenario `page-product`: `"src":"\/\/host\/cdn\/shop\/files\/…"`); `/products/<handle>.js` without one for `featured_image` and `images`, and with one for the `src` of the media and of a variant's image (scenario `ajax-product-js`)
+  it('prints image addresses without a protocol through the json filter, and as the parity store does in the Ajax answer', async () => {
     const { actual } = await probeMatches('probe-product-default', (b: any) => b.ajax)
     const liquid = actual as any
     const addresses = (product: any) => [product.featured_image, ...product.images, product.variants[0].featured_image.src, product.variants[0].featured_media.preview_image.src, product.media[0].src, product.media[0].preview_image.src]
     expect(addresses(liquid)).toHaveLength(13)
     for (const address of addresses(liquid)) expect(address).toMatch(/^\/\/cdn\.shopify\.com\//)
-    for (const address of addresses(productJson(data, 'hoodie'))) expect(address).toMatch(/^https:\/\/cdn\.shopify\.com\//)
+    const ajax = productJson(data, 'hoodie') as any
+    for (const address of [ajax.featured_image, ...ajax.images]) expect(address).toMatch(/^\/\/cdn\.shopify\.com\//)
+    for (const address of [ajax.variants[0].featured_image.src, ajax.variants[0].featured_media.preview_image.src, ajax.media[0].src, ajax.media[0].preview_image.src]) expect(address).toMatch(/^https:\/\/cdn\.shopify\.com\//)
   })
   for (const name of ['probe-product-variant', 'probe-product-sold-out-variant', 'probe-product-in-collection']) {
     it(`prints a product with a selected variant through the json filter as well (${name})`, async () => {

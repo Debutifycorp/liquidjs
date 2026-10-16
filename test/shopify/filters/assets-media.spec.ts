@@ -36,6 +36,23 @@ describe('shopify/filters/assets', () => {
     const { html } = await renderLiquid(liquid, "{{ 'product-1' | placeholder_svg_tag: 'ph' }}|{{ 'visa' | payment_type_svg_tag: class: 'icon' }}")
     expect(html).toBe('<svg class="ph" data-name="product-1"></svg>|<svg class="icon" data-type="visa"></svg>')
   })
+  // https://shopify.dev/docs/api/liquid/filters/payment_type_svg_tag names the six cards in the `<title>` of their icons (Visa, Mastercard, American Express, PayPal, Diners Club, Discover) and shows an empty line after the first three; scenarios `page-home` and `ajax-cart-sections` print the same: `</svg>` and a line break after Visa, Mastercard and American Express, and nothing after the other three
+  it('payment_type_svg_tag names the card in its title, and ends the first three icons with a line break as Shopify does', async () => {
+    const titles: Array<[string, string, string]> = [['visa', 'Visa', '\n'], ['master', 'Mastercard', '\n'], ['american_express', 'American Express', '\n'], ['paypal', 'PayPal', ''], ['diners_club', 'Diners Club', ''], ['discover', 'Discover', '']]
+    for (const [type, title, ending] of titles) {
+      const svg = await render(`{{ '${type}' | payment_type_svg_tag }}`)
+      expect(svg).toContain(`aria-labelledby="pi-${type}"><title id="pi-${type}">${title}</title>`)
+      expect(svg.endsWith('</svg>\n')).toBe(ending === '\n')
+      expect(svg.endsWith('</svg>') || ending === '\n').toBe(true)
+    }
+    expect(await render("{{ 'visa' | payment_type_svg_tag: class: 'icon' }}")).toMatch(/^<svg class="icon" xmlns=/)
+  })
+  it('payment_type_svg_tag keeps the key of a card it has no name for, and escapes it', async () => {
+    const svg = await render("{{ 'jcb' | payment_type_svg_tag }}")
+    expect(svg).toContain('<title id="pi-jcb">jcb</title>')
+    expect(svg.endsWith('</svg>')).toBe(true)
+    expect(await render('{{ type | payment_type_svg_tag }}', { type: '"><b>' })).toContain('<title id="pi-&quot;&gt;&lt;b&gt;">&quot;&gt;&lt;b&gt;</title>')
+  })
   // https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag
   it('placeholder_svg_tag draws line art for every name the page lists, in the markup the page shows', async () => {
     const names = ['product-1', 'product-2', 'product-3', 'product-4', 'product-5', 'product-6', 'collection-1', 'collection-2', 'collection-3', 'collection-4', 'collection-5', 'collection-6', 'lifestyle-1', 'lifestyle-2', 'image', 'product-apparel-1', 'product-apparel-2', 'product-apparel-3', 'product-apparel-4', 'collection-apparel-1', 'collection-apparel-2', 'collection-apparel-3', 'collection-apparel-4', 'hero-apparel-1', 'hero-apparel-2', 'hero-apparel-3', 'blog-apparel-1', 'blog-apparel-2', 'blog-apparel-3', 'detailed-apparel-1']
@@ -139,25 +156,31 @@ describe('shopify/filters/media', () => {
     expect(await render("{{ product | image_url: crop: 'region', crop_left: 32, crop_top: 32, crop_width: 512, crop_height: 512 }}")).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?crop=region&crop_height=512&crop_left=32&crop_top=32&crop_width=512&v=1683744744`)
     expect(await render("{{ product | image_url: crop: 'region', width: 100, height: 100, crop_left: 32, crop_top: 32, crop_width: 512, crop_height: 512 }}")).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?crop=region&crop_height=512&crop_left=32&crop_top=32&crop_width=512&height=100&v=1683744744&width=100`)
   })
-  it('image_url never resizes past the original or 5760, and keeps quality within 10 to 90', async () => {
-    expect(await render('{{ product | image_url: width: 9999 }}')).toBe(`${BEAKERS}&width=3000`)
-    expect(await render('{{ product | image_url: height: 9999 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?height=2000&v=1683744744`)
+  // scenario `page-collections`: the theme prints `{{ image | image_url: width: 1500 }}` as a card's `src` for an image that is 1024 wide, and the parity store keeps `width=1500` in it, so the URL names the width that was asked for and the CDN serves nothing larger than the original (shopify.dev's Note on image_url: "an image can never be resized to be larger than its original dimensions"); only the 5760 maximum the page gives is applied here
+  it('image_url keeps the size that was asked for past the original, stops at 5760, and keeps quality within 10 to 90', async () => {
+    expect(await render('{{ product | image_url: width: 5000 }}')).toBe(`${BEAKERS}&width=5000`)
+    expect(await render('{{ product | image_url: height: 9999 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?height=5760&v=1683744744`)
+    expect(await render('{{ product | image_url: width: 9999 }}')).toBe(`${BEAKERS}&width=5760`)
     expect(await render("{{ 'https://cdn.test/a.jpg' | image_url: width: 9999 }}", {})).toBe('//cdn.test/a.jpg?width=5760')
     expect(await render("{{ 'https://cdn.test/a.jpg' | image_url: height: 9999 }}", {})).toBe('//cdn.test/a.jpg?height=5760')
     expect(await render('{{ product | image_url: width: 450, quality: 5 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?quality=10&v=1683744744&width=450`)
     expect(await render('{{ product | image_url: width: 450, quality: 200 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?quality=90&v=1683744744&width=450`)
   })
-  it('image_url scales a too large request proportionally, so a square stays a square', async () => {
+  it('image_url scales a request over 5760 proportionally, so a square stays a square', async () => {
+    const url = (query: string) => `${HOST}/files/science-beakers-blue-light-new.jpg?${query}`
+    expect(await render('{{ product | image_url: width: 6000, height: 6000 }}')).toBe(url('height=5760&v=1683744744&width=5760'))
+    expect(await render('{{ product | image_url: width: 7200, height: 3600 }}')).toBe(url('height=2880&v=1683744744&width=5760'))
+    expect(await render('{{ product | image_url: width: 800, height: 800 }}')).toBe(url('height=800&v=1683744744&width=800'))
+  })
+  // the size image_tag writes and the sizes of its srcset stay within the image, though the URL it was given asks for more (not pinned by a recording)
+  it('image_tag keeps its width, height and srcset within the original, whatever the URL asks for', async () => {
     const small = { title: 'Small', featured_image: { src: BEAKERS, width: 1000, height: 600, alt: 'Small' } }
     const url = (query: string) => `${HOST}/files/science-beakers-blue-light-new.jpg?${query}`
-    expect(await render('{{ product | image_url: width: 800, height: 800 }}', { product: small })).toBe(url('height=600&v=1683744744&width=600'))
     const tag = await render("{{ product | image_url: width: 1500, height: 1500, crop: 'center' | image_tag }}", { product: small })
-    expect(tag).toContain(`src="${url('crop=center&amp;height=600&amp;v=1683744744&amp;width=600')}"`)
+    expect(tag).toContain(`src="${url('crop=center&amp;height=1500&amp;v=1683744744&amp;width=1500')}"`)
     expect(tag).toContain('width="600" height="600"')
     expect(tag).toContain(`${url('crop=center&amp;height=352&amp;v=1683744744&amp;width=352')} 352w`)
-    expect(await render('{{ product | image_url: width: 6000, height: 1000 }}')).toBe(url('height=500&v=1683744744&width=3000'))
-    expect(await render('{{ product | image_url: width: 500, height: 800 }}', { product: small })).toBe(url('height=600&v=1683744744&width=375'))
-    expect(await render('{{ product | image_url: width: 700, height: 900 }}', { product: small })).toBe(url('height=600&v=1683744744&width=467'))
+    expect(await render('{{ product | image_url: width: 1500 | image_tag }}', { product: small })).toContain('width="1000" height="600"')
   })
   it('the image_url result is a string to filters that read strings', async () => {
     expect(await render('{{ product | image_url: width: 450 | size }}')).toBe(String(`${BEAKERS}&width=450`.length))

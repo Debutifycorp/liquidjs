@@ -32,7 +32,7 @@ function lazyByDefault (state: ShopifyState): boolean {
 /**
  * Returns the image's CDN URL through the `imageUrl` service; `image_tag` reads the image and parameters from the result. https://shopify.dev/docs/api/liquid/filters/image_url
  *
- * The page's Caution says that without a `width` or `height` "an error is returned", but Shopify's reference theme (Dawn, recorded in liquid-spec's Dawn template) prints `{{ image | image_url }}` with no size as the last `srcset` candidate, so this package reads the Caution as "no resize happens": the URL has no `width` or `height` (the `crop: 'region'` examples on the page print one too), and any other parameter given is kept. A `width` or `height` that is empty, nil or not above zero counts as omitted. What Shopify prints for the sizeless form is not pinned by shopify.dev, so it goes on the "confirm on a development store" list. The page's Note says an image "can never be resized to be larger than its original dimensions", so `width` and `height` stop at the image's own when it has them, and at the 5760 maximum the page gives. When both are given and one is over its limit, both are scaled by the same factor (`min(1, limit / requested)` over the two), so an 800 by 800 request for a 1000 by 600 image is 600 by 600 and keeps the square the template asked for. shopify.dev does not say how the ratio is handled when a request is too large, so this proportional clamp is not pinned. `quality` stays within the page's 10 to 90.
+ * The page's Caution says that without a `width` or `height` "an error is returned", but Shopify's reference theme (Dawn, recorded in liquid-spec's Dawn template) prints `{{ image | image_url }}` with no size as the last `srcset` candidate, so this package reads the Caution as "no resize happens": the URL has no `width` or `height` (the `crop: 'region'` examples on the page print one too), and any other parameter given is kept. A `width` or `height` that is empty, nil or not above zero counts as omitted. What Shopify prints for the sizeless form is not pinned by shopify.dev, so it goes on the "confirm on a development store" list. The page's Note says an image "can never be resized to be larger than its original dimensions", which is what the CDN does with the URL; the parity store keeps the size the template asked for in the URL (scenario `page-collections`: `image_url: width: 1500` of an image that is 1024 wide prints `width=1500`), so `width` and `height` stop only at the 5760 maximum the page gives. When both are given and one is over the maximum, both are scaled by the same factor, so a square request stays a square; shopify.dev does not say how the ratio is handled when a request is too large, so this proportional clamp is not pinned. `image_tag` writes the size and builds its srcset within the image's own size. `quality` stays within the page's 10 to 90.
  */
 function imageUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const source = imageSource(input)
@@ -50,12 +50,21 @@ function imageUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
       (params as Record<string, string>)[key] = stringify(value)
     }
   }
-  const factor = Math.min(1, params.width ? Math.min(MAX_DIMENSION, source.image.width || Infinity) / params.width : 1, params.height ? Math.min(MAX_DIMENSION, source.image.height || Infinity) / params.height : 1)
-  if (factor < 1) {
-    if (params.width) params.width = Math.max(1, Math.round(params.width * factor))
-    if (params.height) params.height = Math.max(1, Math.round(params.height * factor))
-  }
-  return new ImageUrlDrop(shopifyState(this.context).services.imageUrl(source.image, params), source.image, params, source.alt)
+  // the URL names the size that was asked for, held to the 5760 maximum; it is not cut to the image's own size (scenario `page-collections`: `image_url: width: 1500` of a 1024 wide image prints `width=1500`)
+  const asked = withinLimit(params, MAX_DIMENSION)
+  // what `image_tag` writes as the size and builds its srcset from stays within the image, though the URL asks for more
+  const within = withinLimit(asked, Math.min(MAX_DIMENSION, source.image.width || Infinity), Math.min(MAX_DIMENSION, source.image.height || Infinity))
+  return new ImageUrlDrop(shopifyState(this.context).services.imageUrl(source.image, asked), source.image, within, source.alt)
+}
+
+/** `params` with `width` and `height` scaled by one factor so that neither is over its limit (`maxHeight` is `maxWidth` when not given): a request over a limit keeps its ratio. */
+function withinLimit (params: ImageUrlParams, maxWidth: number, maxHeight = maxWidth): ImageUrlParams {
+  const factor = Math.min(1, params.width ? maxWidth / params.width : 1, params.height ? maxHeight / params.height : 1)
+  if (factor >= 1) return params
+  const scaled = { ...params }
+  if (scaled.width) scaled.width = Math.max(1, Math.round(scaled.width * factor))
+  if (scaled.height) scaled.height = Math.max(1, Math.round(scaled.height * factor))
+  return scaled
 }
 
 function widthsFrom (value: unknown): number[] {
