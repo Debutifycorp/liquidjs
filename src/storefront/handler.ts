@@ -3,9 +3,10 @@ import type { StoreData, StoreView, ThemeInput } from '../shopify'
 import { BodyError, readBody } from './body'
 import type { Fields } from './body'
 import { errorPage, noticePage } from './html'
-import { asError, pageForPath, renderPageResponse, renderSectionResponse, renderSectionsJson, report, resourceExists, storeRoot } from './pages'
+import { pageForPath, renderPageResponse, renderSectionResponse, renderSectionsJson, resourceExists } from './pages'
 import { routeRequest } from './router'
 import type { Route, Routed } from './router'
+import { asError, PRIVATE, report, storeRoot } from './support'
 import { DEFAULT_LIMITS } from './types'
 import type { HandleOptions, Storefront, StorefrontLimits, StorefrontOptions, VisitorState } from './types'
 import { cookieVisitor, emptyVisitor, memoryCartStore, newVisitorKey, visitorCookie, VisitorQueue } from './visitor'
@@ -30,8 +31,6 @@ export interface Context {
 export interface Answer { response: Response, state?: VisitorState }
 
 export type RouteHandler = (ctx: Context) => Promise<Answer>
-
-const PRIVATE = 'private, no-store'
 
 const resolve = async <T>(value: T | ((request: Request) => T | Promise<T>), request: Request): Promise<T> => typeof value === 'function' ? await (value as (request: Request) => T | Promise<T>)(request) : value
 
@@ -77,7 +76,7 @@ async function answerPage (ctx: Context): Promise<Answer> {
   if (route.kind === 'notice') {
     return { response: ctx.options.notice ? await ctx.options.notice(route.notice, ctx.request) : noticePage(route.notice, cameFrom(ctx.request) ?? storeRoot(ctx)) }
   }
-  if (route.kind !== 'page') return { response: await renderPageResponse(ctx, pageForPath(ctx, '/404'), 404) }
+  if (route.kind !== 'page') return { response: await renderPageResponse(ctx, pageForPath(ctx, `${ctx.routed.localePrefix}/404`), 404) }
   // a page that names a resource the store lacks is the 404 page, whatever sections it was asked for
   if (!resourceExists(ctx.data, route.page)) return { response: await renderPageResponse(ctx, route.page) }
   if (route.sectionId) return { response: await renderSectionResponse(ctx, route.page, route.sectionId) }
@@ -146,10 +145,13 @@ export function createStorefront (options: StorefrontOptions): Storefront {
         const routed = routeRequest(request.method, request.url, data, { basePath, country: visitor.country })
         const view = resolveView(data, { basePath, localePrefix: routed.localePrefix, market: routed.market, language: routed.language })
         const ctx: Context = { request, options, limits, theme, data, routed, basePath, view, visitor, key, sandbox, fields }
-        const locked = data.shop.password_enabled && !visitor.unlocked && routed.route.kind !== 'password' && !(routed.route.kind === 'page' && routed.route.page.templateName === 'password')
+        // https://shopify.dev/docs/storefronts/themes/architecture/templates/password: the password page is "shown when password protection is applied to a store". The page does not say how any other address reaches it, so sending every other address there is Debutify's reading (no recording: the parity store was recorded past its password page). The page itself is open as a page; asked for a section (`?section_id=`, `?sections=`) it is any other address, or a section of the theme would show the store's products to a visitor without the password.
+        const route = routed.route
+        const passwordPage = route.kind === 'password' || (route.kind === 'page' && route.page.templateName === 'password' && !route.sectionId && !route.sections)
+        const locked = data.shop.password_enabled && !visitor.unlocked && !passwordPage
         if (locked) return finish(redirect(ctx, '/password'), head)
         const answer = await (ROUTE_HANDLERS[routed.route.kind] ?? answerPage)(ctx)
-        // a `HEAD` request changes nothing, whatever the route does for a `GET` (a link-style route such as `/discount/<code>` is a `GET` that changes the cart; a link prefetcher sends `HEAD`)
+        // a `HEAD` request changes nothing, whatever the route does for a `GET`: HTTP makes it a safe method (https://www.rfc-editor.org/rfc/rfc9110#section-9.2.1), and a link-style route such as `/discount/<code>` is a `GET` that changes the cart while a link prefetcher sends `HEAD`
         if (answer.state && !head) {
           await store.set(key, answer.state)
           return finish(answer.response, head, !handleOptions.visitor && !fromCookie ? visitorCookie(key, basePath) : undefined)

@@ -2,31 +2,24 @@ import { renderPage, renderSection, requestFromUrl } from '../shopify'
 import type { FormOutcome, PageRequest, StoreData } from '../shopify'
 import { notFoundPage } from './html'
 import type { Context } from './handler'
-import type { StorefrontOptions, StorefrontReport } from './types'
+import { asError, PRIVATE, report, storeRoot } from './support'
 
-const HTML = { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'private, no-store' }
+const HTML = { 'content-type': 'text/html; charset=utf-8', 'cache-control': PRIVATE }
 
-/** Hands a report to the caller's `onReport`. A reporter that throws, or returns a promise that rejects, must not fail the page it reports on (or, from the error path, the whole call): its failure is dropped. */
-export function report (options: StorefrontOptions, entry: StorefrontReport, request: Request): void {
-  try {
-    const result: unknown = options.onReport?.(entry, request)
-    if (result && typeof (result as Promise<unknown>).catch === 'function') (result as Promise<unknown>).catch(() => undefined)
-  } catch {
-    // the caller's reporter is not ours to fix
-  }
-}
+/** The collection handles that name no collection of the data but list products: `all`, and the vendor and type lists. The collection page and a product under a collection (`/collections/all/products/<handle>`, where every card of the all-products listing links) read the same ones. */
+const PSEUDO_COLLECTIONS = ['all', 'vendors', 'types']
 
-export const asError = (error: unknown): Error => error instanceof Error ? error : new Error(String(error))
+const collectionExists = (data: StoreData, handle: string) => PSEUDO_COLLECTIONS.includes(handle) || (data.collections ?? []).some(c => c.handle === handle)
 
-/** Whether the resource a page names exists, so a missing one shows the theme's 404 template with status 404 (https://shopify.dev/docs/storefronts/themes/architecture/templates/404 names the template and not the status; `page-not-found` is a page recording that part S's comparison checks, not a fixture). A product under a collection (`/collections/<c>/products/<p>`) needs both; whether Shopify also asks that the collection holds the product is not pinned, and here it does not. */
+/** Whether the resource a page names exists, so a missing one shows the theme's 404 template with status 404 (https://shopify.dev/docs/storefronts/themes/architecture/templates/404 names the template and not the status; `page-not-found` is a page recording that part S's comparison checks, not a fixture). A product under a collection (`/collections/<c>/products/<p>`) needs both, and the collection is read as the collection page reads it; whether Shopify also asks that the collection holds the product is not pinned, and here it does not. */
 export function resourceExists (data: StoreData, page: PageRequest): boolean {
   const resource = page.request.resource
   if (resource === undefined) return true
   const collection = page.request.collection
-  if (collection !== undefined && !(data.collections ?? []).some(c => c.handle === collection)) return false
+  if (collection !== undefined && !collectionExists(data, collection)) return false
   switch (page.templateName) {
     case 'product': return (data.products ?? []).some(p => p.handle === resource)
-    case 'collection': return resource === 'all' || resource === 'vendors' || resource === 'types' || (data.collections ?? []).some(c => c.handle === resource)
+    case 'collection': return collectionExists(data, resource)
     case 'page': return (data.pages ?? []).some(p => p.handle === resource)
     case 'blog': return (data.blogs ?? []).some(b => b.handle === resource)
     // the resource is `<blog>/<article>`: compared whole, so a handle that held a `/` could not be read as two
@@ -48,9 +41,6 @@ function renderOptions (ctx: Context, page: PageRequest, form?: FormOutcome) {
     request: { ...page.request, host: url.host, origin: url.origin, ...(form ? { form } : {}) }
   }
 }
-
-/** The store's root under the request's base path and locale prefix, where a plain page's link back goes. */
-export const storeRoot = (ctx: Context) => `${ctx.basePath}${ctx.routed.localePrefix}` || '/'
 
 /** A page through the engine, https://shopify.dev/docs/storefronts/themes/architecture/templates. A page whose resource is missing renders the theme's `404` template with status 404; a theme that cannot show one (it has none, or it fails) gets a plain 404 page and an `error` report instead of a 500. */
 export async function renderPageResponse (ctx: Context, page: PageRequest, status = 200, form?: FormOutcome): Promise<Response> {

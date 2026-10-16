@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from 'crypto'
 import { redirect } from './handler'
 import type { RouteHandler } from './handler'
 import { pageForPath, renderPageResponse } from './pages'
+import type { Route } from './router'
 
 const digest = (text: string) => createHash('sha256').update(text).digest()
 
@@ -15,4 +16,4 @@ const password: RouteHandler = async ctx => {
   return { response: await renderPageResponse(ctx, page, 200, { type: 'storefront_password', posted: false, errors: { password: ['Incorrect password'] } }) }
 }
 
-export const FORM_HANDLERS: Record<string, RouteHandler> = { password }
+export const FORM_HANDLERS: Partial<Record<Route['kind'], RouteHandler>> = { password }

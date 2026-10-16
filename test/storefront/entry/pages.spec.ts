@@ -64,6 +64,22 @@ describe('pages', () => {
     expect((await send('GET', '/collections/tops/products/hoodie')).status).toBe(200)
   })
 
+  it('reads the collection of a product link as the collection page reads it: all, vendors, types and the data\'s collections', async () => {
+    const { send } = harness()
+    for (const collection of ['all', 'vendors', 'types', 'tops']) {
+      const page = await send('GET', `/collections/${collection}`)
+      const product = await send('GET', `/collections/${collection}/products/hoodie`)
+      expect([collection, page.status, product.status, product.text.includes('<h1>Not found</h1>')]).toEqual([collection, 200, 200, false])
+    }
+    const section = await send('GET', '/collections/all/products/hoodie?section_id=cart-count')
+    expect([section.status, section.text]).toEqual([200, wrapper('cart-count', '0')])
+    // a collection that exists nowhere, or a product that does not, is still a 404
+    for (const url of ['/collections/nowhere', '/collections/nowhere/products/hoodie', '/collections/all/products/nope', '/collections/vendors/products/nope']) {
+      const answer = await send('GET', url)
+      expect([url, answer.status, answer.text.includes('<h1>Not found</h1>')]).toEqual([url, 404, true])
+    }
+  })
+
   it('answers a render that throws with a plain 500 page and reports the error', async () => {
     const reports: unknown[] = []
     const { send } = harness({ data: () => { throw new Error('boom at /src/x.ts:12') }, onReport: report => reports.push(report) })

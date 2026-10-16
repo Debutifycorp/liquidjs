@@ -166,6 +166,9 @@ describe('request bodies', () => {
     delete ROUTE_HANDLERS.password
     const answer = await send('POST', '/password', 'password=open')
     expect([answer.status, answer.text.includes('<h1>Not found</h1>')]).toEqual([404, true])
+    // in the language of the address it was asked under
+    const french = await send('POST', '/fr-ca/password', 'password=open')
+    expect([french.status, french.text.includes('<h1>Not found</h1>'), french.text.includes('Shopify.locale = "fr"')]).toEqual([404, true, true])
   })
 
   it('does not read a body for a route that has none', async () => {
@@ -220,6 +223,26 @@ describe('the password lock', () => {
     expect(await ask('POST', '/p/tok/cart/add.js')).toBe('/p/tok/password')
     expect(await ask('GET', '/p/tok/checkout')).toBe('/p/tok/password')
     expect(await ask('GET', '/p/tok/nope')).toBe('/p/tok/password')
+  })
+
+  it('keeps the password page open as a page, and closes it when it is asked for a section', async () => {
+    const { send } = harness({ data: locked, password: 'open' })
+    // an empty `section_id` asks for no section
+    for (const url of ['/password', '/password/', '/password?view=x', '/password?x=1', '/password?section_id=', '/password?sections=']) {
+      const page = await send('GET', url)
+      expect([url, page.status]).toEqual([url, 200])
+    }
+    // a section of the theme would show the store's products, collections and pages to a visitor who has not given the password
+    for (const url of ['/password?section_id=cart-count', '/password/?section_id=cart-count', '/password?sections=cart-count', '/password?sections=cart-count,missing', '/password?section_id=missing']) {
+      const answer = await send('GET', url)
+      expect([url, answer.status, answer.headers.get('location'), answer.text]).toEqual([url, 302, '/password', ''])
+    }
+    expect((await send('GET', '/products/hoodie?section_id=cart-count')).status).toBe(302)
+    expect((await send('POST', '/password', 'password=open')).status).toBe(302)
+    // unlocked, it is a page like any other
+    const section = await send('GET', '/password?section_id=cart-count')
+    expect([section.status, section.text]).toEqual([200, '<div id="shopify-section-cart-count" class="shopify-section">0</div>'])
+    expect((await send('GET', '/password?sections=cart-count')).status).toBe(200)
   })
 
   it('renders the wrong-password page in the visitor\'s language, whatever the form sends', async () => {
