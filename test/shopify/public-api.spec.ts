@@ -7,7 +7,7 @@ describe('the /shopify entry', () => {
     expect(added).toEqual([
       'ColorDrop', 'ColorSchemeDrop', 'ContentForTag', 'DocTag', 'ExternalVideoUrlDrop', 'FontDrop', 'FormTag', 'ImageDrop', 'ImageUrlDrop', 'JavascriptTag', 'PaginateTag',
       'SHOPIFY_DEFAULT_LIMITS', 'SchemaTag', 'SectionTag', 'SectionsTag', 'SettingsDrop', 'ShopifyLayoutTag', 'ShopifyTablerowTag', 'StyleTag', 'StylesheetTag', 'Translator', 'VideoUrlDrop',
-      'cartJson', 'compileTheme', 'createShopifyLiquid', 'defaultServices', 'discountCodeStatus', 'findVariant', 'lineItemJson', 'lineKey', 'localePrefixes', 'parseWrapper', 'predictiveJson', 'productJson', 'recommendationsJson', 'renderLiquid', 'renderPage', 'renderSection', 'requestFromUrl', 'resolveView', 'sampleStoreData', 'shopifyFilterRegistry', 'stockFor', 'storefrontSampleData'
+      'cartJson', 'compileTheme', 'createShopifyLiquid', 'defaultServices', 'discountCodeStatus', 'findVariant', 'lineItemJson', 'lineKey', 'localePrefixes', 'parseWrapper', 'predictiveJson', 'productJson', 'recommendationsJson', 'renderLiquid', 'renderPage', 'renderSection', 'requestFromUrl', 'resolveView', 'sampleStoreData', 'shippingRates', 'shopifyFilterRegistry', 'stockFor', 'storefrontSampleData'
     ])
   })
   it('leaves the root tag classes alone and registers its own under the Shopify names', () => {
