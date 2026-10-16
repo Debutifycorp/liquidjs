@@ -31,6 +31,48 @@ describe('alternate templates', () => {
     expect((await chosen('/pages/contact')).templateName).toBe('page')
   })
 
+  it('lets the view win over the resource suffix when both name templates the theme has', async () => {
+    const files = { ...theme.files, 'templates/product.other.json': EMPTY }
+    const name = async (url: string) => (await chosen(url, files)).templateName
+    expect(data.products?.find(product => product.handle === 'white-leather-sneakers')?.template_suffix).toBe('probe')
+    expect(await name('/products/white-leather-sneakers?view=other')).toBe('product.other')
+    expect(await name('/products/white-leather-sneakers?view=probe')).toBe('product.probe')
+    expect(await name('/products/white-leather-sneakers')).toBe('product.probe')
+  })
+
+  it('renders the JSON file when an alternate template exists as JSON and as Liquid', async () => {
+    const files = {
+      'config/settings_schema.json': '[]',
+      'config/settings_data.json': '{"current":{}}',
+      'layout/theme.liquid': '{{ content_for_layout }}',
+      'sections/json.liquid': 'from json',
+      'templates/product.both.json': '{"sections":{"main":{"type":"json"}},"order":["main"]}',
+      'templates/product.both.liquid': 'from liquid'
+    }
+    const result = await chosen('/products/hoodie?view=both', files)
+    expect(result.templateName).toBe('product.both')
+    expect(result.html).toContain('from json')
+    expect(result.html).not.toContain('from liquid')
+  })
+
+  it('names no template for a view or a suffix with a slash, even when the theme holds that file', async () => {
+    const files = { ...theme.files, 'templates/product.x/y.json': EMPTY, 'templates/product.x/y.liquid': 'nested' }
+    expect((await chosen('/products/hoodie?view=x/y', files)).templateName).toBe('product')
+    const slashed = { ...data, products: (data.products ?? []).map(product => product.handle === 'hoodie' ? { ...product, template_suffix: 'x/y' } : product) }
+    const page = requestFromUrl('/products/hoodie', slashed)
+    const result = await renderPage({ theme: { files }, templateName: page.templateName, data: slashed, request: page.request, locale: page.locale })
+    expect(result.templateName).toBe('product')
+  })
+
+  it('takes the suffix of the first resource in the store when the request names none', async () => {
+    const first = { id: 70001, handle: 'first', title: 'First', content: '', template_suffix: 'probe' }
+    const store = { ...data, pages: [first, ...(data.pages ?? [])] }
+    const result = await renderPage({ theme, templateName: 'page', data: store, request: {} })
+    expect(result.templateName).toBe('page.probe')
+    const named = await renderPage({ theme, templateName: 'page', data: store, request: { resource: 'about' } })
+    expect(named.templateName).toBe('page')
+  })
+
   it('renders a template name that already has a suffix as it is given', async () => {
     const result = await renderPage({ theme, templateName: 'product.probe', data, request: { resource: 'white-leather-sneakers', view: 'other' } })
     expect(result.templateName).toBe('product.probe')

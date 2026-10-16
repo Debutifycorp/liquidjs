@@ -53,7 +53,7 @@ export interface RenderPageOptions {
   unknownTags?: 'report' | 'error'
 }
 
-/** What `renderSection` takes: `renderPage`'s options and the `section` to render, the id `renderPage` reports for it (`template--product__main`), a key of the JSON template's `sections` (`main`) or a static section's name. */
+/** What `renderSection` takes: `renderPage`'s options and the `section` to render, the id `renderPage` reports for it (`template--product__main`), a key of the JSON template's `sections` (`main`) or a static section's name. The section is looked up in the template that renders, as for `renderPage`: when `view` or the resource's `template_suffix` picks an alternate template (`product.probe`), the ids are that template's (`template--product-probe__main`), and `RenderSectionResult.templateName` says which rendered. */
 export interface RenderSectionOptions extends RenderPageOptions {
   section: string
 }
@@ -83,10 +83,10 @@ function suffixOf (store: StoreObjects, name: string, resource: string | undefin
   return found?.template_suffix as string | null | undefined
 }
 
-/** The template a page renders: `templates/<name>.<suffix>` for the request's `view`, else for the resource's `template_suffix`, when the theme has it (JSON or Liquid); `name` otherwise. https://shopify.dev/docs/storefronts/themes/architecture/templates/alternate-templates. The page names the two ways to apply an alternate template (assign it to a resource in the admin, or `?view=<suffix>`) but not which wins when both apply, nor what a `view` that names no template does, so the order (view first, then the suffix, then the base template) is Debutify's, on the confirm-on-a-development-store list; no fixture holds both. A name that already has a suffix (`page.contact`) is rendered as given. */
+/** The template a page renders: `templates/<name>.<suffix>` for the request's `view`, else for the resource's `template_suffix`, when the theme has it (JSON or Liquid); `name` otherwise. https://shopify.dev/docs/storefronts/themes/architecture/templates/alternate-templates. The page names the two ways to apply an alternate template (assign it to a resource in the admin, or `?view=<suffix>`) but not which wins when both apply, nor what a `view` that names no template does, so the order (view first, then the suffix, then the base template) is Debutify's, on the confirm-on-a-development-store list; no fixture holds both. `view` applies to every base template (cart, search, 404, `customers/*` and the rest, not only product, collection and page), as the page lists no supported types. A `view` or suffix holding `/` names no template (a suffix is a plain part of a file name, and a `/` would read as a directory in `template.name`), so it falls back to the base template. A name that already has a suffix (`page.contact`) is rendered as given. */
 function chooseTemplate (theme: CompiledTheme, name: string, view: string | undefined, suffix: string | null | undefined): string {
   for (const candidate of [view, suffix]) {
-    if (!candidate || name.includes('.')) continue
+    if (!candidate || candidate.includes('/') || name.includes('.')) continue
     const full = `${name}.${candidate}`
     if (theme.has(`templates/${full}.json`) || theme.has(`templates/${full}.liquid`)) return full
   }
@@ -913,7 +913,7 @@ export async function renderPage (options: RenderPageOptions): Promise<RenderPag
 }
 
 /**
- * Renders one section of the page, as `renderPage` would place it (same id, `index`, `location` and group class), for re-rendering an edited section. `section` is the id `renderPage` reports for it (`report.sections[].id`): `template--<template>__<key>`, `sections--<group>__<key>` (with the request's `context` applied to the group), a bare key of the JSON template's `sections` (`featured`), or a static section's name, tried in that order. A key the page does not have, or a disabled section, renders nothing and is reported; a template that does not exist rejects, as `renderPage` does.
+ * Renders one section of the page, as `renderPage` would place it (same id, `index`, `location` and group class), for re-rendering an edited section. `section` is the id `renderPage` reports for it (`report.sections[].id`): `template--<template>__<key>`, `sections--<group>__<key>` (with the request's `context` applied to the group), a bare key of the JSON template's `sections` (`featured`), or a static section's name, tried in that order. A key the page does not have, or a disabled section, renders nothing and is reported; a template that does not exist rejects, as `renderPage` does. The template is the one `renderPage` would choose for the same options (the alternate template a `view` or `template_suffix` picks), so a section id names that template (`template--product-probe__main`), not the base one.
  *
  * https://shopify.dev/docs/api/ajax/section-rendering returns a section's HTML alone, as this does, and addresses sections by these ids, but the section object's page says `index` is nil there, where this keeps the index the section has on the page so the section matches its place in a preview. The `assets` of the result hold the section's `{% stylesheet %}` and `{% javascript %}` bodies; see `RenderSectionResult`.
  */
