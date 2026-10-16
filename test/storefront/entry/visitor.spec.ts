@@ -1,5 +1,5 @@
 import { memoryCartStore as entryStore } from '../../../src/storefront'
-import { cookieVisitor, emptyVisitor, memoryCartStore, newVisitorKey, visitorCookie, VisitorQueue } from '../../../src/storefront/visitor'
+import { cartToken, cookieVisitor, emptyVisitor, memoryCartStore, newVisitorKey, visitorCookie, VisitorQueue } from '../../../src/storefront/visitor'
 
 describe('visitors', () => {
   it('keys visitors by the cart cookie, set HttpOnly and SameSite=Lax under the base path', () => {
@@ -10,6 +10,17 @@ describe('visitors', () => {
     expect(cookieVisitor(new Request('https://x.invalid/', { headers: { cookie: `a=1; cart=${key}` } }))).toBe(key)
     expect(cookieVisitor(new Request('https://x.invalid/', { headers: { cookie: 'cart=<script>' } }))).toBeUndefined()
     expect(emptyVisitor(key)).toEqual({ cart: { token: key, lines: [], note: null, attributes: {}, discountCodes: [] } })
+  })
+
+  it('shows a cart token that is not the key, except in a sandbox where the key is in the address', () => {
+    const key = newVisitorKey()
+    expect(cartToken(key, false)).toMatch(/^[0-9a-f]{32}$/)
+    expect(cartToken(key, false)).not.toBe(key)
+    expect(cartToken(key, false)).toBe(cartToken(key, false))
+    expect(cartToken(key, false)).not.toBe(cartToken(newVisitorKey(), false))
+    // the SHA-256 of `abc`, first 32 digits
+    expect(cartToken('abc', false)).toBe('ba7816bf8f01cfea414140de5dae2223')
+    expect(cartToken(key, true)).toBe(key)
   })
 
   it('keeps at most max visitors and drops idle ones', async () => {

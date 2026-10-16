@@ -6,7 +6,7 @@ import type { CartResult } from './cart'
 import { redirect, STORE_PATH } from './handler'
 import type { Context, RouteHandler } from './handler'
 import { pageForPath, renderSectionsJson } from './pages'
-import type { Route } from './router'
+import type { CartAction, Route } from './router'
 import type { VisitorState } from './types'
 import { randomUUID } from 'crypto'
 
@@ -17,12 +17,12 @@ const empty = (status: number) => new Response(null, { status, headers: JSON_HEA
 
 type Item = Record<string, unknown>
 
-/** `path` without the base path, which is a whole-segment prefix: `/p/tok` is the base of `/p/tok/cart` and `/p/tok?x`, not of `/p/token`. */
+/** `path` without the base path, which is a whole-segment prefix: `/p/tok` is the base of `/p/tok/cart`, `/p/tok?x` and `/p/tok#top`, not of `/p/token`. */
 function withoutBase (ctx: Context, path: string): string {
   const base = ctx.basePath
-  if (base === '' || !(path === base || path.startsWith(`${base}/`) || path.startsWith(`${base}?`))) return path
+  if (base === '' || !(path === base || path.startsWith(`${base}/`) || path.startsWith(`${base}?`) || path.startsWith(`${base}#`))) return path
   const rest = path.slice(base.length)
-  return rest === '' || rest.startsWith('?') ? `/${rest}` : rest
+  return rest === '' || rest.startsWith('?') || rest.startsWith('#') ? `/${rest}` : rest
 }
 
 /** The path of the `Referer`, when the header is an address with a path on a store. */
@@ -45,7 +45,7 @@ function contextPage (ctx: Context, fields: Fields): PageRequest {
   return page.request.localePrefix || !prefix ? page : pageForPath(ctx, `${prefix}${path === '/' ? '' : path}`)
 }
 
-/** The ids `sections` names, from a comma-separated string or an array of strings: trimmed, without blanks or repeats. Stops reading at the first id past the limit, so a long list costs no more than a short one. */
+/** The ids `sections` names, from a comma-separated string or an array of strings: trimmed, without blanks or repeats. Reading stops at the first id past the limit, so a long list of ids costs no more than a short one; a long run of blanks is read to its end, within the body limit. */
 function sectionIds (raw: unknown, limit: number): string[] {
   const ids = new Set<string>()
   const read = (id: unknown) => {
@@ -54,9 +54,10 @@ function sectionIds (raw: unknown, limit: number): string[] {
     if (trimmed) ids.add(trimmed)
   }
   if (typeof raw === 'string') {
-    for (const id of raw.split(',')) {
-      read(id)
-      if (ids.size > limit) break
+    for (let from = 0; from <= raw.length && ids.size <= limit;) {
+      const comma = raw.indexOf(',', from)
+      read(raw.slice(from, comma < 0 ? undefined : comma))
+      from = comma < 0 ? raw.length + 1 : comma + 1
     }
   } else if (Array.isArray(raw)) {
     for (const id of raw) {
@@ -73,27 +74,6 @@ export async function sectionsFor (ctx: Context, fields: Fields, state: VisitorS
   if (!ids.length) return undefined
   if (ids.length > ctx.limits.sections) return null
   return renderSectionsJson({ ...ctx, visitor: state }, contextPage(ctx, fields), ids)
-}
-
-/** The fields of a link to `GET /cart/change?id=<key>&quantity=0` (a line's `url_to_remove`): the four the change reads, from the query, so a query cannot name anything else. */
-function linkFields (query: URLSearchParams): Fields {
-  const fields: Fields = {}
-  for (const name of ['id', 'line', 'quantity', 'selling_plan']) {
-    const value = query.get(name)
-    if (value !== null) fields[name] = value
-  }
-  return fields
-}
-
-/** The cart as `add.js`, `change.js`, `update.js` and `clear.js` answer it: lines in the `change` form, in which a line's discount application prints the total allocated to that line, where `/cart.js` prints the application's total over the cart (fixture `ajax-discount-codes`, step 5: with `BUNDLE` the line that gets 5000 prints 5000 and the line with an allocation of 0 prints 0, and the cart probe of step 6 prints 5000 on both). The engine's `change` form prints the application's total; this puts the line's own amount in its place, and a cart-level application, which is the same everywhere, is left as it is. */
-function changeAnswer (ctx: Context, state: VisitorState): Item {
-  const cart = cartJson(ctx.data, state.cart, ctx.view, 'change')
-  const items = (cart.items as Item[]).map(item => {
-    const allocations = item.line_level_discount_allocations
-    if (!Array.isArray(allocations)) return item
-    return { ...item, line_level_discount_allocations: allocations.map((allocation: Item) => ({ ...allocation, discount_application: { ...(allocation.discount_application as Item), total_allocated_amount: allocation.amount } })) }
-  })
-  return { ...cart, items }
 }
 
 /** The last item of each key: when the cart splits a line in two (a Buy X Get Y discount), the parity store names the line by its key and answers the later of the two (fixture `ajax-discount-automatic-bxgy`, step 0: an add of two answers one item, the discounted one). */
@@ -149,13 +129,13 @@ function changeEntry (item: Item, quantity: number): Item {
   }
 }
 
-/** What `change.js` adds to the cart answer: `items_added` for the line that grew and `items_removed` for the line that shrank (or went), each with the difference as `quantity`. The parity store lists one entry for a variant id that names two lines it changed, `items_added` holding 3 where one line grew by 3 and the other by 1 (fixture `ajax-cart-session`, step 7), so the first line of each direction is the entry. `items_removed` is `[]` in every recording and is built the way `items_added` is (the line that fell, the difference): no recording has a line that shrank. */
+/** What `change.js` adds to the cart answer: `items_added` for the line that grew and `items_removed` for the line that shrank (or went), each with the difference as `quantity`. The parity store lists one entry for a variant id that names two lines it changed, `items_added` holding 3 where one line grew by 3 and the other by 1 (fixture `ajax-cart-session`, step 7), so the first line of each direction is the entry. `items_removed` is `[]` in every recording and is built the way `items_added` is (the line that fell, the difference): no recording has a line that shrank. A change of properties or selling plan changes the line's key, so the old line is in `items_removed` and the new one in `items_added` with its whole quantity; that is unrecorded too. */
 function changeLists (ctx: Context, before: VisitorState, after: VisitorState, items: Item[]): { items_added: Item[], items_removed: Item[] } {
   const [more] = grown(before.cart.lines, after.cart.lines)
   const [fewer] = shrunk(before.cart.lines, after.cart.lines)
   const added = more ? itemsByKey(items).get(lineKey(more.line)) : undefined
   // a line that went is no longer in the new cart, so its item is read from the old one
-  const gone = fewer ? itemsByKey(changeAnswer(ctx, before).items as Item[]).get(lineKey(fewer.line)) : undefined
+  const gone = fewer ? itemsByKey(cartJson(ctx.data, before.cart, ctx.view, 'change').items as Item[]).get(lineKey(fewer.line)) : undefined
   return { items_added: more && added ? [changeEntry(added, more.by)] : [], items_removed: fewer && gone ? [changeEntry(gone, fewer.by)] : [] }
 }
 
@@ -166,7 +146,7 @@ function changelog (before: VisitorState, after: VisitorState): { items_changelo
   return { items_changelog: { added: [...byVariant].map(([variantId, quantity]) => ({ variant_id: variantId, quantity })) } }
 }
 
-/** The answer of `add.js`: the lines the request reached, in the order of the request (fixture `ajax-discount-codes`, step 0, where the cart lists them in reverse), as `{ items }` when the request sent `items` (every recording does) and as the line itself when it sent one `id` (shopify.dev's example, https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-add-js; no recording sends it). */
+/** The answer of `add.js`: the lines the request reached, in the order of the request (fixture `ajax-discount-codes`, step 0, where the cart lists them in reverse), as `{ items }` when the request sent `items` (every recording does, and every example on https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-add-js answers so) and as the line itself when it sent one `id`: that is the brief's choice, which no recording or shopify.dev example shows. */
 function addAnswer (fields: Fields, lines: CartLineState[], items: Item[]): Item {
   const byKey = itemsByKey(items)
   const keys = [...new Set(lines.map(lineKey))]
@@ -174,30 +154,29 @@ function addAnswer (fields: Fields, lines: CartLineState[], items: Item[]): Item
   return Array.isArray(fields.items) ? { items: added } : added[0] ?? {}
 }
 
+const OPS = { add: addToCart, change: changeCart, update: updateCart }
+
+/** The body of a cart answer: what `add.js` added, or the cart with what `change.js` and `update.js` list beside it. */
+function answerBody (ctx: Context, action: CartAction, fields: Fields, result: Extract<CartResult, { ok: true }>): Item {
+  const cart = cartJson(ctx.data, result.state.cart, ctx.view, 'change')
+  switch (action) {
+    case 'add': return addAnswer(fields, result.lines, cart.items as Item[])
+    case 'change': return { ...cart, ...changeLists(ctx, ctx.visitor, result.state, cart.items as Item[]) }
+    case 'update': return { ...cart, ...changelog(ctx.visitor, result.state) }
+    default: return cart
+  }
+}
+
 /**
- * `POST /cart/<action>.js`, https://shopify.dev/docs/api/ajax/reference/cart, and, until the forms unit takes the form format, the form spellings too. `add.js` answers the added lines, the others the cart; `change.js` also lists the lines that grew and shrank, and `update.js` the variants that grew; all hold the bundled sections when the request asked for them. The cart's lines are in the `change` form, which the add, change, update and clear answers print (`cartJson`). `GET /cart/change?id=<key>&quantity=0`, a line's remove link, reads the same four fields from its query, and a `HEAD` request for it answers as the `GET` does and saves nothing (the handler).
+ * `POST /cart/<action>.js`, https://shopify.dev/docs/api/ajax/reference/cart, and, until the forms unit takes the form format, the form spellings too. `add.js` answers the added lines, the others the cart; `change.js` also lists the lines that grew and shrank, and `update.js` the variants that grew; all hold the bundled sections when the request asked for them. The cart's lines are in the `change` form, which the add, change, update and clear answers print (`cartJson`). A `GET` of `/cart/change` (a line's remove link) is the forms unit's.
  */
 const cartOps: RouteHandler = async ctx => {
   const route = ctx.routed.route
   if (route.kind !== 'cart') throw new Error('not a cart route')
-  const link = ctx.request.method.toUpperCase() !== 'POST'
-  const fields = link ? linkFields(ctx.routed.query) : ctx.fields
-  const result: CartResult = route.action === 'clear'
-    ? clearCart(ctx.visitor)
-    : route.action === 'add'
-      ? addToCart(ctx.visitor, fields, ctx.data, ctx.limits)
-      : route.action === 'change'
-        ? changeCart(ctx.visitor, fields, ctx.data, ctx.limits)
-        : updateCart(ctx.visitor, fields, ctx.data, ctx.limits)
+  const result: CartResult = route.action === 'clear' ? clearCart(ctx.visitor) : OPS[route.action](ctx.visitor, ctx.fields, ctx.data, ctx.limits)
   if (!result.ok) return { response: json(result.error.body, result.error.status) }
-  const cart = changeAnswer(ctx, result.state)
-  const items = cart.items as Item[]
-  const body = route.action === 'add'
-    ? addAnswer(fields, result.lines, items)
-    : route.action === 'change'
-      ? { ...cart, ...changeLists(ctx, ctx.visitor, result.state, items) }
-      : route.action === 'update' ? { ...cart, ...changelog(ctx.visitor, result.state) } : cart
-  const sections = await sectionsFor(ctx, fields, result.state)
+  const body = answerBody(ctx, route.action, ctx.fields, result)
+  const sections = await sectionsFor(ctx, ctx.fields, result.state)
   return { response: json(sections === undefined ? body : { ...body, sections }), state: result.state }
 }
 
@@ -245,7 +224,7 @@ const suggest: RouteHandler = async ctx => {
   return { response: json(predictiveJson(ctx.data, { ...request, q: request.q.slice(0, ctx.limits.search) }, ctx.view)) }
 }
 
-/** `GET /recommendations/products.json`, with the errors https://shopify.dev/docs/api/ajax/reference/product-recommendations lists: 422 for a missing `product_id`, 404 for a product the store lacks, and 422 for an `intent` that is not `related` or `complementary` (the engine answers none of these with an error; the recording, fixture `ajax-recommendations-json`, has none either). */
+/** `GET /recommendations/products.json`, with the errors https://shopify.dev/docs/api/ajax/reference/product-recommendations lists: 422 for a missing `product_id`, 404 for a product the store lacks, and 422 for an `intent` that is not `related` or `complementary` (the engine answers none of these with an error; the recording, fixture `ajax-recommendations-json`, has none either). The products in the visitor's cart are left out, as they are on the `section_id` path (https://shopify.dev/docs/storefronts/themes/product-merchandising/recommendations/related-products lists the products in the cart among the left-out ones). */
 const recommendations: RouteHandler = async ctx => {
   const route = ctx.routed.route
   if (route.kind !== 'recommendations-json') throw new Error('not a recommendations route')
@@ -256,7 +235,7 @@ const recommendations: RouteHandler = async ctx => {
   if (id === '') return { response: error(422, 'Invalid parameter error', 'A product_id value is missing') }
   if (!(ctx.data.products ?? []).some(candidate => String(candidate.id) === id)) return { response: error(404, 'Product not found', `No product with id ${id.slice(0, ctx.limits.propertyLength)} is published in the online store`) }
   if (request.intent && request.intent !== 'related' && request.intent !== 'complementary') return { response: error(422, 'Invalid parameter error', 'The intent parameter must be one of related, complementary') }
-  return { response: json(recommendationsJson(ctx.data, request, ctx.view)) }
+  return { response: json(recommendationsJson(ctx.data, request, ctx.view, ctx.visitor.cart)) }
 }
 
 /** The handlers this unit adds, by route kind; `cart` covers the `.js` format and, until the forms unit takes the form format, the form format as well. */

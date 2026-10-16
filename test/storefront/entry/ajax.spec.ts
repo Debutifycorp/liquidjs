@@ -1,5 +1,3 @@
-import { storefrontSampleData } from '../../../src/shopify'
-import type { StoreData } from '../../../src/shopify'
 import { harness } from './harness'
 import { maskVolatile } from '../expect-probe'
 import { loadFixture } from '../fixtures'
@@ -18,8 +16,8 @@ function sectionsMatch (actual: unknown, expected: Record<string, unknown>): voi
 }
 
 /** Replays a recorded Ajax scenario through the storefront, step by step: statuses always, JSON bodies where the recording kept them, section HTML by its keys (the fixture drops theme markup). */
-async function replay (name: string, data: StoreData = storefrontSampleData as StoreData): Promise<void> {
-  const { send } = harness({ data })
+async function replay (name: string): Promise<void> {
+  const { send } = harness()
   for (const step of loadFixture(name).steps) {
     const body = step.json ? stepFields(step) : step.form ? new URLSearchParams(step.form).toString() : undefined
     let answer = await send(step.method, step.url, body)
@@ -56,12 +54,9 @@ async function replay (name: string, data: StoreData = storefrontSampleData as S
   }
 }
 
-/** The dataset without the automatic discount `Second pair of slides half off`, which the parity store gained after it recorded `ajax-cart-session`: its slides line of five is one line there, and splits in two with the discount. */
-const BEFORE_SLIDES_DISCOUNT: StoreData = { ...storefrontSampleData, discounts: (storefrontSampleData.discounts ?? []).filter(discount => discount.title !== 'Second pair of slides half off') } as StoreData
-
 describe('Ajax endpoints', () => {
-  it('replays ajax-cart-session', () => replay('ajax-cart-session', BEFORE_SLIDES_DISCOUNT))
-  for (const name of ['ajax-cart-sections', 'ajax-cart-errors', 'ajax-discount-codes', 'ajax-discount-automatic-bxgy', 'ajax-shipping-rates', 'ajax-shipping-rates-en-ca', 'ajax-shipping-rates-en-eu', 'ajax-product-js', 'ajax-suggest-json', 'ajax-recommendations-json', 'ajax-cart-en-ca']) {
+  // `ajax-cart-session` is replayed on the whole dataset: its slides line of five is bought under a selling plan, which the automatic Buy X Get Y on slides does not discount (discounts apply to one time purchases unless the data says otherwise)
+  for (const name of ['ajax-cart-session', 'ajax-cart-sections', 'ajax-cart-errors', 'ajax-discount-codes', 'ajax-discount-automatic-bxgy', 'ajax-shipping-rates', 'ajax-shipping-rates-en-ca', 'ajax-shipping-rates-en-eu', 'ajax-product-js', 'ajax-suggest-json', 'ajax-recommendations-json', 'ajax-cart-en-ca']) {
     it(`replays ${name}`, () => replay(name))
   }
 })

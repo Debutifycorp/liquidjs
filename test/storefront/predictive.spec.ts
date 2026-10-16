@@ -232,6 +232,30 @@ describe('/recommendations/products.json', () => {
     expect(recommendationsJson(data, { productId: request.productId, intent: 'nope' })).toEqual({ products: [], intent: 'nope' })
   })
 
+  describe('with the visitor\'s cart', () => {
+    const requestOf = { productId: byHandle('men-t-shirt').id, limit: 4 }
+    const handles = (answer: Record<string, unknown>) => (answer.products as Array<{ handle: string }>).map(product => product.handle)
+    const five = handles(recommendationsJson(data, { ...requestOf, limit: 5 }))
+    const inCart = five[0]
+    const cart = { token: 't', lines: [{ variantId: byHandle(inCart).variants[0].id, quantity: 1, properties: {}, sellingPlanId: null }], note: null, attributes: {}, discountCodes: [] }
+
+    it('leaves out the products in it, the rest in their order, the limit filled from the products after them', () => {
+      expect(handles(recommendationsJson(data, requestOf, undefined, cart))).toEqual(five.slice(1))
+    })
+
+    it('leaves out what a page rendered for that cart leaves out (shopify.dev: products in the cart are not recommended)', async () => {
+      const page = requestFromUrl(`/recommendations/products?product_id=${requestOf.productId}&limit=4`, data).request
+      const section = await renderProbeSection('probe-recommendations', { request: page, cart }) as { products: string[] }
+      expect(section.products).toEqual(handles(recommendationsJson(data, requestOf, undefined, cart)))
+      expect(section.products).not.toContain(inCart)
+    })
+
+    it('answers as before without one, and an empty cart leaves nothing out', () => {
+      expect(handles(recommendationsJson(data, requestOf, undefined, { ...cart, lines: [] }))).toEqual(five.slice(0, 4))
+      expect(handles(recommendationsJson(data, requestOf))).toEqual(five.slice(0, 4))
+    })
+  })
+
   it('takes a limit from 1 to 10, and 10 when there is none', () => {
     const count = (limit?: number | string | null) => (recommendationsJson(data, { productId: byHandle('men-t-shirt').id, limit }) as { products: unknown[] }).products.length
     expect(count()).toBe(10)

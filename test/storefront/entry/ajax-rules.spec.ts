@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { lineKey, storefrontSampleData } from '../../../src/shopify'
 import type { StoreData } from '../../../src/shopify'
 import { harness, harnessTheme, line, VISITOR } from './harness'
@@ -206,6 +207,7 @@ describe('the bundled sections', () => {
     const options = { visitor: VISITOR, basePath: '/p/tok' }
     expect(await where({}, { sections_url: '/p/tok/products/given' }, '/p/tok/cart/add.js', options)).toBe('/p/tok/products/given|product|US|USD')
     expect(await where({}, { sections_url: '/p/tok' }, '/p/tok/cart/add.js', options)).toBe('/p/tok|index|US|USD')
+    expect(await where({}, { sections_url: '/p/tok#top' }, '/p/tok/cart/add.js', options)).toBe('/p/tok|index|US|USD')
     expect(await where({}, { sections_url: '/products/given' }, '/p/tok/cart/add.js', options)).toBe('/p/tok/products/given|product|US|USD')
     // `/p/token` is a page of the store, not under the base path `/p/tok`
     expect(await where({}, { sections_url: '/p/token/x' }, '/p/tok/cart/add.js', options)).toBe('/p/tok/p/token/x|404|US|USD')
@@ -226,36 +228,7 @@ describe('the bundled sections', () => {
   })
 })
 
-describe('GET /cart/change and /discount/<code>', () => {
-  it('applies a GET and leaves a HEAD alone, for the remove link of a line', async () => {
-    const { send, seed, store } = harness()
-    await seed([line(SUNNIES, 2), line(HOODIE, 1)])
-    const key = lineKey(line(SUNNIES, 2))
-    const head = await send('HEAD', `/cart/change?id=${encodeURIComponent(key)}&quantity=0`)
-    expect(head.status).toBe(200)
-    expect(head.text).toBe('')
-    expect((await store.get(VISITOR))?.cart.lines).toHaveLength(2)
-    const get = await send('GET', `/cart/change?id=${encodeURIComponent(key)}&quantity=0`)
-    expect(get.status).toBe(200)
-    expect((await store.get(VISITOR))?.cart.lines.map(l => l.variantId)).toEqual([HOODIE])
-    await send('GET', '/cart/change?line=1&quantity=3')
-    expect((await store.get(VISITOR))?.cart.lines).toMatchObject([{ variantId: HOODIE, quantity: 3 }])
-  })
-
-  it('reads the four fields of the link and nothing else from its query', async () => {
-    const { send, seed, store } = harness()
-    await seed([line(SUNNIES, 2)])
-    const get = await send('GET', '/cart/change?line=1&quantity=1&note=hacked&properties%5Ba%5D=b&__proto__%5Bx%5D=1&sections=cart-count')
-    expect(get.status).toBe(200)
-    const cart = (await store.get(VISITOR))!.cart
-    expect([cart.note, cart.lines[0].properties, (get.json as any).sections]).toEqual(['', {}, undefined])
-  })
-
-  it('answers a link that names no line with the cart error', async () => {
-    const { send } = harness()
-    expect(await send('GET', '/cart/change?id=1&quantity=0')).toMatchObject({ status: 400, json: { status: 'bad_request', description: 'no valid id or line parameter' } })
-  })
-
+describe('GET /discount/<code>', () => {
   it('applies a code on GET and not on HEAD, then redirects to the page the link names', async () => {
     const { send, store } = harness()
     const head = await send('HEAD', '/discount/WELCOME10?redirect=/cart')
@@ -317,10 +290,33 @@ describe('GET /cart/change and /discount/<code>', () => {
 describe('the other endpoints', () => {
   it('does not save a visitor for a read of the cart', async () => {
     const { send, store } = harness()
-    const cart = await send('GET', '/cart.js')
-    expect((cart.json as any).token).toBe(VISITOR)
+    expect((await send('GET', '/cart.js')).status).toBe(200)
     expect(await store.get(VISITOR)).toBeUndefined()
     expect((await send('GET', '/cart.json')).status).toBe(200)
+  })
+
+  it('prints a one-way derivation of the visitor key as the cart token, and the key itself only in a sandbox', async () => {
+    const derived = createHash('sha256').update(VISITOR).digest('hex').slice(0, 32)
+    const { send, seed } = harness()
+    const first = await send('GET', '/cart.js')
+    expect((first.json as any).token).toBe(derived)
+    expect(derived).toMatch(/^[0-9a-f]{32}$/)
+    expect(first.text).not.toContain(VISITOR)
+    // the same on every answer that prints the cart, whatever the stored cart holds
+    await seed([line(SUNNIES, 1)], { cart: { token: VISITOR, lines: [], note: null, attributes: {}, discountCodes: [] } })
+    for (const answer of [await send('GET', '/cart.js'), await send('POST', '/cart/add.js', { items: [{ id: SUNNIES }] }), await send('POST', '/cart/update.js', { note: 'x' }), await send('POST', '/cart/clear.js')]) {
+      expect((answer.json as any).token ?? derived).toBe(derived)
+      expect(answer.text).not.toContain(VISITOR)
+    }
+    // a page prints the same token
+    const page = harness({ theme: { files: { ...harnessTheme().files, 'sections/token.liquid': '{{ cart.token }}' } } })
+    expect(wrapped((await page.send('GET', '/?section_id=token')).text)).toBe(derived)
+    // another visitor has another token
+    const other = harness({}, { visitor: 'another-visitor-key-0002' })
+    expect(((await other.send('GET', '/cart.js')).json as any).token).not.toBe(derived)
+    // in a sandbox the key is in the base path already
+    const sandboxed = harness({}, { visitor: VISITOR, sandbox: true })
+    expect(((await sandboxed.send('GET', '/cart.js')).json as any).token).toBe(VISITOR)
   })
 
   it('answers the shipping rates for a cart and an address, 202 for the prepare, 422 for an address no zone covers', async () => {
@@ -381,6 +377,23 @@ describe('the other endpoints', () => {
     const long = await send('GET', `/recommendations/products.json?product_id=${'7'.repeat(5000)}`)
     expect(long.status).toBe(404)
     expect((long.json as any).description.length).toBeLessThan(400)
+  })
+
+  it('leaves the products in the visitor\'s cart out of the recommendations, the same ones the section_id answer leaves out', async () => {
+    const { send, seed } = harness()
+    const query = 'product_id=10489561382934&limit=4'
+    const handles = (answer: Answer) => (answer.json as any).products.map((product: any) => product.handle) as string[]
+    const sectionHandles = async () => JSON.parse(wrapped((await send('GET', `/recommendations/products?${query}&section_id=probe-recommendations`)).text)!).products as string[]
+    const before = handles(await send('GET', `/recommendations/products.json?${query}`))
+    expect(await sectionHandles()).toEqual(before)
+    expect(before.length).toBe(4)
+    const product = data.products!.find(candidate => candidate.handle === before[0])!
+    await seed([line(product.variants[0].id, 1)])
+    const after = handles(await send('GET', `/recommendations/products.json?${query}`))
+    expect(after).not.toContain(before[0])
+    expect(after.slice(0, 3)).toEqual(before.slice(1))
+    expect(after).toHaveLength(4)
+    expect(await sectionHandles()).toEqual(after)
   })
 
   it('sends every answer as private, uncached JSON', async () => {

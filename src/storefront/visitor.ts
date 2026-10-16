@@ -1,4 +1,4 @@
-import { randomBytes } from 'crypto'
+import { createHash, randomBytes } from 'crypto'
 import { DEFAULT_LIMITS } from './types'
 import type { CartStore, VisitorState } from './types'
 
@@ -9,6 +9,9 @@ const COOKIE_PATH = /^[\x21-\x3a\x3c-\x7e]*$/
 
 /** A new visitor key: 128 bits from the system's random source, as 32 hex digits. The key is the visitor's only credential, so it is never derived from anything the visitor sends. */
 export const newVisitorKey = () => randomBytes(16).toString('hex')
+
+/** The `token` a visitor's cart prints in `/cart.js` and in the cart object of a page. In a sandbox the key is already in the page's address (the base path) and the token is the key. Otherwise the key is the `cart` cookie, which is `HttpOnly` because the key is the visitor's only credential, and a token that were the key would hand it to any script on the page that reads `/cart.js`: the token is then a one-way derivation of it, the first 32 digits of its SHA-256. */
+export const cartToken = (key: string, sandbox: boolean) => sandbox ? key : createHash('sha256').update(key).digest('hex').slice(0, 32)
 
 export function emptyVisitor (key: string): VisitorState {
   return { cart: { token: key, lines: [], note: null, attributes: {}, discountCodes: [] } }

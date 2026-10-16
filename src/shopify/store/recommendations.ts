@@ -2,6 +2,8 @@ import { HandleMap } from '../objects/handle-map'
 import { ReportCollector } from '../report'
 import { buildStore } from './build'
 import type { LiquidObject, StoreObjects } from './build'
+import { buildCartObject } from './cart'
+import type { CartState } from './cart'
 import { productJson } from './product-json'
 import type { StoreData } from './types'
 import { resolveView } from './view'
@@ -76,10 +78,14 @@ export function trackingId (...parts: Array<string | number>): string {
 /**
  * The `/recommendations/products.json` answer, https://shopify.dev/docs/api/ajax/reference/product-recommendations: `products`, each as `/products/<handle>.js` prints it (`productJson`), and the `intent`, in that order (fixture `ajax-recommendations-json`). Each product's `url` carries the tracking parameters the parity store adds, in its order: `pr_prod_strat` (`collection_fallback`, the one strategy any recording shows, and the one Debutify's related products follow: the product's collections first), `pr_rec_id` (`trackingId`), `pr_rec_pid` (the recommended product), `pr_ref_pid` (the product asked about) and `pr_seq` (`uniform`). A request the engine cannot answer (a product the store does not have, an intent that is neither `related` nor `complementary`) gives no products, where Shopify answers 404 or 422; `intent` is then the request's, or `related`.
  *
+ * `cart` is the visitor's cart (a `CartState`, as `renderPage` takes it): the products in it are left out, as shopify.dev's limitations pages say and as the `recommendations` of a page rendered for that cart leaves them out; without it the cart of the store data is the one that counts.
+ *
  * Which products come back is Debutify's rule (`buildRecommendations`), not Shopify's: the parity store samples at random from the collections the product is in (two recordings of the same request, fixtures `ajax-recommendations-json` and `probe-recommendations-related`, share two of their four products, `soft-cotton-hoodie-in-jam` first in both and `women-t-shirt` in different places, and all eight are in the dataset's `tops` collection), and the dataset does not list the parity store's `hoodie` in any collection.
  */
-export function recommendationsJson (data: StoreData, request: RecommendationsRequest, view: StoreView = resolveView(data, {})): Record<string, unknown> {
-  const store = buildStore(data, view)
+export function recommendationsJson (data: StoreData, request: RecommendationsRequest, view: StoreView = resolveView(data, {}), cart?: CartState): Record<string, unknown> {
+  const built = buildStore(data, view)
+  // the visitor's cart, when the caller has one, is built on the shared store's products, currency and prefix, as a page's is (`buildGlobals`), so the products in it are left out as they are on the `section_id` path
+  const store = cart ? { ...built, cart: buildCartObject(built, cart) } : built
   const found = buildRecommendations(store, request, new ReportCollector())
   const intent = typeof found.intent === 'string' ? found.intent : request.intent || 'related'
   const id = trackingId(request.productId, limitOf(request.limit), intent)

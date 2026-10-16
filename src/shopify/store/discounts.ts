@@ -150,10 +150,16 @@ function meetsMinimum (discount: DiscountData, pieces: Piece[], ctx: DiscountCon
   return true
 }
 
-/** A line is entitled to an amount-off-products discount when it is one of its items and its purchase type (one time or a subscription) is not left out. The purchase types default to both: the dataset's flags only say `false`, and the Admin API page of the basic discount input does not give a default. */
+/**
+ * Whether a discount applies to the purchase type of a line: a one time purchase or a subscription (a line bought under a selling plan). The default is one time purchases only: `applies_on_one_time_purchase` is true and `applies_on_subscription` false unless the dataset says otherwise. The Admin API page of the discount input (https://shopify.dev/docs/api/admin-graphql/latest/input-objects/DiscountCustomerGetsInput) gives no default; this is as observed on the parity store (Admin API 2026-10): its two automatic discounts were created without the flags and both read `appliesOnOneTimePurchase: true, appliesOnSubscription: false`, and its recording of a subscription line of five slides (fixture `ajax-cart-session`, step 6) carries no discount although the automatic Buy X Get Y on slides exists.
+ */
+function allowsPurchase (item: LiquidObject, discount: AmountOffProductsDiscountData | BuyXGetYDiscountData): boolean {
+  return item.selling_plan_allocation ? discount.applies_on_subscription === true : discount.applies_on_one_time_purchase !== false
+}
+
+/** A line is entitled to an amount-off-products discount when it is one of its items and its purchase type is allowed (`allowsPurchase`). */
 function entitled (piece: Piece, discount: AmountOffProductsDiscountData, ctx: DiscountContext): boolean {
-  if (!inItems(piece.item, discount.items, ctx)) return false
-  return piece.item.selling_plan_allocation ? discount.applies_on_subscription !== false : discount.applies_on_one_time_purchase !== false
+  return inItems(piece.item, discount.items, ctx) && allowsPurchase(piece.item, discount)
 }
 
 /** Whether a discount besides a code took money off the piece already, which a spend minimum of Buy X Get Y does not count: "If a combinable discount already applies to an item, that item doesn't count towards the minimum purchase amount at all." https://help.shopify.com/en/manual/discounts/discount-types/buy-x-get-y */
@@ -184,7 +190,8 @@ function applyBuyXGetY (discount: BuyXGetYDiscountData, pieces: Piece[], ctx: Di
   const units: Unit[] = pieces.flatMap(piece => Array.from({ length: piece.units }, () => ({ piece, price: piece.price / piece.units, role: null })))
   const spend = discount.buys.quantity === undefined
   const buyable = units.filter(unit => inItems(unit.piece.item, discount.buys.items, ctx) && !(spend && discounted(unit.piece)))
-  const given = units.filter(unit => inItems(unit.piece.item, discount.gets.items, ctx)).sort((a, b) => a.price - b.price)
+  // the purchase types are those of what is given: "customerGets" carries them in the Admin API, so a subscription unit is bought toward a Buy X Get Y but is not discounted by one unless the discount says so
+  const given = units.filter(unit => inItems(unit.piece.item, discount.gets.items, ctx) && allowsPurchase(unit.piece.item, discount)).sort((a, b) => a.price - b.price)
   const limit = discount.uses_per_order ?? Infinity
   let uses = 0
   while (uses < limit) {
@@ -477,7 +484,7 @@ const decimal = (value: number) => Number.isInteger(value) ? value.toFixed(1) : 
 /**
  * A discount application as an Ajax answer prints it. `cart` (`/cart.js` and `{{ cart | json }}`) puts `type` first, in the order of the page, and prints the type of an automatic discount as the empty string; `change` (the answers of `add.js`, `change.js` and `update.js`) sorts the keys by name and prints `automatic` (fixtures `ajax-discount-codes` and `ajax-discount-automatic-bxgy`). `value` is a string: the percentage, or the amount in the currency's major unit (the page's example prints `"2.5"`, https://shopify.dev/docs/api/liquid/objects/discount_application; no fixture holds a fixed amount, so the major unit is the engine's reading of that example).
  */
-export function discountApplicationJson (application: LiquidObject, form: 'cart' | 'change'): Record<string, unknown> {
+export function discountApplicationJson (application: LiquidObject, form: 'cart' | 'change', total: unknown = application.total_allocated_amount): Record<string, unknown> {
   const value = application.value_type === 'percentage' ? decimal(application.value as number) : decimal((application.value as number) / 100)
   const fields = {
     type: form === 'change' && application.type === '' ? 'automatic' : application.type,
@@ -490,12 +497,14 @@ export function discountApplicationJson (application: LiquidObject, form: 'cart'
     allocation_method: application.allocation,
     target_selection: application.target_selection,
     target_type: application.target_type,
-    total_allocated_amount: application.total_allocated_amount
+    total_allocated_amount: total
   }
   return form === 'cart' ? fields : Object.fromEntries(Object.entries(fields).sort(([a], [b]) => a < b ? -1 : 1))
 }
 
-/** A discount allocation as an Ajax answer prints it: its amount and the application it comes from. */
+/**
+ * A discount allocation as an Ajax answer prints it: its amount and the application it comes from. In the `change` form the application's `total_allocated_amount` is what was allocated to this line, the allocation's own amount, where `/cart.js` and `{{ cart | json }}` print the application's total over the cart: fixture `ajax-discount-codes`, step 5 (`BUNDLE`) prints 5000 on the line that gets 5000 and 0 on the line with an allocation of 0, and the cart probe of step 6 prints 5000 on both. One recording cannot tell the line's own amount from a running total over the lines; the line's own amount is the simpler reading.
+ */
 export function discountAllocationJson (entry: LiquidObject, form: 'cart' | 'change'): Record<string, unknown> {
-  return { amount: entry.amount, discount_application: discountApplicationJson(entry.discount_application as LiquidObject, form) }
+  return { amount: entry.amount, discount_application: discountApplicationJson(entry.discount_application as LiquidObject, form, form === 'change' ? entry.amount : undefined) }
 }

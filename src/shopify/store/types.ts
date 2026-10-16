@@ -373,7 +373,9 @@ export interface AmountOffProductsDiscountData extends DiscountBaseData {
   type: 'amount_off_products'
   value: DiscountValueData
   items: DiscountItemsData
+  /** Whether it applies to one time purchases; true when omitted. */
   applies_on_one_time_purchase?: boolean
+  /** Whether it applies to subscriptions (lines bought under a selling plan); false when omitted, as the parity store's discounts read (see `allowsPurchase` in `discounts.ts`). */
   applies_on_subscription?: boolean
 }
 
@@ -397,6 +399,10 @@ export interface BuyXGetYDiscountData extends DiscountBaseData {
   /** What it then gets: `quantity` of `items` at `value` off (`{ percentage: 100 }` is free). */
   gets: { items: DiscountItemsData, quantity: number, value: DiscountValueData }
   uses_per_order?: number
+  /** Whether what it gives applies to one time purchases; true when omitted. */
+  applies_on_one_time_purchase?: boolean
+  /** Whether what it gives applies to subscriptions (lines bought under a selling plan); false when omitted. */
+  applies_on_subscription?: boolean
 }
 
 /** A discount of the store, by the four kinds the Admin API creates (basic, free shipping and Buy X Get Y, as codes or automatic). */

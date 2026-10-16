@@ -1,5 +1,5 @@
 import { cartJson, discountCodeStatus, renderPage, storefrontSampleData as data } from '../../src/shopify'
-import type { CartState, StoreData } from '../../src/shopify'
+import type { BuyXGetYDiscountData, CartState, StoreData } from '../../src/shopify'
 import { buildStore } from '../../src/shopify/store/build'
 import { buildCartObject } from '../../src/shopify/store/cart'
 import { applyDiscounts } from '../../src/shopify/store/discounts'
@@ -50,7 +50,7 @@ describe('discounts', () => {
     expect(keys(cartJson(data, state([], ['WELCOME10'])))).toEqual(keys(fixture.steps[14].body))
   })
   it('answers update.js in the form of the change answers: applications wrapped in their amount, the type automatic', () => {
-    for (const [codes, at] of [[['WELCOME10'], 1], [['FREESHIP', 'WELCOME10'], 7], [['NOPE'], 9], [[], 11]] as Array<[string[], number]>) {
+    for (const [codes, at] of [[['WELCOME10'], 1], [['SHOES5'], 3], [['BUNDLE'], 5], [['FREESHIP', 'WELCOME10'], 7], [['NOPE'], 9], [[], 11]] as Array<[string[], number]>) {
       const answer = cartJson(data, cart(codes), undefined, 'change') as any
       const recorded = withoutChangelog(fixture.steps[at].body) as any
       expect(keys(answer)).toEqual(keys(recorded))
@@ -101,6 +101,18 @@ describe('discounts', () => {
       const cartObject = built(state([line(SLIDES, 3), line(HOODIE, 1)]))
       expect((cartObject.items as any[]).map(item => item.index)).toEqual([0, 1, 2, 3])
       expect(cartObject.item_count).toBe(4)
+    })
+  })
+
+  describe('the application of a line in the change form', () => {
+    const totals = (answer: any) => answer.items.flatMap((item: any) => item.line_level_discount_allocations.map((a: any) => [a.amount, a.discount_application.total_allocated_amount]))
+    it('prints the amount allocated to the line as its total, where /cart.js prints the total over the cart (fixture ajax-discount-codes, steps 5 and 6)', () => {
+      const bundle = cart(['BUNDLE'])
+      expect(totals(cartJson(data, bundle, undefined, 'change'))).toEqual([[5000, 5000], [0, 0]])
+      expect(totals(cartJson(data, bundle))).toEqual([[5000, 5000], [0, 5000]])
+      // a cart-level application keeps its total over the cart
+      const welcome = cartJson(data, cart(['WELCOME10']), undefined, 'change') as any
+      expect(welcome.cart_level_discount_applications.map((entry: any) => [entry.amount, entry.discount_application.total_allocated_amount])).toEqual([[4100, 4100]])
     })
   })
 
@@ -254,6 +266,14 @@ describe('discounts', () => {
       expect(built(state([line(SLIDES, 1, 71001)]), oneTime).total_discount).toBe(0)
       expect(built(state([line(SLIDES, 1)]), oneTime).total_discount).toBe(250)
     })
+    it('applies a product discount to one time purchases only unless it says it applies to subscriptions (as observed on the parity store: its discounts, created without the flags, read true and false)', () => {
+      const plain = withDiscounts({ id: 1, type: 'amount_off_products', title: 'Slides', value: { percentage: 10 }, items: { products: ['slides'] } })
+      expect([built(state([line(SLIDES, 1, 71001)]), plain).total_discount, built(state([line(SLIDES, 1)]), plain).total_discount]).toEqual([0, 250])
+      const both = withDiscounts({ id: 1, type: 'amount_off_products', title: 'Slides', value: { percentage: 10 }, items: { products: ['slides'] }, applies_on_subscription: true })
+      expect([built(state([line(SLIDES, 1, 71001)]), both).total_discount, built(state([line(SLIDES, 1)]), both).total_discount]).toEqual([225, 250])
+      const subscriptions = withDiscounts({ id: 1, type: 'amount_off_products', title: 'Slides', value: { percentage: 10 }, items: { products: ['slides'] }, applies_on_one_time_purchase: false, applies_on_subscription: true })
+      expect([built(state([line(SLIDES, 1, 71001)]), subscriptions).total_discount, built(state([line(SLIDES, 1)]), subscriptions).total_discount]).toEqual([225, 0])
+    })
   })
 
   describe('free shipping', () => {
@@ -305,6 +325,26 @@ describe('discounts', () => {
       expect(beanie.discount_allocations).toEqual([])
       expect(sneakers.discount_allocations).toEqual([])
       expect([sunnies.final_line_price, cartObject.total_price, cartObject.total_discount]).toEqual([0, 36000, 5000])
+    })
+    describe('purchase types', () => {
+      const slidesDiscount = data.discounts!.find(discount => discount.title === 'Second pair of slides half off') as BuyXGetYDiscountData
+      const only = (flags: Pick<BuyXGetYDiscountData, 'applies_on_one_time_purchase' | 'applies_on_subscription'>) => withDiscounts({ ...slidesDiscount, ...flags })
+      it('does not discount what is bought under a selling plan unless it says so: five slides on a plan are one line without a discount (fixture ajax-cart-session, step 6)', () => {
+        const plan = built(state([line(SLIDES, 5, 71001)]))
+        expect([plan.total_discount, (plan.items as any[]).map(item => item.quantity)]).toEqual([0, [5]])
+        expect(built(state([line(SLIDES, 5)])).total_discount).toBe(1250)
+        expect(built(state([line(SLIDES, 5, 71001)]), only({ applies_on_subscription: true })).total_discount).toBe(1125)
+      })
+      it('counts a subscription unit as bought but gives the discount to a one time unit', () => {
+        const mixed = built(state([line(SLIDES, 1), line(SLIDES, 1, 71001)]))
+        expect(mixed.total_discount).toBe(1250)
+        expect((mixed.items as any[]).map(item => [item.quantity, item.selling_plan_allocation ? 'plan' : 'one time', item.line_level_total_discount])).toEqual([[1, 'one time', 1250], [1, 'plan', 0]])
+      })
+      it('gives the discount to the purchase types its flags name', () => {
+        const mixed = state([line(SLIDES, 1), line(SLIDES, 1, 71001)])
+        expect(built(mixed, only({ applies_on_one_time_purchase: false, applies_on_subscription: true })).total_discount).toBe(1125)
+        expect(built(mixed, only({ applies_on_one_time_purchase: false })).total_discount).toBe(0)
+      })
     })
     it('needs the tops it counts: one T-shirt does not earn the sunnies', () => {
       const one = state([line(SUNNIES, 1), line(TSHIRT, 1)], ['BUNDLE'])

@@ -9,7 +9,7 @@ import type { Route, Routed } from './router'
 import { asError, PRIVATE, report, storeRoot } from './support'
 import { DEFAULT_LIMITS } from './types'
 import type { HandleOptions, Storefront, StorefrontLimits, StorefrontOptions, VisitorState } from './types'
-import { cookieVisitor, emptyVisitor, memoryCartStore, newVisitorKey, visitorCookie, VisitorQueue } from './visitor'
+import { cartToken, cookieVisitor, emptyVisitor, memoryCartStore, newVisitorKey, visitorCookie, VisitorQueue } from './visitor'
 
 export interface Context {
   request: Request
@@ -141,7 +141,9 @@ export function createStorefront (options: StorefrontOptions): Storefront {
       const first = routeRequest(request.method, request.url, data, { basePath }).route
       const fields = readsBody(first, verb) ? await readBody(request, limits.body) : {}
       const run = async (): Promise<Response> => {
-        const visitor = (await store.get(key)) ?? emptyVisitor(key)
+        const stored = (await store.get(key)) ?? emptyVisitor(key)
+        // the token is shown, never the key itself, whatever the stored cart holds (`cartToken`)
+        const visitor: VisitorState = { ...stored, cart: { ...stored.cart, token: cartToken(key, sandbox) } }
         const routed = routeRequest(request.method, request.url, data, { basePath, country: visitor.country })
         const view = resolveView(data, { basePath, localePrefix: routed.localePrefix, market: routed.market, language: routed.language })
         const ctx: Context = { request, options, limits, theme, data, routed, basePath, view, visitor, key, sandbox, fields }
