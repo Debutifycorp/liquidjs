@@ -61,15 +61,15 @@ describe('cart answers are private copies', () => {
   })
 })
 
-// fixture `ajax-cart-text`: the parity store keeps the visitor's note, attribute and property text raw (`/cart.js`, step 2), prints it HTML-escaped in Liquid (`cart.note`, `cart.attributes.<name>` and the values of `item.properties`, step 3, and the probe's `cart.note | json`, `cart.attributes | json` and `item.properties | json`, step 4) and raw again in `{{ cart | json }}` (the probe's `ajax`, step 4). A raw print let a cross-site `POST /cart/update` put script into a theme's `<textarea>{{ cart.note }}</textarea>` (final review B, C1 and the settled cart-note concern of lane FA)
+// fixture `ajax-cart-text`: the parity store keeps the visitor's note, attribute and property text raw (`/cart.js`, step 2), prints it HTML-escaped in Liquid (`cart.note`, `cart.attributes.<name>` and the values of `item.properties`, step 3, and the probe's `cart.note | json`, `cart.attributes | json` and `item.properties | json`, step 4) and raw again in `{{ cart | json }}` (the probe's `ajax`, step 4). A raw print let a cross-site `POST /cart/update` put script into a theme's `<textarea>{{ cart.note }}</textarea>` (final review B, C1 and the settled cart-note concern of lane FA). A name with markup in it (`<s>k</s>`, `<u>N</u>`) stays raw in the Ajax answers and prints with its tags stripped in Liquid (`k`, `N`, steps 3 and 4: the loop, `cart.attributes | json` and `item.properties | json`; lane FA2)
 describe('visitor text in the cart', () => {
   const text = loadFixture('ajax-cart-text')
   const MARKUP = { note: '</textarea><b>A & "B"</b>', attribute: '<i>x & "y"</i>', property: '<b>A & "B"</b>' }
-  const cart = state([line(HOODIE_GREEN_SMALL, 1, { Engraving: MARKUP.property })], { note: MARKUP.note, attributes: { gift: MARKUP.attribute } })
+  const cart = state([line(HOODIE_GREEN_SMALL, 1, { Engraving: MARKUP.property, '<u>N</u>': 'v' })], { note: MARKUP.note, attributes: { gift: MARKUP.attribute, '<s>k</s>': 'w' } })
 
   it('answers /cart.js with the text as it was stored', () => {
     expect(normaliseKeys(cartJson(data, cart))).toEqual(normaliseKeys(text.steps[2].body))
-    expect(normaliseKeys(cartJson(data, cart, undefined, 'change'))).toMatchObject({ note: MARKUP.note, attributes: { gift: MARKUP.attribute }, items: [{ properties: { Engraving: MARKUP.property } }] })
+    expect(normaliseKeys(cartJson(data, cart, undefined, 'change'))).toMatchObject({ note: MARKUP.note, attributes: { gift: MARKUP.attribute, '<s>k</s>': 'w' }, items: [{ properties: { Engraving: MARKUP.property, '<u>N</u>': 'v' } }] })
   })
 
   it('prints the note, the attribute and the properties HTML-escaped in Liquid', async () => {
@@ -84,6 +84,26 @@ describe('visitor text in the cart', () => {
   it('holds the escaped strings as plain strings, so escape escapes them again as Shopify\'s would', async () => {
     const html = (await renderPage({ theme: { files: { ...probeTheme().files, 'templates/cart.liquid': '{{ cart.note | escape }}|{{ cart.attributes.gift | escape }}|{% for item in cart.items %}{{ item.properties.Engraving | escape }}{% endfor %}|{{ cart.note | size }}' } }, templateName: 'cart', data, cart })).html
     expect(html).toBe('&amp;lt;/textarea&amp;gt;&amp;lt;b&amp;gt;A &amp;amp; &amp;quot;B&amp;quot;&amp;lt;/b&amp;gt;|&amp;lt;i&amp;gt;x &amp;amp; &amp;quot;y&amp;quot;&amp;lt;/i&amp;gt;|&amp;lt;b&amp;gt;A &amp;amp; &amp;quot;B&amp;quot;&amp;lt;/b&amp;gt;|' + String(MARKUP.note.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').length))
+  })
+
+  // final review B, FA2: the names of the attributes and properties are the visitor's too. Fixture `ajax-cart-text` records the tags of a name stripped (`k`, `N`) in the loop (step 3) and as the keys `cart.attributes | json` and `item.properties | json` print (step 4, which the probe test below replays), so the stripped name is the key of the hash; the lookup by it (`cart.attributes.k`) is inferred from that. `&`, `<`, `>`, `"` and `'` left in a name are escaped as the values are (the recording holds no such name), so a theme that prints `{{ p.first }}` in an attribute cannot be broken out of
+  it('reads an attribute and a property by the name with its tags stripped, and the raw name finds nothing', async () => {
+    const html = (await renderPage({ theme: { files: { ...probeTheme().files, 'templates/cart.liquid': '[{{ cart.attributes.k }}][{{ cart.attributes["<s>k</s>"] | json }}]{% for item in cart.items %}[{{ item.properties.N }}][{{ item.properties["<u>N</u>"] | json }}]{% endfor %}' } }, templateName: 'cart', data, cart })).html
+    expect(html).toBe('[w][null][v][null]')
+  })
+
+  it('escapes what stripping leaves in a name, so printing it in an attribute cannot break out, and leaves a plain name as it is', async () => {
+    const names = ['a&b', 'x"y', 'it\'s', 'a<b', '</i><b onmouseover=1>"', 'Gift wrap']
+    const attributes = Object.fromEntries(names.map(name => [name, 'v']))
+    const properties = Object.fromEntries(names.map(name => [name, 'v']))
+    const files = { ...probeTheme().files, 'templates/cart.liquid': '{% for a in cart.attributes %}<input name="{{ a.first }}" value="{{ a.last }}">{% endfor %}|{% for item in cart.items %}{% for p in item.properties %}<input name="{{ p.first }}">{% endfor %}{% endfor %}' }
+    const html = (await renderPage({ theme: { files }, templateName: 'cart', data, cart: state([line(HOODIE_GREEN_SMALL, 1, properties)], { attributes }) })).html
+    const [attributeHtml, propertyHtml] = html.split('|')
+    // the tags of `</i><b onmouseover=1>"` go, and the quote they leave is escaped
+    const expected = ['a&amp;b', 'x&quot;y', 'it&#39;s', 'a&lt;b', '&quot;', 'Gift wrap']
+    expect(attributeHtml).toBe(expected.map(name => `<input name="${name}" value="v">`).join(''))
+    expect(propertyHtml).toBe(expected.map(name => `<input name="${name}">`).join(''))
+    expect(await renderPage({ theme: { files: { ...probeTheme().files, 'templates/cart.liquid': '{{ cart.attributes["Gift wrap"] }}{% for item in cart.items %}{{ item.properties["Gift wrap"] }}{% endfor %}' } }, templateName: 'cart', data, cart: state([line(HOODIE_GREEN_SMALL, 1, properties)], { attributes }) }).then(page => page.html)).toBe('vv')
   })
 
   it('keeps a missing note and attribute missing, and leaves plain text as it is', async () => {

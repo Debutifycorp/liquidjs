@@ -32,10 +32,17 @@ const rawTextOf = (cart: LiquidObject): RawText => (cart[RAW_TEXT] as RawText | 
 const rawPropertiesOf = (item: LiquidObject): Record<string, string> => (item[RAW_PROPERTIES] as Record<string, string> | undefined) ?? item.properties as Record<string, string>
 
 /**
- * The visitor's text as a template reads it: HTML-escaped (`&lt;`, `&amp;`, `&quot;`, `&#39;`), and a plain string, so `| escape` escapes it once more, as Shopify's would (fixture `ajax-cart-text`, step 3: `note=&lt;/textarea&gt;&lt;b&gt;A &amp; &quot;B&quot;&lt;/b&gt;` for the note `</textarea><b>A & "B"</b>`). The cart's note, the values of its attributes and of a line's properties are the visitor's, set by a post any website can make, and a theme prints them with no filter (Dawn's `<textarea>{{ cart.note }}</textarea>`), so a raw print ran the script of a cross-site `POST /cart/update`. Names are not escaped: the recording holds only plain names, so how Shopify prints one with markup in it is not pinned. A missing note stays nil.
+ * The visitor's text as a template reads it: HTML-escaped (`&lt;`, `&amp;`, `&quot;`, `&#39;`), and a plain string, so `| escape` escapes it once more, as Shopify's would (fixture `ajax-cart-text`, step 3: `note=&lt;/textarea&gt;&lt;b&gt;A &amp; &quot;B&quot;&lt;/b&gt;` for the note `</textarea><b>A & "B"</b>`). The cart's note, the values of its attributes and of a line's properties are the visitor's, set by a post any website can make, and a theme prints them with no filter (Dawn's `<textarea>{{ cart.note }}</textarea>`), so a raw print ran the script of a cross-site `POST /cart/update`. A missing note stays nil.
  */
 const escapedText = <T extends string | null>(text: T): T => (text === null ? text : escapeHtml(text) as T)
-const escapedValues = (values: Record<string, string>): Record<string, string> => Object.fromEntries(Object.entries(values).map(([name, value]) => [name, escapedText(value)]))
+
+/**
+ * The name of an attribute or of a line item property as a template reads it: the visitor's name with its HTML tags stripped, so `<s>k</s>` reads `k` and `<u>N</u>` reads `N` (fixture `ajax-cart-text`: `/cart.js` keeps `"<s>k</s>":"w"` and `"<u>N</u>":"v"`, step 2, and in Liquid `{% for a in cart.attributes %}{{ a.first }}` prints `k` and `{% for p in item.properties %}{{ p.first }}` prints `N`, step 3, and `cart.attributes | json` and `item.properties | json` print the keys `k` and `N`, step 4; `{{ cart | json }}` keeps the raw names, the `ajax` of step 4). The stripped name is the key, so `cart.attributes.k` and `item.properties.N` read the value; that lookup is inferred from the keys the `json` filter printed, the recording does not read by name. What stripping leaves of `&`, `<`, `>`, `"` and `'` is escaped as the values are, so a theme that prints `{{ p.first }}` in an attribute (`<input name="{{ p.first }}">`) cannot be broken out of by a name like `x"y`: the recording holds no such name, so this is a safety rule of this package, and a name with none of them (`gift`, `Engraving`, `Gift wrap`) reads as it is. Final review B, lane FA2. Two names that strip to the same one (`k` and `<s>k</s>`) leave the later one's value, which nothing pins.
+ */
+const readableName = (name: string): string => escapedText(stripTags(name))
+
+/** A cart's attributes, or a line's properties, as a template reads them: the names without their tags (`readableName`) and the values escaped (`escapedText`). */
+const readableText = (values: Record<string, string>): Record<string, string> => Object.fromEntries(Object.entries(values).map(([name, value]) => [readableName(name), escapedText(value)]))
 
 /** Whether `value` is a cart built by `buildCartObject`. */
 export const isBuiltCart = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject)[CART_MARKER] === true
@@ -131,7 +138,7 @@ function builtVariant (store: StoreObjects, variantId: number): BuiltVariant | u
 
 /** Line item properties as a template reads them: by name (`item.properties.Engraving`) and as pairs (`for property in item.properties`), and printed by `json` as the parity store prints them, a list of `[name, value]` pairs (`[]` for none, fixture `ajax-cart-session`, step 11). */
 function propertiesOf (properties: Record<string, string>): Record<string, string> {
-  const copy = escapedValues(properties)
+  const copy = readableText(properties)
   Object.defineProperty(copy, 'toJSON', { value: () => Object.entries(copy), enumerable: false })
   return copy
 }
@@ -255,7 +262,7 @@ export function buildCartObject (store: StoreObjects, state: CartState): LiquidO
     total_weight: items.reduce((weight, item) => weight + ((item.variant as LiquidObject).weight as number) * (item.quantity as number), 0),
     currency: { iso_code: store.currency.iso_code, symbol: store.currency.symbol, name: store.currency.name },
     note: escapedText(state.note),
-    attributes: escapedValues(attributes),
+    attributes: readableText(attributes),
     requires_shipping: items.some(item => item.requires_shipping),
     cart_level_discount_applications: discounts.cartLevel,
     discount_applications: discounts.applications,
