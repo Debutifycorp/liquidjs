@@ -1,4 +1,5 @@
 import { createHash } from 'crypto'
+import { LiquidFloat } from '../../util/liquid-float'
 import type { LiquidObject } from './build'
 import type { ViewCurrency } from './markets'
 import { convert } from './pricing'
@@ -95,7 +96,7 @@ function uuidOf (id: number): string {
 /**
  * A discount application, https://shopify.dev/docs/api/liquid/objects/discount_application, in the form the parity store's Liquid prints (fixtures `ajax-discount-codes` and `ajax-discount-automatic-bxgy`):
  * - `title` is the code for a code and the discount's title for an automatic one; `type` is `discount_code`, or the empty string for an automatic discount (the page lists `automatic`, which only the add, change and update answers print);
- * - `value` is a number, the percentage or the amount in the minor unit of the view's currency; `description` is nil and so is `allocation_method`, which the page does not document and Liquid prints as nil in every cart the parity store was asked for;
+ * - `value` is the percentage, a decimal that prints with its point (`10.0`: scenario `ajax-discount-codes`, step 3, the probe's `{{ discount_application.value | json }}` for a code of 10 percent), or the amount in the minor unit of the view's currency, a whole number; `description` is nil and so is `allocation_method`, which the page does not document and Liquid prints as nil in every cart the parity store was asked for;
  * - `key` (a UUID) and `created_at` (an ISO date) are hidden fields the Ajax answers print. Shopify makes both for each request and the fixtures mask them as volatile; the engine's are fixed by the discount, so that the same cart answers the same twice: the key is a version 4 shaped UUID made from a hash of the discount's id, and the date is the Unix epoch.
  * `allocation` is the method the Ajax answers print: `across` for an order discount, `each` for a percentage and for Buy X Get Y.
  */
@@ -108,7 +109,7 @@ function makeApplication (discount: DiscountData, ctx: DiscountContext): LiquidO
     type: discount.code ? 'discount_code' : '',
     title: discount.code ?? discount.title,
     description: null,
-    value: 'percentage' in given ? given.percentage : money(given.amount, ctx),
+    value: 'percentage' in given ? new LiquidFloat(given.percentage) : money(given.amount, ctx),
     value_type: percentage ? 'percentage' : 'fixed_amount',
     allocation_method: null,
     target_selection: order || discount.type === 'free_shipping' ? 'all' : 'entitled',
@@ -557,7 +558,7 @@ const decimal = (value: number) => Number.isInteger(value) ? value.toFixed(1) : 
  * A discount application as an Ajax answer prints it. `cart` (`/cart.js` and `{{ cart | json }}`) puts `type` first, in the order of the page, and prints the type of an automatic discount as the empty string; `change` (the answers of `add.js`, `change.js` and `update.js`) sorts the keys by name and prints `automatic` (fixtures `ajax-discount-codes` and `ajax-discount-automatic-bxgy`). `value` is a string: the percentage, or the amount in the currency's major unit (the page's example prints `"2.5"`, https://shopify.dev/docs/api/liquid/objects/discount_application; no fixture holds a fixed amount, so the major unit is the engine's reading of that example).
  */
 export function discountApplicationJson (application: LiquidObject, form: 'cart' | 'change', total: unknown = application.total_allocated_amount): Record<string, unknown> {
-  const value = application.value_type === 'percentage' ? decimal(application.value as number) : decimal((application.value as number) / 100)
+  const value = application.value_type === 'percentage' ? decimal(Number(application.value)) : decimal(Number(application.value) / 100)
   const fields = {
     type: form === 'change' && application.type === '' ? 'automatic' : application.type,
     key: application.key,

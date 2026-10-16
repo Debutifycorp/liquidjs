@@ -4,7 +4,6 @@ import { buildStore } from '../../src/shopify/store/build'
 import { buildCartObject } from '../../src/shopify/store/cart'
 import { applyDiscounts } from '../../src/shopify/store/discounts'
 import { loadFixture } from './fixtures'
-import { liquidJsonImages } from './expect-probe'
 import { probeTheme, renderProbe } from './probe'
 
 const BEANIE = 43696949592086
@@ -34,7 +33,7 @@ describe('discounts', () => {
   for (const [at, codes] of probes) {
     it(`matches the cart probe with ${codes.join(',') || 'no code'}, its ajax included`, async () => {
       const body = await renderProbe('cart.probe', { cart: cart(codes) }) as any
-      expect(keys(body)).toEqual(keys(liquidJsonImages(fixture.steps[at].body)))
+      expect(keys(body)).toEqual(keys(fixture.steps[at].body))
       // the key order of the cart, a line and a discount application of `{{ cart | json }}` is the recorded one
       const recorded = (fixture.steps[at].body as any).ajax
       expect(Object.keys(body.ajax)).toEqual(Object.keys(recorded))
@@ -72,7 +71,7 @@ describe('discounts', () => {
     const slides = state([line(SLIDES, 2)])
     it('splits the line of two pairs of slides in two, the second half off', async () => {
       const body = await renderProbe('cart.probe', { cart: slides }) as any
-      expect(keys(body)).toEqual(keys(liquidJsonImages(auto.steps[1].body)))
+      expect(keys(body)).toEqual(keys(auto.steps[1].body))
       expect(Object.keys(body.ajax.items[1].line_level_discount_allocations[0].discount_application)).toEqual(Object.keys((auto.steps[1].body as any).ajax.items[1].line_level_discount_allocations[0].discount_application))
     })
     it('answers cart.js with both halves under one key', () => {

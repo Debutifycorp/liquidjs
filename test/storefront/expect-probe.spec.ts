@@ -47,7 +47,7 @@ describe('maskVolatile', () => {
     expect(typeof product.featured_image).toBe('string')
     expect(product.variants[0]).toMatchObject({ id: 43695846621206, title: 'Red / Small' })
     expect(product.variants[0].featured_image).toMatchObject({ id: 39774600364054, product_id: 10489561382934, width: 4096, height: 4096, created_at: V, updated_at: V })
-    expect(product.variants[0].featured_image.src).toMatch(/^https:\/\//)
+    expect(product.variants[0].featured_image.src).toMatch(/^\/\/cdn\.shopify\.com\//)
   })
 })
 

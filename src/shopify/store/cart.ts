@@ -1,4 +1,5 @@
 import { createHash } from 'crypto'
+import { LiquidFloat } from '../../util/liquid-float'
 import { stripTags } from '../../util/strip-tags'
 import { HandleMap } from '../objects/handle-map'
 import type { ImageDrop } from '../objects/image'
@@ -259,7 +260,8 @@ export function buildCartObject (store: StoreObjects, state: CartState): LiquidO
     total_price: total,
     checkout_charge_amount: total,
     total_discount: original - total,
-    total_weight: items.reduce((weight, item) => weight + ((item.variant as LiquidObject).weight as number) * (item.quantity as number), 0),
+    // a Float in Shopify's Liquid, so `{{ cart.total_weight }}` and `cart | json` print `1550.0` (scenarios `ajax-cart-session`, `ajax-discount-codes`, `ajax-discount-automatic-bxgy`, `ajax-cart-en-ca`), an empty cart `0.0`; the Ajax answers (`cartJson`) hold the plain number
+    total_weight: new LiquidFloat(items.reduce((weight, item) => weight + ((item.variant as LiquidObject).weight as number) * (item.quantity as number), 0)),
     currency: { iso_code: store.currency.iso_code, symbol: store.currency.symbol, name: store.currency.name },
     note: escapedText(state.note),
     attributes: readableText(attributes),
@@ -285,7 +287,8 @@ const plainText = (html: unknown) => stripTags(String(html ?? ''))
 /** A line's image as the Ajax cart prints it: `url` is the full `https://` address of the dataset, the `alt` the image's, or the product's title when it has none (fixtures `ajax-cart-session` and `ajax-cart-sections`: the dataset's images have none), and the keys' order differs by form. In `{{ cart | json }}` (`liquid`) the address has no protocol and the aspect ratio keeps its point (scenarios `ajax-cart-session`, step 11, `ajax-discount-codes`, `ajax-discount-automatic-bxgy` and `ajax-cart-en-ca`: `"url":"\/\/cdn…"`, `"aspect_ratio":1.0`), where the Ajax answers print `https://` and the number. */
 function imageJson (image: ImageDrop | null | undefined, product: LiquidObject, form: LineItemForm): Record<string, unknown> | null {
   if (!image) return null
-  const aspectRatio = image.aspect_ratio ? (form === 'liquid' ? image.aspect_ratio : image.aspect_ratio.value) : null
+  // a fresh decimal for each answer, so the answer shares nothing with the built store
+  const aspectRatio = image.aspect_ratio ? (form === 'liquid' ? new LiquidFloat(image.aspect_ratio.value) : image.aspect_ratio.value) : null
   const alt = image.alt || product.title
   const rest = { height: image.height, url: lineImageAddress(image, form), width: image.width }
   return form === 'cart' ? { aspect_ratio: aspectRatio, alt, ...rest } : { alt, aspect_ratio: aspectRatio, ...rest }
@@ -412,7 +415,7 @@ export function cartJson (data: StoreData, state: CartState, view: StoreView = r
     original_total_price: cart.original_total_price,
     total_price: cart.total_price,
     total_discount: cart.total_discount,
-    total_weight: cart.total_weight,
+    total_weight: (cart.total_weight as LiquidFloat).value,
     item_count: cart.item_count,
     items: (cart.items as LiquidObject[]).map(item => lineItemJson(item, form)),
     requires_shipping: cart.requires_shipping,
@@ -450,7 +453,7 @@ export function cartLiquidJson (cart: LiquidObject): Record<string, unknown> {
     original_total_price: cart.original_total_price,
     total_price: cart.total_price,
     total_discount: cart.total_discount,
-    total_weight: cart.total_weight,
+    total_weight: new LiquidFloat((cart.total_weight as LiquidFloat).value),
     item_count: cart.item_count,
     items: (cart.items as LiquidObject[]).map(item => lineItemJson(item, 'liquid')),
     requires_shipping: cart.requires_shipping,

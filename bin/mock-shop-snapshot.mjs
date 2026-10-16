@@ -25,7 +25,7 @@ const QUERY = `{
 const nodes = connection => connection.edges.map(edge => edge.node)
 const gidNumber = gid => Number(gid.split('?')[0].split('/').pop())
 const cents = amount => Math.round(Number(amount) * 100)
-// The Storefront API gives a collection's `descriptionHtml` with its apostrophes as `&#39;`, where the store holds a plain `'` (a product's comes with it plain), which is what the parity store prints (scenario `page-collections`: `Liquid's athletic wear`), so the snapshot keeps the `'`
+// The Storefront API gives a collection's `descriptionHtml` with its apostrophes as `&#39;`, where the store holds a plain `'` (a product's comes with it plain), which is what the parity store prints (scenario `page-collections`: `Liquid's athletic wear`), so the snapshot keeps the `'`. `&#39;` is the only escape the four collection descriptions of the snapshot hold; `&amp;`, `&quot;` and the others are valid HTML and stay as the API writes them, so a new snapshot that shows one more escape of this kind is a decision to make then.
 const storedHtml = html => html.replaceAll('&#39;', "'")
 const image = img => img ? { src: img.url, width: img.width, height: img.height, alt: img.altText ?? '', id: gidNumber(img.id) } : null
 const path = url => url.startsWith(HOST) ? url.slice(HOST.length) || '/' : url

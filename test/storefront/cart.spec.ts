@@ -5,8 +5,8 @@ import { buildCartObject } from '../../src/shopify/store/cart'
 import { buildStore } from '../../src/shopify/store/build'
 import { buildGlobals } from '../../src/shopify/store/globals'
 import { resolveView } from '../../src/shopify/store/view'
+import { LiquidFloat } from '../../src'
 import { loadFixture } from './fixtures'
-import { liquidJsonImages } from './expect-probe'
 import { probeTheme, renderProbe, renderProbeHtml } from './probe'
 
 const state = (lines: CartState['lines'], extra: Partial<CartState> = {}): CartState => ({ token: '<token>', lines, note: null, attributes: {}, discountCodes: [], ...extra })
@@ -137,13 +137,13 @@ describe('cart', () => {
     const probe = fixture.steps[10]
     const cart = state([line(43696940613654, 1), line(43695710371862, 1, {}, 71001), line(43695847538710, 1, { Engraving: 'Hi' }), line(43695847538710, 1)], { note: 'Gift wrap', attributes: { gift: 'yes' } })
     const body = await renderProbe('cart.probe', { cart }) as any
-    expect(normaliseKeys(body)).toEqual(normaliseKeys(liquidJsonImages(probe.body)))
+    expect(normaliseKeys(body)).toEqual(normaliseKeys(probe.body))
   })
 
   describe('{{ cart | json }}', () => {
     const cart = state([line(BLACK_SUNNIES, 1), line(SLIDES_SMALL, 1, {}, 71001), line(HOODIE, 1, { Engraving: 'Hi' }), line(HOODIE, 1)], { note: 'Gift wrap', attributes: { gift: 'yes' } })
     it('prints the cart as the parity store does, key order included (fixture ajax-cart-session, the ajax of step 11)', async () => {
-      const recorded = (liquidJsonImages(loadFixture('ajax-cart-session').steps[10].body) as any).ajax
+      const recorded = (loadFixture('ajax-cart-session').steps[10].body as any).ajax
       const { ajax } = await renderProbe('cart.probe', { cart }) as any
       expect(normaliseKeys(ajax)).toEqual(normaliseKeys(recorded))
       expect(Object.keys(ajax)).toEqual(Object.keys(recorded))
@@ -157,7 +157,7 @@ describe('cart', () => {
       expect(items[2].properties).toEqual([['Engraving', 'Hi']])
     })
     it('prints the Canadian cart (fixture ajax-cart-en-ca)', async () => {
-      const recorded = (liquidJsonImages(loadFixture('ajax-cart-en-ca').steps[3].body) as any).ajax
+      const recorded = (loadFixture('ajax-cart-en-ca').steps[3].body as any).ajax
       const { ajax } = await renderProbe('cart.probe', { cart: state([line(HOODIE, 1)], { note: '' }), request: { market: 'ca', language: 'en', localePrefix: '/en-ca' } }) as any
       expect(normaliseKeys(ajax)).toEqual(normaliseKeys(recorded))
     })
@@ -201,7 +201,7 @@ describe('cart', () => {
     it('renders the Canadian cart probe', async () => {
       const probe = loadFixture('ajax-cart-en-ca').steps[3]
       const body = await renderProbe('cart.probe', { cart: state([line(HOODIE, 1)], { note: '' }), request: { market: 'ca', language: 'en', localePrefix: '/en-ca' } }) as any
-      expect(normaliseKeys(body)).toEqual(normaliseKeys(liquidJsonImages(probe.body)))
+      expect(normaliseKeys(body)).toEqual(normaliseKeys(probe.body))
     })
   })
 
@@ -316,8 +316,12 @@ describe('cart', () => {
     })
     it('counts the items, the weight and the total, and requires shipping while it has a line', () => {
       const cart = cartOf(state([line(HOODIE, 3), line(SLIDES_SMALL, 1, {}, 71001)]))
-      expect(cart).toMatchObject({ item_count: 4, total_price: 9000 * 3 + 2250, items_subtotal_price: 9000 * 3 + 2250, original_total_price: 9000 * 3 + 2250, total_weight: 600 * 3 + 300, requires_shipping: true, total_discount: 0, 'empty?': false })
-      expect(cartOf(state([]))).toMatchObject({ item_count: 0, total_price: 0, total_weight: 0, requires_shipping: false, 'empty?': true })
+      expect(cart).toMatchObject({ item_count: 4, total_price: 9000 * 3 + 2250, items_subtotal_price: 9000 * 3 + 2250, original_total_price: 9000 * 3 + 2250, requires_shipping: true, total_discount: 0, 'empty?': false })
+      // the weight is a Float, as Shopify's is: it prints `2100.0`
+      expect(cart.total_weight).toBeInstanceOf(LiquidFloat)
+      expect(Number(cart.total_weight)).toBe(600 * 3 + 300)
+      expect(cartOf(state([]))).toMatchObject({ item_count: 0, total_price: 0, requires_shipping: false, 'empty?': true })
+      expect(String(cartOf(state([])).total_weight)).toBe('0.0')
     })
     it('lets a template read a line\'s properties by name, walk them as pairs and print them as pairs', async () => {
       const html = await renderPage({

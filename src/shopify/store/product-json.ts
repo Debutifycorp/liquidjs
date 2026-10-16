@@ -1,3 +1,4 @@
+import { LiquidFloat } from '../../util/liquid-float'
 import { HandleMap } from '../objects/handle-map'
 import type { ImageDrop } from '../objects/image'
 import { buildStore } from './build'
@@ -19,7 +20,7 @@ const altOf = (image: ImageDrop) => textOrNull(image.data.alt)
 const sameImage = (a: ImageDrop, b: ImageDrop) => a.id != null && b.id != null ? a.id === b.id : a.src === b.src
 
 /** An image's aspect ratio as the answer writes it: in `product | json` the decimal itself, which the `json` filter writes with its point, `1.0` (scenarios `page-product`, `page-product-variant`, `page-product-subscription`, `page-product-requires-plan` and `page-product-en-eu`: `"aspect_ratio":1.0`), and in the Ajax answer the number, which `JSON.stringify` writes as `1` (the comparison reads that answer as JSON, where the two are one value, fixture `ajax-product-js`). */
-const aspectRatio = (image: ImageDrop, shape: 'ajax' | 'liquid') => image.aspect_ratio ? (shape === 'ajax' ? image.aspect_ratio.value : image.aspect_ratio) : null
+const aspectRatio = (image: ImageDrop, shape: 'ajax' | 'liquid') => image.aspect_ratio ? (shape === 'ajax' ? image.aspect_ratio.value : new LiquidFloat(image.aspect_ratio.value)) : null
 
 /** An image as the `preview_image` of a media entry or a variant's `featured_media` (fixture `ajax-product-js`: `aspect_ratio`, `height`, `width`, `src`). */
 function previewImage (image: ImageDrop | null | undefined, shape: 'ajax' | 'liquid'): Record<string, unknown> | null {

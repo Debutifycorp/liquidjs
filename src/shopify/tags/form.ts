@@ -20,6 +20,13 @@ import { SafeHtmlDrop } from '../objects/safe-html'
 
 type Resource = Record<string, unknown> | undefined
 
+/** A hidden input the form writes before its content. A `verbatim` value is written as it is: the form type has made it safe inside a double-quoted attribute. */
+interface HiddenInput {
+  name: string
+  value: string
+  verbatim?: boolean
+}
+
 interface FormType {
   action: (resource: Resource) => string
   /** The action carries `#` and the form's id, as the parity store prints a contact or customer form (scenarios `page-home`, `page-contact`). */
@@ -34,7 +41,7 @@ interface FormType {
   /** Attributes Shopify adds after `accept-charset` (`data-login-with-shop-sign-in`). */
   extra?: Array<[string, string]>
   /** Hidden inputs after `form_type` and `utf8`. */
-  before?: (request: { path: string, query?: ReadonlyArray<readonly [string, string]> }) => Array<[string, string, boolean?]>
+  before?: (request: { path: string, query?: ReadonlyArray<readonly [string, string]> }) => HiddenInput[]
   /** Hidden inputs after the form's content; `section` is the id of the section being rendered, if any. */
   after?: (resource: Resource, section?: string) => Array<[string, string]>
 }
@@ -57,7 +64,7 @@ const FORM_TYPES: Record<string, FormType> = {
   cart: { action: () => '/cart', id: () => 'cart_form', className: 'shopify-cart-form', multipart: true },
   contact: { action: () => '/contact', anchored: true, id: () => 'contact_form', className: 'contact-form' },
   create_customer: { action: () => '/account', id: () => 'create_customer', extra: [['data-login-with-shop-sign-up', 'true']] },
-  currency: { action: () => '/cart/update', id: () => 'currency_form', className: 'shopify-currency-form', multipart: true, before: request => [['return_to', pageAddress(request), true]] },
+  currency: { action: () => '/cart/update', id: () => 'currency_form', className: 'shopify-currency-form', multipart: true, before: request => [{ name: 'return_to', value: pageAddress(request), verbatim: true }] },
   customer: { action: () => '/contact', anchored: true, id: () => 'contact_form', className: 'contact-form' },
   customer_address: {
     action: address => (address && prop(address, 'id') ? `/account/addresses/${prop(address, 'id')}` : '/account/addresses'),
@@ -67,7 +74,7 @@ const FORM_TYPES: Record<string, FormType> = {
   },
   customer_login: { action: () => '/account/login', id: () => 'customer_login', extra: [['data-login-with-shop-sign-in', 'true']] },
   guest_login: { action: () => '/account/login', id: () => 'customer_login_guest', after: () => [['guest', 'true']] },
-  localization: { action: () => '/localization', id: () => 'localization_form', className: 'shopify-localization-form', multipart: true, before: request => [['_method', 'put'], ['return_to', pageAddress(request), true]] },
+  localization: { action: () => '/localization', id: () => 'localization_form', className: 'shopify-localization-form', multipart: true, before: request => [{ name: '_method', value: 'put' }, { name: 'return_to', value: pageAddress(request), verbatim: true }] },
   new_comment: { action: article => `${prop(article, 'url')}/comments#comment_form`, prefixed: true, id: () => 'comment_form', className: 'comment-form' },
   // `section-id` is not on shopify.dev, whose example renders outside a section; Shopify's Dawn demo store prints it after `product-id` in a product form inside a section, and no Dawn file prints it
   product: { action: () => '/cart/add', id: product => `product_form_${prop(product, 'id')}`, className: 'shopify-product-form', multipart: true, after: (product, section) => [['product-id', prop(product, 'id')], ...(section === undefined ? [] : [['section-id', section] as [string, string]])] },
@@ -76,7 +83,7 @@ const FORM_TYPES: Record<string, FormType> = {
   storefront_password: { action: () => '/password', id: () => 'login_form', className: 'storefront-password-form' }
 }
 
-/** A hidden input. A `verbatim` value is written as it is: the caller has made it safe inside a double-quoted attribute. */
+/** A hidden input; a `verbatim` value is not escaped (see `HiddenInput`). */
 const hidden = (name: string, value: string, verbatim = false) => `<input type="hidden" name="${escapeHtml(name)}" value="${verbatim ? value : escapeHtml(value)}" />`
 
 /** The values a form keeps from a post, https://shopify.dev/docs/api/liquid/objects/form: `email`, `body`, `name`, `phone`, `first_name` and `last_name` (`null` when not posted), and the others the page lists (`author` of `new_comment`, `message` of the gift card in a `product` form, and the address fields of `customer_address`), which are nil when not posted and so are not set then. */
@@ -252,12 +259,12 @@ export class FormTag extends Tag {
     const before = spec.before?.(state.request) ?? []
     if ('return_to' in attributes) {
       // an explicit `return_to` replaces the form type's own (`currency`, `localization`); Shopify's output for both is not pinned by shopify.dev
-      const returnTo: [string, string] = ['return_to', stringify(plainValue(attributes.return_to))]
-      const existing = before.findIndex(([name]) => name === 'return_to')
+      const returnTo: HiddenInput = { name: 'return_to', value: stringify(plainValue(attributes.return_to)) }
+      const existing = before.findIndex(input => input.name === 'return_to')
       if (existing === -1) before.push(returnTo)
       else before[existing] = returnTo
     }
-    for (const [name, value, verbatim] of before) open += hidden(name, value, verbatim)
+    for (const { name, value, verbatim } of before) open += hidden(name, value, verbatim)
     emitter.write(open)
     // the outcome of the post belongs to the form of its type; any other form on the page is as nothing was posted
     const outcome = state.form?.type === formType ? state.form : undefined

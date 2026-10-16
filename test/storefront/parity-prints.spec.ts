@@ -14,8 +14,9 @@ async function render (source: string, url = '/', data: StoreData = storefrontSa
 }
 
 describe('a decimal in json (scenarios page-product, page-product-variant, page-product-subscription, page-product-requires-plan, page-product-en-eu)', () => {
-  it('keeps the point of a price divided by 100.00, as the theme\'s structured data prints it (`"price" : 90.0`)', async () => {
-    expect(await render('{% assign v = product.selected_or_first_available_variant %}{{ v.price | divided_by: 100.00 | json }}|{{ v.price | divided_by: 100 | json }}', '/products/hoodie')).toMatch(/^\d+\.0\|\d+$/)
+  // the parity store prints a price in cents, made a decimal and printed through json, with its point (`90.0`), and one made by a whole division without
+  it('keeps the point of a price made a decimal, and not of one that stayed whole', async () => {
+    expect(await render('{% assign v = product.selected_or_first_available_variant %}{{ v.price | divided_by: 10.0 | json }}|{{ v.price | divided_by: 10 | json }}', '/products/hoodie')).toBe('900.0|900')
   })
 
   it('keeps the point of the aspect ratio of an image in the variants and media of product | json', async () => {
@@ -83,12 +84,12 @@ describe('the localization form\'s return_to (scenario page-collection-filtered)
 })
 
 describe('the collection list (scenario page-collections)', () => {
-  // the card's `src` is `image_url: width: 1500` of an image that is 1024 wide, and the parity store keeps `width=1500`
+  // a collection card asks for 1500 pixels of an image that is 1024 pixels wide, and the parity store keeps `width=1500` in the address
   it('keeps the width the card asked for in the address of a smaller image', async () => {
-    const out = await render('{% assign image = collections.men.image %}{{ image.width }}|{{ image | image_url: width: 1500 }}|{{ image | image_url }}')
+    const out = await render('{% assign image = collections.men.image %}{{ image.width }}|{{ image | image_url: width: 1300 }}|{{ image | image_url }}')
     const [width, asked, plain] = out.split('|')
     expect(width).toBe('1024')
-    expect(asked).toMatch(/\.png\?width=1500$/)
+    expect(asked).toMatch(/\.png\?width=1300$/)
     expect(plain).toMatch(/\.png$/)
   })
 
@@ -131,5 +132,38 @@ describe('the addresses of an image in a cart (scenarios ajax-cart-session, ajax
     expect(answer.items[0].featured_image.aspect_ratio).toBe(1)
     const line = buildCartObject(buildStore(storefrontSampleData), cart).items as Array<Record<string, any>>
     for (const form of ['cart', 'change'] as const) expect(lineItemJson(line[0], form)).toMatchObject({ image: expect.stringMatching(absolute), featured_image: { url: expect.stringMatching(absolute) } })
+  })
+})
+
+describe('the decimals of a cart, compared as printed text (scenarios ajax-cart-session, ajax-discount-codes, ajax-discount-automatic-bxgy and ajax-cart-en-ca)', () => {
+  const HOODIE = 43695847538710
+  const line = (quantity: number) => ({ variantId: HOODIE, quantity, properties: {}, sellingPlanId: null })
+  const cartOf = (lines: CartState['lines'], discountCodes: string[] = []): CartState => ({ token: '<token>', lines, note: null, attributes: {}, discountCodes })
+  const page = async (source: string, cart: CartState) => (await renderPage({ theme: { files: { ...THEME, 'templates/cart.liquid': source } }, templateName: 'cart', data: storefrontSampleData, cart })).html
+
+  // the parity store prints the weight of a cart, and of an empty one, as a Float: `1550.0`, `0.0`
+  it('prints the weight of the cart with its point, in the cart object and in cart | json', async () => {
+    const text = await page('{{ cart.total_weight }}|{{ cart.total_weight | json }}|{{ cart | json }}', cartOf([line(2)]))
+    const [plain, alone, whole] = text.split('|')
+    expect(plain).toBe('1200.0')
+    expect(alone).toBe('1200.0')
+    expect(whole).toContain('"total_weight":1200.0,')
+    expect((await page('{{ cart.total_weight }}|{{ cart | json }}', cartOf([]))).split('|')).toEqual(['0.0', expect.stringContaining('"total_weight":0.0,')])
+  })
+
+  it('keeps the weight a plain number in the Ajax answer', () => {
+    expect(JSON.stringify(cartJson(storefrontSampleData, cartOf([line(2)])))).toContain('"total_weight":1200,')
+  })
+
+  it('lets a template divide the weight as Shopify does, as a decimal', async () => {
+    expect(await page('{{ cart.total_weight | divided_by: 1000 }}|{{ cart.total_weight | times: 1 }}', cartOf([line(1)]))).toBe('0.6|600.0')
+  })
+
+  // the probe prints the value of a 10 percent code as `10.0`
+  it('prints the value of a percentage discount application with its point, and a fixed amount without one', async () => {
+    const percentage = await page('{{ cart.discount_applications[0].value | json }}|{{ cart.discount_applications[0].value_type }}', cartOf([line(1)], ['WELCOME10']))
+    expect(percentage).toBe('10.0|percentage')
+    const ajax = cartJson(storefrontSampleData, cartOf([line(1)], ['WELCOME10'])) as { cart_level_discount_applications: Array<{ value: unknown }> }
+    expect(ajax.cart_level_discount_applications[0].value).toBe('10.0')
   })
 })

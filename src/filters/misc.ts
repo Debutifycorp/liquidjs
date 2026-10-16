@@ -31,7 +31,7 @@ const rawJSON = (JSON as unknown as { rawJSON?: (text: string) => object }).rawJ
 function json (this: FilterImpl, value: any, space = 0) {
   const memoryLimit = this.context.memoryLimit
   return JSON.stringify(value, function (this: any, key: string, val: any) {
-    // a decimal under `numberSemantics: 'ruby'` reaches the replacer as a plain number (its `toJSON`), which JSON writes without the point of a whole value; Shopify writes a Float as Ruby's `Float#to_s` does, `90.0` (scenarios page-product and page-product-variant, `{{ variant.price | divided_by: 100.00 | json }}`). The holder still has the wrapper. Only a number is looked up again, so no other value is read twice.
+    // a decimal under `numberSemantics: 'ruby'` reaches the replacer as a plain number (its `toJSON`), which JSON writes without the point of a whole value; Shopify writes a Float as Ruby's `Float#to_s` does, `90.0` (scenarios page-product and page-product-variant: a price in cents divided by 100.0 and printed through json). The holder still has the wrapper. Only a number is looked up again, so no other value is read twice.
     if (rawJSON && typeof val === 'number' && Number.isFinite(val)) {
       const held = this[key]
       if (held instanceof LiquidFloat) {

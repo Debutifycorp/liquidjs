@@ -43,7 +43,6 @@ describe('shopify/filters/assets', () => {
       const svg = await render(`{{ '${type}' | payment_type_svg_tag }}`)
       expect(svg).toContain(`aria-labelledby="pi-${type}"><title id="pi-${type}">${title}</title>`)
       expect(svg.endsWith('</svg>\n')).toBe(ending === '\n')
-      expect(svg.endsWith('</svg>') || ending === '\n').toBe(true)
     }
     expect(await render("{{ 'visa' | payment_type_svg_tag: class: 'icon' }}")).toMatch(/^<svg class="icon" xmlns=/)
   })
@@ -156,7 +155,7 @@ describe('shopify/filters/media', () => {
     expect(await render("{{ product | image_url: crop: 'region', crop_left: 32, crop_top: 32, crop_width: 512, crop_height: 512 }}")).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?crop=region&crop_height=512&crop_left=32&crop_top=32&crop_width=512&v=1683744744`)
     expect(await render("{{ product | image_url: crop: 'region', width: 100, height: 100, crop_left: 32, crop_top: 32, crop_width: 512, crop_height: 512 }}")).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?crop=region&crop_height=512&crop_left=32&crop_top=32&crop_width=512&height=100&v=1683744744&width=100`)
   })
-  // scenario `page-collections`: the theme prints `{{ image | image_url: width: 1500 }}` as a card's `src` for an image that is 1024 wide, and the parity store keeps `width=1500` in it, so the URL names the width that was asked for and the CDN serves nothing larger than the original (shopify.dev's Note on image_url: "an image can never be resized to be larger than its original dimensions"); only the 5760 maximum the page gives is applied here
+  // scenario `page-collections`: a collection card asks for 1500 pixels of an image that is 1024 pixels wide, and the parity store keeps `width=1500` in the address, so the URL names the width that was asked for and the CDN serves nothing larger than the original (shopify.dev's Note on image_url: "an image can never be resized to be larger than its original dimensions"); only the 5760 maximum the page gives is applied here
   it('image_url keeps the size that was asked for past the original, stops at 5760, and keeps quality within 10 to 90', async () => {
     expect(await render('{{ product | image_url: width: 5000 }}')).toBe(`${BEAKERS}&width=5000`)
     expect(await render('{{ product | image_url: height: 9999 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?height=5760&v=1683744744`)

@@ -5,7 +5,7 @@ import { buildStore, selectSellingPlan } from '../../src/shopify/store/build'
 import { buildGlobals } from '../../src/shopify/store/globals'
 import { planPrice } from '../../src/shopify/store/pricing'
 import { loadFixture } from './fixtures'
-import { ajaxProductImages, maskVolatile, probeMatches } from './expect-probe'
+import { maskVolatile, probeMatches } from './expect-probe'
 
 /** Three variants (11, 12, 13) of one product with two groups: A offers 12 and 13 (one 50% plan), B offers all three (a $1.00 off and a fixed price plan). */
 const twoGroups = (): StoreData => {
@@ -80,7 +80,7 @@ describe('selling plans', () => {
   it('prints the product JSON of a product with selling plans as /products/<handle>.js does', () => {
     const recorded = loadFixture('ajax-product-js').steps[1].body as any
     const answer = productJson(data, 'slides') as any
-    expect(maskVolatile(answer)).toEqual(maskVolatile(ajaxProductImages(recorded)))
+    expect(maskVolatile(answer)).toEqual(maskVolatile(recorded))
     expect(Object.keys(answer.selling_plan_groups[0])).toEqual(Object.keys(recorded.selling_plan_groups[0]))
     expect(Object.keys(answer.selling_plan_groups[0].selling_plans[0])).toEqual(Object.keys(recorded.selling_plan_groups[0].selling_plans[0]))
     expect(Object.keys(answer.variants[0].selling_plan_allocations[0])).toEqual(Object.keys(recorded.variants[0].selling_plan_allocations[0]))

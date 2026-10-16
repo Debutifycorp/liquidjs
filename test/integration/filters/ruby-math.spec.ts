@@ -20,14 +20,14 @@ describe('numberSemantics: ruby', () => {
     it('compares a decimal with a whole number', async () => expect(await render('{% if 2.0 == 2 %}yes{% endif %}')).toBe('yes'))
     it('appends a decimal as Ruby prints it', async () => expect(await render('{{ 2.0 | append: "x" }}')).toBe('2.0x'))
     it('serialises a decimal as a JSON number', async () => expect(await render('{{ 2.5 | json }}')).toBe('2.5'))
-    // Shopify writes a Ruby Float in JSON as Float#to_s does: the point stays on a whole value (scenario page-product, `"price" : {{ price | divided_by: 100.00 | json }}` prints `90.0`)
+    // Shopify writes a Ruby Float in JSON as Float#to_s does: the point stays on a whole value (scenarios page-product and page-product-variant: a price in cents divided by 100.0 and printed through json is `90.0`)
     it('serialises a whole-valued decimal with its point', async () => {
       expect(await render('{{ 2.0 | json }}')).toBe('2.0')
-      expect(await render('{{ 9000 | divided_by: 100.0 | json }}')).toBe('90.0')
+      expect(await render('{{ 10 | divided_by: 5.0 | json }}')).toBe('2.0')
     })
     it('serialises a whole number without a point', async () => {
       expect(await render('{{ 2 | json }}')).toBe('2')
-      expect(await render('{{ 9000 | divided_by: 100 | json }}')).toBe('90')
+      expect(await render('{{ 10 | divided_by: 5 | json }}')).toBe('2')
       expect(await render('{{ x | json }}', { x: 3 })).toBe('3')
     })
     it('serialises a decimal inside an array or a hash with its point', async () => {
@@ -35,6 +35,12 @@ describe('numberSemantics: ruby', () => {
     })
     it('keeps the indent of json with a space', async () => {
       expect(await render('{{ list | json: 1 }}', { list: [new LiquidFloat(1)] })).toBe('[\n 1.0\n]')
+    })
+    // the text is the one `{{ x }}` prints, Ruby's `Float#to_s`; no recording pins how Shopify writes an exponent form in JSON
+    it('serialises a decimal in exponent form as it prints', async () => {
+      expect(await render('{{ 10000000000000000.0 | json }}')).toBe('1.0e+16')
+      expect(await render('{{ 0.00001 | json }}')).toBe('1.0e-05')
+      expect(await render('{{ list | json }}', { list: [new LiquidFloat(0.00001), new LiquidFloat(-1e21)] })).toBe('[1.0e-05,-1.0e+21]')
     })
     it('serialises a decimal that is not finite as null, as JSON.stringify does', async () => expect(await render('{{ 10.0 | divided_by: 0.0 | json }}')).toBe('null'))
     it('serialises a decimal in jsonify the same way', async () => expect(await render('{{ 2.0 | jsonify }}')).toBe('2.0'))
@@ -108,5 +114,22 @@ describe('numberSemantics: ruby', () => {
     it('still passes 2.0 through default as 2', async () => expect(await js.parseAndRender('{{ 2.0 | default: 1 }}')).toBe('2'))
     it('still slices 2.0 as 2', async () => expect(await js.parseAndRender('{{ 2.0 | slice: 0, 3 }}')).toBe('2'))
     it('still divides 0.3 by 0.1 as JavaScript does', async () => expect(await js.parseAndRender('{{ 0.3 | divided_by: 0.1 }}')).toBe('2.9999999999999996'))
+  })
+})
+
+// `JSON.rawJSON` is Node 21+ and in current browsers; where it is missing a decimal keeps printing as a plain JSON number
+describe('numberSemantics: ruby, in a runtime without JSON.rawJSON', () => {
+  it('prints a whole decimal as a plain number and the rest as before', async () => {
+    const original = (JSON as unknown as { rawJSON?: unknown }).rawJSON
+    delete (JSON as unknown as { rawJSON?: unknown }).rawJSON
+    try {
+      await jest.isolateModulesAsync(async () => {
+        const { Liquid: Isolated } = await import('../../../src')
+        const engine = new Isolated({ numberSemantics: 'ruby' })
+        expect(await engine.parseAndRender('{{ 2.0 | json }}|{{ 2.5 | json }}|{{ 2 | json }}|{{ 2.0 }}')).toBe('2|2.5|2|2.0')
+      })
+    } finally {
+      (JSON as unknown as { rawJSON?: unknown }).rawJSON = original
+    }
   })
 })

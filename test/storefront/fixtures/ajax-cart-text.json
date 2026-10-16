@@ -374,10 +374,10 @@
                 "aspect_ratio": 1,
                 "alt": "Hoodie",
                 "height": 2048,
-                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+                "url": "//cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
                 "width": 2048
               },
-              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+              "image": "//cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
               "handle": "hoodie",
               "requires_shipping": true,
               "product_type": "Hoodies",

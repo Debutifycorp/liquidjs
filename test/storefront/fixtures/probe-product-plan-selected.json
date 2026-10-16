@@ -274,7 +274,7 @@
                 "alt": null,
                 "width": 4096,
                 "height": 4096,
-                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+                "src": "//cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
                 "variant_ids": [
                   43695710371862,
                   43695710404630,
@@ -300,7 +300,7 @@
                   "aspect_ratio": 1,
                   "height": 4096,
                   "width": 4096,
-                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
+                  "src": "//cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
                 }
               },
               "requires_selling_plan": false,
@@ -356,7 +356,7 @@
                 "alt": null,
                 "width": 4096,
                 "height": 4096,
-                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+                "src": "//cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
                 "variant_ids": [
                   43695710371862,
                   43695710404630,
@@ -382,7 +382,7 @@
                   "aspect_ratio": 1,
                   "height": 4096,
                   "width": 4096,
-                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
+                  "src": "//cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
                 }
               },
               "requires_selling_plan": false,
@@ -438,7 +438,7 @@
                 "alt": null,
                 "width": 4096,
                 "height": 4096,
-                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+                "src": "//cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
                 "variant_ids": [
                   43695710371862,
                   43695710404630,
@@ -464,7 +464,7 @@
                   "aspect_ratio": 1,
                   "height": 4096,
                   "width": 4096,
-                  "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
+                  "src": "//cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
                 }
               },
               "requires_selling_plan": false,
@@ -504,9 +504,9 @@
             }
           ],
           "images": [
-            "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
+            "//cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
           ],
-          "featured_image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+          "featured_image": "//cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
           "options": [
             "Size"
           ],
@@ -519,12 +519,12 @@
                 "aspect_ratio": 1,
                 "height": 4096,
                 "width": 4096,
-                "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
+                "src": "//cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg"
               },
               "aspect_ratio": 1,
               "height": 4096,
               "media_type": "image",
-              "src": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
+              "src": "//cdn.shopify.com/mock-shop-production-media/_seeds/demostore/2b6e548b7deeed36367218be099c91d2366145fdac845fa32455c6ee502cdaea.jpg",
               "width": 4096
             }
           ],

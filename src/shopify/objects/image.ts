@@ -97,7 +97,7 @@ export function imageSource (input: unknown, title = ''): ImageSource | undefine
   return undefined
 }
 
-/** What `image_url` returns: the URL, printed as itself, carrying the image and parameters `image_tag` needs. Filters that read a string (`size`, `json`) see the URL. */
+/** What `image_url` returns: the URL, printed as itself, carrying the image and parameters `image_tag` needs. Filters that read a string (`size`, `json`) see the URL. `params` holds the parameters within the image's own size, which `image_tag` writes its size and `srcset` from; the URL itself keeps the size the template asked for. */
 export class ImageUrlDrop extends Drop {
   public constructor (public readonly url: string, public readonly image: ImageData, public readonly params: ImageUrlParams, public readonly alt: string) {
     super()
