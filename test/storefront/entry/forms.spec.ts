@@ -75,6 +75,36 @@ describe('forms', () => {
   })
 })
 
+describe('the form endpoints asked for JSON', () => {
+  // https://github.com/Shopify/dawn/blob/main/assets/product-form.js posts the add form's FormData to `routes.cart_add_url` (`/cart/add`, no extension) with `Accept: application/javascript` and `X-Requested-With: XMLHttpRequest`, and reads the answer as JSON; a theme's cart code posts `cart_change_url` and `cart_update_url` the same way with `Accept: application/json`. No shopify.dev page states the rule and no recording holds it: it is what those themes need and what the platform does for them. A request that asks for neither stays a form post.
+  const ADD = form({ id: '43696940613654', quantity: '1' })
+  it('answers /cart/add with the added line when the request asks for JavaScript, and when it is an XMLHttpRequest', async () => {
+    const asks: Array<Record<string, string>> = [{ accept: 'application/javascript', 'x-requested-with': 'XMLHttpRequest' }, { accept: 'application/json' }, { accept: 'text/javascript, */*; q=0.01' }, { 'x-requested-with': 'XMLHttpRequest' }]
+    for (const headers of asks) {
+      const { send } = harness()
+      const answer = await send('POST', '/cart/add', ADD, headers)
+      expect([headers, answer.status, (answer.json as any)?.variant_id]).toEqual([headers, 200, 43696940613654])
+      expect(((await send('GET', '/cart.js')).json as any).item_count).toBe(1)
+    }
+  })
+  it('answers /cart/change and /cart/update with the cart when the request asks for JSON', async () => {
+    const { send } = harness()
+    await send('POST', '/cart/add.js', { items: [{ id: 43696940613654, quantity: 2 }] })
+    const changed = await send('POST', '/cart/change', { line: 1, quantity: 1 }, { accept: 'application/json' })
+    expect([changed.status, (changed.json as any).item_count]).toEqual([200, 1])
+    const updated = await send('POST', '/cart/update', { updates: { 43696940613654: 3 } }, { accept: 'application/json' })
+    expect([updated.status, (updated.json as any).item_count]).toEqual([200, 3])
+  })
+  it('keeps a browser form post and a link a redirect', async () => {
+    const { send } = harness()
+    const accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+    const posted = await send('POST', '/cart/add', ADD, { accept })
+    expect([posted.status, posted.headers.get('location')]).toEqual([302, '/cart'])
+    const removed = await send('GET', '/cart/change?line=1&quantity=0', undefined, { accept: 'application/json' })
+    expect([removed.status, removed.headers.get('location')]).toEqual([302, '/cart'])
+  })
+})
+
 describe('form redirects', () => {
   const ADD = form({ id: '43696940613654', quantity: '1', form_type: 'product' })
   const BASE = { visitor: 'test-visitor-key-0001', basePath: '/p/tok' }
