@@ -1,0 +1,4 @@
+{%- layout none -%}
+note={{ cart.note }}
+attribute={{ cart.attributes.gift }}
+properties={% for item in cart.items %}{% for p in item.properties %}{{ p.first }}={{ p.last }};{% endfor %}{% endfor %}

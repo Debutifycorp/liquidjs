@@ -1,0 +1,424 @@
+{
+  "scenario": "ajax-cart-text",
+  "steps": [
+    {
+      "method": "POST",
+      "url": "/cart/add.js",
+      "json": {
+        "items": [
+          {
+            "id": 43695847538710,
+            "quantity": 1,
+            "properties": {
+              "Engraving": "<b>A & \"B\"</b>"
+            }
+          }
+        ]
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "items": [
+          {
+            "id": 43695847538710,
+            "properties": {
+              "Engraving": "<b>A & \"B\"</b>"
+            },
+            "quantity": 1,
+            "variant_id": 43695847538710,
+            "key": "43695847538710:<hash>",
+            "title": "Hoodie - Green / Small",
+            "product_title": "Hoodie",
+            "variant_title": "Green / Small",
+            "price": 9000,
+            "original_price": 9000,
+            "discounted_price": 9000,
+            "line_price": 9000,
+            "original_line_price": 9000,
+            "presentment_price": 90,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 600,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 10489561382934,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 9000,
+            "final_line_price": 9000,
+            "url": "/products/hoodie?variant=43695847538710",
+            "featured_image": {
+              "alt": "Hoodie",
+              "aspect_ratio": 1,
+              "height": 2048,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+              "width": 2048
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+            "handle": "hoodie",
+            "requires_shipping": true,
+            "product_type": "Hoodies",
+            "untranslated_product_title": "Hoodie",
+            "product_description": "This hoodie is the perfect choice for comfort and warmth. Meticulously crafted from 100% cotton, the hoodie features a soft, plush fleece interior and a unisex sizing design. Soft and lightweight, it's sure to be your go-to for chilly days.",
+            "untranslated_variant_title": "Green / Small",
+            "variant_options": [
+              "Green",
+              "Small"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              },
+              {
+                "name": "Size",
+                "value": "Small"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/update.js",
+      "json": {
+        "note": "</textarea><b>A & \"B\"</b>",
+        "attributes": {
+          "gift": "<i>x & \"y\"</i>"
+        }
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "</textarea><b>A & \"B\"</b>",
+        "attributes": {
+          "gift": "<i>x & \"y\"</i>"
+        },
+        "original_total_price": 9000,
+        "total_price": 9000,
+        "total_discount": 0,
+        "total_weight": 600,
+        "item_count": 1,
+        "items": [
+          {
+            "id": 43695847538710,
+            "properties": {
+              "Engraving": "<b>A & \"B\"</b>"
+            },
+            "quantity": 1,
+            "variant_id": 43695847538710,
+            "key": "43695847538710:<hash>",
+            "title": "Hoodie - Green / Small",
+            "product_title": "Hoodie",
+            "variant_title": "Green / Small",
+            "price": 9000,
+            "original_price": 9000,
+            "discounted_price": 9000,
+            "line_price": 9000,
+            "original_line_price": 9000,
+            "presentment_price": 90,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 600,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 10489561382934,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 9000,
+            "final_line_price": 9000,
+            "url": "/products/hoodie?variant=43695847538710",
+            "featured_image": {
+              "alt": "Hoodie",
+              "aspect_ratio": 1,
+              "height": 2048,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+              "width": 2048
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+            "handle": "hoodie",
+            "requires_shipping": true,
+            "product_type": "Hoodies",
+            "untranslated_product_title": "Hoodie",
+            "product_description": "This hoodie is the perfect choice for comfort and warmth. Meticulously crafted from 100% cotton, the hoodie features a soft, plush fleece interior and a unisex sizing design. Soft and lightweight, it's sure to be your go-to for chilly days.",
+            "untranslated_variant_title": "Green / Small",
+            "variant_options": [
+              "Green",
+              "Small"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              },
+              {
+                "name": "Size",
+                "value": "Small"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 9000,
+        "cart_level_discount_applications": [],
+        "discount_codes": [],
+        "items_changelog": {
+          "added": []
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "</textarea><b>A & \"B\"</b>",
+        "attributes": {
+          "gift": "<i>x & \"y\"</i>"
+        },
+        "original_total_price": 9000,
+        "total_price": 9000,
+        "total_discount": 0,
+        "total_weight": 600,
+        "item_count": 1,
+        "items": [
+          {
+            "id": 43695847538710,
+            "properties": {
+              "Engraving": "<b>A & \"B\"</b>"
+            },
+            "quantity": 1,
+            "variant_id": 43695847538710,
+            "key": "43695847538710:<hash>",
+            "title": "Hoodie - Green / Small",
+            "price": 9000,
+            "original_price": 9000,
+            "presentment_price": 90,
+            "discounted_price": 9000,
+            "line_price": 9000,
+            "original_line_price": 9000,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": null,
+            "grams": 600,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 10489561382934,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 9000,
+            "final_line_price": 9000,
+            "url": "/products/hoodie?variant=43695847538710",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Hoodie",
+              "height": 2048,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+              "width": 2048
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+            "handle": "hoodie",
+            "requires_shipping": true,
+            "product_type": "Hoodies",
+            "product_title": "Hoodie",
+            "product_description": "This hoodie is the perfect choice for comfort and warmth. Meticulously crafted from 100% cotton, the hoodie features a soft, plush fleece interior and a unisex sizing design. Soft and lightweight, it's sure to be your go-to for chilly days.",
+            "variant_title": "Green / Small",
+            "variant_options": [
+              "Green",
+              "Small"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              },
+              {
+                "name": "Size",
+                "value": "Small"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 9000,
+        "cart_level_discount_applications": [],
+        "discount_codes": []
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart?view=probe-text",
+      "status": 200,
+      "location": null,
+      "body": {
+        "text": "note=&lt;/textarea&gt;&lt;b&gt;A &amp; &quot;B&quot;&lt;/b&gt;\nattribute=&lt;i&gt;x &amp; &quot;y&quot;&lt;/i&gt;\nproperties=Engraving=&lt;b&gt;A &amp; &quot;B&quot;&lt;/b&gt;;\n"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart?view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "item_count": 1,
+        "total_price": 9000,
+        "items_subtotal_price": 9000,
+        "original_total_price": 9000,
+        "total_discount": 0,
+        "total_weight": 600,
+        "currency": "USD",
+        "note": "&lt;/textarea&gt;&lt;b&gt;A &amp; &quot;B&quot;&lt;/b&gt;",
+        "attributes": {
+          "gift": "&lt;i&gt;x &amp; &quot;y&quot;&lt;/i&gt;"
+        },
+        "requires_shipping": true,
+        "money": "$90.00",
+        "cart_level_discount_applications": [],
+        "discount_applications": [],
+        "items": [
+          {
+            "key": "43695847538710:<hash>",
+            "variant_id": 43695847538710,
+            "quantity": 1,
+            "title": "Hoodie - Green / Small",
+            "url": "/products/hoodie?variant=43695847538710",
+            "url_to_remove": "/cart/change?id=43695847538710:<hash>&quantity=0",
+            "original_price": 9000,
+            "final_price": 9000,
+            "original_line_price": 9000,
+            "final_line_price": 9000,
+            "line_level_total_discount": 0,
+            "properties": [
+              [
+                "Engraving",
+                "&lt;b&gt;A &amp; &quot;B&quot;&lt;/b&gt;"
+              ]
+            ],
+            "selling_plan": null,
+            "line_level_discount_allocations": [],
+            "discount_allocations": []
+          }
+        ],
+        "ajax": {
+          "note": "</textarea><b>A & \"B\"</b>",
+          "attributes": {
+            "gift": "<i>x & \"y\"</i>"
+          },
+          "original_total_price": 9000,
+          "total_price": 9000,
+          "total_discount": 0,
+          "total_weight": 600,
+          "item_count": 1,
+          "items": [
+            {
+              "id": 43695847538710,
+              "properties": {
+                "Engraving": "<b>A & \"B\"</b>"
+              },
+              "quantity": 1,
+              "variant_id": 43695847538710,
+              "key": "43695847538710:<hash>",
+              "title": "Hoodie - Green / Small",
+              "price": 9000,
+              "original_price": 9000,
+              "discounted_price": 9000,
+              "line_price": 9000,
+              "original_line_price": 9000,
+              "total_discount": 0,
+              "discounts": [],
+              "sku": null,
+              "grams": 600,
+              "vendor": "Mock.shop",
+              "taxable": true,
+              "product_id": 10489561382934,
+              "product_has_only_default_variant": false,
+              "gift_card": false,
+              "final_price": 9000,
+              "final_line_price": 9000,
+              "url": "/products/hoodie?variant=43695847538710",
+              "featured_image": {
+                "aspect_ratio": 1,
+                "alt": "Hoodie",
+                "height": 2048,
+                "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+                "width": 2048
+              },
+              "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/0f65745f05a1549a7f5eff876fce0351bc1899e9fa304e5f6db014179269de9b.png",
+              "handle": "hoodie",
+              "requires_shipping": true,
+              "product_type": "Hoodies",
+              "product_title": "Hoodie",
+              "product_description": "This hoodie is the perfect choice for comfort and warmth. Meticulously crafted from 100% cotton, the hoodie features a soft, plush fleece interior and a unisex sizing design. Soft and lightweight, it's sure to be your go-to for chilly days.",
+              "variant_title": "Green / Small",
+              "variant_options": [
+                "Green",
+                "Small"
+              ],
+              "options_with_values": [
+                {
+                  "name": "Color",
+                  "value": "Green"
+                },
+                {
+                  "name": "Size",
+                  "value": "Small"
+                }
+              ],
+              "line_level_discount_allocations": [],
+              "line_level_total_discount": 0
+            }
+          ],
+          "requires_shipping": true,
+          "currency": "USD",
+          "items_subtotal_price": 9000,
+          "cart_level_discount_applications": [],
+          "checkout_charge_amount": 9000
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/clear.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "</textarea><b>A & \"B\"</b>",
+        "attributes": {
+          "gift": "<i>x & \"y\"</i>"
+        },
+        "original_total_price": 0,
+        "total_price": 0,
+        "total_discount": 0,
+        "total_weight": 0,
+        "item_count": 0,
+        "items": [],
+        "requires_shipping": false,
+        "currency": "USD",
+        "items_subtotal_price": 0,
+        "cart_level_discount_applications": [],
+        "discount_codes": []
+      }
+    }
+  ]
+}
