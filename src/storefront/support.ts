@@ -18,3 +18,11 @@ export const asError = (error: unknown): Error => error instanceof Error ? error
 
 /** The store's root under the request's base path and locale prefix, where a plain page's link back goes. */
 export const storeRoot = (ctx: Context) => `${ctx.basePath}${ctx.routed.localePrefix}` || '/'
+
+/** `path` without the base path, which is a whole-segment prefix: `/p/tok` is the base of `/p/tok/cart`, `/p/tok?x` and `/p/tok#top`, not of `/p/token`. */
+export function withoutBase (ctx: Context, path: string): string {
+  const base = ctx.basePath
+  if (base === '' || !(path === base || path.startsWith(`${base}/`) || path.startsWith(`${base}?`) || path.startsWith(`${base}#`))) return path
+  const rest = path.slice(base.length)
+  return rest === '' || rest.startsWith('?') || rest.startsWith('#') ? `/${rest}` : rest
+}

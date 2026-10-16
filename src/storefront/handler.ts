@@ -6,7 +6,7 @@ import { errorPage, noticePage } from './html'
 import { pageForPath, renderPageResponse, renderSectionResponse, renderSectionsJson, resourceExists } from './pages'
 import { routeRequest } from './router'
 import type { Route, Routed } from './router'
-import { asError, PRIVATE, report, storeRoot } from './support'
+import { asError, PRIVATE, report, storeRoot, withoutBase } from './support'
 import { DEFAULT_LIMITS } from './types'
 import type { HandleOptions, Storefront, StorefrontLimits, StorefrontOptions, VisitorState } from './types'
 import { cartToken, cookieVisitor, emptyVisitor, memoryCartStore, newVisitorKey, visitorCookie, VisitorQueue } from './visitor'
@@ -58,23 +58,32 @@ export const mutates = (route: Route) => route.kind === 'cart' || route.kind ===
 /** Whether a route reads the body of its request: a `POST` to one of the routes that take a form or JSON. */
 const readsBody = (route: Route, method: string) => method === 'POST' && (route.kind === 'cart' || route.kind === 'contact' || route.kind === 'localization' || route.kind === 'password' || route.kind === 'shipping')
 
-/** The path of the page the visitor came from, when their `Referer` names a path on a store. The address is the visitor's to write, so anything but a plain path (a malformed address, `//host`, a backslash) is not used. */
-function cameFrom (request: Request): string | undefined {
-  const referer = request.headers.get('referer')
+/** The page the visitor came from, from the `Referer`: its path from the store's root (the base path taken off) and its query. Undefined when there is no `Referer`, when it is outside the base path, or when it is not an address with a path on a store: the address is the visitor's to write, so anything but a plain path (a malformed address, `//host`, a backslash) is not used. */
+export function refererPath (ctx: Context): { path: string, search: string } | undefined {
+  const referer = ctx.request.headers.get('referer')
   if (!referer) return undefined
   try {
-    const path = new URL(referer).pathname
-    return STORE_PATH.test(path) ? path : undefined
+    const url = new URL(referer)
+    const base = ctx.basePath
+    if (base !== '' && url.pathname !== base && !url.pathname.startsWith(`${base}/`)) return undefined
+    const path = withoutBase(ctx, url.pathname)
+    return STORE_PATH.test(url.pathname) && STORE_PATH.test(path) ? { path, search: url.search } : undefined
   } catch {
     return undefined
   }
+}
+
+/** The link back from the notice page: the page the visitor came from, as the browser addresses it (base path included, no query), or the store's root. */
+function backHref (ctx: Context): string {
+  const came = refererPath(ctx)
+  return came ? `${ctx.basePath}${came.path === '/' ? '' : came.path}` || '/' : storeRoot(ctx)
 }
 
 async function answerPage (ctx: Context): Promise<Answer> {
   const route = ctx.routed.route
   if (route.kind === 'not-found') return { response: await renderPageResponse(ctx, route.page, 404) }
   if (route.kind === 'notice') {
-    return { response: ctx.options.notice ? await ctx.options.notice(route.notice, ctx.request) : noticePage(route.notice, cameFrom(ctx.request) ?? storeRoot(ctx)) }
+    return { response: ctx.options.notice ? await ctx.options.notice(route.notice, ctx.request) : noticePage(route.notice, backHref(ctx)) }
   }
   if (route.kind !== 'page') return { response: await renderPageResponse(ctx, pageForPath(ctx, `${ctx.routed.localePrefix}/404`), 404) }
   // a page that names a resource the store lacks is the 404 page, whatever sections it was asked for

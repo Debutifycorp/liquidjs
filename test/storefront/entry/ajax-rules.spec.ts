@@ -203,6 +203,15 @@ describe('the bundled sections', () => {
     expect(await where({}, { sections_url: 42 })).toBe('/|index|US|USD')
   })
 
+  it('reads the Referer under the base path, and passes over a page outside it', async () => {
+    const options = { visitor: VISITOR, basePath: '/p/tok' }
+    const at = (referer: string) => where({ referer }, {}, '/p/tok/cart/add.js', options)
+    expect(await at('https://store.invalid/p/tok/products/referred?x=1')).toBe('/p/tok/products/referred|product|US|USD')
+    expect(await at('https://store.invalid/other/products/referred')).toBe('/p/tok|index|US|USD')
+    expect(await at('https://store.invalid/p/token/products/referred')).toBe('/p/tok|index|US|USD')
+    expect(await at('https://store.invalid/p/tok//evil.com')).toBe('/p/tok|index|US|USD')
+  })
+
   it('takes the base path off the page, as a whole segment', async () => {
     const options = { visitor: VISITOR, basePath: '/p/tok' }
     expect(await where({}, { sections_url: '/p/tok/products/given' }, '/p/tok/cart/add.js', options)).toBe('/p/tok/products/given|product|US|USD')

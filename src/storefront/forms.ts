@@ -1,18 +1,21 @@
 import { createHash, timingSafeEqual } from 'crypto'
 import { localePrefixes } from '../shopify'
 import type { StoreData } from '../shopify'
-import { linkFields, withoutBase } from './ajax'
+import type { Fields } from './body'
 import { addToCart, changeCart, clearCart, updateCart } from './cart'
-import { redirect, STORE_PATH } from './handler'
+import { redirect, refererPath, STORE_PATH } from './handler'
 import type { Context, RouteHandler } from './handler'
 import { cartErrorPage } from './html'
 import { pageForPath, renderPageResponse } from './pages'
 import type { Route } from './router'
-import { storeRoot } from './support'
+import { storeRoot, withoutBase } from './support'
 
 const digest = (text: string) => createHash('sha256').update(text).digest()
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/** The longest email address, RFC 5321's limit (https://www.rfc-editor.org/rfc/rfc5321#section-4.5.3.1.3: a path of 256 octets, with the angle brackets). `EMAIL` takes time quadratic in what it reads on a long run of dots, so a longer value is refused before the pattern runs. */
+const EMAIL_MAX = 254
 
 /** `path` (a path on the store, from its root, with its query) with its locale prefix taken off: the prefix, and the path that follows it (`/fr-ca?x=1` is `/fr-ca` and `/?x=1`). */
 function splitLocale (data: StoreData, path: string): { prefix: string, rest: string } {
@@ -25,19 +28,12 @@ function splitLocale (data: StoreData, path: string): { prefix: string, rest: st
   return { prefix: '', rest: path }
 }
 
-/** The page the visitor came from, from the `Referer` header: its locale prefix and its path with query, from the store's root (the base path is taken off). Undefined when there is no `Referer`, or when it is not an address with a path on a store: the address is the visitor's to write, so anything but a plain path (`//host`, a backslash, a control character) is not used. A page of another locale than the request's is kept in its own; one with none takes the request's. */
+/** The page the visitor came from, from the `Referer` (`refererPath`): its own locale prefix, which is none for a page of the primary language, and its path with query from the store's root with that prefix taken off. */
 function cameFrom (ctx: Context): { prefix: string, path: string } | undefined {
-  const referer = ctx.request.headers.get('referer')
-  if (!referer) return undefined
-  try {
-    const url = new URL(referer)
-    const path = withoutBase(ctx, url.pathname)
-    if (!STORE_PATH.test(url.pathname) || !STORE_PATH.test(path)) return undefined
-    const { prefix, rest } = splitLocale(ctx.data, `${path}${url.search}`)
-    return { prefix: prefix || ctx.routed.localePrefix, path: rest }
-  } catch {
-    return undefined
-  }
+  const came = refererPath(ctx)
+  if (!came) return undefined
+  const { prefix, rest } = splitLocale(ctx.data, `${came.path}${came.search}`)
+  return { prefix, path: rest }
 }
 
 /** The same request as if it were made under another locale prefix, so `redirect` puts that prefix on the target. */
@@ -45,6 +41,16 @@ const under = (ctx: Context, localePrefix: string): Context => ({ ...ctx, routed
 
 /** The `href` of a link to a page `cameFrom` found. */
 const hrefOf = (ctx: Context, page: { prefix: string, path: string }) => `${ctx.basePath}${page.prefix}${page.path === '/' ? '' : page.path}` || '/'
+
+/** The fields of a link to `GET /cart/change?id=<key>&quantity=0` (a line's `url_to_remove`): the four the change reads, from the query, so a query cannot name anything else. */
+export function linkFields (query: URLSearchParams): Fields {
+  const fields: Fields = {}
+  for (const name of ['id', 'line', 'quantity', 'selling_plan']) {
+    const value = query.get(name)
+    if (value !== null) fields[name] = value
+  }
+  return fields
+}
 
 const OPERATIONS = { add: addToCart, change: changeCart, update: updateCart }
 
@@ -81,7 +87,7 @@ const contact: RouteHandler = async ctx => {
   const email = (values.email ?? '').trim()
   const errors: Record<string, string[]> = {}
   if (!email) errors.email = ["can't be blank"]
-  else if (!EMAIL.test(email)) errors.email = ['is invalid']
+  else if (email.length > EMAIL_MAX || !EMAIL.test(email)) errors.email = ['is invalid']
   const back = cameFrom(ctx) ?? { prefix: ctx.routed.localePrefix, path: '/' }
   if (!Object.keys(errors).length) {
     const at = back.path.indexOf('?')
@@ -110,7 +116,7 @@ function choose (data: StoreData, country: string | undefined, language: string 
 export const localeTarget = (data: StoreData, country: string | undefined, language: string | undefined): string => choose(data, country, language).prefix
 
 /**
- * `POST /localization`, https://shopify.dev/docs/api/liquid/tags/form (the `localization` form: a country selector or a language selector, with `return_to` and `_method=put`): sets the visitor's country and language, then redirects to `return_to` under the locale prefix of the new market and language. As the parity store answers it (fixtures `flow-localization-country`, which posts `country_code=CA` and is answered `302 /en-ca/pages/about`, and `flow-localization-language`, which posts `language_code=fr` with `country_code=CA` and is answered `302 /fr-ca/pages/about`), a post that names only one of the two keeps the other as the page it was made on has it. The unprefixed page that follows the country post still renders the United States: Shopify does not send a visitor from an unprefixed page to their locale prefix, so neither does this. A country no market sells to is not taken. `return_to` is a path on the store (a theme prints the page's `request.path`, which holds the base path and the old locale prefix, both taken off here), or the root.
+ * `POST /localization`, https://shopify.dev/docs/api/liquid/tags/form (the `localization` form: a country selector or a language selector, with `return_to` and `_method=put`): sets the visitor's country and language, then redirects to `return_to` under the locale prefix of the new market and language, as the parity store answers it (fixtures `flow-localization-country`, which posts `country_code=CA` and is answered `302 /en-ca/pages/about`, and `flow-localization-language`, which posts `language_code=fr` with `country_code=CA` and is answered `302 /fr-ca/pages/about`). The unprefixed page that follows the country post still renders the United States: Shopify does not send a visitor from an unprefixed page to their locale prefix, so neither does this. What a post that names only one of the two keeps of the other is Debutify's reading, no fixture settles it: the fixtures post both fields, or a country alone from an English page, and cannot tell the page's language from the market's default. The page the form was on keeps its language and its country where the new market has them. A country no market sells to is not taken. `return_to` is a path on the store (a theme prints the page's `request.path`, which holds the base path and the old locale prefix, both taken off here), `back` for the page the visitor came from (shopify.dev's form page names it for every form type), or the root.
  */
 const localization: RouteHandler = async ctx => {
   const sent = ctx.fields.country_code
@@ -121,7 +127,8 @@ const localization: RouteHandler = async ctx => {
   const asked = ctx.fields.language_code
   const { prefix, language } = choose(ctx.data, country, typeof asked === 'string' ? asked : here.language)
   const returnTo = ctx.fields.return_to
-  const from = typeof returnTo === 'string' && STORE_PATH.test(returnTo) ? splitLocale(ctx.data, withoutBase(ctx, returnTo)).rest : '/'
+  const back = returnTo === 'back' ? cameFrom(ctx) : undefined
+  const from = back ? back.path : typeof returnTo === 'string' && STORE_PATH.test(returnTo) ? splitLocale(ctx.data, withoutBase(ctx, returnTo)).rest : '/'
   const state = { ...ctx.visitor, ...(country === undefined ? {} : { country }), ...(language === undefined ? {} : { language }) }
   return { response: redirect(under(ctx, prefix), from), state }
 }

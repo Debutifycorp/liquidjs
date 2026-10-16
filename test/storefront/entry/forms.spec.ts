@@ -1,3 +1,5 @@
+import { storefrontSampleData } from '../../../src/shopify'
+import type { StoreData } from '../../../src/shopify'
 import { loadFixture } from '../fixtures'
 import { harness } from './harness'
 
@@ -97,6 +99,14 @@ describe('form redirects', () => {
     expect((await send('POST', '/p/tok/fr-ca/cart/add', form({ id: '43696940613654', return_to: 'back' }), { referer: 'https://store.invalid/p/tok/fr-ca/products/hoodie' })).headers.get('location')).toBe('/p/tok/fr-ca/products/hoodie')
     expect((await send('POST', '/p/tok/cart/add', form({ id: '43696940613654', checkout: '' }))).headers.get('location')).toBe('/p/tok/checkout')
   })
+  it('goes back to the page the visitor came from in the locale that page has, and ignores a page outside the base path', async () => {
+    const { send } = harness({}, BASE)
+    const back = async (url: string, referer: string) => (await send('POST', url, form({ id: '43696940613654', return_to: 'back' }), { referer })).headers.get('location')
+    // a page of the primary language is unprefixed whatever prefix the post was made under, and the other way round
+    expect(await back('/p/tok/fr-ca/cart/add', 'https://store.invalid/p/tok/products/hoodie')).toBe('/p/tok/products/hoodie')
+    expect(await back('/p/tok/cart/add', 'https://store.invalid/p/tok/fr-ca/products/hoodie?variant=1')).toBe('/p/tok/fr-ca/products/hoodie?variant=1')
+    expect(await back('/p/tok/cart/add', 'https://store.invalid/other/products/hoodie')).toBe('/p/tok/cart')
+  })
   it('links a cart form error back to the page it came from, or the store, and keeps the cart', async () => {
     const { send } = harness({}, BASE)
     const sold = form({ id: '43695847145494', quantity: '1' })
@@ -108,6 +118,9 @@ describe('form redirects', () => {
     expect(await back('/p/tok/cart/add', { referer: 'https://store.invalid//evil.example/x' })).toBe('/p/tok')
     expect(await back('/p/tok/cart/add', { referer: 'https://store.invalid/p/tok//evil.example/x' })).toBe('/p/tok')
     expect(await back('/p/tok/cart/add', { referer: 'not an address' })).toBe('/p/tok')
+    // a page outside the base path is not the store's: it is not linked to
+    expect(await back('/p/tok/cart/add', { referer: 'https://store.invalid/other/products/hoodie' })).toBe('/p/tok')
+    expect(await back('/p/tok/cart/add', { referer: 'https://store.invalid/p/token/products/hoodie' })).toBe('/p/tok')
     expect(((await send('GET', '/p/tok/cart.js')).json as any).item_count).toBe(0)
   })
   it('reads the four fields of a remove link from its query and saves nothing for HEAD', async () => {
@@ -117,9 +130,15 @@ describe('form redirects', () => {
     const head = await send('HEAD', '/cart/change?line=1&quantity=0&note=x')
     expect([head.status, head.headers.get('location'), head.text]).toEqual([302, '/cart', ''])
     expect((await send('GET', '/cart.js')).json).toMatchObject({ item_count: 2, note: null })
+    // a link's `return_to` is ignored by Debutify's choice (the link reads the four fields only); neither shopify.dev nor a fixture says what Shopify does with one
     const get = await send('GET', '/cart/change?line=1&quantity=1&note=x&return_to=/collections/all')
     expect([get.status, get.headers.get('location')]).toEqual([302, '/cart'])
     expect((await send('GET', '/cart.js')).json).toMatchObject({ item_count: 1, note: '' })
+  })
+  it('answers a remove link that names no line with the cart error on its own page', async () => {
+    const { send } = harness()
+    const answer = await send('GET', '/cart/change?id=1&quantity=0')
+    expect([answer.status, answer.text.includes('no valid id or line parameter')]).toEqual([400, true])
   })
   it('clears and updates the cart from forms', async () => {
     const { send, seed } = harness()
@@ -168,6 +187,41 @@ describe('the contact form under a base path and locale', () => {
       expect(((await send('POST', '/contact', body, referer)).json as any).contact.errors).toEqual([expect.objectContaining({ field: 'email' })])
     }
   })
+  it('refuses an email longer than an address can be before the pattern reads it, however it ends', async () => {
+    // `[^\s@]+\.[^\s@]+$` takes time quadratic in a run of dots: 60,000 of them held a request for about two seconds
+    const { send } = harness()
+    const referer = { referer: 'https://store.invalid/pages/about?view=probe-form' }
+    for (const email of [`a@${'.'.repeat(60000)}@`, `${'a'.repeat(60000)}@example.com`, `a@${'b'.repeat(250)}.com`]) {
+      const started = performance.now()
+      const answer = await send('POST', '/contact', fields(email), referer)
+      expect([answer.status, (answer.json as any).contact.errors, performance.now() - started < 500]).toEqual([200, [expect.objectContaining({ field: 'email', message: expect.stringContaining('is invalid') })], true])
+    }
+    // the longest address is still an address
+    const longest = `${'a'.repeat(64)}@${'b'.repeat(63)}.${'c'.repeat(63)}.${'d'.repeat(61)}`
+    expect(longest).toHaveLength(254)
+    expect((await send('POST', '/contact', fields(longest), referer)).status).toBe(302)
+    expect((await send('POST', '/contact', fields(`${longest}d`), referer)).status).toBe(200)
+  })
+  it('goes back in the locale of the page it came from, and the redirect shows the form as posted', async () => {
+    const { send } = harness({}, BASE)
+    const sent = await send('POST', '/p/tok/contact', fields('a@example.com'), { referer: 'https://store.invalid/p/tok/fr-ca/pages/about?view=probe-form' })
+    expect(sent.headers.get('location')).toBe('/p/tok/fr-ca/pages/about?view=probe-form&contact_posted=true#contact_form')
+    const shown = await send('GET', sent.headers.get('location')!.replace(/#.*/, ''))
+    expect((shown.json as any).contact).toMatchObject({ posted_successfully: true, errors: [] })
+    // a page outside the base path is not the store's: the post goes to the store's root
+    expect((await send('POST', '/p/tok/contact', fields('a@example.com'), { referer: 'https://store.invalid/other/pages/about' })).headers.get('location')).toBe('/p/tok/?contact_posted=true#contact_form')
+    // an error shows the page it came from in that page's language
+    const failed = await send('POST', '/p/tok/contact', fields('x'), { referer: 'https://store.invalid/p/tok/fr-ca/pages/about?view=probe-form' })
+    expect([failed.status, (failed.json as any).contact.errors.length]).toEqual([200, 1])
+  })
+  it('reads no prototype key of the posted fields', async () => {
+    const { send } = harness()
+    const referer = { referer: 'https://store.invalid/pages/about?view=probe-form' }
+    for (const body of ['form_type=contact&contact[__proto__][email]=a@example.com', 'form_type=contact&contact[constructor][prototype]=x', 'form_type=contact&contact[toString]=x', 'form_type=contact&toString=x&contact[email]=']) {
+      const answer = await send('POST', '/contact', body, referer)
+      expect([body, answer.status, (answer.json as any).contact.errors]).toEqual([body, 200, [expect.objectContaining({ field: 'email', message: expect.stringContaining("can't be blank") })]])
+    }
+  })
   it('shows a newsletter error on the page with the customer form', async () => {
     const { send } = harness()
     const answer = await send('POST', '/contact', form({ form_type: 'customer', 'contact[email]': 'x' }), { referer: 'https://store.invalid/pages/about?view=probe-form' })
@@ -177,7 +231,25 @@ describe('the contact form under a base path and locale', () => {
 })
 
 describe('the localization form', () => {
-  const post = async (send: ReturnType<typeof harness>['send'], url: string, fields: Record<string, string>) => (await send('POST', url, form({ form_type: 'localization', _method: 'put', ...fields }))).headers.get('location')
+  const post = async (send: ReturnType<typeof harness>['send'], url: string, fields: Record<string, string>, headers: Record<string, string> = {}) => (await send('POST', url, form({ form_type: 'localization', _method: 'put', ...fields }), headers)).headers.get('location')
+
+  it('goes back to the page the visitor came from for return_to back, under the new prefix', async () => {
+    const { send } = harness({}, { visitor: 'test-visitor-key-0001', basePath: '/p/tok' })
+    expect(await post(send, '/p/tok/localization', { country_code: 'CA', return_to: 'back' }, { referer: 'https://store.invalid/p/tok/pages/about?view=probe' })).toBe('/p/tok/en-ca/pages/about?view=probe')
+    expect(await post(send, '/p/tok/fr-ca/localization', { country_code: 'US', return_to: 'back' }, { referer: 'https://store.invalid/p/tok/fr-ca/collections/all?sort_by=price-ascending' })).toBe('/p/tok/collections/all?sort_by=price-ascending')
+    // no usable referer, or a page outside the base path: the root
+    expect(await post(send, '/p/tok/localization', { country_code: 'CA', return_to: 'back' })).toBe('/p/tok/en-ca')
+    expect(await post(send, '/p/tok/localization', { country_code: 'CA', return_to: 'back' }, { referer: 'https://store.invalid/other/pages/about' })).toBe('/p/tok/en-ca')
+    expect(await post(send, '/p/tok/localization', { country_code: 'CA', return_to: 'back' }, { referer: 'https://store.invalid//evil.example/x' })).toBe('/p/tok/en-ca')
+  })
+  it('switches the languages of a store that has languages and no markets', async () => {
+    const { send, store } = harness({ data: { ...storefrontSampleData, markets: undefined } as StoreData })
+    expect(await post(send, '/localization', { language_code: 'fr', return_to: '/pages/about' })).toBe('/fr/pages/about')
+    expect(await store.get('test-visitor-key-0001')).toMatchObject({ language: 'fr' })
+    expect(await post(send, '/fr/localization', { language_code: 'en', return_to: '/fr/pages/about' })).toBe('/pages/about')
+    // a country names no market here; a language the store lacks is its default one
+    expect(await post(send, '/fr/localization', { country_code: 'CA', language_code: 'de', return_to: '/fr/pages/about' })).toBe('/pages/about')
+  })
 
   it('moves between markets and languages, keeping what the post leaves out as the page it was on has it', async () => {
     const { send } = harness()
@@ -219,5 +291,21 @@ describe('the variant redirect', () => {
     expect((await send('GET', `/p/tok/fr-ca${step.url}`)).headers.get('location')).toBe(`/p/tok/fr-ca${step.location}`)
     expect((await send('HEAD', `/p/tok${step.url}`)).headers.get('location')).toBe(`/p/tok${step.location}`)
     expect((await send('GET', '/p/tok/variants/1')).status).toBe(404)
+  })
+})
+
+describe('the notice page\'s link back under a base path', () => {
+  it('is the page the visitor came from when it is on the store, and the store\'s root when it is not', async () => {
+    const { send } = harness({}, { visitor: 'test-visitor-key-0001', basePath: '/p/tok' })
+    const back = async (referer: string | undefined) => /<a href="([^"]*)">Back to the store/.exec((await send('GET', '/p/tok/checkout', undefined, referer ? { referer } : {})).text)?.[1]
+    expect(await back('https://store.invalid/p/tok/cart?x=1')).toBe('/p/tok/cart')
+    expect(await back('https://store.invalid/p/tok')).toBe('/p/tok')
+    expect(await back('https://store.invalid/p/tok/')).toBe('/p/tok')
+    expect(await back('https://store.invalid/p/tok/fr-ca/products/hoodie')).toBe('/p/tok/fr-ca/products/hoodie')
+    expect(await back('https://store.invalid/other/cart')).toBe('/p/tok')
+    expect(await back('https://store.invalid/p/token/cart')).toBe('/p/tok')
+    expect(await back('https://store.invalid/p/tok//evil.example')).toBe('/p/tok')
+    expect(await back('https://store.invalid//evil.example')).toBe('/p/tok')
+    expect(await back(undefined)).toBe('/p/tok')
   })
 })

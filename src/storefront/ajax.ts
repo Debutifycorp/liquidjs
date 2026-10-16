@@ -3,10 +3,11 @@ import type { CartLineState, PageRequest } from '../shopify'
 import type { Fields } from './body'
 import { addToCart, changeCart, clearCart, updateCart } from './cart'
 import type { CartResult } from './cart'
-import { redirect, STORE_PATH } from './handler'
+import { redirect, refererPath, STORE_PATH } from './handler'
 import type { Context, RouteHandler } from './handler'
 import { pageForPath, renderSectionsJson } from './pages'
 import type { CartAction, Route } from './router'
+import { withoutBase } from './support'
 import type { VisitorState } from './types'
 import { randomUUID } from 'crypto'
 
@@ -17,29 +18,12 @@ const empty = (status: number) => new Response(null, { status, headers: JSON_HEA
 
 type Item = Record<string, unknown>
 
-/** `path` without the base path, which is a whole-segment prefix: `/p/tok` is the base of `/p/tok/cart`, `/p/tok?x` and `/p/tok#top`, not of `/p/token`. */
-export function withoutBase (ctx: Context, path: string): string {
-  const base = ctx.basePath
-  if (base === '' || !(path === base || path.startsWith(`${base}/`) || path.startsWith(`${base}?`) || path.startsWith(`${base}#`))) return path
-  const rest = path.slice(base.length)
-  return rest === '' || rest.startsWith('?') || rest.startsWith('#') ? `/${rest}` : rest
-}
-
-/** The path of the `Referer`, when the header is an address with a path on a store. */
-function refererPath (request: Request): string | null {
-  const referer = request.headers.get('referer')
-  if (!referer) return null
-  try {
-    return new URL(referer).pathname
-  } catch {
-    return null
-  }
-}
-
 /** The page a cart answer's sections render in: `sections_url`, then the `X-Storefront-Page` header, then the `Referer` path, then `/` (the spec's "Section context"). A candidate must be a path on this store (`STORE_PATH`; the spec's "Redirects": `sections_url` must start with a single `/`), and one that is not is passed over for the next. The theme sends `sections_url: window.location.pathname`, which in the sandbox includes the base path, as the header and the referer do. A path that names no locale takes the request's own, so `/en-ca/cart/add.js` without a context renders its sections in the Canadian market. https://shopify.dev/docs/api/ajax/reference/cart#bundled-section-rendering */
 function contextPage (ctx: Context, fields: Fields): PageRequest {
   const given = typeof fields.sections_url === 'string' ? fields.sections_url : null
-  const path = withoutBase(ctx, [given, ctx.request.headers.get('x-storefront-page'), refererPath(ctx.request)].find((candidate): candidate is string => candidate !== null && STORE_PATH.test(candidate)) ?? '/')
+  // the first two name a path as the browser shows it, base path included; the `Referer` comes from the shared reader, which has taken the base path off (and refuses a page outside it)
+  const named = [given, ctx.request.headers.get('x-storefront-page')].find((candidate): candidate is string => candidate !== null && STORE_PATH.test(candidate))
+  const path = named !== undefined ? withoutBase(ctx, named) : refererPath(ctx)?.path ?? '/'
   const page = pageForPath(ctx, path)
   const prefix = ctx.routed.localePrefix
   return page.request.localePrefix || !prefix ? page : pageForPath(ctx, `${prefix}${path === '/' ? '' : path}`)
@@ -74,16 +58,6 @@ export async function sectionsFor (ctx: Context, fields: Fields, state: VisitorS
   if (!ids.length) return undefined
   if (ids.length > ctx.limits.sections) return null
   return renderSectionsJson({ ...ctx, visitor: state }, contextPage(ctx, fields), ids)
-}
-
-/** The fields of a link to `GET /cart/change?id=<key>&quantity=0` (a line's `url_to_remove`): the four the change reads, from the query, so a query cannot name anything else. */
-export function linkFields (query: URLSearchParams): Fields {
-  const fields: Fields = {}
-  for (const name of ['id', 'line', 'quantity', 'selling_plan']) {
-    const value = query.get(name)
-    if (value !== null) fields[name] = value
-  }
-  return fields
 }
 
 /** The last item of each key: when the cart splits a line in two (a Buy X Get Y discount), the parity store names the line by its key and answers the later of the two (fixture `ajax-discount-automatic-bxgy`, step 0: an add of two answers one item, the discounted one). */
