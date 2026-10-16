@@ -56,6 +56,17 @@ describe('forms', () => {
       expect((shown.json as any).localization).toEqual((page.body as any).localization)
     }
   })
+  it('reads the language from locale_code as well as language_code', async () => {
+    // Dawn's language selector (https://github.com/Shopify/dawn/blob/main/snippets/language-localization.liquid) holds `<input type="hidden" name="locale_code">`, and a theme built on it posts that name, not the `language_code` of the recorded post (fixture `flow-localization-language`); Shopify answers both, so the answer is the recorded one
+    const [post] = loadFixture('flow-localization-language').steps
+    const { language_code: language, ...rest } = post.form!
+    const { send } = harness()
+    const moved = await send('POST', '/localization', form({ ...rest, locale_code: language }))
+    expect([moved.status, moved.headers.get('location')]).toEqual([post.status, post.location])
+    // a language_code wins when both are sent
+    const both = await send('POST', '/localization', form({ ...rest, language_code: language, locale_code: 'en' }))
+    expect(both.headers.get('location')).toBe(post.location)
+  })
   it('keeps redirects on the store, under the base path', async () => {
     const { send } = harness({}, { visitor: 'test-visitor-key-0001', basePath: '/p/tok' })
     for (const [target, expected] of [['//evil.example/x', '/p/tok'], ['https://evil.example/', '/p/tok'], ['/\\evil', '/p/tok'], ['/cart.js', '/p/tok/cart.js'], ['/p/tok/cart', '/p/tok/cart']]) {

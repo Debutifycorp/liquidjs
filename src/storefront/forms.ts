@@ -124,7 +124,8 @@ const localization: RouteHandler = async ctx => {
   // the page the form was on: its country is the visitor's when its market has it, and its language is the prefix's
   const here = pageForPath(ctx, `${ctx.routed.localePrefix}/`).request
   const country = given ?? here.country ?? ctx.visitor.country
-  const asked = ctx.fields.language_code
+  // `locale_code` is the name Dawn's language selector posts (https://github.com/Shopify/dawn/blob/main/snippets/language-localization.liquid); the recorded post (`flow-localization-language`) names `language_code`, which wins when both are sent
+  const asked = ctx.fields.language_code ?? ctx.fields.locale_code
   const { prefix, language } = choose(ctx.data, country, typeof asked === 'string' ? asked : here.language)
   const returnTo = ctx.fields.return_to
   const back = returnTo === 'back' ? cameFrom(ctx) : undefined
