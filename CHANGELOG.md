@@ -1,3 +1,102 @@
+# [1.1.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v1.0.1...debutify-v1.1.0) (2026-10-16)
+
+
+### Bug Fixes
+
+* **build:** declare the real version in dist/index.d.ts, and test the ES module and the declarations ([58e0b99](https://github.com/Debutifycorp/liquidjs/commit/58e0b99cf5b92b34482b5a0737459cd63c838a16))
+* **filters:** keep stripTags out of the root engine's filter table ([0dd3033](https://github.com/Debutifycorp/liquidjs/commit/0dd3033dbf6dc1729c70bc3786a4a3fb5471ab6a))
+* **shopify:** a select keeps a saved value that is no longer an option, and a url setting takes the view prefix ([6500b9d](https://github.com/Debutifycorp/liquidjs/commit/6500b9dbf2dd68f8e40050eef703cc5d48b1cbd1))
+* **shopify:** best discount combination, combination limits (Task 14 review) ([e4c24b4](https://github.com/Debutifycorp/liquidjs/commit/e4c24b45f70402ba968e8ef0ceab934f7457b3e2))
+* **shopify:** blog global and within under a view prefix, analytics publish closure (Task 2 review) ([5297a1d](https://github.com/Debutifycorp/liquidjs/commit/5297a1dce70714b1fd0040594f24f105e26925cc))
+* **shopify:** build an order's shipping, tax, refund and payments in the view's currency ([0720754](https://github.com/Debutifycorp/liquidjs/commit/07207546d7086686376967bfb512a82fd34b7614))
+* **shopify:** contact and customer forms anchor their action at the form id ([175da21](https://github.com/Debutifycorp/liquidjs/commit/175da2169eaf469a28ed694c35dbf18c6668353f))
+* **shopify:** decimals print with their point in json, image and cart addresses without a protocol, richtext void tags as stored, return_to raw, payment icon titles ([32c5b5a](https://github.com/Debutifycorp/liquidjs/commit/32c5b5ad37ba1768b930ebad508c6e5f1ac373f3)), closes [Float#to_s](https://github.com/Float/issues/to_s)
+* **shopify:** EEA markets hide compare-at prices, zero is not rounded, json nil drop (Task 4 review) ([7b6406b](https://github.com/Debutifycorp/liquidjs/commit/7b6406b19a8cc3a70ad0954edfb0925de7974e1d))
+* **shopify:** escape titles that come from the request, state unpinned page metadata as unpinned ([40d016b](https://github.com/Debutifycorp/liquidjs/commit/40d016bcbdc39666695415cf7bdebab1a4bc8809))
+* **shopify:** export CartLinesData, the cart data shape 1.0 had ([30044de](https://github.com/Debutifycorp/liquidjs/commit/30044deb1eef5fc4f259a8abf15f9f8b7fc8fa81))
+* **shopify:** form drop key order, errors as an array, more posted values (Task 12 review) ([59cf96c](https://github.com/Debutifycorp/liquidjs/commit/59cf96c45afb3584bd05434b77f976d852d7c7dc))
+* **shopify:** hide private cart attributes (Task 13 review) ([a10dbc9](https://github.com/Debutifycorp/liquidjs/commit/a10dbc9bbfffffd0b918f0e29517695c9fc5c385))
+* **shopify:** legacy localization renders as before, safe display names, page locale follows the request (Task 3 review) ([e9b6122](https://github.com/Debutifycorp/liquidjs/commit/e9b61225f466e410ea509212ff17e2d8a869ec56))
+* **shopify:** link_to adds rel nofollow to external addresses only, and the date formats do not pad the day ([8e972c7](https://github.com/Debutifycorp/liquidjs/commit/8e972c708860a196789cab3e3cd571f7d257846b))
+* **shopify:** list order and data differences from the parity store's pages (item 22 task 8, lane P3) ([ec1a089](https://github.com/Debutifycorp/liquidjs/commit/ec1a089f9fc1fe75f2af32223ac1d389dbf3ab4b))
+* **shopify:** narrow probe volatile paths, segment-wise path decoding (Task 1 review) ([114ee1c](https://github.com/Debutifycorp/liquidjs/commit/114ee1c8caca67dc5f29a59ce9b9a73abadde62d))
+* **shopify:** no first available variant when all are sold out (Task 6 review) ([aa396f2](https://github.com/Debutifycorp/liquidjs/commit/aa396f2079e6c63f47cfb98357f4579944fdbc6a))
+* **shopify:** overlays without Shopify state, base loop guard, more overlay tests (Task 16 review) ([bb9972a](https://github.com/Debutifycorp/liquidjs/commit/bb9972a584fa12d5503467996f3659d5e52c5471))
+* **shopify:** page metadata follows the parity store's pages ([8f5fd02](https://github.com/Debutifycorp/liquidjs/commit/8f5fd027ecc8fbfd960b4956ba2dd8e521f0b69a))
+* **shopify:** parity variants titled by their option values; page probe on the new handles ([371dc3c](https://github.com/Debutifycorp/liquidjs/commit/371dc3c60125a7d980ff3ee4b3e13112b0e4ef5a))
+* **shopify:** predictive product fields as shopify.dev says, honest recommendation tests (Task 11 review) ([2e0d84f](https://github.com/Debutifycorp/liquidjs/commit/2e0d84f520135bf36aac35e55184d0dd78ec7a26))
+* **shopify:** print the cart weight and a percentage discount value as decimals, list the 1.1.0 upgrade changes, keep the fixtures' image addresses as recorded ([303efb4](https://github.com/Debutifycorp/liquidjs/commit/303efb48d8e879f960f4073295140971887b9d49))
+* **shopify:** review minors of the P2 lane, image src without protocol, and the line break after a font_face rule ([91570b6](https://github.com/Debutifycorp/liquidjs/commit/91570b6911e83cea0127d2e9e70d32255b478521))
+* **shopify:** review minors of the P3 lane, lazy default order, product images in JSON, tests ([b3029ca](https://github.com/Debutifycorp/liquidjs/commit/b3029cafcbbfb0dc45077b39962be7a583c1ee3a))
+* **shopify:** search on the compiled filter matcher, shared query derivation (Task 10 review) ([2ecfb2b](https://github.com/Debutifycorp/liquidjs/commit/2ecfb2bae4e06e280318a5c2878ffd1a1a5aad12))
+* **shopify:** selling plan rounding and edge cases (Task 7 review) ([523e7d1](https://github.com/Debutifycorp/liquidjs/commit/523e7d1c255fc93811a84b570a998fda1a89bad1))
+* **shopify:** settle Buy X Get Y on runs of units, decide a minimum in the view's currency, give order and shipping discounts a purchase type ([fd35acb](https://github.com/Debutifycorp/liquidjs/commit/fd35acb22092175a7c8ad84678e6bb3b9f30b79c))
+* **shopify:** shipping rates in other markets, country names (Task 15 review) ([3229b09](https://github.com/Debutifycorp/liquidjs/commit/3229b09e570b7162211ff582ef59448dee6b07d6))
+* **shopify:** store collection tags of all products, recorded claims only (Task 17 review) ([d592ef0](https://github.com/Debutifycorp/liquidjs/commit/d592ef05b49aaf2b4374f75995fd75cfff30d070))
+* **shopify:** the default image service prints addresses without their protocol, as image_url does on Shopify ([2d3a148](https://github.com/Debutifycorp/liquidjs/commit/2d3a148801c3967c8de6e4a0068223acb7da48ad))
+* **shopify:** view wins over suffix in a test, unsafe suffixes fall back (Task 8 review) ([982e469](https://github.com/Debutifycorp/liquidjs/commit/982e4690091f823d8baea5b9babd5c9a03b26871))
+* **storefront:** a sandboxed form post names its page, which sends no Referer ([69582ea](https://github.com/Debutifycorp/liquidjs/commit/69582ea5acc3beb17a565ab44ef65e9a0f16e33a))
+* **storefront:** answer the cart endpoints without an extension in JSON when the request asks for it ([c739606](https://github.com/Debutifycorp/liquidjs/commit/c7396066bd133c6f1b66e1c4403046871b172f1f))
+* **storefront:** body and visitor edge cases (Task 2 review) ([7828efd](https://github.com/Debutifycorp/liquidjs/commit/7828efd117f8658944add7bd9d9015615b4ae405))
+* **storefront:** bound the email check, one Referer reader, return_to back on localization (Task 6 review) ([af49813](https://github.com/Debutifycorp/liquidjs/commit/af49813be1d1e2b488185e3785036863a27d5ae6))
+* **storefront:** build a request's filters and product copies when read, bound the view cache, keep search words, read an unknown sort_order as manual ([4245d7c](https://github.com/Debutifycorp/liquidjs/commit/4245d7c7bf821d8b765caef45e379e1837a99a2a))
+* **storefront:** build search results with copyObject so they keep the product's hidden markers and print through json as a product does ([07a54aa](https://github.com/Debutifycorp/liquidjs/commit/07a54aa2ffad0b7b1ae22fa69a326a2fd95437e7))
+* **storefront:** cart change on stock, name bounds, error text sources (Task 3 review) ([b097af2](https://github.com/Debutifycorp/liquidjs/commit/b097af2c1785ff686f5aca9e63facafba68d4ca5))
+* **storefront:** give cartJson and lineItemJson answers their own arrays and objects instead of the cached store's ([2b8d8f4](https://github.com/Debutifycorp/liquidjs/commit/2b8d8f415d7bf78582da990a29affb72fdc171cb))
+* **storefront:** hand the form object's posted values over escaped and HTML-safe, so a cross-site contact post cannot run script on the store's page ([18e522a](https://github.com/Debutifycorp/liquidjs/commit/18e522aa43e6c949d2ed35e843e3e04ba325e0da))
+* **storefront:** leave head-less HTML alone, run the client script once, harden its requests (Task 7 review) ([a88e844](https://github.com/Debutifycorp/liquidjs/commit/a88e8449168477abfee9558ba21277eb7b29880d))
+* **storefront:** linear path trimming, stricter import rule (Task 1 review) ([468deb0](https://github.com/Debutifycorp/liquidjs/commit/468deb0a83dcd124b9f49d006e64364706cd0d0c))
+* **storefront:** lock the password page's sections, all-products product links (Task 4 review) ([46bec63](https://github.com/Debutifycorp/liquidjs/commit/46bec633b6475efc11aa99e48d5891656d6818fd))
+* **storefront:** name a neutral myshopify domain in the storefront sample data and its fixtures ([7a3c89e](https://github.com/Debutifycorp/liquidjs/commit/7a3c89ef3b47eb606f00144309a1c96a522d223c))
+* **storefront:** print a cart attribute or line item property name with its tags stripped and its markup characters escaped in Liquid ([a0c1ff3](https://github.com/Debutifycorp/liquidjs/commit/a0c1ff3feee85be52c90851ad7c600fe2c38c7f6))
+* **storefront:** print the visitor's cart note, attribute values and line item properties HTML-escaped in Liquid, and raw in the Ajax answers and cart | json, as the parity store does ([696252f](https://github.com/Debutifycorp/liquidjs/commit/696252f5f64b91289145ea618a6c45aa023f3acc))
+* **storefront:** read the language from locale_code, which Dawn's language selector posts ([096efe0](https://github.com/Debutifycorp/liquidjs/commit/096efe0c2e4985727134f261fe1ca93ad226cf93))
+* **storefront:** resolve visitor-written targets before the base path goes on, bound what one visitor can store, and the seven minors of final review A ([f6f3417](https://github.com/Debutifycorp/liquidjs/commit/f6f341749508cb94e39ef19de41e9412e6e96e07))
+* **storefront:** the form probe parses on Shopify ([4d1877c](https://github.com/Debutifycorp/liquidjs/commit/4d1877c220f006266b02c37509ad3509692de768))
+* **storefront:** the form probe prints valid JSON ([5a426dc](https://github.com/Debutifycorp/liquidjs/commit/5a426dc5ec9b796a5690cfbc9105c08c4628c432))
+* **storefront:** type the Ajax answers as the parity store does, prepare_shipping_rates answers null (Task 8, lane AX) ([15d1100](https://github.com/Debutifycorp/liquidjs/commit/15d1100486441c05ca492154f938c0988d1c55ad))
+* **storefront:** visitor cart in recommendations, one-time-only discount default, change-form totals, derived cart token (Task 5 review) ([e0e96ca](https://github.com/Debutifycorp/liquidjs/commit/e0e96ca8ab06ec75a63352dffc97749c44d48731))
+
+
+### Features
+
+* **shopify:** alternate templates by view and template suffix ([ec9054c](https://github.com/Debutifycorp/liquidjs/commit/ec9054c9d91a96785ef6b94f4405ce1eee8a160e))
+* **shopify:** cart | json prints the cart as Shopify does ([579f543](https://github.com/Debutifycorp/liquidjs/commit/579f5431cb849d655775ef39c3d220ebf6dab70c))
+* **shopify:** cart state, line keys, the cart drop and cartJson ([69265c7](https://github.com/Debutifycorp/liquidjs/commit/69265c77c4e412c1ed0f9fb9bd6a7699f9b952c5))
+* **shopify:** collection sort, filters, tag paths, vendor and type collections ([8f34bbc](https://github.com/Debutifycorp/liquidjs/commit/8f34bbc6dc97bf89dca9abbcb9ec03a41712116d))
+* **shopify:** content translations per language ([4e69866](https://github.com/Debutifycorp/liquidjs/commit/4e698667d9304a807b9ddf555aa5574db3ca3232))
+* **shopify:** discount codes, automatic discounts, free shipping and Buy X Get Y in the cart ([37ac452](https://github.com/Debutifycorp/liquidjs/commit/37ac452782217fe7083bf28b93fd21b3764b03fa))
+* **shopify:** every parity probe matches; settled behaviours documented ([c59b983](https://github.com/Debutifycorp/liquidjs/commit/c59b983e01844df9e23a5519d081a39934ce5fdd))
+* **shopify:** markets, languages and localization per view ([41dd71f](https://github.com/Debutifycorp/liquidjs/commit/41dd71fcd0418d7cffb33b143b46f01396a7005b))
+* **shopify:** posted form state and form_errors ([b74a342](https://github.com/Debutifycorp/liquidjs/commit/b74a3420ed64e1ac8410d013d5961c950b4cfa21))
+* **shopify:** product prices in the market's currency, with Shopify's rounding; json writes nil as null ([7217f43](https://github.com/Debutifycorp/liquidjs/commit/7217f436427ee8ae6cf401932032865d3f6be2b5))
+* **shopify:** read a storefront address into a page request (requestFromUrl) ([c7fd0f7](https://github.com/Debutifycorp/liquidjs/commit/c7fd0f7e47fc0398108afbc4218be418ce542a25))
+* **shopify:** sample data from Shopify's mock.shop, storefront data types and probe templates ([90b1ef8](https://github.com/Debutifycorp/liquidjs/commit/90b1ef82a4a5ce0f7050f0176138328f638f3934))
+* **shopify:** search types, filters, sort, prefix and unavailable products ([5e7a98e](https://github.com/Debutifycorp/liquidjs/commit/5e7a98ea03dba0fd5f6a2e34483a62a0c79d8d0f))
+* **shopify:** selected variant, stock fields and productJson ([5855fd1](https://github.com/Debutifycorp/liquidjs/commit/5855fd1f9023c5d2ba70bfffdc4f9992502a154f))
+* **shopify:** selling plan groups, allocations and the selected plan ([3973ff8](https://github.com/Debutifycorp/liquidjs/commit/3973ff8247df20e6e9a46c143775f0de8f6c9bfd))
+* **shopify:** shipping rates for a cart and an address ([f34d636](https://github.com/Debutifycorp/liquidjs/commit/f34d6367ce0997088ddee7f080705c25761e21c0))
+* **shopify:** store views with a URL prefix, prefixed routes and forms, customer events in content_for_header ([b45dfcb](https://github.com/Debutifycorp/liquidjs/commit/b45dfcb1bcfc88fce439f3e3c1f66d7d4293db03))
+* **shopify:** the predictive_search object, predictiveJson and recommendationsJson ([dd05192](https://github.com/Debutifycorp/liquidjs/commit/dd051920e264e318d18338635ab8d5a19ca69001))
+* **shopify:** theme overlays over a shared, parsed-once base theme ([eee2167](https://github.com/Debutifycorp/liquidjs/commit/eee2167a4173c4b594767588f6f54e13d5447bec))
+* **storefront:** cart operations with Shopify's merge, stock, selling plan and error rules ([7cf33c6](https://github.com/Debutifycorp/liquidjs/commit/7cf33c664e21e161697c0e97cfa15c55b4335df5))
+* **storefront:** cart, contact, localization and variant forms, redirects kept on the store ([b822e37](https://github.com/Debutifycorp/liquidjs/commit/b822e3767f72d681b0e21a968ddce984cecd9a27))
+* **storefront:** request bodies, visitor keys, the memory cart store and per-visitor order ([c7fd8a1](https://github.com/Debutifycorp/liquidjs/commit/c7fd8a127fc3d1002ab5a7f729a0683d8f680c12))
+* **storefront:** sandboxed pages: CORS, preflights, cookieless visitors and the client script ([6528c9a](https://github.com/Debutifycorp/liquidjs/commit/6528c9adc54243dd2ff9bcde6a4367defce07b1a))
+* **storefront:** the @debutify/liquidjs/storefront entry, its types and router ([3478bce](https://github.com/Debutifycorp/liquidjs/commit/3478bce387c26397eaf8706017970eff8dc4f8e3))
+* **storefront:** the Cart API with bundled sections, discount links, shipping rates, product, suggest and recommendations JSON ([210b099](https://github.com/Debutifycorp/liquidjs/commit/210b099397b2d91fb5d6f323c044ee0493203466))
+* **storefront:** the handler, pages, sections, 404 and error pages, the password lock ([2ad1f87](https://github.com/Debutifycorp/liquidjs/commit/2ad1f87563906c57a721aa0a1dd898c236f9df21))
+
+
+### Performance Improvements
+
+* **shopify:** count filter values in one pass (Task 9 review) ([d2a2ca1](https://github.com/Debutifycorp/liquidjs/commit/d2a2ca1473da0a2fd722c3365f03e32f5fc0ce62))
+
+
+### Upstream
+
+Based on [LiquidJS 10.30.0](https://github.com/harttle/liquidjs/releases/tag/v10.30.0).
+
 ## [1.0.1](https://github.com/Debutifycorp/liquidjs/compare/debutify-v1.0.0...debutify-v1.0.1) (2026-10-15)
 
 
