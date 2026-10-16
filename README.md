@@ -1,6 +1,6 @@
 # @debutify/liquidjs
 
-Debutify's fork of [LiquidJS](https://github.com/harttle/liquidjs) for rendering Shopify themes outside Shopify. With default options it is LiquidJS (see `NOTICE.md`). Install with `npm install @debutify/liquidjs`. It runs on Node.js 24 or newer; the browser bundles of the root entry are unchanged.
+Debutify's fork of [LiquidJS](https://github.com/harttle/liquidjs) for rendering Shopify themes outside Shopify. With default options it is LiquidJS (see `NOTICE.md`). Install with `npm install @debutify/liquidjs`. It runs on Node.js 24 or newer; the browser bundles of the root entry are unchanged. Besides the root entry it has two Node.js entries: `@debutify/liquidjs/shopify`, which renders Shopify themes, and `@debutify/liquidjs/storefront`, which serves a whole store as a function from a `Request` to a `Response`.
 
 ## Options added by this fork
 
@@ -104,7 +104,7 @@ const { html, report } = await renderLiquid(liquid, "{{ 1999 | money }} {{ 10 | 
 
 ### Storefront requests
 
-A storefront answers addresses: pages, and the [Ajax API](https://shopify.dev/docs/api/ajax)'s JSON. The engine reads an address into the request a page renders, builds the store's objects once per market, language and URL prefix, and prints the Ajax answers from the same objects a page shows, so a page and its `/cart.js` agree. Serving the addresses, keeping a visitor's cart and handling posts are the caller's.
+A storefront answers addresses: pages, and the [Ajax API](https://shopify.dev/docs/api/ajax)'s JSON. The engine reads an address into the request a page renders, builds the store's objects once per market, language and URL prefix, and prints the Ajax answers from the same objects a page shows, so a page and its `/cart.js` agree. Serving the addresses, keeping a visitor's cart and handling posts are the caller's; the [`/storefront` entry](#storefront-debutifyliquidjsstorefront) does all three.
 
 `requestFromUrl(url, data, options?)` reads an address as Shopify routes it and returns a `PageRequest`: the base template to render (`templateName`), the `request` for `renderPage` and the `locale` the page renders in. `options` takes `basePath` (a path the store is served under, such as `/p/<token>`, taken off before routing), `country` (the shopper's chosen country, kept when it belongs to the address's market) and `form` (the outcome of a form posted before this page).
 
@@ -206,7 +206,7 @@ An unknown filter returns its input and an unknown tag renders nothing, so one g
 
 ### Public API
 
-From 1.0.0, semver covers what `@debutify/liquidjs/shopify` exports, and nothing else:
+From 1.0.0, semver covers what `@debutify/liquidjs/shopify` exports, and nothing else (`@debutify/liquidjs/storefront` has its own list, under [Storefront public API](#storefront-public-api)):
 
 - the functions `createShopifyLiquid`, `renderLiquid`, `renderPage`, `renderSection`, `compileTheme`, `parseWrapper`, `shopifyFilterRegistry`, `requestFromUrl`, `localePrefixes`, `resolveView`, `productJson`, `predictiveJson`, `recommendationsJson`, `cartJson`, `lineItemJson`, `lineKey`, `findVariant`, `stockFor`, `discountCodeStatus` and `shippingRates` (see [Storefront requests](#storefront-requests)), and the values `defaultServices`, `sampleStoreData`, `storefrontSampleData` and `SHOPIFY_DEFAULT_LIMITS`;
 - the types of their options and results (`ShopifyLiquidOptions` with `BaseTemplates`, `RenderLiquidResult`, `ThemeInput`, `RenderPageOptions`, `RenderPageResult`, `RenderSectionOptions`, `RenderSectionResult`, `RequestInput`, `RecommendationsRequest`, `PredictiveRequest`, `FormOutcome`, `PageRequest`, `LocalePrefix`, `StoreView`, `CartState`, `CartLineState`, `LineItemForm`, `DiscountContext`, `DiscountedLine`, `DiscountResult`, `ShippingAddress`, `ShippingRateJson`, `ShippingRatesAnswer`, `ShopifyServices`), `CompiledTheme` (a type only: it is what `compileTheme` returns, and the class itself is not exported), the report types (`RenderReport`, `CountEntry`, `ErrorEntry`, `MissingEntry`, `MissingKind`, `SectionEntry`, `UnsupportedEntry`, `UnsupportedFeature`) and the data types (`StoreData` with `ShopData`, `ProductData`, `VariantData`, `MediaData`, `ImageMediaData`, `VideoMediaData`, `VideoSourceData`, `ExternalVideoMediaData`, `CollectionData`, `PageData`, `BlogData`, `ArticleData`, `LinkData`, `LinkListData`, `CartData`, `LocalizationData`, `CountryOptionData`, `FilterData`, `GiftCardData`, `CustomerData`, `AddressData`, `OrderData`, `OrderLineData`, `FulfillmentData`, `TransactionData`, `Metafields`, `SellingPlanGroupData`, `SellingPlanData`, `SellingPlanPriceAdjustmentData`, `DiscountData`, `DiscountItemsData`, `DiscountValueData`, `AmountOffProductsDiscountData`, `AmountOffOrderDiscountData`, `FreeShippingDiscountData`, `BuyXGetYDiscountData`, `ShippingZoneData`, `ShippingRateData`, `MarketData`, `LanguageData`, `TranslationsData` and `ResourceTranslations`, then `SectionData`, `BlockData`, `ImageData`, `ImageUrlParams`, `FontInfo`, `LocaleTree`, `SettingDefinition`, `FilterStatus` and `ShopifyFilterEntry`);
@@ -372,7 +372,7 @@ shopify.dev does not pin these outputs, or pins only part of the filter, tag or 
 - [`line_item.index`](https://shopify.dev/docs/api/liquid/objects/line_item) is not on shopify.dev; the sample cart's lines carry it 0-based because Dawn reads it as a row number (`item.index | plus: 1`).
 - The [cart](https://shopify.dev/docs/api/liquid/objects/cart) a page shows is `RenderPageOptions.cart` (a `CartState`: lines of a variant id, quantity, properties and selling plan, a note, attributes and discount codes), else `StoreData.cart` (a `CartState`, or lines by product handle and variant id, which carry no properties or plan), else an empty cart. Line prices are in the currency of the request's market, and `cartJson` prints the `/cart.js` answer from the same cart object, in the key order of the parity store's recordings; `{{ cart | json }}` prints the shape the parity store prints for it (no `token`, a line's `properties` as an object and its `url` the variant's), which is neither the engine's cart object nor `/cart.js`. Not pinned: a line's `key` is `<variant id>:<32 hex digits>`, the hash being the engine's own (a hash of the line's properties and plan, not of what Shopify hashes); `product_description` in the Ajax answers is the description without its tags and `featured_image.alt` is the product's title for an image without alt text; a line without an image prints `featured_image` and `image` as `null`; `fixed_selling_plan` is `false`; `cart.items | json` and a single line print as the lines of `{{ cart | json }}`, which no recording shows on their own. Cart attributes whose name starts with `__` are left out of `cart.attributes`, `/cart.js` and `{{ cart | json }}`, as the Cart API page says, and a line that holds less than one of its variant is left out of the cart. The cart applies `StoreData.discounts` and the cart's `discountCodes`: automatic discounts and entered codes, an order discount on what product discounts leave, a Buy X Get Y that splits a line it discounts in part, and `discountCodeStatus` for the Cart API's `discount_codes`. Discounts combine only when each allows the other's class in `combines_with`; of the sets that go together the one that takes the most off the cart is applied ("the best discount or combination of discounts" of the [help centre](https://help.shopify.com/en/manual/discounts/discount-combinations)), the set with more entered codes winning a tie, and the recordings agree. A cart takes at most five product or order codes, never two shipping discounts, and never two product discounts on one line (the Shopify Plus tags that allow it are not modelled); above twelve discounts that apply, they are taken best first instead of searched. `line_item.title` is HTML-escaped (`Men&#39;s T-shirt`), where `product_title` and the title in the add, change and update answers are not, as the parity store prints them. Not pinned: a discount application's `value` in the Ajax answers is a string, the amount of a fixed discount in major units (the page's example prints `"2.5"`; no recording has a fixed amount); a fixed amount converts like a price but is not rounded up to the market's rounding value (the selling plan precedent; no recording has a discount in another market); a percentage is rounded per line (half up) and an amount spread over lines in proportion to their price with the remainder on the last (the recordings only have exact splits), and `final_price` is the final line price per unit rounded; a line a Buy X Get Y touches in part is split by kind, the untouched units first, then the bought ones (an allocation of 0), then the discounted ones (the recordings have only a bought and a discounted unit), and of the units that tie the cart's order decides; a product discount or a Buy X Get Y applies to one-time purchases and not to subscription lines (lines bought under a selling plan) unless its `applies_on_one_time_purchase` and `applies_on_subscription` flags say otherwise (`true` and `false` when omitted; the Admin API page gives no default, and the parity store's discounts, created without the flags, read as these defaults and leave the subscription line of fixture `ajax-cart-session` without the discount), where a Buy X Get Y's flags are those of what it gives and a subscription unit still counts as bought; and a free shipping discount counts as saving nothing, so any discount it cannot combine with wins, its minimum counts what the discounts that combine with it left, and without a known country it holds for every country.
 - `shippingRates(data, cart, address, view?)` answers the Cart API's [`async_shipping_rates.json` and `shipping_rates.json`](https://shopify.dev/docs/api/ajax/reference/cart) from `StoreData.shipping_zones`: the rates of the zone that names the address's country (a zone listing the address's province before one covering the whole country), else the zone of the rest of the world, whose subtotal and weight ranges (inclusive, in the shop's currency and in grams) the cart is inside, each in the recorded form with `price` a string; an address in no zone (or with no known country) gets the error object `{ country: ['Country/region not supported'], zip: ['Enter a postal code'] }`, which the storefront answers with status 422, `zip` only when none was given. Not pinned: the subtotal is the cart's after its product and order discounts and counts only lines that require shipping (the help centre does not say before or after discounts); a zone with no rate for the cart answers `shipping_rates: []`, as does an empty cart; rates convert like prices in the view's currency and round up where the market rounds, as the Canadian and European recordings show (fixtures `ajax-shipping-rates-en-ca` and `ajax-shipping-rates-en-eu`: 10.00 USD is 14.00 CAD, 20.00 USD is 18.95 EUR) and the help centre's rounding page says of shipping rates, while `markup` stays `"0.00"` (see Known gaps); a free shipping discount that applies makes every rate up to its limit free, the Cart API's rates carrying one is not recorded; a country is read as an ISO code (`UK` as `GB`) or an English name, from the store's markets and `Intl.DisplayNames`, the deprecated and special codes left out; a missing country answers like an unknown one, and a supported country without a postal code gets its rates (the message for it is not recorded).
-- [`recommendations`](https://shopify.dev/docs/api/liquid/objects/recommendations) has both `performed` and `performed?` (the page names only `performed?`), and an empty array for `products` where the page says an `EmptyDrop` while `performed?` is false (they behave alike for `== empty`, `size` and loops). It is performed for `request.recommendations`, a [Product Recommendations API](https://shopify.dev/docs/api/ajax/reference/product-recommendations) request, which leaves out the product itself, unavailable products, products priced at 0, gift cards and products in the cart, as the [related products](https://shopify.dev/docs/storefronts/themes/product-merchandising/recommendations/related-products) and [complementary products](https://shopify.dev/docs/storefronts/themes/product-merchandising/recommendations/complementary-products) pages say. Debutify's own, not pinned: related products are the products of the collections the product is in (without `all` and `frontpage`, as shopify.dev's related-collections rule says), then the products of its product type, in store order, because the store data has no purchase history or description similarity; complementary products, which a merchant sets up in the admin, are none (the store data cannot set them up; the parity store, with none set up, agrees); a `limit` outside 1 to 10 is clamped into that range; product URLs carry no `pr_` tracking parameters in `recommendations.products` (`recommendationsJson`, the `/recommendations/products.json` answer, adds Shopify's `pr_prod_strat`, `pr_rec_id`, `pr_rec_pid`, `pr_ref_pid` and `pr_seq`, with an id that is the same for the same request, and takes the visitor's cart as an optional fourth argument, whose products it leaves out as a page rendered for that cart does); and a product id the store does not have, or an intent other than `related` and `complementary`, leaves `recommendations` not performed and is reported, where Shopify answers 404 or 422.
+- [`recommendations`](https://shopify.dev/docs/api/liquid/objects/recommendations) has both `performed` and `performed?` (the page names only `performed?`), and an empty array for `products` where the page says an `EmptyDrop` while `performed?` is false (they behave alike for `== empty`, `size` and loops). It is performed for `request.recommendations`, a [Product Recommendations API](https://shopify.dev/docs/api/ajax/reference/product-recommendations) request, which leaves out the product itself, unavailable products, products priced at 0, gift cards and products in the cart, as the [related products](https://shopify.dev/docs/storefronts/themes/product-merchandising/recommendations/related-products) and [complementary products](https://shopify.dev/docs/storefronts/themes/product-merchandising/recommendations/complementary-products) pages say. Debutify's own, not pinned: related products are the products of the collections the product is in (without `all` and `frontpage`, as shopify.dev's related-collections rule says), then the products of its product type, in store order, because the store data has no purchase history or description similarity; complementary products, which a merchant sets up in the admin, are none (the store data cannot set them up; the parity store, with none set up, agrees); a `limit` outside 1 to 10 is clamped into that range; product URLs carry no `pr_` tracking parameters in `recommendations.products` (`recommendationsJson`, the `/recommendations/products.json` answer, adds Shopify's `pr_prod_strat`, `pr_rec_id`, `pr_rec_pid`, `pr_ref_pid` and `pr_seq`, with an id that is the same for the same request, and takes the visitor's cart as an optional fourth argument, whose products it leaves out as a page rendered for that cart does); and a product id the store does not have, or an intent other than `related` and `complementary`, leaves `recommendations` not performed and is reported, where Shopify answers 404 or 422; the engine has no status to answer with, so it is the `/recommendations/products.json` route of the [`/storefront` entry](#storefront-debutifyliquidjsstorefront) that answers them (422 for a missing `product_id`, 404 for a product the store lacks, 422 for a bad `intent`), and `recommendationsJson` answers none of them.
 - [`predictive_search`](https://shopify.dev/docs/api/liquid/objects/predictive_search) is set on a `/search/suggest` request (`request.predictive`, which `requestFromUrl` reads from the [Predictive Search API](https://shopify.dev/docs/api/ajax/reference/predictive-search)'s parameters) and nil on any other page, as the parity store prints it; `predictiveJson` answers `/search/suggest.json`. Products ignore `resources[options][fields]` and search every product field, as the page says: every term but the last is a whole word, and the last may start a word of the title, type, vendor and variant titles (the fields the page lists for partial matching) but must be a whole word of the description, tags and variant SKUs; the fixtures `probe-predictive-shirt`, `probe-predictive-prefix` and `ajax-suggest-json` agree with that rule and rule out only prefix matching in the description. Unavailable products follow `unavailable_products` (`last` by default), pages and articles are found by the `title`, `author` and `body` (and, for articles, `tag`) that `fields` names, and collections by their title in the primary language ("Collection suggestions are based on the store's primary language"; the title printed is the view's). Not pinned, Debutify's own: a blank `q` is not performed (every list empty), where the page says only that `performed` is true inside a section rendered through the API and makes `q` required; results are in store order; with `limit_scope` `all` the types share the limit in the order `query`, `product`, `collection`, `page`, `article` (the page does not say how it is split), so products can use all of it; the page's typo tolerance and the product category and variant barcode fields are not modelled; there are no query suggestions (Shopify makes them from search history, which the store data lacks); the Liquid `predictive_search.resources` holds the store's own objects, without the variant a variant-title match picks and without tracking parameters on their URLs, which only the JSON answer has; in the JSON answer a product's `variants` holds the variant whose title has most of the terms, as the page says, with the product's `image`, `featured_image` and `url` (`?variant=<id>`) following it, and the fields and order of that variant, of collection, page and article results and the position of `?variant=` before the tracking parameters (`_pos`, `_psq`, `_psid`, `_ss`) are read from the page, since no recording has one; a result without an image `alt` takes its title; and prices are decimal strings of the view's currency.
 - The sample [blog](https://shopify.dev/docs/api/liquid/objects/blog)'s `moderated?` is `false`; the page lists the property without saying which value a store has.
 - [Input settings](https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings): an unset `text`, `textarea`, `html`, `richtext`, `inline_richtext` or `liquid` setting reads as `''` where the page says an `empty` object (`== empty` and `== blank` match, it prints nothing and is not nil); a `product`, `collection`, `page`, `blog` or `article` setting prints its handle when output directly, as the page says, and it is the store's own object (so `==` and `contains` find it), whose handle print also shows wherever else the object is printed, such as the elements of a `product_list` or `collection_list`, which the page does not pin; what a `link_list` prints directly is not pinned either and prints as the object does.
@@ -408,6 +408,353 @@ shopify.dev does not pin these outputs, or pins only part of the filter, tag or 
 - The section schema's `blocks` list (`@theme`, `@app`, block types) does not restrict what renders from saved data, and `disabled` on a block (documented for sections only) skips it.
 - The text of a section's syntax error and of the `content_for` errors (unknown type, missing `type` or `id`), and where a failing block's error lands: a block file that does not parse is listed in `report.errors` with its file and line, but a block whose saved JSON or schema has the wrong shape prints an error such as `Liquid error: block <id>: "settings" must be an object` (`Liquid error: blocks/<type>.liquid: …` for its schema) in its own wrapper and is not listed in `report.errors`; its siblings and the rest of its section still render, and the section is reported as `failed` with that message as the `reason`.
 - Block-level `t` lookups: a block resolves `sections.<section type>.<key>` through its section's schema `locales`.
+
+## Storefront: `@debutify/liquidjs/storefront`
+
+The `/storefront` entry serves a whole Shopify store from data. You give it a theme and a `StoreData` object, and it answers the requests a Shopify storefront answers, as a function from a standard `Request` to a standard `Response`: the pages, the [Cart Ajax API](https://shopify.dev/docs/api/ajax/reference/cart) and the cart forms, [section rendering](https://shopify.dev/docs/api/ajax/section-rendering), the product, predictive search and recommendations JSON, the contact, newsletter, localization and password forms, discount links, and the redirects between them. Every visitor has a cart, kept in a store you can replace. The pages and the Ajax answers come from the `/shopify` entry (see [Storefront requests](#storefront-requests)), which the storefront keeps external to its own bundle, so a process holds one copy of the engine.
+
+It serves no files (theme assets, fonts and images are the host's, through the [`services`](#services) option), sends nothing (no email, no payment) and has no checkout or customer accounts: those addresses answer a [notice page](#the-notice-page). It is for Node.js 24 or newer, like `/shopify`: its `exports` entry has the same `types`, `module` and `default` conditions and no browser build. The engine's own gaps are under [Known gaps](#known-gaps); the storefront's are under [Known gaps of the storefront](#known-gaps-of-the-storefront).
+
+### Serve a store
+
+`createStorefront(options)` returns a `Storefront`, an object with one method, `handle(request, handleOptions?)`, which takes a `Request` and resolves to a `Response`. A bad request, a missing page and a failing render are all answers (a 400, a 404, a 500), not rejections; `handle` rejects when the host calls it wrongly (see `sandbox` below). Run this as an ES module on Node.js 24: it is a complete server for the mock.shop sample store.
+
+```js
+import { createServer } from 'node:http'
+import { Readable } from 'node:stream'
+import { createStorefront } from '@debutify/liquidjs/storefront'
+import { storefrontSampleData } from '@debutify/liquidjs/shopify'
+
+const theme = {
+  files: {
+    'layout/theme.liquid': '<!doctype html><html><head>{{ content_for_header }}</head><body>{{ content_for_layout }}</body></html>',
+    'templates/index.json': '{ "sections": {}, "order": [] }',
+    'templates/product.json': '{ "sections": { "main": { "type": "main-product" } }, "order": ["main"] }',
+    'templates/cart.json': '{ "sections": {}, "order": [] }',
+    'templates/404.json': '{ "sections": {}, "order": [] }',
+    'sections/main-product.liquid': '<h1>{{ product.title }}</h1>{{ product.price | money }}',
+    'sections/cart-count.liquid': '{{ cart.item_count }}'
+  }
+}
+
+const storefront = createStorefront({ theme, data: storefrontSampleData })
+
+createServer(async (req, res) => {
+  const body = req.method === 'GET' || req.method === 'HEAD' ? undefined : Readable.toWeb(req)
+  const request = new Request(`http://${req.headers.host}${req.url}`, { method: req.method, headers: req.headers, body, duplex: 'half' })
+  const response = await storefront.handle(request)
+  res.statusCode = response.status
+  for (const [name, value] of response.headers) if (name !== 'set-cookie') res.setHeader(name, value)
+  const cookies = response.headers.getSetCookie()
+  if (cookies.length) res.setHeader('set-cookie', cookies)
+  res.end(Buffer.from(await response.arrayBuffer()))
+}).listen(3000)
+```
+
+`http://localhost:3000/products/hoodie` is now the hoodie's product page, and a cart change sets the visitor's cookie. Without a server, `handle` is called with a `Request` directly (with `storefront` from above):
+
+```js
+const add = await storefront.handle(new Request('https://shop.example/cart/add.js', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ id: 43695847538710, quantity: 2, sections: 'cart-count' })
+}))
+add.status // 200
+add.headers.get('set-cookie') // 'cart=<32 hex digits>; Path=/; HttpOnly; SameSite=Lax'
+const cookie = add.headers.get('set-cookie').split(';')[0]
+const cart = await (await storefront.handle(new Request('https://shop.example/cart.js', { headers: { cookie } }))).json()
+cart.item_count // 2
+cart.total_price // 18000: two hoodies at 90.00
+```
+
+The request's own URL is the store's address: its host and origin print in the pages (`canonical_url`, the `hreflang` links, `request.origin`), so a host behind a proxy that rewrites the host builds the `Request` from the public address. Keep the same `theme` and `data` objects between requests, as `renderPage` asks: a theme object is compiled once and a `data` object has its views built once.
+
+In a Next.js route handler the `Request` is the one Next gives, and `basePath` is the folder the route sits in. Next.js documents `route.ts` files that export a function per HTTP method, `GET`, `POST`, `HEAD` and the others, with `runtime = 'nodejs'` to pick the Node.js runtime ([Route Handlers](https://nextjs.org/docs/app/api-reference/file-conventions/route)); the storefront needs Node.js, not the Edge runtime.
+
+```ts
+// app/store/[[...path]]/route.ts
+import { createStorefront } from '@debutify/liquidjs/storefront'
+import { storefrontSampleData } from '@debutify/liquidjs/shopify'
+import { theme } from '@/lib/theme' // a ThemeInput, see "Render a page"
+
+export const runtime = 'nodejs'
+
+const storefront = createStorefront({ theme, data: storefrontSampleData })
+
+const handle = (request: Request) => storefront.handle(request, { basePath: '/store' })
+
+export const GET = handle
+export const HEAD = handle
+export const POST = handle
+```
+
+The default cart store belongs to the storefront object, so carts live as long as that module instance does: a restart, or anything that evaluates the module again, starts with none, and a host that runs a separate instance per request keeps none. Pass a `cartStore` that outlives the process when carts must survive (see [Visitors and carts](#visitors-and-carts)).
+
+### Storefront options
+
+`createStorefront` takes a `StorefrontOptions` object. `theme` and `data` are required.
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `theme` | required | The theme, a `ThemeInput` (`files`, optional `base`), or a function of the request that returns one, sync or async. A theme object is compiled once and kept by the engine, so a function must return the same object for the same theme: one that builds a new object on every request compiles the theme on every request. |
+| `data` | required | The store, a `StoreData` object, or a function of the request that returns one. Pass the same object while the store is the same: its views are built once per object, and data edited in place keeps rendering the objects built before the edit. |
+| `services` | `defaultServices` | A `Partial<ShopifyServices>` merged over the defaults for every render (see [Services](#services)): `assetUrl`, `imageUrl`, `fontUrl` and the rest. The defaults point at `/assets/<path>` and the like, which the storefront does not serve (they get the 404 page), so a host serves the files and sets the services to where it does. |
+| `cartStore` | `memoryCartStore({ max: limits.visitors, idleMs: limits.idleMs })` | Where visitor states live, a `CartStore` (see [Visitors and carts](#visitors-and-carts)). |
+| `notice` | the built-in page | `(kind, request) => Response \| Promise<Response>`, where `kind` is `'checkout'` or `'account'`: replaces the [notice page](#the-notice-page). |
+| `limits` | `DEFAULT_LIMITS` | A `Partial<StorefrontLimits>` laid over the defaults; a limit given as `undefined` keeps its default. See [Limits and errors](#limits-and-errors). |
+| `password` | none | The password `POST /password` accepts when the store data says the store is password protected (`shop.password_enabled`). With none set, no password opens a protected store. See [Password protection](#password-protection). |
+| `onReport` | none | `(report, request) => void`, called with a `StorefrontReport` after every page or section render (`{ kind: 'render', report }`, the engine's [render report](#the-render-report)) and for every failure (`{ kind: 'error', error }`). A reporter that throws, or returns a promise that rejects, does not fail the request. |
+
+Pages render in the engine's untrusted mode (see [Safety](#safety)) with its default `parseLimit`, `renderLimit` and `memoryLimit`: the storefront passes no trust option and no render limit, so a `liquid` setting prints as escaped text, and a render that runs past `renderLimit` is an error answer (a 500 page and an `error` report).
+
+`handle(request, handleOptions?)` takes a `HandleOptions` object:
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `basePath` | `''` | The path every storefront address starts with, such as `/p/<token>`. It is cleaned to one leading slash and no trailing or doubled one (`store/` is `/store`). An address outside it is the store's 404 page, and the base path is part of every link the pages print, of the redirects and of the visitor's cookie path. Give the storefront the whole request URL, base path included: it takes the base path off itself. |
+| `visitor` | none | The visitor key, a non-empty string. When it is given, the `cart` cookie is neither read nor set and the visitor is this key. |
+| `sandbox` | `false` | The page runs in a sandboxed iframe: cross-origin answers, no cookies, the client script in `<head>`. Needs `visitor`; `handle` rejects with a `TypeError` without it. See [Sandboxed pages](#sandboxed-pages). |
+
+### Routes
+
+Every address is read under the base path and an optional locale prefix (`/fr-ca/cart.js`; [Storefront requests](#storefront-requests) lists the prefixes a store serves). Every answer but a sandbox preflight, the error pages included, carries `Cache-Control: private, no-store`, because it may hold or depend on one visitor's state. A `HEAD` request is answered like a `GET` with no body, and it changes nothing: a prefetcher that sends `HEAD` to `/discount/<code>` does not apply the code.
+
+| Address | Method | Answer |
+| --- | --- | --- |
+| a page address (`/`, `/products/<handle>`, `/collections/<handle>`, `/pages/<handle>`, `/blogs/…`, `/search`, `/cart`, `/password`, as `requestFromUrl` routes them) | `GET`, `HEAD` | The page, as HTML, with the visitor's cart. A page whose product, collection, page, blog or article the store lacks is the theme's `404` template with status 404 (a plain 404 page, and an `error` report, when the theme has no `404` template or it fails to render). |
+| any page address with `?section_id=<id>` | `GET`, `HEAD` | That one section's HTML in its wrapper ([Section Rendering API](https://shopify.dev/docs/api/ajax/section-rendering)); 404 with an empty body for a section the theme lacks. |
+| any page address with `?sections=a,b` | `GET`, `HEAD` | JSON keyed by section id, `null` for a section that is missing or fails to render. More than `limits.sections` ids is a 400 with an empty body. |
+| `/cart.js`, `/cart.json` | `GET`, `HEAD` | The visitor's cart as JSON, the same cart object the pages print. |
+| `/cart/add.js`, `/cart/change.js`, `/cart/update.js`, `/cart/clear.js` (and the `.json` spellings) | `POST` | The Cart API, answered as JSON. See [The cart](#the-cart). |
+| `/cart/add`, `/cart/change`, `/cart/update`, `/cart/clear` and `/cart`; the remove link `/cart/change?id=<key>&quantity=0` | `POST`; `GET`, `HEAD` for the link | The cart forms and links: change the cart, then redirect. See [The cart](#the-cart). |
+| `/discount/<code>` | `GET` | Adds the code to the cart and redirects to `?redirect=` (default `/`). A code the cart already holds, in any case, moves last; a blank code or one longer than `limits.propertyLength` is not added, and the link still redirects. |
+| `/cart/prepare_shipping_rates.json` | `POST` | 202 with the JSON body `null`, as the parity store answers. |
+| `/cart/async_shipping_rates.json`, `/cart/shipping_rates.json` | `GET`, `HEAD` | `{ "shipping_rates": [...] }` for the cart and the address in the query's `shipping_address[country]`, `shipping_address[province]` and `shipping_address[zip]` (`shippingRates`); 422 and Shopify's error object for an address no shipping zone covers. |
+| `/products/<handle>.js` | `GET`, `HEAD` | The product as JSON; 404 with an empty body for a handle the store lacks. |
+| `/search/suggest.json` | `GET`, `HEAD` | Predictive search JSON; the terms are cut to `limits.search` characters. |
+| `/recommendations/products.json` | `GET`, `HEAD` | Product recommendations JSON, without the products in the visitor's cart. The storefront answers the errors of the [Product Recommendations API](https://shopify.dev/docs/api/ajax/reference/product-recommendations) itself: 422 for a missing `product_id`, 404 for a product the store lacks and 422 for an `intent` other than `related` and `complementary`, each as `{ status, message, description }`. |
+| `/contact` | `POST` | The contact form (`form_type=contact`) and the newsletter form (`form_type=customer`). Nothing is sent anywhere. A valid form (a `contact[email]` that is an email address of at most 254 characters) redirects to the page it came from, with `contact_posted=true` (`customer_posted=true` for the newsletter form) and `#contact_form`, which the engine reads as a posted form. An invalid one renders that page with status 200 and the form's errors (`can't be blank`, `is invalid`). The page it came from is the `Referer` when that is a page of the store, else the store's root. |
+| `/localization` | `POST` | The localization form: `country_code`, `language_code` and `return_to`. It keeps the visitor's country and language and redirects to `return_to` under the locale prefix of the market that sells to that country and the language (the primary market when none does). A country no market sells to is not taken. |
+| `/password` | `POST` | The storefront password form, see [Password protection](#password-protection). |
+| `/variants/<id>` | `GET`, `HEAD` | A 302 to `/products/<handle>?variant=<id>`, the request's query dropped; the 404 page for a variant the store lacks. |
+| `/checkout`, `/checkouts`, `/checkouts/…`, `/account`, `/account/…` | any | The [notice page](#the-notice-page). |
+| anything else | any | The 404 page. A method a route does not take gets it too (`PUT /cart.js`, `POST /products/hoodie`), not a 405. |
+
+The answers carry the content types the parity store sends. Pages and the notice and error pages are `text/html; charset=utf-8`. The `.js` endpoints (`/cart.js`, `/cart/add.js`, `/cart/change.js`, `/cart/update.js`, `/cart/clear.js` and `/products/<handle>.js`) are `text/javascript; charset=utf-8`, their error answers included, except the "Cannot find variant" error of `add.js` and `update.js`, which is plain `application/json`. The `.json` endpoints (shipping rates, `/search/suggest.json`, `/recommendations/products.json`), the `?sections=` map and the empty 404 of an unknown product are `application/json; charset=utf-8`, and the empty 400 of a sixth section is `text/html; charset=utf-8`. A client should parse a JSON body whatever the type says.
+
+### The cart
+
+The Ajax endpoints read a JSON body, a url-encoded form or a multipart form, the three shapes themes post: `items[0][id]`, `properties[Engraving]` and `updates[<variant id>]` are read as nested fields, a file field is dropped, and a body may not be over `limits.body` bytes. A line is a variant with its properties and selling plan; a new line goes first, and an item that matches a line merges into it. All the items of one add are added or none is.
+
+- `add.js` answers `{ "items": [...] }` when the request sent `items`, else the line.
+- `change.js` takes `line` (1-based) or `id` (a line key, or a variant id as a string) and a `quantity` (0 removes the line), and `properties` or `selling_plan` to change them. It also lists the line that grew under `items_added` and the one that shrank under `items_removed`. A change that names no line, or an `id` that is not a string, is a 400.
+- `update.js` takes `updates` (quantities by variant id, line key or position), `note`, `attributes` and `discount` (comma-separated codes that replace the cart's). It lists the variants that grew under `items_changelog.added`.
+- `clear.js` empties the lines and keeps the note, attributes and discount codes.
+
+A request may name `sections` (a comma-separated string or an array of up to `limits.sections` ids): the answer then holds them under `sections`, rendered after the change with the new cart, in the context of the page named by `sections_url` in the body, else by the `X-Storefront-Page` header, else by the path of the `Referer`, else `/`. More sections than the limit are not an error here: the change is made and `sections` is `null`. A cart error is Shopify's `{ status, message, description }`, almost always a 422 (a variant that does not exist or is sold out, more than the stock, a selling plan the variant lacks, a limit of this storefront), and nothing changes when one occurs.
+
+The form spellings change the cart the same way and then redirect: to the `return_to` field (a path on the store, or `back` for the page the visitor came from), else `/cart`; a form with a `checkout` field goes to `/checkout`, the notice page. A cart error there is a plain page with Shopify's status, the description and a link back.
+
+Discounts are the store data's (`StoreData.discounts` and the codes in the cart). A discount applies to one-time purchases only: a line bought under a selling plan is not discounted unless the discount's flags say otherwise (`applies_on_subscription: true`; `applies_on_one_time_purchase: false` takes one-time purchases out). With the flags omitted they are `true` and `false`, as observed on the parity store, whose discounts were created without them.
+
+### Redirects
+
+Every redirect is a 302 with `Cache-Control: private, no-store`. A target that a visitor can write (`?redirect=` of a discount link, `return_to` of a cart form or of the localization form) must be a path on the store: one leading slash, not followed by another slash or a backslash, and no control character. Anything else (a host, `//host`, `/\host`, nothing) is replaced by the route's own default (`/` for a discount link and the localization form, `/cart` for a cart form), so a link cannot send a visitor to another site. The base path and the locale prefix are put in front of the target unless it already starts with them, and characters outside ASCII are written as UTF-8 percent escapes, so `Location` is always a valid header.
+
+### The notice page
+
+Checkout and the customer account pages are Shopify's, not the storefront's. Their addresses (`/checkout`, `/checkouts` and everything under it, `/account` and everything under it, under the base path and a locale prefix) answer, whatever the method, a plain page with status 200: "Available in your own store", a line saying that checkout or customer accounts work once the store is published on Shopify, and a link back to the page the visitor came from (the `Referer`, when it is a page inside the base path) or to the store's root. It loads no theme file. The `notice` option replaces it: `notice('checkout' | 'account', request)` returns the `Response`, whose status, headers and body are yours; the storefront sets `Cache-Control: private, no-store` on it.
+
+### Password protection
+
+When the store data says `shop.password_enabled`, a visitor who has not passed the password is sent to the password page: every address but `/password` and `POST /password` is a 302 to `/password`, under the base path and the locale prefix, the JSON endpoints and a section asked of the password page (`?section_id=`, `?sections=`) included. The page itself is the theme's `password` template. `POST /password` with the `password` option's value redirects to `/` and marks the visitor as unlocked in their state; any other password renders the `password` template again with status 200 and `form.errors` holding `password: ['Incorrect password']`. The two passwords are compared as SHA-256 digests with `timingSafeEqual`, so the comparison takes the same time whatever their lengths.
+
+The wrong-password text and its 200 status are Debutify's own: Shopify's password page was not recorded. The storefront has no rate limit on `POST /password`, or on any other route: a host that serves a store stand-alone must rate-limit it, or anyone can try passwords as fast as the storefront answers.
+
+### Visitors and carts
+
+Every request belongs to a visitor, and a visitor has a `VisitorState`, plain JSON that a `CartStore` keeps under the visitor's key:
+
+```ts
+interface VisitorState {
+  cart: CartState // the /shopify entry's CartState: token, lines, note, attributes, discountCodes
+  country?: string // the country and language chosen with POST /localization
+  language?: string
+  unlocked?: boolean // passed the storefront password
+}
+
+interface CartStore {
+  get (visitor: string): Promise<VisitorState | undefined>
+  set (visitor: string, state: VisitorState): Promise<void>
+}
+```
+
+The key comes from one of two places. In cookie mode (the default) it is the `cart` cookie: a value of 16 to 128 letters, digits, `_` or `-`, anything else being ignored, and a request without one starts a new visitor with a key of 128 random bits (32 hex digits). The storefront sets the cookie on the first answer that changes the visitor's state (a cart change, a discount link, a locale choice, an unlocked password) when the request carried no valid one, as `cart=<key>; Path=<base path, or />; HttpOnly; SameSite=Lax`: no `Secure` attribute (a host serving HTTPS adds it to the header it sends) and no expiry, so it ends with the browser session, where Shopify's own `cart` cookie lasts two weeks. With the `visitor` option the key is the one the host passes, and no cookie is read or set.
+
+`cart.token`, the cart's token in `/cart.js` and in the `cart` object of a page, is not always the key. The key is the visitor's only credential, and in cookie mode the cookie is `HttpOnly` so that no script on the page can read it; a token equal to the key would hand it to any script that reads `/cart.js`. So in cookie mode the token is a one-way derivation of the key, the first 32 hex digits of its SHA-256, and so it is with a `visitor` option and no `sandbox`. In `sandbox` mode the token is the visitor key the host passes, which is already in the page's address. A host that needs the session key uses the key it passes to `handle`, not the token.
+
+`memoryCartStore(options?)` is the default store, exported so that a host can size it itself: `max` (visitors held, default 10,000), `idleMs` (milliseconds of disuse after which a visitor is dropped, default 24 hours) and `now` (a clock, for tests). Reading and writing both count as use, and when the store is full the least recently used visitor goes first. It copies a state on the way in and on the way out, it lives in one process, and its carts are lost when the process restarts and are not shared between processes. `limits.visitors` and `limits.idleMs` size only this default store; a `cartStore` you pass has its own limits.
+
+Any object with `get` and `set` is a cart store. It must give back what `set` was given (`undefined` for a visitor it does not know), and it should drop idle visitors itself. Routes that change a visitor's state (the cart endpoints and forms, discount links, `/contact`, `/localization` and `/password`) run one at a time per visitor, in the order they arrived, inside one `createStorefront`; reads run at once. That order is kept in memory: a store shared by several processes must protect itself against two writes for one visitor at the same moment, or the host sends one visitor's requests to one process.
+
+```js
+import { createStorefront, memoryCartStore } from '@debutify/liquidjs/storefront'
+import { storefrontSampleData } from '@debutify/liquidjs/shopify'
+
+// the default store, sized by hand: 500 visitors, an hour of disuse
+const small = createStorefront({ theme, data: storefrontSampleData, cartStore: memoryCartStore({ max: 500, idleMs: 60 * 60 * 1000 }) })
+
+// your own store: a Map stands in for a key-value service, and a state is plain JSON
+const kv = new Map()
+const cartStore = {
+  async get (visitor) {
+    const stored = kv.get(`cart:${visitor}`)
+    return stored === undefined ? undefined : JSON.parse(stored)
+  },
+  async set (visitor, state) {
+    kv.set(`cart:${visitor}`, JSON.stringify(state))
+  }
+}
+const shared = createStorefront({ theme, data: storefrontSampleData, cartStore })
+```
+
+### Sandboxed pages
+
+A preview that runs a theme you did not write must not let the theme's scripts reach the host that serves it. The storefront serves such a preview as a page in a sandboxed iframe under an address nobody can guess, `/p/<token>`, and `sandbox: true` is its half of that. The host's half is two things, and both are needed:
+
+- Send `Content-Security-Policy: sandbox allow-scripts allow-forms` on every answer under the base path: pages, JSON, redirects, 404s and the host's own error answers, not only the pages the storefront returns.
+- Frame the page with `<iframe sandbox="allow-scripts allow-forms" src="/p/<token>/">`.
+
+The reason is the origin. Under `sandbox` without `allow-same-origin`, a document has an opaque origin and not the host's, so the theme's scripts cannot reach the host's cookies, storage or pages; and the header keeps that true when the address is opened outside the iframe (a link opened in a new tab, a form post that navigates), which the iframe attribute alone does not. Never add `allow-same-origin`: the page would then have the host's origin and the sandbox would protect nothing. Scripts and forms are what a theme needs; modals, popups and navigating the parent page stay off. An opaque origin also has no working storage or cookies, which themes use, and its requests to the host are cross-origin and carry no cookies. So in `sandbox` mode the storefront answers for it, and the [client script](#the-client-script) gives the page in-memory storage and cookies.
+
+```js
+import { createStorefront } from '@debutify/liquidjs/storefront'
+import { storefrontSampleData } from '@debutify/liquidjs/shopify'
+
+const TOKEN = 'a-long-random-token-made-for-this-preview'
+const BASE = `/p/${TOKEN}`
+const SANDBOX = 'sandbox allow-scripts allow-forms'
+
+const storefront = createStorefront({ theme, data: storefrontSampleData })
+
+const sandboxed = (response) => {
+  const headers = new Headers(response.headers)
+  headers.set('content-security-policy', SANDBOX)
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
+}
+
+/** The preview host: a fetch-style handler for the whole site. */
+export async function host (request) {
+  const { pathname } = new URL(request.url)
+  if (pathname === '/') {
+    return new Response(`<!doctype html><iframe sandbox="allow-scripts allow-forms" src="${BASE}/" style="border:0;width:100%;height:100vh"></iframe>`, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+  }
+  if (pathname !== BASE && !pathname.startsWith(`${BASE}/`)) return new Response('Not found', { status: 404 })
+  try {
+    return sandboxed(await storefront.handle(request, { basePath: BASE, visitor: TOKEN, sandbox: true }))
+  } catch {
+    return sandboxed(new Response('Something went wrong', { status: 500 }))
+  }
+}
+```
+
+With `sandbox: true` (which needs `visitor`) the storefront changes five things:
+
+- It answers a preflight (`OPTIONS`, for any address) at once with 204 and `Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods: GET, POST, OPTIONS`, `Access-Control-Allow-Headers: content-type, accept, x-requested-with, x-storefront-page` and `Access-Control-Max-Age: 600`, before it reads anything. The host must hand `OPTIONS` requests under the base path to `handle`.
+- Every other answer carries `Access-Control-Allow-Origin: *`: with an opaque origin, each request the page makes to its own host is cross-origin. No credentials are allowed, so this exposes nothing a direct request would not.
+- The `Cookie` header is ignored and no `Set-Cookie` is sent: the visitor is the `visitor` option, whatever cookies the request carries.
+- An HTML answer gets the client script first in its `<head>` (or, in a document with no `<head>`, after its `<html>` tag, else after its doctype; HTML with none of the three is not a page and is left alone). A section fragment, a redirect, a `HEAD` answer and JSON do not.
+- `cart.token` is the visitor key.
+
+The token in the base path is the only key to the preview's cart: anyone who has the address can read and change it. Make it unguessable, one per preview, and send it nowhere else. A host that serves the theme's assets for such a page sends them with `Access-Control-Allow-Origin: *` too, because fonts, module scripts and `fetch` calls are cross-origin from an opaque origin.
+
+### The client script
+
+`storefrontClientScript({ basePath })` returns the script the storefront puts in a sandboxed page, as a string of plain ES5 that runs before any theme code. A host that never calls `handle` with `sandbox: true` has no use for it; one that builds its own pages puts it first in `<head>`:
+
+```js
+import { storefrontClientScript } from '@debutify/liquidjs/storefront'
+
+const tag = `<script>${storefrontClientScript({ basePath: '/p/a-long-random-token' })}</script>`
+```
+
+The base path is the only value written into the script, as a JSON string with `<`, U+2028 and U+2029 escaped, so no base path can close the element. The script does five things:
+
+- `localStorage` and `sessionStorage` become in-memory objects with the `Storage` methods (`getItem`, `setItem`, `removeItem`, `clear`, `key` and `length`), gone when the page unloads. A property assigned by hand (`localStorage.key = value`) is not storage.
+- `document.cookie` becomes an in-memory cookie jar. A cookie is removed by `max-age=0` (or negative) or an `expires` in 1970; no other expiry, `path` or `domain` is read.
+- A root-relative address (`/cart/add.js`) given to `fetch`, `XMLHttpRequest`, a link (when it is clicked) or a form (when it is submitted) gets `Shopify.routes.root` put in front of it, which holds the base path and the locale prefix (the base path before the page has set it), unless it already starts with the prefix or the base path. An absolute URL or an address without a leading slash is the page's own to get right, as is a button's `formaction`, which is not read.
+- On the store's own requests it sends the page's current path and query in `X-Storefront-Page`, which the storefront reads as the context for bundled sections (see [The cart](#the-cart)).
+- It runs once per window: a second copy of the script does nothing, so what the page stored is kept and nothing is wrapped twice.
+
+### Limits and errors
+
+`DEFAULT_LIMITS` (frozen) holds the defaults of the limits that keep one request or one visitor from costing more than a host can bear. To change one, pass it in the `limits` option.
+
+| Limit | Default | Applies to |
+| --- | --- | --- |
+| `body` | 65,536 | Bytes of a request body, checked against `Content-Length` first and again as the body is read. |
+| `lines` | 100 | Lines in a cart, items in one `add.js` and entries in one `updates`. |
+| `quantity` | 9,999 | Units on one line. |
+| `properties` | 25 | Properties of one line, attributes of a cart and discount codes of a cart (the oldest code goes first when a discount link adds one more). |
+| `propertyLength` | 255 | Characters in a property name or value, an attribute name, a discount code and a shipping address part. |
+| `sections` | 5 | Sections in one `?sections=` or one cart answer. |
+| `search` | 256 | Characters in predictive search terms. |
+| `visitors` | 10,000 | Visitors the default cart store holds. |
+| `idleMs` | 86,400,000 | Milliseconds of disuse after which the default cart store drops a visitor. |
+
+What the storefront answers when something is wrong:
+
+| Situation | Answer |
+| --- | --- |
+| A body over `limits.body` | 413 with `{ "status": 413, "message": "Payload Too Large", "description": "…" }`. |
+| A body that cannot be read or parsed: bad JSON, JSON that is not an object, a form that is not valid, one field used both as a value and as a group (`a=1&a[b]=2`) | 400 with `{ "status": 400, "message": "Bad Request", "description": "…" }`. |
+| A cart change that is wrong or over a limit | A Cart API error, `{ status, message, description }`, almost always 422; the description names the limit (`The quantity must be a whole number from 1 to 9999.`). Nothing changes. On a cart form, a plain page with the same status. |
+| More than `limits.sections` ids in `?sections=` | 400 with an empty body. In a cart answer, the change is made and `sections` is `null`. |
+| A section that is missing or fails | 404 with an empty body for `?section_id=`; `null` under its id for `?sections=` and in a cart answer. |
+| A page whose resource is missing, or an address the store does not serve | The theme's `404` template with status 404; a plain page when the theme has none or it fails. |
+| A render, the theme or data function, or the cart store throws (a theme that does not parse, a render over `renderLimit`) | 500, a plain "Something went wrong" page with no detail, and `onReport` gets `{ kind: 'error', error }`. |
+| `handle` with `sandbox: true` and no `visitor` | `handle` rejects with a `TypeError`: it is the host's bug. |
+
+### Storefront public API
+
+From 1.1.0, the release that adds the entry, semver covers what `@debutify/liquidjs/storefront` exports, and nothing else: the functions `createStorefront`, `memoryCartStore` and `storefrontClientScript`, the value `DEFAULT_LIMITS`, and the types `StorefrontOptions`, `HandleOptions`, `Storefront`, `StorefrontLimits`, `StorefrontReport`, `CartStore` and `VisitorState`. Anything imported from a deeper path (`@debutify/liquidjs/dist/...`) is not covered.
+
+### Known gaps of the storefront
+
+The storefront is compared with Debutify's parity store request by request. These differences are kept on purpose, each with its reason, and none hides another difference in the same scenario or page.
+
+Scenarios whose remaining difference is accepted (the scenario's other steps are still compared):
+
+- `flow-contact-ok`, `flow-contact-error` and `flow-contact-newsletter`: Shopify's bot challenge answers scripted contact posts with 403, so no recording holds Shopify's answer.
+- `flow-checkout`: checkout and the account pages are outside the storefront by the spec: they answer the notice page with status 200, where Shopify redirects to its checkout and its login.
+- `ajax-cart-form-add`: the cart form's checkout button: Shopify redirects to its own checkout (/checkouts/cn/<token>/en-us), the storefront to its notice page at /checkout.
+
+Parts of scenarios that are accepted (only the named snippet or key is replaced by one fixed text on both sides, so every other difference still shows):
+
+- `customer-account-login-address` (scenarios `page-*`, `probe-page-*` and `flow-localization-*`): customer accounts are outside the storefront by the spec: Shopify's login address is its own customer-authentication redirect, the storefront's is its notice page at /account/login.
+- `content-for-header-endpoint-links` (scenarios `page-*`): Shopify adds links to endpoints the storefront does not serve to content_for_header: the oEmbed and the Atom feed of a product, collection, blog or article, and the rel=buy link to its buy-now endpoint.
+- `placeholder-art` (scenarios `page-*`): placeholder_svg_tag draws Shopify's own artwork, which cannot be copied; the engine draws its own, so only the tag and its class are compared.
+- `search-ranking` (scenarios `probe-search-shirt` and `probe-search-type-product`): Shopify's search relevance orders the results its own way; the results themselves (which products and articles) are still compared.
+- `predictive-search-matches` (scenario `probe-predictive-prefix`): Shopify's predictive search matches a prefix such as `ca` against more fields than the engine does (it returns the hoodie), which is its relevance and not data.
+- `recommended-products` (scenario `probe-recommendations-related`): Shopify samples related products from the store's sales, which this store never had, so the products it lists are its own pick; their count is still compared.
+- `payment-icon-art` (scenarios `page-*` and `ajax-cart-sections`): payment_type_svg_tag draws Shopify's own card artwork and names the card in its own words in the title (Visa, Mastercard), which cannot be copied; the list of cards, each item and its id, and the svg tag's attributes are still compared.
+- `shipping-markup` (scenarios `ajax-shipping-rates-en-ca` and `ajax-shipping-rates-en-eu`): Shopify prints the markup of a shipping rate in another currency as the printed price less the base rate at its live exchange rate (CAD -0.17, EUR 1.15), which the dataset does not hold and which changes daily; the storefront prints 0.00. Every other field of those rates, the converted price included, is still compared.
+- `recommended-products-json` (scenario `ajax-recommendations-json`): Shopify samples the related products of the recommendations answer at random (pr_seq=uniform, pr_prod_strat=collection_fallback) and puts a random pr_rec_id in each product url; the answer's intent and the number of products are still compared.
+
+Probe keys that the engine cannot match, accepted in `test/storefront/all-probes.spec.ts`. The recorded value is left out (or, for `results`, compared as a set) and the value the engine prints is pinned instead, so a change to it still fails:
+
+- `results` of `probe-search-shirt` and `probe-search-type-product`: Shopify ranks search results by its own relevance, which the dataset does not carry and no rule of plain matching reproduces (the engine lists them in store order); the results are compared as a set, and the engine's order is pinned.
+- `products` of `probe-predictive-prefix`: for `q=ca` Shopify's predictive index finds the `hoodie` before `canvas-sneakers`, though nothing in the dataset for the hoodie holds a word that starts "ca"; the engine finds `canvas-sneakers` alone.
+- `products` of `probe-recommendations-related`: Shopify samples related products per request from its own recommendation model (two recordings of one request share two of four products); the engine lists the products of the product's collections, then of its type, in store order.
+- `routes.account_login_url` of `probe-page-home`, `probe-page-en-ca`, `probe-page-en-eu`, `probe-page-fr-ca` and `probe-page-fr-eu`: the parity store uses new customer accounts, whose login address is Shopify's `customer_authentication/redirect` on the store's myshopify domain, a setting the dataset does not carry; customer accounts are out of the item's scope, so the engine prints the classic `<prefix>/account/login`.
+
+What no recording or shopify.dev page pins is Debutify's own choice, and may differ from Shopify:
+
+- The password page: the wrong-password text, its 200 status, and every other address redirecting to `/password` until the visitor has passed it.
+- The contact and newsletter forms send nothing, and their error wording (`can't be blank`, `is invalid`) is the storefront's.
+- A cart add for more units than the stock holds adds nothing and answers 422, where shopify.dev says Shopify adds the maximum; the text for one unit left is the storefront's. The `.json` spellings of the cart endpoints are undocumented and are the same endpoints as the `.js` ones.
+- The `cart` cookie ends with the browser session, where Shopify's lasts two weeks.
+- The limits in the table above are the storefront's own; Shopify's differ.
 
 The upstream README follows.
 
