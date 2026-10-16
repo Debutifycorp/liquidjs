@@ -81,6 +81,12 @@ export function currencyOf (data: StoreData, view: StoreView): ViewCurrency {
   }
 }
 
+/** The root of the market, in the market's default language: the primary market's is the store's own root (`''`), another market's is its default language's prefix (`/en-ca`, `/en-eu`). `shop.secure_url` ends with it (recordings `page-home-fr-ca` and `page-product-en-eu`: `https://<host>/en-ca` on the Canada market's French page, `/en-eu` on the Europe market's). shopify.dev's shop page gives `secure_url` no market root, so only the recordings pin it. */
+export function marketRoot (data: StoreData, market: string): string {
+  const entry = marketOf(data, market)
+  return localePrefixes(data).find(prefix => prefix.market === entry.handle && prefix.language === entry.languages[0])?.prefix ?? ''
+}
+
 /** The currencies of all the store's markets, one a currency, in ISO order as the parity store lists `shop.enabled_currencies` (fixture `probe-page-home`: CAD, EUR, USD, though its markets run USD, CAD, EUR), each as https://shopify.dev/docs/api/liquid/objects/currency. */
 export function enabledCurrencies (data: StoreData): LiquidObject[] {
   const byCode = new Map(marketsOf(data).map(m => [m.currency.iso_code, { iso_code: m.currency.iso_code, symbol: m.currency.symbol, name: m.currency.name ?? m.currency.iso_code }]))

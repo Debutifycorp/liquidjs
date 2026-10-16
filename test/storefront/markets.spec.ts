@@ -127,7 +127,8 @@ describe('markets and localization', () => {
   it('prints the market formats through the money filters', async () => {
     const layout = '{{ 123456 | money }}|{{ 123456 | money_with_currency }}|{{ 123456 | money_without_currency }}|{{ shop.money_format }}|{{ cart.currency.iso_code }}'
     expect(await renderUrl('/', layout)).toBe('$1,234.56|$1,234.56 USD|1,234.56|${{amount}}|USD') // eslint-disable-line no-template-curly-in-string
-    expect(await renderUrl('/fr-eu', layout)).toBe('€1.234,56|€1.234,56 EUR|1.234,56|${{amount}}|EUR') // eslint-disable-line no-template-curly-in-string
+    // `shop.money_format` is the market currency's too (recording `page-product-en-eu`: `€{{amount_with_comma_separator}}`); this test pinned the shop's `${{amount}}` before that recording was compared
+    expect(await renderUrl('/fr-eu', layout)).toBe('€1.234,56|€1.234,56 EUR|1.234,56|€{{amount_with_comma_separator}}|EUR')
   })
 
   describe('hreflang links', () => {

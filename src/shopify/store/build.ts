@@ -1,11 +1,10 @@
 import { ImageDrop } from '../objects/image'
 import { HandleMap } from '../objects/handle-map'
-import { DEFAULT_MONEY_FORMAT, DEFAULT_MONEY_WITH_CURRENCY_FORMAT } from '../state'
 import type { ImageData } from '../types'
 import { escapeHtml } from '../util/html'
 import { buildCartObject, cartStateOf } from './cart'
 import { buildFilters } from './filters'
-import { buildLocalization, currencyOf, enabledCurrencies } from './markets'
+import { buildLocalization, currencyOf, enabledCurrencies, marketRoot } from './markets'
 import type { ViewCurrency } from './markets'
 import { convert, planAmount, planPrice } from './pricing'
 import { translateData } from './translate'
@@ -800,10 +799,12 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
       domain: data.shop.domain,
       permanent_domain: data.shop.domain,
       url: `https://${data.shop.domain}`,
-      secure_url: `https://${data.shop.domain}`,
+      // the market's root in its default language (`marketRoot`; recordings `page-home-fr-ca` and `page-product-en-eu`)
+      secure_url: `https://${data.shop.domain}${marketRoot(data, view.market)}`,
       currency: data.shop.currency,
-      money_format: data.shop.money_format ?? DEFAULT_MONEY_FORMAT,
-      money_with_currency_format: data.shop.money_with_currency_format ?? DEFAULT_MONEY_WITH_CURRENCY_FORMAT,
+      // the formats of the market's currency, which are the shop's own for the shop's currency (recording `page-product-en-eu`: `€{{amount_with_comma_separator}}`); the money filters already print in them
+      money_format: currency.money_format,
+      money_with_currency_format: currency.money_with_currency_format,
       locale: data.shop.locale ?? 'en',
       // https://shopify.dev/docs/api/liquid/objects/shop lists both: the currencies of the store's markets and its published locales. The parity store prints the currencies by ISO code and, as `published_locales`, the languages of the market the page is in with their URLs there (fixtures `probe-page-home` and `probe-page-en-ca`), not every language the store is published in.
       enabled_currencies: enabledCurrencies(data),

@@ -7,6 +7,7 @@ import { buildCartObject } from './cart'
 import type { CartState } from './cart'
 import { collectionView, typeCollection, vendorCollection } from './collection-view'
 import { alternatesOf, buildLocalization, languageIn } from './markets'
+import { pageDescription, pageImage, templateTitle } from './page-meta'
 import { buildPredictiveSearch } from './predictive'
 import { buildRecommendations, RecommendationsRequest } from './recommendations'
 import { buildSearch } from './search'
@@ -175,9 +176,9 @@ export interface PageGlobals {
 }
 
 /**
- * The global objects of one page, each following its page under https://shopify.dev/docs/api/liquid/objects: `shop`, `cart`, `customer`, `localization`, `collections`, `all_products`, `pages`, `blogs`, `articles`, `linklists`, `images`, `routes`, `template`, `request` (`page_type`, `path`, `host`, `origin`, `locale`, `design_mode`, `visual_preview_mode`), `page_title`, `page_description`, `canonical_url`, `handle`, `current_page`, `current_tags`, `search`, `recommendations`, `predictive_search`, `powered_by_link`, `additional_checkout_buttons`, `content_for_additional_checkout_buttons`, `metaobjects`, `country_option_tags`, `all_country_option_tags`, `gift_card` on the `gift_card` template (https://shopify.dev/docs/api/liquid/objects/gift_card, nil when the store data issues none), `order` on the `customers/order` template (https://shopify.dev/docs/api/liquid/objects/order, the customer's order `orderFor` picks), and the template's resource under its own name (`product`, `collection`, `page`, `blog`, `article`; an article also sets `blog`).
+ * The global objects of one page, each following its page under https://shopify.dev/docs/api/liquid/objects: `shop`, `cart`, `customer`, `localization`, `collections`, `all_products`, `pages`, `blogs`, `articles`, `linklists`, `images`, `routes`, `template`, `request` (`page_type`, `path`, `host`, `origin`, `locale`, `design_mode`, `visual_preview_mode`), `page_title`, `page_description`, `page_image`, `canonical_url`, `handle`, `current_page`, `current_tags`, `search`, `recommendations`, `predictive_search`, `powered_by_link`, `additional_checkout_buttons`, `content_for_additional_checkout_buttons`, `metaobjects`, `country_option_tags`, `all_country_option_tags`, `gift_card` on the `gift_card` template (https://shopify.dev/docs/api/liquid/objects/gift_card, nil when the store data issues none), `order` on the `customers/order` template (https://shopify.dev/docs/api/liquid/objects/order, the customer's order `orderFor` picks), and the template's resource under its own name (`product`, `collection`, `page`, `blog`, `article`; an article also sets `blog`).
  *
- * Choices shopify.dev does not pin, for the "confirm on a development store" list: `canonical_url` is the origin plus the path, with no query string, as the parity store prints it (fixtures `probe-page-*`: `/pages/about?view=probe` has `https://<host>/pages/about`), and no page number, which no fixture records (the page says only that it is the canonical URL of the current page); `page_title` is the resource's title or the shop's name, without the shop-name suffix a live store adds; `powered_by_link` is empty because the link points at shopify.com, which a Debutify store does not show; `search` runs only when the request has `searchTerms` (`buildSearch`, whose matching is Debutify's), `recommendations` is performed only for a request's `recommendations` (`buildRecommendations`, whose related products are Debutify's) and carries `performed` beside `performed?` (shopify.dev names only `performed?`, but liquid-spec's recorded Shopify environments hold both, so a template that reads `recommendations.performed` takes the same branch as on a store), and `metaobjects` is empty.
+ * Choices shopify.dev does not pin, for the "confirm on a development store" list: `canonical_url` is the origin plus the path, with no query string, as the parity store prints it (fixtures `probe-page-*`: `/pages/about?view=probe` has `https://<host>/pages/about`), except a search's `?q=` (recording `page-search`: `/search?q=shirt`), and no page number, which no fixture records (the page says only that it is the canonical URL of the current page); `page_title` is the resource's title, Shopify's words for a template without one (`templateTitle`) or the shop's name, without the shop-name suffix a live store adds; `page_description` and `page_image` are the resource's text and featured image (`pageDescription`, `pageImage`); `powered_by_link` is empty because the link points at shopify.com, which a Debutify store does not show; `search` runs only when the request has `searchTerms` (`buildSearch`, whose matching is Debutify's), `recommendations` is performed only for a request's `recommendations` (`buildRecommendations`, whose related products are Debutify's) and carries `performed` beside `performed?` (shopify.dev names only `performed?`, but liquid-spec's recorded Shopify environments hold both, so a template that reads `recommendations.performed` takes the same branch as on a store), and `metaobjects` is empty.
  */
 export function buildGlobals (input: GlobalsInput): PageGlobals {
   const { store, request, report } = input
@@ -217,6 +218,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   const localization = request.country && request.country !== (store.localization.country as LiquidObject | null)?.iso_code ? buildLocalization(data, view, request.country) : store.localization
   // the cart is per visitor, so one the caller hands in is built on the shared store's products, currency and prefix; recommendations leave out the products of that cart
   const cart = input.cart ? buildCartObject(store, input.cart) : store.cart
+  const search = buildSearch(store, request.searchTerms, request, view.prefix)
   const globals: Record<string, unknown> = {
     shop: store.shop,
     settings: null,
@@ -243,13 +245,15 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
       design_mode: false,
       visual_preview_mode: false
     },
-    page_title: resource?.title ?? store.shop.name,
-    page_description: (resource?.description as string | undefined) ?? store.shop.description,
-    canonical_url: `${origin}${path}`,
+    // `templateTitle`, `pageDescription` and `pageImage` (page-meta.ts) hold what the parity store prints for each template
+    page_title: resource?.title ?? templateTitle(pageType, search) ?? store.shop.name,
+    page_description: pageDescription(pageType, resource, store.shop.description),
+    page_image: pageImage(pageType, resource),
+    canonical_url: `${origin}${canonicalPath(pageType, path, request.searchTerms)}`,
     handle: resource?.handle ?? '',
     current_page: page,
     current_tags: pageType === 'collection' && request.tags?.length ? request.tags : null,
-    search: buildSearch(store, request.searchTerms, request, view.prefix),
+    search,
     recommendations: buildRecommendations({ ...store, cart }, request.recommendations, report),
     // https://shopify.dev/docs/api/liquid/objects/predictive_search: only a Predictive Search API request has it; any other page has none, and the recording prints nil (fixture `ajax-sections-page`)
     ...(request.predictive ? { predictive_search: buildPredictiveSearch(store, request.predictive, input.data) } : {}),
@@ -264,6 +268,12 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     ...resources
   }
   return { globals, linklists, request: { path, origin, page, prefix: view.prefix, query: request.query, alternates: pageType === '404' ? [] : alternates(data, view, path, request.searchTerms, pageType) } }
+}
+
+/** The path of the canonical URL: the page's path, and for a search with a term its `?q=` (recording `page-search`: `rel="canonical"` and `og:url` are `/search?q=shirt`). Any other query, a search's `type` and filters included, is left out, as the hreflang links leave it out. */
+function canonicalPath (pageType: string, path: string, searchTerms: string | undefined): string {
+  if (pageType !== 'search' || !searchTerms?.trim()) return path
+  return `${path.split(/[?#]/)[0]}?${new URLSearchParams({ q: searchTerms })}`
 }
 
 /**

@@ -55,6 +55,22 @@ describe('pages', () => {
     }
   })
 
+  it('shows the 404 template at /404, whatever address was asked for, with the status 404', async () => {
+    // recording `page-not-found` (`/pages/does-not-exist`, status 404): the canonical link, `og:url` and the localization form's `return_to` all name `/404`
+    const { harnessTheme } = await import('./harness')
+    const theme = harnessTheme()
+    theme.files['templates/404.liquid'] = '{{ canonical_url }}|{{ request.path }}|{{ request.page_type }}|{{ template.name }}'
+    const { send } = harness({ theme })
+    const body = (text: string) => text.split('<body>')[1]?.split('</body>')[0]
+    for (const url of ['/nope', '/pages/does-not-exist', '/products/nope?variant=1', '/collections/nope/products/hoodie', '/404']) {
+      const answer = await send('GET', url)
+      expect([url, answer.status, body(answer.text)]).toEqual([url, 404, 'https://store.invalid/404|/404|404|404'])
+    }
+    // the shopper's language stays: the 404 of the French Canada store is at its own /404
+    const french = await send('GET', '/fr-ca/does-not-exist')
+    expect([french.status, body(french.text)]).toEqual([404, 'https://store.invalid/fr-ca/404|/fr-ca/404|404|404'])
+  })
+
   it('answers 404 for a section of a page that does not exist, and for a product under a collection that does not', async () => {
     const { send } = harness()
     for (const url of ['/products/nope?section_id=cart-count', '/products/nope?sections=cart-count', '/collections/nope/products/hoodie', '/collections/tops/products/nope']) {

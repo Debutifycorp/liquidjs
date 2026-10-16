@@ -14,6 +14,7 @@ import { assetFilters } from './assets'
 import { colorFilters } from './color'
 import { fontFilters } from './font'
 import { jsonFilters } from './json'
+import { htmlSafeFilters } from './html-safe'
 
 /** The Shopify filter implementations, one set per module. */
 export const SHOPIFY_FILTER_SETS: readonly ShopifyFilterSet[] = Object.freeze([
@@ -25,7 +26,8 @@ export const SHOPIFY_FILTER_SETS: readonly ShopifyFilterSet[] = Object.freeze([
   assetFilters,
   colorFilters,
   fontFilters,
-  jsonFilters
+  jsonFilters,
+  htmlSafeFilters
 ])
 
 export function shopifyFilterImplementations (): ShopifyFilterSet {
