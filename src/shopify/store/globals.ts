@@ -43,7 +43,7 @@ export interface RequestInput {
   resource?: string
   /** Chooses contextual section group files (`header-group.context.<market>.json`). */
   context?: { market?: string, b2b?: boolean }
-  /** `search.terms` on the search template. */
+  /** `search.terms` on the search template, and the vendor or type that `/collections/vendors?q=` and `/collections/types?q=` list. */
   searchTerms?: string
   /** A Product Recommendations API request (`/recommendations/products?product_id=…&limit=…&intent=…`), which renders `recommendations` for that product (`buildRecommendations`). */
   recommendations?: RecommendationsRequest

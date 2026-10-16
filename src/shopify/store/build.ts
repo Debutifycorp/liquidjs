@@ -312,13 +312,14 @@ export function selectSellingPlan (product: LiquidObject, planId: number | undef
 }
 
 /**
- * https://shopify.dev/docs/api/liquid/objects/collection, at its URL under `prefix`. Filtering, tags and sorting are not applied here (`collectionView` applies them per request): `products` is the collection's product list as given, `filters` are the store's storefront filters over those products (`buildFilters`, in the view `currency` when given), `default_sort_by` is the collection's `sort_order` (`manual` when it has none) and `sort_options` lists the options the parity store lists, `Most relevant` included (fixture `probe-collection-all`). `tags` are the tags of the products in `products`, read when asked, so inside a `paginate` block they are the tags of the products of the page, as the parity store prints them (fixtures `probe-collection-page-2` and `probe-collection-page-past`, where the page after the last has none).
+ * https://shopify.dev/docs/api/liquid/objects/collection, at its URL under `prefix`. Filtering, tags and sorting are not applied here (`collectionView` applies them per request): `products` is the collection's product list as given, `filters` are the store's storefront filters over those products (`buildFilters`, in the view `currency` when given), built when first read and kept, so a store build does not pay for collections no page shows, `default_sort_by` is the collection's `sort_order` (`manual` when it has none) and `sort_options` lists the options the parity store lists, `Most relevant` included (fixture `probe-collection-all`). `tags` are the tags of the products in `products`, read when asked, so inside a `paginate` block they are the tags of the products of the page, as the parity store prints them (fixtures `probe-collection-page-2` and `probe-collection-page-past`, where the page after the last has none).
  */
 export function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>, filters: FilterData[] | undefined, prefix: string, currency?: ViewCurrency): LiquidObject {
   const items = data.products.map(handle => HandleMap.get(products, handle)).filter((product): product is LiquidObject => !!product)
   const collect = (key: string) => unique(items.flatMap(product => product[key] as string | string[]).filter(Boolean)).sort()
   const own = image(data.image)
   const url = withPrefix(prefix, `/collections/${data.handle}`)
+  let computed: LiquidObject[] | undefined
   return printsHandle({
     id: data.id,
     handle: data.handle,
@@ -336,7 +337,10 @@ export function buildCollection (data: CollectionData, products: HandleMap<Liqui
     get tags () {
       return unique(((this as LiquidObject).products as LiquidObject[]).flatMap(product => product.tags as string[])).sort()
     },
-    filters: buildFilters(filters, items, url, [], currency),
+    get filters () {
+      computed ??= buildFilters(filters, items, url, [], currency)
+      return computed
+    },
     sort_by: '',
     default_sort_by: data.sort_order ?? 'manual',
     sort_options: [

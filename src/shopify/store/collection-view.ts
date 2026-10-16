@@ -1,7 +1,7 @@
 import { HandleMap } from '../objects/handle-map'
 import { buildCollection, copyObject } from './build'
 import type { LiquidObject, StoreObjects } from './build'
-import { applyFilters, buildFilters, matchingVariant } from './filters'
+import { applyFilters, buildFilters, filterMatcher, normalizeQuery } from './filters'
 import type { RequestInput } from './globals'
 import type { ViewCurrency } from './markets'
 import type { FilterData } from './types'
@@ -11,7 +11,11 @@ export { applyFilters }
 
 type Product = LiquidObject
 
-const created = (product: Product) => String(product.created_at ?? '')
+/** The time a product was created, from its `created_at` with any UTC offset; -Infinity when it has none or it is no date, which then sorts before every date. */
+const stamp = (product: Product) => {
+  const time = Date.parse(String(product.created_at ?? ''))
+  return Number.isNaN(time) ? -Infinity : time
+}
 const sold = (product: Product) => typeof product.sales_rank === 'number' ? product.sales_rank : Infinity
 
 /** The collections Shopify makes itself: the catalogue and the vendor and type collections. They have no manual order, and `manual` shows their default one, by title (fixture `probe-collection-sort-manual`). */
@@ -20,20 +24,26 @@ const AUTOMATIC = new Set(['all', 'vendors', 'types'])
 /** The `sort_by` values of https://shopify.dev/docs/api/liquid/objects/collection#collection-sort_by. */
 export const SORT_VALUES = ['manual', 'best-selling', 'title-ascending', 'title-descending', 'price-ascending', 'price-descending', 'created-ascending', 'created-descending']
 
+const collator = new Intl.Collator('en')
+
 const BY: Record<'title' | 'price' | 'created', (a: Product, b: Product) => number> = {
-  title: (a, b) => String(a.title).localeCompare(String(b.title), 'en'),
+  title: (a, b) => collator.compare(String(a.title), String(b.title)),
   price: (a, b) => Number(a.price) - Number(b.price),
-  created: (a, b) => created(a) < created(b) ? -1 : created(a) > created(b) ? 1 : Number(a.id) - Number(b.id)
+  created: (a, b) => {
+    const [x, y] = [stamp(a), stamp(b)]
+    if (x !== y) return x < y ? -1 : 1
+    return x === -Infinity ? 0 : Number(a.id) - Number(b.id)
+  }
 }
 
 /**
- * `products` in the order `sortBy` names, a copy. Products that tie keep the order they came in, and a descending order is exactly the reverse of the ascending one, ties included, as the parity store lists them (fixtures `probe-collection-sort-price-ascending` and `-descending`: the two 25.00 products come slides then clear-sunnies, and the 120.00 ones women-crewneck first descending). Best selling puts the products with a `sales_rank` first, by rank, and the rest newest first, which is what the parity store lists with no sales (fixtures `probe-collection-sort-best-selling` and `probe-collection-best-selling`: hoodie, beanie, high-top-sneakers, clear-sunnies, gray-runners, gray-leather-sneakers, the catalogue's newest first, not the collection's order); with no `created_at` to tell which is newest, the rest keep their order. A product is newer than another by its `created_at` and, at the same second, by its larger `id`, as Shopify numbers products in the order it makes them (the fixtures' ties fall that way). `manual` keeps the order, except in the collections Shopify makes itself (`automatic`), where it is the title order. Price is the product's lowest price and title the title in English collation, neither of which shopify.dev pins; created is the `created_at` text, which sorts as the time it holds.
+ * `products` in the order `sortBy` names, a copy. Products that tie keep the order they came in, and a descending order is exactly the reverse of the ascending one, ties included, as the parity store lists them (fixtures `probe-collection-sort-price-ascending` and `-descending`: the two 25.00 products come slides then clear-sunnies, and the 120.00 ones women-crewneck first descending). Best selling puts the products with a `sales_rank` first, by rank, and the rest newest first, which is what the parity store lists with no sales (fixtures `probe-collection-sort-best-selling` and `probe-collection-best-selling`: hoodie, beanie, high-top-sneakers, clear-sunnies, gray-runners, gray-leather-sneakers, the catalogue's newest first, not the collection's order); with no `created_at` to tell which is newest, the rest keep their order. A product is newer than another by its `created_at` (compared as the time it holds, whatever its UTC offset) and, at the same time, by its larger `id`, as Shopify numbers products in the order it makes them (the fixtures' ties fall that way); products with no `created_at` tie and keep their order. `manual` keeps the order, except in the collections Shopify makes itself (`automatic`), where it is the title order. Price is the product's lowest price and title the title in English collation, neither of which shopify.dev pins; a `created_at` that is no date sorts before every date.
  */
 export function sortProducts (products: Product[], sortBy: string, automatic = false): Product[] {
   const list = [...products]
   if (sortBy === 'manual') return automatic ? list.sort(BY.title) : list
   if (sortBy === 'best-selling') {
-    const newest = list.some(product => created(product)) ? list.sort(BY.created).reverse() : list
+    const newest = list.some(product => stamp(product) !== -Infinity) ? list.sort(BY.created).reverse() : list
     return newest.sort((a, b) => sold(a) === sold(b) ? 0 : sold(a) < sold(b) ? -1 : 1)
   }
   const [key, direction] = sortBy.split('-') as ['title' | 'price' | 'created', 'ascending' | 'descending']
@@ -55,14 +65,17 @@ export function collectionView (collection: LiquidObject, request: RequestInput,
   const all = collection.products as Product[]
   const tags = request.tags ?? []
   const tagged = tags.length ? all.filter(product => tags.every(tag => (product.tags as string[]).includes(tag))) : all
-  const query = (request.query ?? [...(request.sortBy ? [['sort_by', request.sortBy] as [string, string]] : []), ...(request.filters ?? [])]).filter(([name]) => name !== 'page')
-  const active = request.filters ?? query.filter(([name]) => name.startsWith('filter.'))
+  const query = normalizeQuery(request.query ?? [...(request.sortBy ? [['sort_by', request.sortBy] as [string, string]] : []), ...(request.filters ?? [])]).filter(([name]) => name !== 'page')
+  const active = request.filters ? normalizeQuery(request.filters) : query.filter(([name]) => name.startsWith('filter.'))
   const named = request.sortBy && SORT_VALUES.includes(request.sortBy) ? request.sortBy : undefined
-  const sorted = sortProducts(applyFilters(tagged, active, currency, undefined, storefrontFilters), named ?? String(collection.default_sort_by), AUTOMATIC.has(String(collection.handle))).map(product => {
-    const variant = matchingVariant(product, active, currency, storefrontFilters)
+  const matcher = filterMatcher(active, currency, storefrontFilters)
+  const sorted = sortProducts(tagged.filter(matcher.test), named ?? String(collection.default_sort_by), AUTOMATIC.has(String(collection.handle)))
+  const link = (product: Product) => {
+    const variant = matcher.firstVariant(product)
     return variant ? copyOf(product, { url: variant.url, featured_media: variant.featured_media ?? product.featured_media }) : product
-  })
-  return copyOf(collection, { products: sorted, products_count: sorted.length, sort_by: named ?? '', filters: buildFilters(storefrontFilters, tagged, path, query, currency) })
+  }
+  const shown = active.some(([name]) => name.startsWith('filter.v.')) ? sorted.map(link) : sorted
+  return copyOf(collection, { products: shown, products_count: shown.length, sort_by: named ?? '', filters: buildFilters(storefrontFilters, tagged, path, query, currency) })
 }
 
 /**
