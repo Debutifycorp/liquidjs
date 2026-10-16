@@ -260,12 +260,23 @@ function imageJson (image: ImageDrop | null | undefined, product: LiquidObject, 
   return form === 'cart' ? { aspect_ratio: aspectRatio, alt, ...rest } : { alt, aspect_ratio: aspectRatio, ...rest }
 }
 
+/**
+ * A private copy of what the built store hands over: arrays and plain objects are copied all the way down, anything else (a string, a number, `null`) is itself. The answers of `cartJson` and `lineItemJson` are the caller's own, and the store keeps its built variants and selling plans for the next request, so an answer that held one of their arrays or objects (`variant.options`, `variant.quantity_rule`, a plan's `options` and `price_adjustments`) let a caller that changed it change every later answer, `productJson`'s too. Final review B, M1.
+ */
+function own<T> (value: T): T {
+  if (Array.isArray(value)) return value.map(own) as T
+  if (value !== null && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, own(entry)])) as T
+  }
+  return value
+}
+
 /** A line's selling plan allocation as the cart prints it: the allocation's prices and its plan, which `/cart.js` gives a `fixed_selling_plan` (false, the only value recorded) and the other Ajax answers a `checkout_charge`; `{{ cart | json }}` gives neither and ends the allocation with its `checkout_charge_amount` and `remaining_balance_charge_amount` (fixture `ajax-cart-session`: steps 4 and 5, and the `ajax` of step 10). */
 function allocationJson (allocation: LiquidObject, form: LineItemForm): Record<string, unknown> {
   const plan = allocation.selling_plan as LiquidObject
   const checkout = plan.checkout_charge as LiquidObject
   return {
-    price_adjustments: allocation.price_adjustments,
+    price_adjustments: own(allocation.price_adjustments),
     price: allocation.price,
     compare_at_price: allocation.compare_at_price,
     per_delivery_price: allocation.per_delivery_price,
@@ -273,7 +284,7 @@ function allocationJson (allocation: LiquidObject, form: LineItemForm): Record<s
       id: plan.id,
       name: plan.name,
       description: plan.description,
-      options: plan.options,
+      options: own(plan.options),
       recurring_deliveries: plan.recurring_deliveries,
       ...(form === 'cart' ? { fixed_selling_plan: false } : {}),
       price_adjustments: (plan.price_adjustments as LiquidObject[]).map(adjustment => ({ order_count: adjustment.order_count, position: adjustment.position, value_type: adjustment.value_type, value: adjustment.value })),
@@ -343,11 +354,11 @@ export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): 
     untranslated_product_title: item.untranslated_product_title,
     product_description: plainText(product.description),
     untranslated_variant_title: item.variant_title,
-    variant_options: variant.options,
-    options_with_values: item.options_with_values,
+    variant_options: own(variant.options),
+    options_with_values: own(item.options_with_values),
     line_level_discount_allocations: (item.line_level_discount_allocations as LiquidObject[]).map(entry => discountAllocationJson(entry, applicationForm)),
     line_level_total_discount: item.line_level_total_discount,
-    quantity_rule: variant.quantity_rule,
+    quantity_rule: own(variant.quantity_rule),
     has_components: false
   }
   const line = Object.fromEntries((form === 'cart' ? CART_LINE_KEYS : form === 'liquid' ? LIQUID_LINE_KEYS : CHANGE_LINE_KEYS).map(key => [key, fields[key]]))

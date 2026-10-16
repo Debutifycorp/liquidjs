@@ -1,9 +1,10 @@
-import { cartJson, findVariant, lineItemJson, lineKey, renderPage, renderSection, stockFor, storefrontSampleData as data } from '../../src/shopify'
+import { cartJson, findVariant, lineItemJson, lineKey, productJson, renderPage, renderSection, stockFor, storefrontSampleData as data } from '../../src/shopify'
 import type { CartState, RequestInput, StoreData } from '../../src/shopify'
 import { ReportCollector } from '../../src/shopify/report'
 import { buildCartObject } from '../../src/shopify/store/cart'
 import { buildStore } from '../../src/shopify/store/build'
 import { buildGlobals } from '../../src/shopify/store/globals'
+import { resolveView } from '../../src/shopify/store/view'
 import { loadFixture } from './fixtures'
 import { probeTheme, renderProbe } from './probe'
 
@@ -14,6 +15,50 @@ const HOODIE = 43695847538710
 const SLIDES_SMALL = 43695710371862
 const BLACK_SUNNIES = 43696940613654
 const CA = { market: 'ca', language: 'en', prefix: '/en-ca' }
+
+/** Changes every array and object of an answer in place: an item added to each array, a key to each object. */
+function scribble (value: unknown): void {
+  if (Array.isArray(value)) {
+    value.forEach(scribble)
+    value.push('INJECTED')
+  } else if (value && typeof value === 'object') {
+    Object.values(value).forEach(scribble)
+    ;(value as Record<string, unknown>).INJECTED = true
+  }
+}
+
+// final review B, M1: `cartJson` is public API, and its `variant_options`, `quantity_rule` and selling plan fields were the cached store's own arrays and objects, so a caller that changed an answer changed every later answer, and `productJson`'s
+describe('cart answers are private copies', () => {
+  const cart = state([line(HOODIE, 1), line(SLIDES_SMALL, 1, {}, 71001)], { note: 'Gift wrap', attributes: { gift: 'yes' } })
+
+  it('leaves the next cart answer and the product answers alone when a caller changes one', () => {
+    const store = structuredClone(data)
+    const before = { cart: structuredClone(cartJson(store, cart)), change: structuredClone(cartJson(store, cart, undefined, 'change')), product: productJson(store, 'hoodie'), slides: productJson(store, 'slides') }
+    for (const form of ['cart', 'change'] as const) scribble(cartJson(store, cart, undefined, form))
+    expect(cartJson(store, cart)).toEqual(before.cart)
+    expect(cartJson(store, cart, undefined, 'change')).toEqual(before.change)
+    expect(productJson(store, 'hoodie')).toEqual(before.product)
+    expect(productJson(store, 'slides')).toEqual(before.slides)
+  })
+
+  it('does the same for a line of any form', () => {
+    const store = structuredClone(data)
+    const items = buildCartObject(buildStore(store, resolveView(store, {})), cart).items as any[]
+    for (const form of ['cart', 'change', 'liquid'] as const) {
+      const before = items.map(item => structuredClone(lineItemJson(item, form)))
+      items.forEach(item => scribble(lineItemJson(item, form)))
+      expect(items.map(item => lineItemJson(item, form))).toEqual(before)
+    }
+  })
+
+  it('leaves the page alone too: a section that prints the cart as json after an answer was changed', async () => {
+    const store = structuredClone(data)
+    const render = async () => (await renderPage({ theme: { files: { ...probeTheme().files, 'templates/cart.liquid': '{{ cart | json }}|{{ all_products["hoodie"].variants[0].options | json }}|{{ all_products["hoodie"].variants[0].quantity_rule | json }}' } }, templateName: 'cart', data: store, cart })).html
+    const before = await render()
+    scribble(cartJson(store, cart))
+    expect(await render()).toBe(before)
+  })
+})
 
 describe('cart', () => {
   it('gives the same line the same key, and different properties or plans a different key', () => {
