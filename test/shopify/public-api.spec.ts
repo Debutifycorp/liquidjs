@@ -10,6 +10,11 @@ describe('the /shopify entry', () => {
       'cartJson', 'compileTheme', 'createShopifyLiquid', 'defaultServices', 'discountCodeStatus', 'findVariant', 'lineItemJson', 'lineKey', 'localePrefixes', 'parseWrapper', 'predictiveJson', 'productJson', 'recommendationsJson', 'renderLiquid', 'renderPage', 'renderSection', 'requestFromUrl', 'resolveView', 'sampleStoreData', 'shippingRates', 'shopifyFilterRegistry', 'stockFor', 'storefrontSampleData'
     ])
   })
+  it('exports CartLinesData, the cart shape 1.0 had, beside the CartData union (final review C, M1)', () => {
+    const lines: shopify.CartLinesData = { items: [{ product_handle: 'a', variant_id: 1, quantity: 2 }] }
+    const cart: shopify.CartData = lines
+    expect('items' in cart ? cart.items[0].quantity : 0).toBe(2)
+  })
   it('leaves the root tag classes alone and registers its own under the Shopify names', () => {
     expect(shopify.TablerowTag).toBe(root.TablerowTag)
     expect(shopify.LayoutTag).toBe(root.LayoutTag)
