@@ -798,12 +798,12 @@ The storefront is compared with Debutify's parity store request by request. Thes
 Scenarios whose remaining difference is accepted (the scenario's other steps are still compared):
 
 - `flow-contact-ok`, `flow-contact-error` and `flow-contact-newsletter`: Shopify's bot challenge answers scripted contact posts with 403, so no recording holds Shopify's answer.
-- `flow-checkout`: checkout and the account pages are outside the storefront by the spec: they answer the notice page with status 200, where Shopify redirects to its checkout and its login.
+- `flow-checkout`: checkout and the account pages are not served, since the storefront has no checkout and no customer accounts: they answer the notice page with status 200, where Shopify redirects to its checkout and its login.
 - `ajax-cart-form-add`: the cart form's checkout button: Shopify redirects to its own checkout (/checkouts/cn/<token>/en-us), the storefront to its notice page at /checkout.
 
 Parts of scenarios that are accepted (only the named snippet or key is replaced by one fixed text on both sides, so every other difference still shows):
 
-- `customer-account-login-address` (scenarios `page-*`, `probe-page-*` and `flow-localization-*`): customer accounts are outside the storefront by the spec: Shopify's login address is its own customer-authentication redirect, the storefront's is its notice page at /account/login.
+- `customer-account-login-address` (scenarios `page-*`, `probe-page-*` and `flow-localization-*`): customer accounts are not served, since the storefront has none: Shopify's login address is its own customer-authentication redirect, the storefront's is its notice page at /account/login.
 - `content-for-header-endpoint-links` (scenarios `page-*`): Shopify adds links to endpoints the storefront does not serve to content_for_header: the oEmbed and the Atom feed of a product, collection, blog or article, and the rel=buy link to its buy-now endpoint.
 - `placeholder-art` (scenarios `page-*`): placeholder_svg_tag draws Shopify's own artwork, which cannot be copied; the engine draws its own, so only the tag and its classes are compared.
 - `search-ranking` (scenarios `probe-search-shirt` and `probe-search-type-product`): Shopify's search relevance orders the results its own way; the results themselves (which products and articles) are still compared.
