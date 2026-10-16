@@ -1,4 +1,4 @@
-import { stripTags } from '../../filters/html'
+import { stripTags } from '../../util/strip-tags'
 import { SafeHtmlDrop } from '../objects/safe-html'
 import { escapeHtml } from '../util/html'
 import type { LiquidObject } from './build'

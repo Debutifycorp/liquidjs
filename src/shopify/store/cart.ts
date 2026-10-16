@@ -1,5 +1,5 @@
 import { createHash } from 'crypto'
-import { stripTags } from '../../filters/html'
+import { stripTags } from '../../util/strip-tags'
 import { HandleMap } from '../objects/handle-map'
 import type { ImageDrop } from '../objects/image'
 import { escapeHtml } from '../util/html'
