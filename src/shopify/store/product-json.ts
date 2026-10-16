@@ -1,0 +1,135 @@
+import { HandleMap } from '../objects/handle-map'
+import type { ImageDrop } from '../objects/image'
+import { buildStore } from './build'
+import type { LiquidObject } from './build'
+import { resolveView } from './view'
+import type { StoreView } from './view'
+import type { StoreData } from './types'
+
+/** An image's URL as the parity store answers it: the full `https://` address of the dataset, not the protocol-relative `//cdn.shopify.com/…` that https://shopify.dev/docs/api/ajax/reference/product shows (fixture `ajax-product-js`). */
+const imageUrl = (image: ImageDrop | null | undefined) => image ? String(image.src) : null
+
+/** The text of a field the Ajax API writes as `null` when it is empty (an image's `alt`, a variant's `sku`), as the parity store does (fixture `ajax-product-js`). */
+const textOrNull = (text: unknown) => text === '' || text === undefined || text === null ? null : text
+
+/** Whether two variants show the same image: matched by `id` when both have one, by `src` otherwise (as the product's images are). */
+const sameImage = (a: ImageDrop, b: ImageDrop) => a.id != null && b.id != null ? a.id === b.id : a.src === b.src
+
+/** An image as the `preview_image` of a media entry or a variant's `featured_media` (fixture `ajax-product-js`: `aspect_ratio`, `height`, `width`, `src`). */
+function previewImage (image: ImageDrop | null | undefined): Record<string, unknown> | null {
+  if (!image) return null
+  return { aspect_ratio: image.aspect_ratio ? image.aspect_ratio.value : null, height: image.height, width: image.width, src: imageUrl(image) }
+}
+
+/** A variant's image as the Ajax API writes it: the product's image with its `position` in `product.images`, the ids of the variants that show it and its two timestamps, which the dataset does not hold, so they are the product's creation time (the parity store prints the moments it made the image, which the engine cannot reproduce: `VOLATILE` in `test/storefront/expect-probe.ts`). */
+function variantImage (image: ImageDrop, product: LiquidObject): Record<string, unknown> {
+  const variantIds = (product.variants as LiquidObject[]).filter(other => other.featured_image && sameImage(other.featured_image as ImageDrop, image)).map(other => other.id)
+  return { id: image.id, product_id: product.id, position: image.position, created_at: product.created_at ?? null, updated_at: product.created_at ?? null, alt: textOrNull(image.alt), width: image.width, height: image.height, src: imageUrl(image), variant_ids: variantIds }
+}
+
+/** A variant in the Ajax answer (`.js`) or in `product | json` (`'liquid'`): the parity store prints the same fields in a different order, with `quantity_price_breaks` in the first only (fixtures `ajax-product-js` and `probe-product-default`). */
+function variantJson (variant: LiquidObject, product: LiquidObject, shape: 'ajax' | 'liquid'): Record<string, unknown> {
+  const featured = variant.featured_image as ImageDrop | null
+  const media = variant.featured_media as ImageDrop | null
+  const head = {
+    id: variant.id,
+    title: variant.title,
+    option1: variant.option1,
+    option2: variant.option2,
+    option3: variant.option3,
+    sku: textOrNull(variant.sku),
+    requires_shipping: variant.requires_shipping,
+    taxable: variant.taxable,
+    featured_image: featured ? variantImage(featured, product) : null,
+    available: variant.available,
+    name: variant.title === 'Default Title' ? product.title : `${product.title} - ${variant.title}`,
+    public_title: variant.title === 'Default Title' ? null : variant.title,
+    options: variant.options,
+    price: variant.price,
+    weight: variant.weight,
+    compare_at_price: variant.compare_at_price,
+    inventory_management: variant.inventory_management,
+    barcode: variant.barcode ?? null,
+    featured_media: media ? { alt: textOrNull(media.alt), id: media.id, position: media.position, preview_image: previewImage(media) } : null
+  }
+  const plans = { requires_selling_plan: variant.requires_selling_plan ?? false, selling_plan_allocations: variant.selling_plan_allocations }
+  return shape === 'ajax'
+    ? { ...head, quantity_rule: variant.quantity_rule, quantity_price_breaks: variant.quantity_price_breaks ?? [], ...plans }
+    : { ...head, ...plans, quantity_rule: variant.quantity_rule }
+}
+
+/** A media entry as the Ajax API writes it. An image carries its own fields beside its `preview_image` (fixture `ajax-product-js`); the page shows no video, so a hosted or external video keeps the fields of its media object with the preview in the same compact form, which no recording pins. */
+function mediaJson (media: LiquidObject): Record<string, unknown> {
+  if (media.media_type === 'image') {
+    const image = media as unknown as ImageDrop
+    return { alt: textOrNull(image.alt), id: image.id, position: image.position, preview_image: previewImage(image), aspect_ratio: image.aspect_ratio ? image.aspect_ratio.value : null, height: image.height, media_type: 'image', src: imageUrl(image), width: image.width }
+  }
+  return { ...media, alt: textOrNull(media.alt), preview_image: previewImage(media.preview_image as ImageDrop | null) }
+}
+
+/** The fields both answers start with, in their order (fixtures `ajax-product-js` and `probe-product-default`). */
+function productHead (product: LiquidObject): Record<string, unknown> {
+  return {
+    id: product.id,
+    title: product.title,
+    handle: product.handle,
+    description: product.description,
+    published_at: product.published_at,
+    created_at: product.created_at,
+    vendor: product.vendor,
+    type: product.type,
+    tags: product.tags,
+    price: product.price,
+    price_min: product.price_min,
+    price_max: product.price_max,
+    available: product.available,
+    price_varies: product.price_varies,
+    compare_at_price: product.compare_at_price,
+    compare_at_price_min: product.compare_at_price_min,
+    compare_at_price_max: product.compare_at_price_max,
+    compare_at_price_varies: product.compare_at_price_varies
+  }
+}
+
+/**
+ * The built `product` as https://shopify.dev/docs/api/ajax/reference/product answers `/products/<handle>.js`, with the key order and field forms of the parity store's answer (fixture `ajax-product-js`; it has `url` and no `content`, which the page does not list). Prices are the view's, because the product is built in it.
+ */
+export function productAjax (product: LiquidObject): Record<string, unknown> {
+  return {
+    ...productHead(product),
+    variants: (product.variants as LiquidObject[]).map(variant => variantJson(variant, product, 'ajax')),
+    images: (product.images as ImageDrop[]).map(imageUrl),
+    featured_image: imageUrl(product.featured_image as ImageDrop | null),
+    options: (product.options_with_values as LiquidObject[]).map(option => ({ name: option.name, position: option.position, values: option.values })),
+    url: product.url,
+    media: (product.media as LiquidObject[]).map(mediaJson),
+    requires_selling_plan: product.requires_selling_plan,
+    selling_plan_groups: product.selling_plan_groups
+  }
+}
+
+/**
+ * The built `product` as `{{ product | json }}` prints it. https://shopify.dev/docs/api/liquid/filters/json shows the product's fields, with `content` last; the parity store's object is not `/products/<handle>.js` (fixtures `probe-product-default`, `probe-product-en-ca` and `probe-product-en-eu-hoodie`): its `options` are the option names, it has no `url`, its variants have no `quantity_price_breaks` and list `quantity_rule` last, and it ends with `content`, the description. The page also says stores created after 5 December 2017 leave out the variants' `inventory_quantity` and `inventory_policy`, which the fixtures agree with.
+ */
+export function productLiquidJson (product: LiquidObject): Record<string, unknown> {
+  return {
+    ...productHead(product),
+    variants: (product.variants as LiquidObject[]).map(variant => variantJson(variant, product, 'liquid')),
+    images: (product.images as ImageDrop[]).map(imageUrl),
+    featured_image: imageUrl(product.featured_image as ImageDrop | null),
+    options: product.options,
+    media: (product.media as LiquidObject[]).map(mediaJson),
+    requires_selling_plan: product.requires_selling_plan,
+    selling_plan_groups: product.selling_plan_groups,
+    content: product.content
+  }
+}
+
+/** Whether `value` is a product built by `buildProduct` (or selected by `selectProduct`), which carries a hidden marker. */
+export const isBuiltProduct = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject).__product === true
+
+/** The product `handle` as `/products/<handle>.js` answers it in `view` (the primary market and language when omitted), `productAjax` of the view's product; null for a handle the store does not have (the parity store answers 404, fixture `ajax-product-js`). */
+export function productJson (data: StoreData, handle: string, view: StoreView = resolveView(data, {})): Record<string, unknown> | null {
+  const product = HandleMap.get(buildStore(data, view).products, handle)
+  return product ? productAjax(product) : null
+}

@@ -2,7 +2,7 @@ import { HandleMap } from '../objects/handle-map'
 import { TemplateDrop } from '../objects/template'
 import { own } from '../util/own'
 import type { ReportCollector } from '../report'
-import { buildLinklists, LiquidObject, StoreObjects } from './build'
+import { buildLinklists, LiquidObject, selectProduct, StoreObjects } from './build'
 import { alternatesOf, buildLocalization, languageIn } from './markets'
 import { buildRecommendations, RecommendationsRequest } from './recommendations'
 import { buildSearch } from './search'
@@ -173,7 +173,14 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     const map = store[kind] as HandleMap<LiquidObject>
     const found = request.resource ? HandleMap.get(map, request.resource) : HandleMap.values(map)[0]
     if (request.resource && !found) report.missing('resource', `${template.name} ${request.resource}`)
-    resources[template.name] = found ?? null
+    // a product page shows the variant `?variant=` names (`selectProduct`); the built product is shared by every request, so a selection is a copy
+    resources[template.name] = found && template.name === 'product' ? selectProduct(found, request.variant) : found ?? null
+    // `/collections/<collection>/products/<product>` shows the product with that collection as the `collection` global: https://shopify.dev/docs/api/liquid/objects/collection says `collection.next_product` and `collection.previous_product` "can be used on the product page", which they could not be without it. The product's own URL does not carry the collection (fixture `probe-product-in-collection`: `/products/men-t-shirt`). A collection the store does not have sets none.
+    if (template.name === 'product' && request.collection !== undefined) {
+      const collection = HandleMap.get(store.collections, request.collection)
+      if (collection) resources.collection = collection
+      else report.missing('resource', `collection ${request.collection}`)
+    }
     // the article's blog is the one that lists it (the article objects are the same in `store.articles` and in its blog's `articles`); its URL is no help, as a base path or locale prefix adds segments before the blog's
     if (template.name === 'article' && found) resources.blog = HandleMap.values(store.blogs).find(blog => (blog.articles as LiquidObject[]).includes(found)) ?? null
   }

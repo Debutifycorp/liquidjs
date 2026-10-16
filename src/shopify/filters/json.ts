@@ -1,6 +1,7 @@
 import { NullDrop } from '../../drop'
 import { filters as engineFilters } from '../../filters'
 import type { FilterImpl } from '../../template/filter-impl-options'
+import { isBuiltProduct, productLiquidJson } from '../store/product-json'
 import type { ShopifyFilterSet } from './types'
 
 const ESCAPES: Record<string, string> = { '/': '\\/', '<': '\\u003c', '>': '\\u003e', '&': '\\u0026', '\u2028': '\\u2028', '\u2029': '\\u2029' }
@@ -14,11 +15,14 @@ export function escapeJson (json: string): string {
 
 type JsonFilter = (this: FilterImpl, value: unknown, space?: number) => string | undefined
 
+/** A product, or a list of them (`collection.products`), as the parity store prints it (`productLiquidJson`; fixtures `probe-product-default`, `probe-product-en-ca` and `probe-product-en-eu-hoodie`), which is not the `/products/<handle>.js` object. Any other value is left as it is. */
+const printedProducts = (value: unknown): unknown => isBuiltProduct(value) ? productLiquidJson(value) : Array.isArray(value) && value.some(isBuiltProduct) ? value.map(printedProducts) : value
+
 /** The engine's filter, with its output escaped by `escapeJson`. The longer output is charged to the memory limit. */
 function escaping (name: 'json' | 'jsonify' | 'inspect') {
   const engine = engineFilters[name] as unknown as JsonFilter
   return function (this: FilterImpl, value: unknown, space?: number) {
-    const json = engine.call(this, value, space)
+    const json = engine.call(this, name === 'json' ? printedProducts(value) : value, space)
     // Shopify writes nil as `null` (the parity store prints `{{ product.selected_selling_plan.id | json }}` on a product with no selected plan as `null`, fixture `probe-product-default`; https://shopify.dev/docs/api/liquid/filters/json shows nil fields as `null` in its product example); the engine has no text for `undefined`, which would leave `"key":,` in a JSON a theme builds, and prints the `nil` literal (a `NullDrop`) as `{}`. `jsonify` and `inspect` keep printing nothing for nil.
     if (name === 'json' && (json === undefined || value instanceof NullDrop)) return 'null'
     if (typeof json !== 'string') return json

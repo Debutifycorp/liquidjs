@@ -72,7 +72,7 @@ function positionIn (list: Array<ImageData | { media_type: string }>, target: Im
   return index < 0 ? null : index + 1
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/variant. `url` carries `?variant=<id>` as that page documents. `unit_price_measurement` and `selling_plan_allocations` are left empty and `quantity_rule` holds Shopify's defaults; shopify.dev documents the fields but this layer has no data for them. `featured_image` and `featured_media` are the product's own image, so they carry the `position` of the matching entry in `product.images` and `product.media` (nil when the product does not list that image); shopify.dev does not say so, and it goes on the confirm-on-a-development-store list with the counting base. `price` and `compare_at_price` are in the view's currency when `currency` is given (`convert`: the market's rate, price adjustment and rounding, https://help.shopify.com/en/manual/international/pricing/exchange-rates), the dataset's shop-currency amounts otherwise; a variant without a compare-at price keeps nil. A market that hides compare-at prices (`ViewCurrency.hide_compare_at_prices`, Shopify's "Hide compare-at" setting, https://help.shopify.com/en/manual/compliance/legal/pricing-indication-directive) gives its variants none: nil, as the parity store prints the hoodie's on-sale variant in the Europe market (fixture `probe-product-en-eu-hoodie`). */
+/** https://shopify.dev/docs/api/liquid/objects/variant. `url` carries `?variant=<id>` as that page documents. `inventory_quantity`, `inventory_policy` (`deny` unless the data says `continue`), `inventory_management` (nil unless the data says `shopify`), `weight` (grams, 0 when the data has none) and `requires_shipping` (true unless the data says otherwise) come from the data, as that page lists them and as the parity store prints them (fixtures `probe-product-default` and `ajax-product-js`). `selected` is false here: it is the request that selects a variant (`selectProduct`). `unit_price_measurement` and `selling_plan_allocations` are left empty and `quantity_rule` holds Shopify's defaults; shopify.dev documents the fields but this layer has no data for them. `featured_image` and `featured_media` are the product's own image, so they carry the `position` of the matching entry in `product.images` and `product.media` (nil when the product does not list that image); shopify.dev does not say so, and it goes on the confirm-on-a-development-store list with the counting base. `price` and `compare_at_price` are in the view's currency when `currency` is given (`convert`: the market's rate, price adjustment and rounding, https://help.shopify.com/en/manual/international/pricing/exchange-rates), the dataset's shop-currency amounts otherwise; a variant without a compare-at price keeps nil. A market that hides compare-at prices (`ViewCurrency.hide_compare_at_prices`, Shopify's "Hide compare-at" setting, https://help.shopify.com/en/manual/compliance/legal/pricing-indication-directive) gives its variants none: nil, as the parity store prints the hoodie's on-sale variant in the Europe market (fixture `probe-product-en-eu-hoodie`). */
 function buildVariant (variant: VariantData, productUrl: string, productImages: ImageData[], productMedia: MediaData[], currency?: ViewCurrency): LiquidObject {
   const options = [variant.option1, variant.option2, variant.option3].filter((option): option is string => typeof option === 'string')
   const featured = variant.image ? new ImageDrop(variant.image, false, positionIn(productImages, variant.image)) : null
@@ -91,12 +91,13 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
     image: featured,
     featured_image: featured,
     featured_media: variant.image ? new ImageDrop(variant.image, true, positionIn(productMedia, variant.image)) : null,
+    selected: false,
     inventory_quantity: variant.inventory_quantity ?? (variant.available ? 1 : 0),
-    inventory_management: null,
-    inventory_policy: 'deny',
-    requires_shipping: true,
+    inventory_management: variant.inventory_management ?? null,
+    inventory_policy: variant.inventory_policy ?? 'deny',
+    requires_shipping: variant.requires_shipping ?? true,
     taxable: true,
-    weight: 0,
+    weight: variant.weight ?? 0,
     unit_price_measurement: null,
     selling_plan_allocations: [],
     quantity_rule: { min: 1, max: null, increment: 1 }
@@ -165,7 +166,29 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
     metafields: data.metafields ?? {}
   }
   for (const variant of variants) hidden(variant, 'product', product)
+  // marks a built product for the `json` filter, which prints it as `/products/<handle>.js` does (`productJson`)
+  hidden(product, '__product', true)
   return printsHandle(product)
+}
+
+/**
+ * The product a request shows: `?variant=<id>` selects that variant (https://shopify.dev/docs/api/liquid/objects/product#product-selected_variant: "The currently selected variant of the product", "On product pages, it is based on the variant ID set in the variant URL parameter", nil when none is), which `selected_or_first_available_variant` then returns "regardless of its availability" (https://shopify.dev/docs/api/liquid/objects/product#product-selected_or_first_available_variant); the variant's `selected` is true (https://shopify.dev/docs/api/liquid/objects/variant#variant-selected) and each option's `selected_value` is the selected variant's (https://shopify.dev/docs/api/liquid/objects/product_option). An id the product does not have selects nothing, as the parity store renders it (fixture `probe-product-unknown-variant`). The built product is shared by every request of a view, so a selection returns a copy and leaves the shared one alone.
+ */
+export function selectProduct (product: LiquidObject, variantId: number | undefined): LiquidObject {
+  const variants = product.variants as LiquidObject[]
+  const chosen = variantId === undefined ? undefined : variants.find(variant => variant.id === variantId)
+  if (!chosen) return product
+  const copy: LiquidObject = { ...product }
+  copy.variants = variants.map(variant => ({ ...variant, selected: variant === chosen }))
+  for (const variant of copy.variants as LiquidObject[]) hidden(variant, 'product', copy)
+  const copyOf = (variant: unknown) => variant ? (copy.variants as LiquidObject[]).find(entry => entry.id === (variant as LiquidObject).id) ?? null : null
+  copy.selected_variant = copyOf(chosen)
+  copy.selected_or_first_available_variant = copy.selected_variant
+  copy.first_available_variant = copyOf(product.first_available_variant)
+  copy.options_with_values = (product.options_with_values as LiquidObject[]).map((option, i) => ({ ...option, selected_value: (chosen.options as string[])[i] ?? null }))
+  copy.options_by_name = Object.fromEntries((copy.options_with_values as LiquidObject[]).map(option => [String(option.name).toLowerCase(), option]))
+  hidden(copy, '__product', true)
+  return printsHandle(copy)
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/collection, at its URL under `prefix`. Filtering, tags and sorting are not applied: `products` is the collection's product list as given, `filters` are the store's storefront filters over those products (`buildFilters`), `tags` is empty and `sort_options` lists Shopify's standard options. */

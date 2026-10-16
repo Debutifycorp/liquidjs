@@ -7,6 +7,7 @@ import { resolveServices } from '../../src/shopify/services'
 import type { SettingsEnv } from '../../src/shopify/settings'
 import { buildLinklists, buildProduct, buildStore } from '../../src/shopify/store/build'
 import { buildGlobals } from '../../src/shopify/store/globals'
+import { productLiquidJson } from '../../src/shopify/store/product-json'
 import { isSafeUrl, sanitizeHtml } from '../../src/shopify/util/sanitize'
 import { legacySampleData as sampleStoreData } from './legacy-sample'
 
@@ -649,7 +650,8 @@ describe('shopify/settings fidelity', () => {
     const settings = new SettingsDrop([{ type, id: 'x' }, { type: 'text', id: 'other' }], { x: handle }, env())
     const object = HandleMap.get((store as any)[key] as HandleMap<Record<string, unknown>>, handle) as Record<string, unknown>
     expect(await render('[{{ s.x }}]|{{ s.x.title }}|{{ s.x.url }}|{{ s.x.handle }}|{% if s.x %}set{% endif %}|{% if s.x == blank %}blank{% endif %}', { s: settings })).toBe(`[${object.handle}]|${object.title}|${object.url}|${object.handle}|set|`)
-    expect(JSON.parse(await render('{{ s.x | json }}', { s: settings }))).toEqual(JSON.parse(JSON.stringify(object)))
+    // `json` prints a product as the parity store does (`productLiquidJson`), and any other resource as its fields
+    expect(JSON.parse(await render('{{ s.x | json }}', { s: settings }))).toEqual(JSON.parse(JSON.stringify(type === 'product' ? productLiquidJson(object) : object)))
     // the setting returns the object the store holds, not a copy, so it is equal to it and found in the lists that hold it; the handle print is a non-enumerable `toString` of that object
     expect(SettingsDrop.value(settings, 'x')).toBe(object)
     expect(Object.getOwnPropertyDescriptor(object, 'toString')?.enumerable).toBe(false)
