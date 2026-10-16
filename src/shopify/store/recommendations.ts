@@ -1,6 +1,11 @@
 import { HandleMap } from '../objects/handle-map'
-import type { ReportCollector } from '../report'
+import { ReportCollector } from '../report'
+import { buildStore } from './build'
 import type { LiquidObject, StoreObjects } from './build'
+import { productJson } from './product-json'
+import type { StoreData } from './types'
+import { resolveView } from './view'
+import type { StoreView } from './view'
 
 /** A request to the Product Recommendations API, `/recommendations/products?product_id=<id>&limit=<n>&intent=<intent>` with its `section_id` (https://shopify.dev/docs/api/ajax/reference/product-recommendations): the section is rendered with `recommendations` for this product. */
 export interface RecommendationsRequest {
@@ -54,4 +59,33 @@ export function buildRecommendations (store: StoreObjects, request: Recommendati
     .filter(item => item !== product && item.available && (item.price as number) > 0 && !item['gift_card?'] && !inCart.has(item))
     .slice(0, limitOf(request.limit))
   return { 'performed?': true, performed: true, products, products_count: products.length, intent }
+}
+
+/** The id the Product Recommendations and Predictive Search answers put in the tracking parameters of the URLs they list (`pr_rec_id`, `_psid`): nine hex digits, as the parity store prints them (fixtures `ajax-recommendations-json` and `ajax-suggest-json`). Shopify makes a new one for each request; the same request here gets the same id, so an answer is stable (two FNV-style hashes of the parts). */
+export function trackingId (...parts: Array<string | number>): string {
+  const text = parts.join('|')
+  let a = 0x811c9dc5
+  let b = 0x9e3779b9
+  for (let i = 0; i < text.length; i++) {
+    a = Math.imul(a ^ text.charCodeAt(i), 0x01000193)
+    b = Math.imul(b ^ text.charCodeAt(i), 0x85ebca6b)
+  }
+  return ((a >>> 0).toString(16).padStart(8, '0') + (b >>> 0).toString(16).padStart(8, '0')).slice(0, 9)
+}
+
+/**
+ * The `/recommendations/products.json` answer, https://shopify.dev/docs/api/ajax/reference/product-recommendations: `products`, each as `/products/<handle>.js` prints it (`productJson`), and the `intent`, in that order (fixture `ajax-recommendations-json`). Each product's `url` carries the tracking parameters the parity store adds, in its order: `pr_prod_strat` (`collection_fallback`, the one strategy any recording shows, and the one Debutify's related products follow: the product's collections first), `pr_rec_id` (`trackingId`), `pr_rec_pid` (the recommended product), `pr_ref_pid` (the product asked about) and `pr_seq` (`uniform`). A request the engine cannot answer (a product the store does not have, an intent that is neither `related` nor `complementary`) gives no products, where Shopify answers 404 or 422; `intent` is then the request's, or `related`.
+ *
+ * Which products come back is Debutify's rule (`buildRecommendations`), not Shopify's: the parity store samples at random from the collections the product is in (two recordings of the same request, fixtures `ajax-recommendations-json` and `probe-recommendations-related`, give different products after the first), and the dataset does not list the parity store's `hoodie` in any collection.
+ */
+export function recommendationsJson (data: StoreData, request: RecommendationsRequest, view: StoreView = resolveView(data, {})): Record<string, unknown> {
+  const store = buildStore(data, view)
+  const found = buildRecommendations(store, request, new ReportCollector())
+  const intent = typeof found.intent === 'string' ? found.intent : request.intent || 'related'
+  const id = trackingId(request.productId, limitOf(request.limit), intent)
+  const products = ((found.products ?? []) as LiquidObject[]).map(product => {
+    const json = productJson(data, String(product.handle), view) as Record<string, unknown>
+    return { ...json, url: `${json.url}?pr_prod_strat=collection_fallback&pr_rec_id=${id}&pr_rec_pid=${product.id}&pr_ref_pid=${request.productId}&pr_seq=uniform` }
+  })
+  return { products, intent }
 }

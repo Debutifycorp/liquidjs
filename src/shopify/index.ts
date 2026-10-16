@@ -20,6 +20,8 @@ export type { StoreData, ShopData, ProductData, VariantData, MediaData, ImageMed
 export type { RequestInput, PredictiveRequest, FormOutcome } from './store/globals'
 export { requestFromUrl, localePrefixes } from './store/request'
 export { productJson } from './store/product-json'
+export { predictiveJson } from './store/predictive'
+export { recommendationsJson } from './store/recommendations'
 export type { PageRequest, LocalePrefix } from './store/request'
 export { resolveView } from './store/view'
 export type { StoreView } from './store/view'
