@@ -59,12 +59,15 @@ export const mutates = (route: Route) => route.kind === 'cart' || route.kind ===
 /** Whether a route reads the body of its request: a `POST` to one of the routes that take a form or JSON. */
 const readsBody = (route: Route, method: string) => method === 'POST' && (route.kind === 'cart' || route.kind === 'contact' || route.kind === 'localization' || route.kind === 'password' || route.kind === 'shipping')
 
-/** The page the visitor came from, from the `Referer`: its path from the store's root (the base path taken off) and its query. Undefined when there is no `Referer`, when it is outside the base path, or when it is not an address with a path on a store: the address is the visitor's to write, so anything but a plain path (a malformed address, `//host`, a backslash) is not used. */
+/** The page the visitor came from: its path from the store's root (the base path taken off) and its query. A sandboxed page's form posts carry no `Referer` (its document has an opaque origin, and Chrome sends none: seen on the private theme's contact form), so there the client script names the page in the post's address, `storefront_page`, and that is read first; every other request has the `Referer`. Undefined when there is none, when it is outside the base path, or when it is not an address with a path on a store: the address is the visitor's to write, so anything but a plain path (a malformed address, `//host`, a backslash) is not used. */
 export function refererPath (ctx: Context): { path: string, search: string } | undefined {
-  const referer = ctx.request.headers.get('referer')
+  const named = ctx.sandbox ? ctx.routed.query.get('storefront_page') : null
+  const referer = named ?? ctx.request.headers.get('referer')
   if (!referer) return undefined
   try {
-    const url = new URL(referer)
+    // the named page is a path, the `Referer` an address
+    if (named !== null && !STORE_PATH.test(named)) return undefined
+    const url = named !== null ? new URL(named, 'https://storefront.invalid') : new URL(referer)
     const base = ctx.basePath
     if (base !== '' && url.pathname !== base && !url.pathname.startsWith(`${base}/`)) return undefined
     const path = withoutBase(ctx, url.pathname)

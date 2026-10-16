@@ -49,7 +49,7 @@ describe('the client script', () => {
     window.document.getElementById('hard')!.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }))
     expect(window.document.getElementById('hard')!.getAttribute('href')).toBe('/p/tok/fr-ca/products/x')
     window.document.getElementById('f')!.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }))
-    expect(window.document.getElementById('f')!.getAttribute('action')).toBe('/p/tok/fr-ca/cart/add')
+    expect(window.document.getElementById('f')!.getAttribute('action')).toBe(`/p/tok/fr-ca/cart/add?storefront_page=${encodeURIComponent('/p/tok/fr-ca/products/x?variant=2')}`)
   })
 })
 
@@ -278,6 +278,22 @@ describe('the client script: links and forms', () => {
     window.document.body.innerHTML = '<form id="a" action="/search"></form><form id="b"></form><form id="c" action="/p/tok/cart"></form>'
     for (const id of ['a', 'b', 'c']) window.document.getElementById(id).dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }))
     expect(['a', 'b', 'c'].map(id => window.document.getElementById(id).getAttribute('action'))).toEqual(['/p/tok/search', null, '/p/tok/cart'])
+  })
+})
+
+describe('the client script: the page a form was posted from', () => {
+  // a sandboxed document has an opaque origin, and the browser sends no `Referer` on its form posts (seen in Chrome 155 with the private theme's contact form), so the script names the page in the post's address; no shopify.dev page covers a sandboxed preview, this is Debutify's own (the storefront spec's "Sandboxed pages")
+  it('adds the page to the address of a post form, before its fragment, and replaces it on the next submit', () => {
+    const { window } = recordingWindow('https://preview.invalid/p/tok/pages/contact?a=1')
+    window.document.body.innerHTML = '<form id="a" method="POST" action="/contact#contact_form"></form><form id="b" method="get" action="/search"></form><form id="c" action="/search"></form><form id="d" method="post"></form><form id="e" method="post" action="https://other.example/x"></form>'
+    const submit = (id: string) => window.document.getElementById(id).dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }))
+    for (const id of ['a', 'b', 'c', 'd', 'e']) submit(id)
+    const page = encodeURIComponent('/p/tok/pages/contact?a=1')
+    expect(['a', 'b', 'c', 'd', 'e'].map(id => window.document.getElementById(id).getAttribute('action'))).toEqual([`/p/tok/contact?storefront_page=${page}#contact_form`, '/p/tok/search', '/p/tok/search', null, 'https://other.example/x'])
+    // the theme moves the page's address when a variant is picked: the next post names the page as it is then
+    window.history.replaceState({}, '', '/p/tok/pages/contact?a=2')
+    submit('a')
+    expect(window.document.getElementById('a').getAttribute('action')).toBe(`/p/tok/contact?storefront_page=${encodeURIComponent('/p/tok/pages/contact?a=2')}#contact_form`)
   })
 })
 

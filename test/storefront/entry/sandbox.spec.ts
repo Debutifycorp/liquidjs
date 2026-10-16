@@ -95,6 +95,33 @@ describe('sandbox mode: cookies and visitors', () => {
   })
 })
 
+describe('sandbox mode: the page a post came from', () => {
+  const form = (fields: Record<string, string>) => new URLSearchParams(fields).toString()
+  const contact = form({ form_type: 'contact', 'contact[email]': 'shopper@example.com', 'contact[body]': 'Hello' })
+  const named = (page: string) => `/p/tok/contact?storefront_page=${encodeURIComponent(page)}`
+
+  // a sandboxed page's form posts carry no `Referer` (the client script's spec says why), so the page is named in the address
+  it('goes back to the page the client script named when the post has no Referer', async () => {
+    const { send } = harness({}, sandbox)
+    const sent = await send('POST', named('/p/tok/pages/about?view=probe-form'), contact, { origin: 'null' })
+    expect([sent.status, sent.headers.get('location')]).toEqual([302, '/p/tok/pages/about?view=probe-form&contact_posted=true#contact_form'])
+    const prefixed = await send('POST', named('/p/tok/fr-ca/pages/about'), contact, { origin: 'null' })
+    expect(prefixed.headers.get('location')).toBe('/p/tok/fr-ca/pages/about?contact_posted=true#contact_form')
+    const back = await send('POST', `/p/tok/cart/add?storefront_page=${encodeURIComponent('/p/tok/products/hoodie?variant=1')}`, form({ id: String(HOODIE), return_to: 'back' }), { origin: 'null' })
+    expect(back.headers.get('location')).toBe('/p/tok/products/hoodie?variant=1')
+  })
+  it('reads only a path on the store from it, and not at all outside the sandbox', async () => {
+    const { send } = harness({}, sandbox)
+    for (const page of ['//evil.example/x', 'https://evil.example/', '/other/pages/about', '/p/tok//evil.example', 'about']) {
+      const sent = await send('POST', named(page), contact, { origin: 'null' })
+      expect([page, sent.headers.get('location')]).toEqual([page, '/p/tok/?contact_posted=true#contact_form'])
+    }
+    const plain = harness({}, { visitor: VISITOR, basePath: '/p/tok' })
+    const sent = await plain.send('POST', named('/p/tok/pages/about'), contact)
+    expect(sent.headers.get('location')).toBe('/p/tok/?contact_posted=true#contact_form')
+  })
+})
+
 describe('sandbox mode: the form posts', () => {
   const form = (fields: Record<string, string>) => new URLSearchParams(fields).toString()
   const origin = { origin: 'null', referer: 'https://preview.invalid/p/tok/pages/about' }

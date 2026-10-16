@@ -1,9 +1,9 @@
 /**
- * The script a sandboxed storefront page runs first. Under `Content-Security-Policy: sandbox` the page has an opaque origin: storage and cookies throw or vanish, and its requests carry no cookies. The script gives the page in-memory `localStorage`, `sessionStorage` and `document.cookie`; adds the base path and the locale prefix (from `Shopify.routes.root`, once the header sets it) to root-relative addresses given to `fetch`, `XMLHttpRequest`, links and forms that lack them; and sends the page's own path in `X-Storefront-Page` on the store's own requests, which the storefront reads as the context of bundled sections. Plain ES5, so it runs before any theme code on every browser the theme supports.
+ * The script a sandboxed storefront page runs first. Under `Content-Security-Policy: sandbox` the page has an opaque origin: storage and cookies throw or vanish, and its requests carry no cookies. The script gives the page in-memory `localStorage`, `sessionStorage` and `document.cookie`; adds the base path and the locale prefix (from `Shopify.routes.root`, once the header sets it) to root-relative addresses given to `fetch`, `XMLHttpRequest`, links and forms that lack them; and sends the page's own path in `X-Storefront-Page` on the store's own requests, which the storefront reads as the context of bundled sections, and names it as `storefront_page` in the address of a form posted to the store (a sandboxed document sends no `Referer`, so this is how the storefront knows where to send the visitor back to). Plain ES5, so it runs before any theme code on every browser the theme supports.
  *
  * No shopify.dev page describes a sandboxed preview: this is Debutify's own, from the storefront spec's "Sandboxed pages". What it relies on is the platform's: a document's origin under `sandbox` is opaque (https://html.spec.whatwg.org/multipage/browsers.html#sandboxed-origin-browsing-context-flag), so `location.origin` reads `"null"` while `location.protocol` and `location.host` still name the host that served the page, which is what "the store's own host" means here; and the page's own path is the one in `location`, read when a request is made, since a theme moves the page's address with `history.replaceState` when a variant is picked.
  *
- * Limits, on purpose: the in-memory storage is an object with the `Storage` methods, so `localStorage.key = value` as a property is not storage; a cookie is removed by `max-age=0` (or negative) or an `expires` in 1970, and no other expiry, `path` or `domain` is read; links are fixed when clicked (`click`, not `auxclick` or a hover), and a form's `action` when it is submitted (a `formaction` on a button is not); an address given as an absolute URL, or a relative one without a leading slash, is the page's own to get right. The script runs once per window: a second run (the script included twice, or inside a fragment that a library inserts and runs) does nothing, so what the page stored is kept and nothing is wrapped twice.
+ * Limits, on purpose: the in-memory storage is an object with the `Storage` methods, so `localStorage.key = value` as a property is not storage; a cookie is removed by `max-age=0` (or negative) or an `expires` in 1970, and no other expiry, `path` or `domain` is read; links are fixed when clicked (`click`, not `auxclick` or a hover), and a form's `action` when it is submitted (a `formaction` on a button is not, and neither does it name the page); an address given as an absolute URL, or a relative one without a leading slash, is the page's own to get right. The script runs once per window: a second run (the script included twice, or inside a fragment that a library inserts and runs) does nothing, so what the page stored is kept and nothing is wrapped twice.
  *
  * The base path is the only value written into the script. It is a JSON string with `<`, U+2028 and U+2029 escaped, so no base path can close the `<script>` element or break the string.
  */
@@ -102,7 +102,15 @@ export function storefrontClientScript (options: { basePath: string }): string {
   }, true);
   document.addEventListener('submit', function (event) {
     var form = event.target;
-    if (form && form.getAttribute) { var h = form.getAttribute('action') || '', f = fix(h); if (h && f !== h) form.setAttribute('action', f); }
+    if (!form || !form.getAttribute) return;
+    var h = form.getAttribute('action') || '', f = fix(h);
+    // a post from this document carries no Referer, so the page is named in the address; the store's own addresses only, the old name replaced, and before any fragment
+    if (h && local(f) && String(form.getAttribute('method') || '').toLowerCase() === 'post') {
+      var hash = f.indexOf('#'), tail = hash < 0 ? '' : f.slice(hash), head = hash < 0 ? f : f.slice(0, hash), cut = head.indexOf('?');
+      var query = cut < 0 ? '' : head.slice(cut + 1).split('&').filter(function (part) { return part !== '' && part.indexOf('storefront_page=') !== 0; }).join('&');
+      f = (cut < 0 ? head : head.slice(0, cut)) + '?' + (query ? query + '&' : '') + 'storefront_page=' + encodeURIComponent(page()) + tail;
+    }
+    if (h && f !== h) form.setAttribute('action', f);
   }, true);
 })();`
 }
