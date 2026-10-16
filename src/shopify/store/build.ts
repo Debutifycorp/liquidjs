@@ -158,7 +158,8 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
     selling_plan_groups: [],
     'gift_card?': false,
     'quantity_price_breaks_configured?': false,
-    template_suffix: null,
+    // the suffix of the alternate template the product uses, https://shopify.dev/docs/api/liquid/objects/product#product-template_suffix; nil when it uses the base template (fixture `probe-product-default`)
+    template_suffix: data.template_suffix ?? null,
     created_at: data.created_at ?? null,
     published_at: data.published_at ?? null,
     metafields: data.metafields ?? {}
@@ -201,14 +202,15 @@ function buildCollection (data: CollectionData, products: HandleMap<LiquidObject
       { name: 'Date, old to new', value: 'created-ascending' },
       { name: 'Date, new to old', value: 'created-descending' }
     ],
-    template_suffix: null,
+    // https://shopify.dev/docs/api/liquid/objects/collection#collection-template_suffix; nil when it uses the base template (fixture `probe-collection-default`)
+    template_suffix: data.template_suffix ?? null,
     metafields: data.metafields ?? {}
   })
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/page, at its URL under `prefix`. */
+/** https://shopify.dev/docs/api/liquid/objects/page, at its URL under `prefix`; `template_suffix` is the data's (https://shopify.dev/docs/api/liquid/objects/page#page-template_suffix), nil for the base template (fixture `probe-page-home`). */
 function buildPage (data: PageData, prefix: string): LiquidObject {
-  return printsHandle({ ...data, url: withPrefix(prefix, `/pages/${data.handle}`), template_suffix: null, published_at: data.published_at ?? null, metafields: data.metafields ?? {} })
+  return printsHandle({ ...data, url: withPrefix(prefix, `/pages/${data.handle}`), template_suffix: data.template_suffix ?? null, published_at: data.published_at ?? null, metafields: data.metafields ?? {} })
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/article, at its URL under `prefix`. Comments are not modelled: `comments` is empty and `comments_enabled?` false. */

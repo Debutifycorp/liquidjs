@@ -89,7 +89,8 @@ export async function probeMatches (name: string, pick: (body: any) => unknown =
   const page = requestFromUrl(step.url, data)
   const section = new URL(step.url, 'https://x.invalid').searchParams.get('section_id')
   // a probe section renders on the `index` page: the probe theme holds only `templates/index.json` for sections, and `renderSection` throws for a template the theme lacks (the address's own template, such as `search` for the predictive probes, would)
-  const templateName = section ? 'index' : page.request.view ? `${page.templateName}.${page.request.view}` : page.templateName
+  // a page renders its base template (`product`) and the runtime picks the alternate one from the address's `?view=` or the resource's `template_suffix`
+  const templateName = section ? 'index' : page.templateName
   const html = await renderProbeHtml(section ?? templateName, { request: page.request, data, section: !!section, templateName, locale: page.locale })
   return { actual: pick(maskVolatile(JSON.parse(html))), expected }
 }

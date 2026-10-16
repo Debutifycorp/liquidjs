@@ -5,13 +5,14 @@ import { toPromise } from '../../util/async'
 import { LiquidError } from '../../util/error'
 import { isLimitError } from '../../util/inline-error'
 import { getPerformance } from '../../util/performance'
+import { HandleMap } from '../objects/handle-map'
 import { createShopifyLiquid, SHOPIFY_DEFAULT_LIMITS } from '../preset'
 import { errorMessage, RenderReport, UnsupportedFeature } from '../report'
 import { sampleStoreData } from '../sample/sample-data'
 import type { ShopifyServices } from '../services'
 import { SettingDefinition, SettingsDrop, SettingsEnv } from '../settings'
 import { createState, currentFrame, Frame, ShopifyState, STATE, ThemeHooks } from '../state'
-import { buildStore, LiquidObject } from '../store/build'
+import { buildStore, LiquidObject, StoreObjects } from '../store/build'
 import { buildGlobals, RequestInput } from '../store/globals'
 import { resolveView } from '../store/view'
 import type { StoreData } from '../store/types'
@@ -30,7 +31,7 @@ export interface ThemeInput {
 
 export interface RenderPageOptions {
   theme: ThemeInput
-  /** `index`, `product`, `page.contact`, `customers/login`: `templates/<name>.json` or `templates/<name>.liquid`. https://shopify.dev/docs/storefronts/themes/architecture/templates/json-templates says "A template can only exist as a JSON or Liquid template, not both"; a theme that has both is one Shopify would refuse, and the JSON file wins here. */
+  /** `index`, `product`, `page.contact`, `customers/login`: `templates/<name>.json` or `templates/<name>.liquid`. https://shopify.dev/docs/storefronts/themes/architecture/templates/json-templates says "A template can only exist as a JSON or Liquid template, not both"; a theme that has both is one Shopify would refuse, and the JSON file wins here. A name without a suffix (`product`) renders the alternate template (`product.probe`) the request's `view` names, or else the resource's `template_suffix`, when the theme has it; `RenderPageResult.templateName` says which rendered. https://shopify.dev/docs/storefronts/themes/architecture/templates/alternate-templates */
   templateName: string
   /** Defaults to the package's public sample store. */
   data?: StoreData
@@ -60,12 +61,36 @@ export interface RenderSectionOptions extends RenderPageOptions {
 export interface RenderPageResult {
   html: string
   report: RenderReport
+  /** The template that rendered: `RenderPageOptions.templateName`, or the alternate template (`product.probe`) the request's `view` or the resource's `template_suffix` picked. https://shopify.dev/docs/storefronts/themes/architecture/templates/alternate-templates */
+  templateName: string
 }
 
 /** What `renderSection` returns: the section's HTML and report, and the bodies of the `{% stylesheet %}` and `{% javascript %}` tags that ran while it rendered. */
 export interface RenderSectionResult extends RenderPageResult {
   /** The bodies `renderPage` would inline into `content_for_header` for this section (and the snippets and blocks it rendered), one string per file in the order first rendered, untouched. A caller that swaps a new kind of section into a page puts them where the page's other bodies are. The Section Rendering API (https://shopify.dev/docs/api/ajax/section-rendering) returns a section's HTML alone, and shopify.dev does not say how a section's stylesheet and javascript reach the page there, so returning them is Debutify's. */
   assets: { stylesheets: string[], javascripts: string[] }
+}
+
+/** The kinds of resource that carry a `template_suffix` (https://shopify.dev/docs/api/liquid/objects/product, https://shopify.dev/docs/api/liquid/objects/collection and https://shopify.dev/docs/api/liquid/objects/page), by the template that shows them and the store map that holds them. */
+const SUFFIXED_RESOURCES = { product: 'products', collection: 'collections', page: 'pages' } as const
+
+/** The `template_suffix` of the resource the base template `name` shows: the request's `resource`, or the first one in the store when it names none, as `buildGlobals` picks it. Undefined for a template without such a resource, or when the store has none. */
+function suffixOf (store: StoreObjects, name: string, resource: string | undefined): string | null | undefined {
+  const kind = own(SUFFIXED_RESOURCES, name)
+  if (!kind) return undefined
+  const map = store[kind] as HandleMap<LiquidObject>
+  const found = resource ? HandleMap.get(map, resource) : HandleMap.values(map)[0]
+  return found?.template_suffix as string | null | undefined
+}
+
+/** The template a page renders: `templates/<name>.<suffix>` for the request's `view`, else for the resource's `template_suffix`, when the theme has it (JSON or Liquid); `name` otherwise. https://shopify.dev/docs/storefronts/themes/architecture/templates/alternate-templates. The page names the two ways to apply an alternate template (assign it to a resource in the admin, or `?view=<suffix>`) but not which wins when both apply, nor what a `view` that names no template does, so the order (view first, then the suffix, then the base template) is Debutify's, on the confirm-on-a-development-store list; no fixture holds both. A name that already has a suffix (`page.contact`) is rendered as given. */
+function chooseTemplate (theme: CompiledTheme, name: string, view: string | undefined, suffix: string | null | undefined): string {
+  for (const candidate of [view, suffix]) {
+    if (!candidate || name.includes('.')) continue
+    const full = `${name}.${candidate}`
+    if (theme.has(`templates/${full}.json`) || theme.has(`templates/${full}.liquid`)) return full
+  }
+  return name
 }
 
 interface SectionSchema {
@@ -298,6 +323,8 @@ class PageRender implements ThemeHooks {
   private readonly root: Context
   private readonly current: Record<string, unknown>
   private readonly templateId: string
+  /** The template this page renders, after `chooseTemplate`. */
+  private readonly templateName: string
   private readonly headerMarker = newHeaderMarker()
   /** The saved JSON behind each block object of `section.blocks` and `block.blocks`, for `{% render block %}`. */
   private readonly blockObjects = new WeakMap<object, { id: string, data: BlockData }>()
@@ -305,6 +332,7 @@ class PageRender implements ThemeHooks {
   public constructor (private readonly theme: CompiledTheme, private readonly options: RenderPageOptions) {
     const data = options.data ?? sampleStoreData
     const store = buildStore(data, resolveView(data, options.request ?? {}))
+    this.templateName = chooseTemplate(theme, options.templateName, options.request?.view, suffixOf(store, options.templateName, options.request?.resource))
     // the theme's locale file follows the language the request names, as `request.locale` does (https://shopify.dev/docs/storefronts/themes/architecture/locales: a theme holds one locale file per language, and the storefront shows the file of the language the shopper chose); a request that names none renders in the shop's locale
     const locale = options.locale ?? options.request?.language ?? String(store.shop.locale)
     const translator = theme.translator(locale, message => this.state.report.unsupported('locale_file', message))
@@ -317,7 +345,7 @@ class PageRender implements ThemeHooks {
       runtime: this
     })
     this.state.currency = { iso_code: store.currency.iso_code, rate: store.currency.rate }
-    const page = buildGlobals({ store, data, templateName: options.templateName, request: options.request ?? {}, locale, report: this.state.report })
+    const page = buildGlobals({ store, data, templateName: this.templateName, request: options.request ?? {}, locale, report: this.state.report })
     this.state.request = page.request
     const env: SettingsEnv = { store, linklists: page.linklists, services: this.state.services, translator, report: this.state.report, trust: this.trust }
     const settingsData = theme.json('config/settings_data.json') ?? {}
@@ -334,19 +362,19 @@ class PageRender implements ThemeHooks {
     // Sections and blocks choose their `color_scheme` settings from the schemes the global `color_scheme_group` holds (https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings#color_scheme: "Shopify returns the selected `color_scheme` object from `color_scheme_group`", and nil "If the theme doesn't have `color_scheme_group` data in `settings_data.json`"), so their settings are built over the global settings' group.
     this.env = { ...env, colorSchemes: SettingsDrop.colorSchemes(settings) }
     this.globals = { ...page.globals, settings, [STATE]: this.state }
-    this.templateId = options.templateName.replace(/[^\w-]/g, '-')
+    this.templateId = this.templateName.replace(/[^\w-]/g, '-')
     this.root = new Context({}, theme.liquid.options, { sync: false, globals: this.globals, renderLimit: options.renderLimit, memoryLimit: options.memoryLimit }, { liquid: theme.liquid, errors: this.errors })
   }
 
   public async page (): Promise<RenderPageResult> {
     const html = await toPromise(this.renderDocument())
-    return { html, report: this.state.report.toReport(this.errors, now() - this.started) }
+    return { html, report: this.state.report.toReport(this.errors, now() - this.started), templateName: this.templateName }
   }
 
   public async section (key: string): Promise<RenderSectionResult> {
     const html = await toPromise(this.renderOneSection(key))
     const { stylesheets, javascripts } = this.state.assets
-    return { html, report: this.state.report.toReport(this.errors, now() - this.started), assets: { stylesheets: [...stylesheets.values()], javascripts: [...javascripts.values()] } }
+    return { html, report: this.state.report.toReport(this.errors, now() - this.started), templateName: this.templateName, assets: { stylesheets: [...stylesheets.values()], javascripts: [...javascripts.values()] } }
   }
 
   /** A context for one section or block: the page's globals plus `extra`, sharing the page's limits and error list. */
@@ -443,11 +471,11 @@ class PageRender implements ThemeHooks {
   }
 
   private templateEntries (template: TemplateJson): Entry[] {
-    return this.entries(template, `templates/${this.options.templateName}.json`, (key, index) => ({ id: `template--${this.templateId}__${key}`, location: 'template', index }))
+    return this.entries(template, `templates/${this.templateName}.json`, (key, index) => ({ id: `template--${this.templateId}__${key}`, location: 'template', index }))
   }
 
   private templateJson (): TemplateJson | undefined {
-    const path = `templates/${this.options.templateName}.json`
+    const path = `templates/${this.templateName}.json`
     if (!this.theme.has(path)) return undefined
     const template = this.theme.json(path)
     if (!isRecord(template)) throw new Error(`${path}: must be a JSON object`)
@@ -456,7 +484,7 @@ class PageRender implements ThemeHooks {
 
   /** The JSON template, or undefined for a Liquid template. A template that does not exist rejects: there is no page to show. */
   private requireTemplate (): TemplateJson | undefined {
-    const name = this.options.templateName
+    const name = this.templateName
     const template = this.templateJson()
     if (!template && !this.theme.has(`templates/${name}.liquid`)) {
       this.state.report.missing('template', name)
@@ -471,7 +499,7 @@ class PageRender implements ThemeHooks {
    * A Liquid template renders as Liquid and chooses its layout with `{% layout %}`; `{% layout none %}` renders it alone, https://shopify.dev/docs/api/liquid/tags/layout ("By default, the `theme.liquid` layout is used"). One that does not parse prints its error as `content_for_layout`.
    */
   private * renderTemplate (): Generator<unknown, { content: string, layout: string | null }, unknown> {
-    const name = this.options.templateName
+    const name = this.templateName
     const template = this.requireTemplate()
     if (template) {
       let out = ''
