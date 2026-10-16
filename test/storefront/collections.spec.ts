@@ -74,18 +74,20 @@ describe('collections beyond the recorded scenarios', () => {
     expect(canadian.filters.map((f: any) => f.param_name)).not.toContain('filter.v.price')
   })
 
-  it('gives a collection of the store the tags of every product it shows, and the catalogue the tags of its page', async () => {
-    // probe-collection-suffix: `featured`'s first page holds no shoe, yet its tags have `shoes`; probe-collection-all: the catalogue's tags are its page's
-    const featured = await probe('/collections/featured?view=probe')
-    expect(featured.products.map((p: any) => p.handle)).not.toContain('canvas-sneakers')
-    expect(featured.tags).toEqual(['accessories', 'men', 'shoes', 'tops', 'unisex', 'women'])
-    expect((await probe('/collections/featured?view=probe&page=3')).tags).toEqual(featured.tags)
-    // a filter takes its products' tags away, as shopify.dev's `collection.tags` says ("doesn't include tags for products that have been filtered out")
-    expect((await probe('/collections/featured?view=probe&filter.p.product_type=Shoes')).tags).toEqual(['accessories', 'men', 'shoes'])
+  it('gives a collection of the store the tags of all its products, on any page and under any filter, and the catalogue the tags of its page', async () => {
+    const all = ['accessories', 'men', 'shoes', 'tops', 'unisex', 'women']
+    // the three recorded requests of `featured` (fixtures `probe-collection-suffix`, `-page-3`, `-filtered`)
+    for (const name of ['probe-collection-suffix', 'probe-collection-suffix-page-3', 'probe-collection-suffix-filtered']) {
+      const { actual, expected } = await probeMatches(name, (b: any) => b.tags)
+      expect([actual, expected]).toEqual([all, all])
+    }
+    // not recorded: a tag path and a sort take the same rule
+    expect((await probe('/collections/featured/women?view=probe')).tags).toEqual(all)
+    expect((await probe('/collections/featured?view=probe&sort_by=price-descending&filter.p.product_type=Shoes')).tags).toEqual(all)
     expect((await probe('/collections/all?view=probe')).tags).toEqual(['accessories', 'men', 'shoes', 'unisex'])
     expect((await probe('/collections/vendors?q=Mock.shop&view=probe')).tags).toEqual(['accessories', 'men', 'shoes', 'unisex'])
     const store = buildStore(storefrontSampleData)
-    expect(HandleMap.get(store.collections, 'featured')!.tags).toEqual(['accessories', 'men', 'shoes', 'tops', 'unisex', 'women'])
+    expect(HandleMap.get(store.collections, 'featured')!.tags).toEqual(all)
   })
 
   it('keeps the whole query in the links of the filters and of the pages', async () => {

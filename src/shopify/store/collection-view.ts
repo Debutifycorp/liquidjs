@@ -1,5 +1,5 @@
 import { HandleMap } from '../objects/handle-map'
-import { AUTOMATIC_COLLECTIONS, buildCollection, copyObject, tagsOf } from './build'
+import { AUTOMATIC_COLLECTIONS, buildCollection, copyObject } from './build'
 import type { LiquidObject, StoreObjects } from './build'
 import { applyFilters, buildFilters, filterMatcher, requestQuery } from './filters'
 import type { RequestInput } from './globals'
@@ -56,7 +56,7 @@ function copyOf (object: LiquidObject, changes: LiquidObject): LiquidObject {
 }
 
 /**
- * The collection a request shows, https://shopify.dev/docs/api/liquid/objects/collection: its products narrowed to the tag path's tags (every tag, https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/tag-filtering), then to the active filters, then sorted by the request's `sort_by` (the collection's default order when it names none or a value the sort options do not list). `products_count` counts the result and `all_products_count` stays the collection's size, as the parity store prints them (fixture `probe-collection-tag`: 6 of 29); `sort_by` is the requested value, empty when the request names none (fixture `probe-collection-all`); `filters` come from the products before the filters, with the active ones marked (`buildFilters`). Under variant filters a product's `url` and `featured_media` are those of its first matching variant (`Matcher.firstVariant`). The built collection is shared by every request of a view, so this returns a copy. Its `tags` are those of every product it shows for a collection of the store's, on any page (fixture `probe-collection-suffix`), and those of its `products` for one Shopify makes (inside a `paginate` block, the page's: fixtures `probe-collection-all` and `probe-collection-page-2`), as `buildCollection` says. `path` is the address the filters' links extend, without its query.
+ * The collection a request shows, https://shopify.dev/docs/api/liquid/objects/collection: its products narrowed to the tag path's tags (every tag, https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/tag-filtering), then to the active filters, then sorted by the request's `sort_by` (the collection's default order when it names none or a value the sort options do not list). `products_count` counts the result and `all_products_count` stays the collection's size, as the parity store prints them (fixture `probe-collection-tag`: 6 of 29); `sort_by` is the requested value, empty when the request names none (fixture `probe-collection-all`); `filters` come from the products before the filters, with the active ones marked (`buildFilters`). Under variant filters a product's `url` and `featured_media` are those of its first matching variant (`Matcher.firstVariant`). The built collection is shared by every request of a view, so this returns a copy, which keeps the built collection's `tags` (`buildCollection`): a collection of the store's has the tags of all its products whatever the filters and the page (recorded: page 1, page 3 and `filter.p.tag`, fixtures `probe-collection-suffix`, `-page-3` and `-filtered`; a tag path and a sort are not recorded), and one Shopify makes the tags of its `products`, the page's inside a `paginate` block (fixtures `probe-collection-all` and `probe-collection-page-2`). `path` is the address the filters' links extend, without its query.
  */
 export function collectionView (collection: LiquidObject, request: RequestInput, storefrontFilters: FilterData[], currency: ViewCurrency, path: string): LiquidObject {
   const all = collection.products as Product[]
@@ -72,10 +72,7 @@ export function collectionView (collection: LiquidObject, request: RequestInput,
     return variant ? copyOf(product, { url: variant.url, featured_media: variant.featured_media ?? product.featured_media }) : product
   }
   const shown = active.some(([name]) => name.startsWith('filter.v.')) ? sorted.map(link) : sorted
-  const view = copyOf(collection, { products: shown, products_count: shown.length, sort_by: named ?? '', filters: buildFilters(storefrontFilters, tagged, path, query, currency) })
-  // a collection of the store's has the tags of every product the request shows, on any page (fixture `probe-collection-suffix`); one Shopify makes keeps the accessor that follows its `products`
-  if (!automatic) Object.defineProperty(view, 'tags', { get: () => tagsOf(shown), enumerable: true, configurable: true })
-  return view
+  return copyOf(collection, { products: shown, products_count: shown.length, sort_by: named ?? '', filters: buildFilters(storefrontFilters, tagged, path, query, currency) })
 }
 
 /**

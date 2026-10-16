@@ -38,13 +38,13 @@ interface FormType {
 
 const prop = (resource: Resource, key: string) => (resource ? stringify(toValue(resource[key])) : '')
 
-/** The address of the page being rendered, its query included: where a `localization` form returns the shopper, as the parity store prints it (fixtures `probe-page-home` and `probe-page-fr-eu`: `/pages/about?view=probe` and `/fr-eu/pages/about?view=probe` while `request.path` is `/pages/about`). The pairs keep the address's order, each name and value encoded with `encodeURIComponent`; the fixtures hold one pair, so the order and encoding of several are not pinned. The deprecated `currency` form, which no fixture records, returns the same way. */
+/** The address of the page being rendered, its query included: where a `localization` form returns the shopper, as the parity store prints it (fixtures `probe-page-home` and `probe-page-fr-eu`: `/pages/about?view=probe` and `/fr-eu/pages/about?view=probe`, the page's path, prefix included, as `request.path` prints it, then the query). The pairs keep the address's order, each name and value encoded with `encodeURIComponent`; the fixtures hold one pair, so the order and encoding of several are not pinned. The deprecated `currency` form, which no fixture records, returns the same way. */
 const pageAddress = (request: { path: string, query?: ReadonlyArray<readonly [string, string]> }) => {
   const pairs = request.query ?? []
   return pairs.length ? `${request.path}?${pairs.map(([name, value]) => `${encodeURIComponent(name)}=${encodeURIComponent(value)}`).join('&')}` : request.path
 }
 
-/** Liquid's `VariableSignature`, repeated: how Shopify's `form` tag reads its object (`FORM_FORMAT` in Shopify's theme-check, lib/theme_check/tags.rb, which parses the tag as the storefront does): a name with dots and square brackets around unquoted keys, so `all_products['hoodie']` is no object it can read. */
+/** Liquid's `VariableSignature`, repeated: the characters `FORM_FORMAT` in Shopify's theme-check (lib/theme_check/tags.rb, whose header says its tag parsing was copied from the storefront renderer) allows in a form's object, a name with dots and square brackets, so `all_products['hoodie']` falls outside it. theme-check agrees on the character set only: its anchored pattern raises a syntax error for such an object, where the storefront printed an empty string, so the rule built on it is Debutify's inference. */
 const READABLE_OBJECT = /^[\w\-.[\]()]+$/
 
 /** The form types and their markup, from the examples on https://shopify.dev/docs/api/liquid/tags/form. `customer_address` for an existing address is not documented there and is approximate. An action is the unprefixed path; `render` puts the view's prefix before it (the base path and locale prefix: the parity store posts its localization form to `/fr-ca/localization` under `/fr-ca`, fixture `probe-page-fr-ca`, and shopify.dev's examples show only the unprefixed actions), except for an action built from an article's URL, which carries it already (`prefixed`). */
@@ -179,7 +179,7 @@ function fieldName (state: ShopifyState, formType: string, field: string): strin
 /**
  * `{% form 'type', resource, attribute: value %}`. https://shopify.dev/docs/api/liquid/tags/form
  *
- * A `product` form whose object is written in a way Shopify's form tag cannot read as one (`READABLE_OBJECT`: a quoted key, `all_products['hoodie']`) prints nothing at all, as the parity store prints `{% form 'product', all_products['hoodie'] %}` on a page (fixtures `probe-page-*`: `product_form` is `""`); the page says only that the product form "requires a product object as a parameter". The other form types, which no fixture records with such an object, read the whole expression.
+ * Recorded: `{% form 'product', all_products['hoodie'] %}{% endform %}`, with an empty body, prints `""` on the parity store's page (fixtures `probe-page-*`: `product_form`); shopify.dev's page says only that the product form "requires a product object as a parameter". Debutify's rule, inferred from the character set of `READABLE_OBJECT`: a `product` form whose object is written with any other character (a quoted key) prints nothing, its content included. Not recorded: whether the content is dropped, an unquoted key (`all_products[handle]`, which prints the form here), a nil or missing object (which prints `<form … id="product_form_">` here), and the other form types with such an object, which read the whole expression here.
  */
 export class FormTag extends Tag {
   private readonly type: ValueToken
