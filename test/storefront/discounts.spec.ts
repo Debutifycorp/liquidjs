@@ -88,16 +88,18 @@ describe('discounts', () => {
     it('answers clear.js with the empty cart', () => {
       expect(keys(cartJson(data, state([]), undefined, 'cart'))).toEqual(keys(auto.steps[3].body))
     })
-    it('discounts one pair in two, three or four, and none in one', () => {
-      const split = (quantity: number) => (built(state([line(SLIDES, quantity)])).items as any[]).map(item => [item.quantity, item.final_line_price])
-      expect(split(1)).toEqual([[1, 2500]])
-      expect(split(3)).toEqual([[2, 5000], [1, 1250]])
-      // the discount gives one pair per order (`uses_per_order`)
-      expect(split(4)).toEqual([[3, 7500], [1, 1250]])
+    it('discounts one pair in two, three or four, and none in one, splitting off what was bought from what was not', () => {
+      const split = (quantity: number) => (built(state([line(SLIDES, quantity)])).items as any[]).map(item => [item.quantity, item.final_line_price, item.discount_allocations.map((a: any) => a.amount)])
+      expect(split(1)).toEqual([[1, 2500, []]])
+      // the pair bought comes first with an allocation of 0 and the discounted pair second, as the recording shows
+      expect(split(2)).toEqual([[1, 2500, [0]], [1, 1250, [1250]]])
+      // the discount gives one pair per order (`uses_per_order`): the pairs it does not touch are a line of their own, first
+      expect(split(3)).toEqual([[1, 2500, []], [1, 2500, [0]], [1, 1250, [1250]]])
+      expect(split(4)).toEqual([[2, 5000, []], [1, 2500, [0]], [1, 1250, [1250]]])
     })
     it('numbers the lines after the split', () => {
       const cartObject = built(state([line(SLIDES, 3), line(HOODIE, 1)]))
-      expect((cartObject.items as any[]).map(item => item.index)).toEqual([0, 1, 2])
+      expect((cartObject.items as any[]).map(item => item.index)).toEqual([0, 1, 2, 3])
       expect(cartObject.item_count).toBe(4)
     })
   })
@@ -309,15 +311,14 @@ describe('discounts', () => {
       expect(built(one).total_discount).toBe(0)
       expect(discountCodeStatus(data, one)).toEqual([{ code: 'BUNDLE', applicable: false }])
     })
-    it('discounts one pair only, though it is given once per order (uses_per_order), splitting a line of two pairs of sunnies', () => {
+    it('discounts one pair only, though it is given once per order (uses_per_order), splitting a line of two pairs of sunnies and the tops that were bought from the ones that were not', () => {
       const cartObject = built(state([line(SUNNIES, 2), line(TSHIRT, 4)], ['BUNDLE']))
-      expect((cartObject.items as any[]).map(item => [item.variant_id, item.quantity, item.final_line_price, item.line_level_total_discount])).toEqual([
-        [SUNNIES, 1, 5000, 0],
-        [SUNNIES, 1, 0, 5000],
-        [TSHIRT, 4, 16000, 0]
+      expect((cartObject.items as any[]).map(item => [item.variant_id, item.quantity, item.final_line_price, item.line_level_total_discount, item.discount_allocations.map((a: any) => a.amount)])).toEqual([
+        [SUNNIES, 1, 5000, 0, []],
+        [SUNNIES, 1, 0, 5000, [5000]],
+        [TSHIRT, 2, 8000, 0, []],
+        [TSHIRT, 2, 8000, 0, [0]]
       ])
-      // the undiscounted pair was not part of what was bought, so it has no allocation
-      expect(cartObject.items[0].discount_allocations).toEqual([])
     })
     it('repeats for every set of the purchase when there is no limit', () => {
       const repeat = withDiscounts({ id: 1, type: 'buy_x_get_y', title: 'Buy 2 tops, get sunnies', code: 'EVERY', buys: { items: { collections: ['tops'] }, quantity: 2 }, gets: { items: { products: ['black-sunnies'] }, quantity: 1, value: { percentage: 100 } } })
@@ -337,19 +338,100 @@ describe('discounts', () => {
       expect(built(state([line(HOODIE, 1), line(SUNNIES, 1)], ['SPEND']), spend).total_discount).toBe(0)
       expect(built(state([line(HOODIE, 2), line(SUNNIES, 1)], ['SPEND']), spend).total_discount).toBe(5000)
     })
-    it('splits the allocations an earlier discount made when it splits the line', () => {
-      const both = withDiscounts(
-        { id: 1, type: 'amount_off_products', title: 'Slides sale', value: { percentage: 50 }, items: { products: ['slides'] }, combines_with: { product: true } },
-        { id: 2, type: 'buy_x_get_y', title: 'Second pair 10% off', buys: { items: { products: ['slides'] }, quantity: 1 }, gets: { items: { products: ['slides'] }, quantity: 1, value: { percentage: 10 } }, uses_per_order: 1, combines_with: { product: true } }
+    it('lets two Buy X Get Y discounts share a line they touch in different ways', () => {
+      const two = withDiscounts(
+        { id: 1, type: 'buy_x_get_y', title: 'Buy 2 tops, get sunnies', code: 'ONE', buys: { items: { collections: ['tops'] }, quantity: 2 }, gets: { items: { products: ['black-sunnies'] }, quantity: 1, value: { percentage: 100 } }, combines_with: { product: true } },
+        { id: 2, type: 'buy_x_get_y', title: 'Buy sneakers, get a T-shirt', code: 'TWO', buys: { items: { products: ['high-top-sneakers'] }, quantity: 1 }, gets: { items: { products: ['men-t-shirt'] }, quantity: 1, value: { percentage: 100 } }, combines_with: { product: true } }
       )
-      const cartObject = built(state([line(SLIDES, 2)]), both)
-      const [first, second] = cartObject.items
-      // 5000: half off is 2500, 1250 on each pair; the second pair then loses 10% of its remaining 1250
-      expect(first.line_level_discount_allocations.map((a: any) => a.amount)).toEqual([1250, 0])
-      expect(second.line_level_discount_allocations.map((a: any) => a.amount)).toEqual([1250, 125])
-      expect([first.final_line_price, second.final_line_price]).toEqual([1250, 1125])
-      expect(cartObject.total_discount).toBe(2500 + 125)
-      expect(cartObject.discount_applications.map((a: any) => a.total_allocated_amount)).toEqual([2500, 125])
+      const cartObject = built(state([line(SUNNIES, 1), line(TSHIRT, 3), line(SNEAKERS, 1)], ['ONE', 'TWO']), two)
+      // ONE (5000) first: two T-shirts bought and the sunnies free; TWO then takes a T-shirt that ONE left alone
+      expect((cartObject.items as any[]).map(item => [item.variant_id, item.quantity, item.final_line_price, item.discount_allocations.map((a: any) => [a.amount, a.discount_application.title])])).toEqual([
+        [SUNNIES, 1, 0, [[5000, 'ONE']]],
+        [TSHIRT, 1, 0, [[4000, 'TWO']]],
+        [TSHIRT, 2, 8000, [[0, 'ONE']]],
+        [SNEAKERS, 1, 18000, [[0, 'TWO']]]
+      ])
+      expect(cartObject.total_discount).toBe(9000)
+    })
+  })
+
+  describe('the best combination', () => {
+    // one 9000 hoodie: A30 is 30% off the order and combines with nothing; B20 is an automatic 20% off hoodies that allows order discounts; C20 is 20% off the order that allows product discounts
+    const trio = withDiscounts(
+      { id: 1, type: 'amount_off_order', title: 'Thirty', code: 'A30', value: { percentage: 30 } },
+      { id: 2, type: 'amount_off_products', title: 'Twenty on hoodies', value: { percentage: 20 }, items: { products: ['hoodie'] }, combines_with: { order: true } },
+      { id: 3, type: 'amount_off_order', title: 'Twenty', code: 'C20', value: { percentage: 20 }, combines_with: { product: true } }
+    )
+    it('takes two discounts that combine over one bigger discount that combines with nothing (the help centre: "the best discount or combination of discounts")', () => {
+      const cartObject = built(state([line(HOODIE, 1)], ['A30', 'C20']), trio)
+      // 20% of 9000 is 1800, and 20% of the remaining 7200 is 1440, where A30 alone is 2700
+      expect(cartObject.discount_applications.map((a: any) => [a.title, a.total_allocated_amount])).toEqual([['Twenty on hoodies', 1800], ['C20', 1440]])
+      expect([cartObject.total_discount, cartObject.total_price]).toEqual([3240, 5760])
+      expect(discountCodeStatus(trio, state([line(HOODIE, 1)], ['A30', 'C20']))).toEqual([{ code: 'C20', applicable: true }, { code: 'A30', applicable: false }])
+    })
+    it('still takes the bigger one when the combination saves less', () => {
+      expect(built(state([line(HOODIE, 1)], ['A30']), trio).discount_applications.map((a: any) => a.title)).toEqual(['A30'])
+      // A30 alone is 2700, B20 alone 1800
+      expect(built(state([line(HOODIE, 1)], ['A30', 'C20']), withDiscounts(trio.discounts![0], { ...trio.discounts![1], value: { percentage: 5 } } as any, trio.discounts![2])).discount_applications.map((a: any) => a.title)).toEqual(['A30'])
+    })
+    it('takes the set with more entered codes on equal savings', () => {
+      const equal = withDiscounts(
+        { id: 1, type: 'amount_off_order', title: 'Auto', value: { amount: 1000 } },
+        { id: 2, type: 'amount_off_order', title: 'Code', code: 'CODE', value: { amount: 1000 } }
+      )
+      expect(built(state([line(HOODIE, 1)], ['CODE']), equal).discount_applications.map((a: any) => a.title)).toEqual(['CODE'])
+    })
+    it('falls back to taking discounts best first above twelve candidates', () => {
+      const many = withDiscounts(...Array.from({ length: 13 }, (_, n) => ({ id: n + 1, type: 'amount_off_order' as const, title: `Percent ${n + 1}`, value: { percentage: n + 1 } })))
+      expect(built(state([line(HOODIE, 1)]), many).discount_applications.map((a: any) => a.title)).toEqual(['Percent 13'])
+    })
+  })
+
+  describe('limits on combining', () => {
+    it('does not combine two shipping discounts (the help centre: "Multiple shipping discounts can\'t apply to the same order")', () => {
+      const shipping = withDiscounts(
+        { id: 1, type: 'free_shipping', title: 'One', code: 'ONE', combines_with: { shipping: true }, max_shipping_price: 500 },
+        { id: 2, type: 'free_shipping', title: 'Two', code: 'TWO', combines_with: { shipping: true }, max_shipping_price: 1500 }
+      )
+      const cartState = state([line(HOODIE, 1)], ['ONE', 'TWO'])
+      expect(discountCodeStatus(shipping, cartState)).toEqual([{ code: 'ONE', applicable: true }, { code: 'TWO', applicable: false }])
+    })
+    it('applies at most five product or order codes, the best first (the help centre: "a maximum of 5 product or order discount codes and 1 shipping discount code")', () => {
+      const codes = Array.from({ length: 7 }, (_, n) => ({ id: n + 1, type: 'amount_off_order' as const, title: `Percent ${n + 1}`, code: `P${n + 1}`, value: { percentage: n + 1 }, combines_with: { order: true } }))
+      const seven = withDiscounts(...codes)
+      const entered = codes.map(c => c.code)
+      const status = discountCodeStatus(seven, state([line(HOODIE, 1)], entered))
+      expect(status.filter(entry => entry.applicable).map(entry => entry.code)).toEqual(['P3', 'P4', 'P5', 'P6', 'P7'])
+      expect(status.filter(entry => !entry.applicable).map(entry => entry.code)).toEqual(['P1', 'P2'])
+    })
+    it('counts the free shipping minimum on what combined discounts leave (the help centre: "the lower price is what counts")', () => {
+      const half = withDiscounts(
+        { id: 1, type: 'amount_off_order', title: 'Half', code: 'HALF', value: { percentage: 50 }, combines_with: { shipping: true } },
+        { id: 2, type: 'free_shipping', title: 'Free', code: 'FREE', minimum: { subtotal: 9000 }, combines_with: { order: true } }
+      )
+      expect(discountCodeStatus(half, state([line(HOODIE, 1)], ['HALF', 'FREE']))).toEqual([{ code: 'HALF', applicable: true }, { code: 'FREE', applicable: false }])
+      expect(discountCodeStatus(half, state([line(HOODIE, 2)], ['HALF', 'FREE']))).toEqual([{ code: 'HALF', applicable: true }, { code: 'FREE', applicable: true }])
+    })
+    it('does not stack two product discounts on one line (the help centre: "you can\'t apply multiple discounts to a single item unless the discounts are of different classes")', () => {
+      const stack = withDiscounts(
+        { id: 1, type: 'amount_off_products', title: 'Ten percent', code: 'TEN', value: { percentage: 10 }, items: { products: ['hoodie'] }, combines_with: { product: true } },
+        { id: 2, type: 'amount_off_products', title: 'Five off', code: 'FIVE', value: { amount: 500 }, items: { products: ['hoodie'] }, combines_with: { product: true } },
+        { id: 3, type: 'amount_off_products', title: 'Sneakers', code: 'SNEAK', value: { amount: 500 }, items: { products: ['high-top-sneakers'] }, combines_with: { product: true } }
+      )
+      expect(built(state([line(HOODIE, 1)], ['TEN', 'FIVE']), stack).discount_applications.map((a: any) => a.title)).toEqual(['TEN'])
+      // on different lines they combine
+      expect(built(state([line(HOODIE, 1), line(SNEAKERS, 1)], ['TEN', 'SNEAK']), stack).discount_applications.map((a: any) => a.title)).toEqual(['TEN', 'SNEAK'])
+    })
+  })
+
+  describe('a title with special characters', () => {
+    it('is escaped in Liquid and in /cart.js as Ruby escapes HTML, and not in the change answers', () => {
+      const quoted = { ...data, products: data.products!.map(product => product.handle === 'hoodie' ? { ...product, title: 'A "big" & <b>' } : product) }
+      const lineState = state([line(HOODIE, 1)])
+      const liquid = 'A &quot;big&quot; &amp; &lt;b&gt; - Green / Small'
+      expect(built(lineState, quoted).items[0].title).toBe(liquid)
+      expect((cartJson(quoted, lineState) as any).items[0].title).toBe(liquid)
+      expect((cartJson(quoted, lineState, undefined, 'change') as any).items[0].title).toBe('A "big" & <b> - Green / Small')
     })
   })
 

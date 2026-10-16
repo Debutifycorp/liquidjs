@@ -1,7 +1,8 @@
 import { createHash } from 'crypto'
-import { escapeHtml, stripTags } from '../../filters/html'
+import { stripTags } from '../../filters/html'
 import { HandleMap } from '../objects/handle-map'
 import type { ImageDrop } from '../objects/image'
+import { escapeHtml } from '../util/html'
 import { buildStore, hidden } from './build'
 import type { LiquidObject, StoreObjects } from './build'
 import { applyDiscounts, discountAllocationJson, discountApplicationJson, enteredCodes } from './discounts'
@@ -135,7 +136,7 @@ function lineItem (store: StoreObjects, state: CartLineState, index: number): Li
     variant,
     product_id: product.id,
     variant_id: variant.id,
-    title: escapeHtml(String(defaultTitle ? product.title : `${product.title} - ${variant.title}`)),
+    title: escapeHtml(defaultTitle ? product.title : `${product.title} - ${variant.title}`),
     product_title: product.title,
     variant_title: defaultTitle ? null : variant.title,
     url: allocation ? `${product.url}?selling_plan=${state.sellingPlanId}&variant=${variant.id}` : variant.url,

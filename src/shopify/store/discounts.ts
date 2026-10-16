@@ -159,22 +159,26 @@ function entitled (piece: Piece, discount: AmountOffProductsDiscountData, ctx: D
 /** Whether a discount besides a code took money off the piece already, which a spend minimum of Buy X Get Y does not count: "If a combinable discount already applies to an item, that item doesn't count towards the minimum purchase amount at all." https://help.shopify.com/en/manual/discounts/discount-types/buy-x-get-y */
 const discounted = (piece: Piece) => piece.allocations.some(entry => (entry.amount as number) > 0 && (entry.discount_application as LiquidObject).target_selection !== 'all')
 
-/** `allocations` split in two for the first `kept` of `of` units: each amount rounded for the first part, the rest for the second. */
-function splitAllocations (allocations: LiquidObject[], kept: number, of: number): [LiquidObject[], LiquidObject[]] {
-  const first: LiquidObject[] = []
-  const second: LiquidObject[] = []
+/** `allocations` split over parts of `counts` units out of `of`, each amount in proportion, the rounding carried so that the parts add up to the whole. */
+function splitAllocations (allocations: LiquidObject[], counts: number[], of: number): LiquidObject[][] {
+  const parts: LiquidObject[][] = counts.map(() => [])
   for (const entry of allocations) {
-    const part = Math.round((entry.amount as number) * kept / of)
-    first.push(allocation(part, entry.discount_application as LiquidObject))
-    second.push(allocation((entry.amount as number) - part, entry.discount_application as LiquidObject))
+    let units = 0
+    let given = 0
+    counts.forEach((count, n) => {
+      units += count
+      const through = n === counts.length - 1 ? entry.amount as number : Math.round((entry.amount as number) * units / of)
+      parts[n].push(allocation(through - given, entry.discount_application as LiquidObject))
+      given = through
+    })
   }
-  return [first, second]
+  return parts
 }
 
 interface Unit { piece: Piece, price: number, role: 'buy' | 'get' | null }
 
 /**
- * A Buy X Get Y, https://help.shopify.com/en/manual/discounts/discount-types/buy-x-get-y, settled on single units: each use takes the cheapest units of what is given ("the lower-priced item that the customer chooses is the item that the customer gets at a discount") and then the units that were to be bought (a quantity, or units to the spend), none of them one already counted, so a product that is bought and given at once is bought first and given second (buy 1 get 1 on two pairs discounts one). The uses are unlimited unless the discount gives `uses_per_order`: "Discount usage is unlimited by default." A line that holds both discounted and other units is split in two, the units bought and not discounted first, as fixture `ajax-discount-automatic-bxgy` shows; a line that was only bought gets an allocation of 0, as the T-shirts of BUNDLE do (fixture `ajax-discount-codes`, step 6). Which of the units that tie are taken is the cart's order, which no fixture settles.
+ * A Buy X Get Y, https://help.shopify.com/en/manual/discounts/discount-types/buy-x-get-y, settled on single units: each use takes the cheapest units of what is given ("the lower-priced item that the customer chooses is the item that the customer gets at a discount") and then the units that were to be bought (a quantity, or units to the spend), none of them one already counted, so a product that is bought and given at once is bought first and given second (buy 1 get 1 on two pairs discounts one). The uses are unlimited unless the discount gives `uses_per_order`: "Discount usage is unlimited by default." A line that holds units of different kinds is split by kind, as fixture `ajax-discount-automatic-bxgy` shows for the bought pair and the discounted one (the bought unit first, with an allocation of 0, then the discounted unit); units the discount did not touch make a line of their own before them, and a line that was only bought, in whole, gets an allocation of 0 (the T-shirts of BUNDLE, fixture `ajax-discount-codes`, step 6). Whether Shopify also splits bought units from untouched ones on one line is not recorded. Which of the units that tie are taken is the cart's order, which no fixture settles.
  */
 function applyBuyXGetY (discount: BuyXGetYDiscountData, pieces: Piece[], ctx: DiscountContext, application: LiquidObject): number | null {
   const units: Unit[] = pieces.flatMap(piece => Array.from({ length: piece.units }, () => ({ piece, price: piece.price / piece.units, role: null })))
@@ -225,22 +229,31 @@ function applyBuyXGetY (discount: BuyXGetYDiscountData, pieces: Piece[], ctx: Di
     }
     const amount = entry.gets ? amountOff(piece, entry.gets) : 0
     total += amount
-    if (!entry.gets) {
-      piece.allocations.push(allocation(0, application))
-      next.push(piece)
-    } else if (entry.gets === piece.units) {
+    if (entry.gets === piece.units) {
       allocate(piece, amount, application)
       next.push(piece)
+    } else if (entry.buys === piece.units) {
+      piece.allocations.push(allocation(0, application))
+      next.push(piece)
     } else {
-      const rest = piece.units - entry.gets
-      const restPrice = Math.round(piece.price * rest / piece.units)
-      const [plainAllocations, giftAllocations] = splitAllocations(piece.allocations, rest, piece.units)
-      if (entry.buys) plainAllocations.push(allocation(0, application))
-      next.push(
-        { item: piece.item, units: rest, price: restPrice, orderBase: 0, allocations: plainAllocations },
-        { item: piece.item, units: entry.gets, price: piece.price - restPrice, orderBase: 0, allocations: giftAllocations }
-      )
-      allocate(next[next.length - 1], amount, application)
+      // units that were neither bought nor given come first, then the bought ones with their allocation of 0, then the given ones; a part that is empty is left out
+      const parts = [
+        { units: piece.units - entry.buys - entry.gets, role: null },
+        { units: entry.buys, role: 'buy' },
+        { units: entry.gets, role: 'get' }
+      ].filter(part => part.units > 0)
+      const shares = splitAllocations(piece.allocations, parts.map(part => part.units), piece.units)
+      let units = 0
+      let paid = 0
+      parts.forEach((part, n) => {
+        units += part.units
+        const through = n === parts.length - 1 ? piece.price : Math.round(piece.price * units / piece.units)
+        const split: Piece = { item: piece.item, units: part.units, price: through - paid, orderBase: 0, allocations: shares[n] }
+        paid = through
+        if (part.role === 'buy') split.allocations.push(allocation(0, application))
+        if (part.role === 'get') allocate(split, amount, application)
+        next.push(split)
+      })
     }
   }
   pieces.splice(0, pieces.length, ...next)
@@ -281,7 +294,8 @@ function applyOne (discount: DiscountData, pieces: Piece[], ctx: DiscountContext
     return total
   }
   if (discount.type === 'free_shipping') {
-    if (!pieces.length || !meetsMinimum(discount, pieces, ctx, piece => piece.orderBase)) return null
+    // shipping discounts go last, so the minimum counts what the discounts that combine with it left: "Products are counted towards a minimum purchase amount at their discounted price. If another discount has already lowered a product's price, then the lower price is what counts. This happens only with discounts that can be combined." https://help.shopify.com/en/manual/discounts/discount-types/free-shipping
+    if (!pieces.length || !meetsMinimum(discount, pieces, ctx, piece => piece.price)) return null
     // a country the address names is checked; without an address the cart cannot say, so the discount holds
     if (discount.countries && ctx.shippingCountry && !discount.countries.includes(ctx.shippingCountry)) return null
     return 0
@@ -297,6 +311,8 @@ interface Candidate {
   order: number
   /** What the discount takes off a cart on its own. */
   savings: number
+  /** The line items the discount takes money off on its own, which two product discounts must not share. */
+  touched: Set<LiquidObject>
 }
 
 /** The order the chosen discounts are applied in: product discounts, then order discounts (percentages before fixed amounts), then shipping, as the help centre says: "Product discounts apply first to individual items. Order discounts apply to the revised subtotal after product discounts. Shipping discounts apply last. [...] the percent off order discount applies first, and then the fixed amount order discount applies after." https://help.shopify.com/en/manual/discounts/discount-combinations */
@@ -305,10 +321,94 @@ function phase (discount: DiscountData): number {
   return classOf(discount) === 'product' ? 0 : 3
 }
 
+/** Most product or order codes one order takes: "Customers can use a maximum of 5 product or order discount codes and 1 shipping discount code on the same order. If this limit is reached, then additional codes won't apply." The one shipping code follows from two shipping discounts not combining. https://help.shopify.com/en/manual/discounts/discount-combinations */
+const MAX_CODES = 5
+
+/** Up to this many discounts that apply, the best combination is searched among all the sets that go together; above it the discounts are taken best first, one by one. Twelve keeps a page's cart cheap (at most a few thousand sets) and is far more than a store's discounts that apply to one cart. */
+const SEARCH_LIMIT = 12
+
+/** Two discounts go together when each allows the other's class (`combines`), when they are not both shipping discounts ("Multiple shipping discounts can't apply to the same order.") and when they do not both take money off the same line: "you can't apply multiple discounts to a single item unless the discounts are of different classes", and the Shopify Plus plan with product discount tags is the one exception, which the engine does not model. https://help.shopify.com/en/manual/discounts/discount-combinations */
+function compatible (a: Candidate, b: Candidate): boolean {
+  if (!combines(a.discount, b.discount)) return false
+  const classes = [classOf(a.discount), classOf(b.discount)]
+  if (classes[0] === 'shipping' && classes[1] === 'shipping') return false
+  if (classes[0] === 'product' && classes[1] === 'product') {
+    for (const item of a.touched) if (b.touched.has(item)) return false
+  }
+  return true
+}
+
+/** Which of two candidates comes first when nothing else separates them: the one that saves more on its own, the entered code, the earlier one. */
+const byRank = (a: Candidate, b: Candidate) => b.savings - a.savings || Number(!a.entered) - Number(!b.entered) || a.order - b.order
+
+/** `set` without the codes over the limit (the best ones stay). */
+function withinLimits (set: Candidate[]): Candidate[] {
+  const codes = set.filter(candidate => candidate.entered && classOf(candidate.discount) !== 'shipping')
+  if (codes.length <= MAX_CODES) return set
+  const kept = new Set([...codes].sort(byRank).slice(0, MAX_CODES))
+  return set.filter(candidate => !codes.includes(candidate) || kept.has(candidate))
+}
+
+interface Applied {
+  candidate: Candidate
+  application: LiquidObject
+  total: number
+}
+
+/** Applies the discounts of `set` to `pieces` in the order Shopify calculates them, and returns those that applied. */
+function applySet (set: Candidate[], pieces: Piece[], ctx: DiscountContext): Applied[] {
+  const applied: Applied[] = []
+  let orders = false
+  for (const candidate of [...set].sort((a, b) => phase(a.discount) - phase(b.discount))) {
+    if (!orders && classOf(candidate.discount) !== 'product') {
+      for (const piece of pieces) piece.orderBase = piece.price
+      orders = true
+    }
+    const application = makeApplication(candidate.discount, ctx)
+    const total = applyOne(candidate.discount, pieces, ctx, application)
+    if (total !== null) applied.push({ candidate, application, total })
+  }
+  return applied
+}
+
+/** The sets of discounts that go together and cannot be added to: each candidate is left out of a set only when it does not go together with one in it. */
+function maximalSets (viable: Candidate[]): Candidate[][] {
+  const sets: Candidate[][] = []
+  const walk = (n: number, chosen: Candidate[]) => {
+    if (n === viable.length) {
+      if (viable.every(candidate => chosen.includes(candidate) || chosen.some(other => !compatible(other, candidate)))) sets.push(chosen)
+      return
+    }
+    const fits = chosen.every(other => compatible(other, viable[n]))
+    if (fits) walk(n + 1, [...chosen, viable[n]])
+    // leaving a discount out only leads to a set that cannot be added to when something still to come does not go with it
+    if (!fits || viable.slice(n + 1).some(later => !compatible(viable[n], later))) walk(n + 1, chosen)
+  }
+  walk(0, [])
+  return sets
+}
+
+/** What a set takes off the cart, how many entered codes it applies, and the places of the discounts it applies, to compare two sets with. */
+interface Score {
+  total: number
+  codes: number
+  orders: number[]
+}
+
+/** Whether `a` is the better set: more taken off, then more entered codes, then the earlier discounts. */
+function better (a: Score, b: Score): boolean {
+  if (a.total !== b.total) return a.total > b.total
+  if (a.codes !== b.codes) return a.codes > b.codes
+  for (let n = 0; n < Math.min(a.orders.length, b.orders.length); n++) {
+    if (a.orders[n] !== b.orders[n]) return a.orders[n] < b.orders[n]
+  }
+  return false
+}
+
 /**
  * The discounts a cart gets: the automatic discounts and the entered codes that apply to it, and of those the ones that go together.
  *
- * Discounts that cannot combine (each must allow the other's class, `combines_with`) are not applied together: "the best discount for the customer's cart is always applied", where "Product and order discounts take priority over shipping discounts" (https://help.shopify.com/en/manual/discounts/discount-combinations), so the discounts are taken in the order of what each saves the cart on its own and one that cannot combine with a discount already taken is left out; of equal ones the entered code is taken. A free shipping discount saves nothing the cart can count (the shipping price is not known here), so it comes last. Fixture `ajax-discount-codes` shows it: WELCOME10 (4100) beats "Beanie week" (2000) though it allows product discounts, because "Beanie week" does not allow order discounts; "Beanie week" beats SHOES5 (500); BUNDLE (5000) beats "Beanie week"; and FREESHIP gives way to WELCOME10. A code that is not applied is rejected, which includes a code that is unknown and every code of an empty cart (step 14).
+ * Discounts that cannot combine (each must allow the other's class, `combines_with`) are not applied together: "If discounts can't combine, then the best discount or combination of discounts for the customer is automatically selected", where "Product and order discounts take priority over shipping discounts" (https://help.shopify.com/en/manual/discounts/discount-combinations). So the discounts that apply to the cart on their own are grouped into the sets that go together (`compatible`) and the set that takes the most off the cart is applied, an entered code winning a tie (more entered codes in the set, then the earlier discounts); a combination of two smaller discounts beats one big discount that combines with nothing. A set is scored by applying it, in the order Shopify calculates (`applySet`). Above twelve such discounts the sets are not searched: the discounts are taken in the order of what each saves on its own, and one that does not go together with one already taken is left out. A free shipping discount saves nothing the cart can count (the shipping price is not known here), so it never changes which set takes the most off, and only joins a set that allows it. Fixture `ajax-discount-codes` shows it: WELCOME10 (4100) beats "Beanie week" (2000) though it allows product discounts, because "Beanie week" does not allow order discounts; "Beanie week" beats SHOES5 (500); BUNDLE (5000) beats "Beanie week"; and FREESHIP gives way to WELCOME10. A code that is not applied is rejected, which includes a code that is unknown, a code over the limit of five (`MAX_CODES`) and every code of an empty cart (step 14).
  *
  * `items` are the cart's line items, which keep their quantities: a Buy X Get Y that discounts some units of a line makes two lines of it (`lines`).
  */
@@ -321,42 +421,52 @@ export function applyDiscounts (items: LiquidObject[], discounts: DiscountData[]
   const candidates: Candidate[] = []
   entered.forEach((code, n) => {
     const discount = discounts.find(d => d.code?.toLowerCase() === code.toLowerCase())
-    if (discount) candidates.push({ discount, entered: code, order: n, savings: 0 })
+    if (discount) candidates.push({ discount, entered: code, order: n, savings: 0, touched: new Set() })
   })
-  discounts.forEach((discount, n) => { if (!discount.code) candidates.push({ discount, entered: null, order: entered.length + n, savings: 0 }) })
+  discounts.forEach((discount, n) => { if (!discount.code) candidates.push({ discount, entered: null, order: entered.length + n, savings: 0, touched: new Set() }) })
 
   const viable = candidates.filter(candidate => {
     const alone = clonePieces(pieces)
-    const savings = applyOne(candidate.discount, alone, ctx, makeApplication(candidate.discount, ctx))
+    const application = makeApplication(candidate.discount, ctx)
+    const savings = applyOne(candidate.discount, alone, ctx, application)
     if (savings === null) return false
     candidate.savings = savings
+    candidate.touched = new Set(alone.filter(piece => piece.allocations.some(entry => entry.discount_application === application && (entry.amount as number) > 0)).map(piece => piece.item))
     return true
   })
-  viable.sort((a, b) => b.savings - a.savings || Number(!a.entered) - Number(!b.entered) || a.order - b.order)
-  const chosen: Candidate[] = []
-  for (const candidate of viable) {
-    if (chosen.every(other => combines(other.discount, candidate.discount))) chosen.push(candidate)
-  }
-  chosen.sort((a, b) => phase(a.discount) - phase(b.discount))
+  viable.sort(byRank)
 
-  const applied = new Set<string>()
-  let orders = false
-  for (const { discount, entered: code } of chosen) {
-    if (!orders && classOf(discount) !== 'product') {
-      for (const piece of pieces) piece.orderBase = piece.price
-      orders = true
+  let chosen: Candidate[] = []
+  if (viable.length > SEARCH_LIMIT) {
+    for (const candidate of viable) {
+      if (chosen.every(other => compatible(other, candidate))) chosen.push(candidate)
     }
-    const application = makeApplication(discount, ctx)
-    if (applyOne(discount, pieces, ctx, application) === null) continue
-    if (code) applied.add(code.toLowerCase())
-    if (discount.type === 'free_shipping') {
-      result.freeShipping = { applies: true, discount: application, ...(discount.max_shipping_price !== undefined ? { maxPrice: money(discount.max_shipping_price, ctx) } : {}) }
+    chosen = withinLimits(chosen)
+  } else {
+    let top: Score | null = null
+    for (const set of maximalSets(viable)) {
+      const limited = withinLimits(set)
+      const applied = applySet(limited, clonePieces(pieces), ctx)
+      const score: Score = { total: sum(applied.map(entry => entry.total)), codes: applied.filter(entry => entry.candidate.entered).length, orders: applied.map(entry => entry.candidate.order).sort((a, b) => a - b) }
+      if (!top || better(score, top)) {
+        top = score
+        chosen = limited
+      }
+    }
+  }
+
+  const applied = applySet(chosen, pieces, ctx)
+  for (const { candidate, application } of applied) {
+    if (candidate.discount.type === 'free_shipping') {
+      const limit = candidate.discount.max_shipping_price
+      result.freeShipping = { applies: true, discount: application, ...(limit !== undefined ? { maxPrice: money(limit, ctx) } : {}) }
       continue
     }
     result.applications.push(application)
-    if (discount.type === 'amount_off_order') result.cartLevel.push(application)
+    if (candidate.discount.type === 'amount_off_order') result.cartLevel.push(application)
   }
-  result.rejectedCodes = entered.filter(code => !applied.has(code.toLowerCase()))
+  const appliedCodes = new Set(applied.flatMap(entry => entry.candidate.entered ? [entry.candidate.entered.toLowerCase()] : []))
+  result.rejectedCodes = entered.filter(code => !appliedCodes.has(code.toLowerCase()))
   result.lines = pieces.map(piece => ({ item: piece.item, units: piece.units, allocations: piece.allocations }))
   return result
 }

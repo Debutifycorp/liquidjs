@@ -19,11 +19,6 @@ const unescapeMap: Record<string, string> = {
 export function escape (this: FilterImpl, str: string) {
   str = stringify(str)
   this.context.memoryLimit.use(str.length)
-  return escapeHtml(str)
-}
-
-/** `str` with `&`, `<`, `>`, `"` and `'` as entities: the text `escape` returns, for callers outside a render. */
-export function escapeHtml (str: string) {
   return str.replace(/&|<|>|"|'/g, m => escapeMap[m])
 }
 
