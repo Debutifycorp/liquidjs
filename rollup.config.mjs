@@ -202,7 +202,7 @@ const storefrontEngine = {
   resolveId (source, importer) {
     if (importer === undefined || dirname(importer) !== storefrontDir) return null
     if (source === '../shopify') return { id: '@debutify/liquidjs/shopify', external: true }
-    // for a file that imports only the engine's types, rpt2 hands Rollup the entry's absolute path: left alone, the module reads nothing the bundle uses and Rollup drops it
+    // for a file that imports only the engine's types, rpt2 hands Rollup the entry's absolute path: left alone, the module reads nothing the bundle uses and Rollup drops it. Naming it external instead fails the build (rpt2 loads every id it was handed to emit declarations and cannot load an external one), so the engine is read and tree-shaken away, and `versionInjection` below keeps the declarations it re-emits right (final review C, I2 and M7)
     if (source === shopifyEntry) return null
     // the helpers the es6 bundle's compiler adds for `async` functions and `for … of` (`__awaiter`, `__values`): rpt2 resolves `tslib` and Rollup inlines it, so the bundle imports nothing for it
     if (source === 'tslib') return null
@@ -220,7 +220,7 @@ const storefrontCjs = {
     banner
   }],
   external: ['crypto'],
-  plugins: [storefrontEngine, typescript(tsconfig('ES2020'))],
+  plugins: [storefrontEngine, versionInjection, typescript(tsconfig('ES2020'))],
   treeshake,
   input: storefrontInput
 }
@@ -232,7 +232,7 @@ const storefrontEsm = {
     banner
   }],
   external: ['crypto'],
-  plugins: [storefrontEngine, typescript(tsconfig('es6'))],
+  plugins: [storefrontEngine, versionInjection, typescript(tsconfig('es6'))],
   treeshake,
   input: storefrontInput
 }

@@ -1,5 +1,7 @@
+import { execFileSync } from 'child_process'
 import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
+import { pathToFileURL } from 'url'
 
 // Reads the built files in `dist`, like the other e2e specs: run `pnpm build` first.
 const root = join(__dirname, '../..')
@@ -30,6 +32,20 @@ describe('the built storefront entry', () => {
     expect(storefront.DEFAULT_LIMITS).toMatchObject({ body: 65536, lines: 100, quantity: 9999, properties: 25, propertyLength: 255, sections: 5, search: 256, visitors: 10000, idleMs: 86400000 })
     expect(Object.isFrozen(storefront.DEFAULT_LIMITS)).toBe(true)
     expect(Object.keys(storefront).sort()).toEqual(['DEFAULT_LIMITS', 'createStorefront', 'memoryCartStore', 'storefrontClientScript'])
+  })
+
+  it('loads as an ES module from dist and lists the same public names (final review C, M6)', () => {
+    const script = 'const entry = await import(process.argv[1]); console.log(JSON.stringify(Object.keys(entry).sort()))'
+    const names = execFileSync(process.execPath, ['--input-type=module', '-e', script, pathToFileURL(join(root, 'dist/storefront.node.mjs')).href], { encoding: 'utf8' })
+    expect(JSON.parse(names)).toEqual(['DEFAULT_LIMITS', 'createStorefront', 'memoryCartStore', 'storefrontClientScript'])
+  })
+
+  it('declares the real version in dist/index.d.ts, which the storefront bundles emit again (final review C, I2)', () => {
+    for (const file of ['dist/index.d.ts', 'dist/shopify/index.d.ts']) {
+      const declarations = readFileSync(join(root, file), 'utf8')
+      expect(declarations).not.toContain('[VI]')
+    }
+    expect(readFileSync(join(root, 'dist/index.d.ts'), 'utf8')).toContain(`export declare const version = "${pkg.version}";`)
   })
 
   it('answers requests from dist, through the engine the package loads once', async () => {
