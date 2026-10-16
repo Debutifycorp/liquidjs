@@ -92,6 +92,18 @@ describe('shopify/filters/media', () => {
     expect(await render("{{ product | image_url: width: 400, height: 400, pad_color: '000' }}")).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?height=400&pad_color=000&v=1683744744&width=400`)
     expect(await render('{{ product | image_url: width: 450, quality: 80 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?quality=80&v=1683744744&width=450`)
   })
+  // as the parity store renders it (scenario `page-product`): `image_url` is protocol-relative (`//host/cdn/shop/files/…`) and the theme adds `https:` itself (`| image_url | prepend: "https:"` prints `"https:\/\/host\/cdn\/shop\/files\/…"` in the JSON-LD), so an image on an absolute address loses its protocol and a theme's `prepend` does not double it
+  it('image_url, img_url and the srcset print an image on an absolute address without its protocol', async () => {
+    const hosted = { title: 'Hoodie', featured_image: { src: 'https://cdn.test/files/a.jpg?v=1', width: 3000, height: 2000, alt: 'Hoodie' } }
+    expect(await render('{{ product | image_url: width: 450 }}', { product: hosted })).toBe('//cdn.test/files/a.jpg?v=1&width=450')
+    expect(await render("{{ product | image_url: width: 450 | prepend: 'https:' }}", { product: hosted })).toBe('https://cdn.test/files/a.jpg?v=1&width=450')
+    expect(await render("{{ 'http://cdn.test/files/a.jpg' | image_url: width: 450 }}", {})).toBe('//cdn.test/files/a.jpg?width=450')
+    expect(await render("{{ product | img_url: '480x' }}", { product: hosted })).toBe('//cdn.test/files/a_480x.jpg?v=1')
+    const tag = await render('{{ product | image_url: width: 450 | image_tag }}', { product: hosted })
+    expect(tag).toContain('src="//cdn.test/files/a.jpg?v=1&amp;width=450"')
+    expect(tag).toContain('srcset="//cdn.test/files/a.jpg?v=1&amp;width=352 352w"')
+    expect(tag).not.toContain('https:')
+  })
   it('image_url on nothing renders nothing', async () => {
     expect(await render('{{ nothing | image_url }}', {})).toBe('')
   })
@@ -121,8 +133,8 @@ describe('shopify/filters/media', () => {
   it('image_url never resizes past the original or 5760, and keeps quality within 10 to 90', async () => {
     expect(await render('{{ product | image_url: width: 9999 }}')).toBe(`${BEAKERS}&width=3000`)
     expect(await render('{{ product | image_url: height: 9999 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?height=2000&v=1683744744`)
-    expect(await render("{{ 'https://cdn.test/a.jpg' | image_url: width: 9999 }}", {})).toBe('https://cdn.test/a.jpg?width=5760')
-    expect(await render("{{ 'https://cdn.test/a.jpg' | image_url: height: 9999 }}", {})).toBe('https://cdn.test/a.jpg?height=5760')
+    expect(await render("{{ 'https://cdn.test/a.jpg' | image_url: width: 9999 }}", {})).toBe('//cdn.test/a.jpg?width=5760')
+    expect(await render("{{ 'https://cdn.test/a.jpg' | image_url: height: 9999 }}", {})).toBe('//cdn.test/a.jpg?height=5760')
     expect(await render('{{ product | image_url: width: 450, quality: 5 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?quality=10&v=1683744744&width=450`)
     expect(await render('{{ product | image_url: width: 450, quality: 200 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?quality=90&v=1683744744&width=450`)
   })

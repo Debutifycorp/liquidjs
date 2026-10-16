@@ -53,7 +53,8 @@ function withSizeSuffix (path: string, size: string): string {
 /** Merges `params` into the query of `src` and sorts the keys, which is the shape of Shopify's CDN URLs (`?crop=bottom&height=400&v=1&width=400`). https://shopify.dev/docs/api/liquid/filters/image_url shows `?v=1683744744&width=450`; it does not state that keys are sorted, so the order is not pinned and the URL stays `approx`. A legacy `size` (`img_url`, the `video_tag` poster) writes only the `_<size>` file name and keeps the image's own query, as the examples on https://shopify.dev/docs/api/liquid/filters/img_url do, whose `crop`, `format` and `scale` examples print the same `_small` URL as the plain one. */
 export function cdnStyleImageUrl (image: ImageData, params: ImageUrlParams): string {
   const at = image.src.indexOf('?')
-  let base = at === -1 ? image.src : image.src.slice(0, at)
+  // the address has no protocol, as the parity store prints it (scenario `page-product`: srcset candidates start `//host/cdn/shop/files/`, and the theme's `image_url | prepend: "https:"` makes the JSON-LD `https:\/\/host\/cdn\/shop\/files\/…`, not `https:https:`)
+  let base = (at === -1 ? image.src : image.src.slice(0, at)).replace(/^https?:(?=\/\/)/i, '')
   const query = new Map<string, string>()
   if (at !== -1) {
     for (const part of image.src.slice(at + 1).split('&')) {
