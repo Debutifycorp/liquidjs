@@ -45,7 +45,7 @@ function renderOptions (ctx: Context, page: PageRequest, form?: FormOutcome) {
 /** A page through the engine, https://shopify.dev/docs/storefronts/themes/architecture/templates. A page whose resource is missing renders the theme's `404` template with status 404; a theme that cannot show one (it has none, or it fails) gets a plain 404 page and an `error` report instead of a 500. */
 export async function renderPageResponse (ctx: Context, page: PageRequest, status = 200, form?: FormOutcome): Promise<Response> {
   const notFound = !resourceExists(ctx.data, page) || page.templateName === '404'
-  // Shopify shows its 404 page at `/404`, not at the address that was asked for (recording `page-not-found`, `/pages/does-not-exist`: the canonical link, `og:url` and the localization form's `return_to` name `/404`), so the request drops its path and the engine gives the template its own, under the base path and the locale prefix
+  // Shopify shows its 404 page at `/404`, not at the address that was asked for (recording `page-not-found`, `/pages/does-not-exist`: the canonical link, `og:url` and the localization form's `return_to` name `/404`), so the request drops its path and the engine gives the template its own, under the base path and the locale prefix; the request's query stays, so `/pages/x?a=b` shows `return_to` `/404?a=b`, which no recording covers
   const shown = notFound ? { ...page, templateName: '404', request: { ...page.request, path: undefined } } : page
   try {
     const result = await renderPage(renderOptions(ctx, shown, form))

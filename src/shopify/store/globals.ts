@@ -270,7 +270,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   return { globals, linklists, request: { path, origin, page, prefix: view.prefix, query: request.query, alternates: pageType === '404' ? [] : alternates(data, view, path, request.searchTerms, pageType) } }
 }
 
-/** The path of the canonical URL: the page's path, and for a search with a term its `?q=` (recording `page-search`: `rel="canonical"` and `og:url` are `/search?q=shirt`). Any other query, a search's `type` and filters included, is left out, as the hreflang links leave it out. */
+/** The path of the canonical URL: the page's path, and for a search with a term its `?q=` (recording `page-search`: `rel="canonical"` and `og:url` are `/search?q=shirt`). Any other query, a search's `type` and filters included, is left out, as the hreflang links leave it out. The term is form-encoded (a space is `+`, as the hreflang links write it); how Shopify encodes a space or a quote in `canonical_url` is not recorded. */
 function canonicalPath (pageType: string, path: string, searchTerms: string | undefined): string {
   if (pageType !== 'search' || !searchTerms?.trim()) return path
   return `${path.split(/[?#]/)[0]}?${new URLSearchParams({ q: searchTerms })}`

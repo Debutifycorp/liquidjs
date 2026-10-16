@@ -8,8 +8,8 @@ const DESCRIPTION_LENGTH = 320
 
 const NAMED: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ndash: '–', mdash: '—', lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”', hellip: '…' }
 
-/** The character a numeric reference names; one outside Unicode reads as U+FFFD. */
-const fromCode = (code: number) => Number.isInteger(code) && code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '�'
+/** The character a numeric reference names; zero, a surrogate and one outside Unicode read as U+FFFD, as in an HTML parser (https://html.spec.whatwg.org/multipage/parsing.html#numeric-character-reference-end-state). */
+const fromCode = (code: number) => Number.isInteger(code) && code > 0 && code <= 0x10ffff && (code < 0xd800 || code > 0xdfff) ? String.fromCodePoint(code) : '\ufffd'
 
 /** The text of an HTML string's character references: the numeric ones and the common named ones. Another name stays as written. */
 function decodeEntities (html: string): string {
@@ -21,13 +21,19 @@ function decodeEntities (html: string): string {
 }
 
 /**
- * The description of a page from its own HTML text, which is what `page_description` is for a product, a collection, a page and an article. https://shopify.dev/docs/api/liquid/objects/page_description says only "The meta description of the current page"; the rules here are what the parity store prints (recordings `page-product`, `page-collection`, `page-page`, `page-faq`, `page-track-order` and `page-article`): the text of the body with its tags taken out, every run of white space (the line break between two blocks too) one space, the first 320 characters. Nil when nothing is left (recordings `page-contact` and `page-collection-filtered`, an empty page and the `all` collection, print no description). An entity is read as the character it names, because the layout escapes the text for its attribute and the parity store prints `it&#39;s`, not `it&amp;#39;s` (`page-product`); two blocks with no white space between them are joined without one, which no recording settles (the recorded bodies all have a line break there).
+ * The description of a page from its own HTML text, which is what `page_description` is for a product, a collection, a page and an article. https://shopify.dev/docs/api/liquid/objects/page_description says only "The meta description of the current page"; the rules here are what the parity store prints (recordings `page-product`, `page-collection`, `page-page`, `page-faq`, `page-track-order` and `page-article`): the text of the body with its tags taken out, every run of white space (the line break between two blocks too) one space, the first 320 characters. Nil when nothing is left (recordings `page-contact` and `page-collection-filtered`, an empty page and the `all` collection, print no description). Two things no recording settles: an entity is read as the character it names, which is Debutify's choice so that the layout's `escape` does not escape an entity a second time (the dataset's men, women, featured and shoes collections hold `&#39;`, and none is recorded; the recorded hoodie has a literal apostrophe, which `escape` writes as `&#39;`), and two blocks with no white space between them are joined without one (the recorded bodies all have a line break there).
  */
 export function descriptionOf (html: unknown): string | null {
   if (typeof html !== 'string') return null
   const text = decodeEntities(stripTags(html)).replace(/\s+/g, ' ').trim()
-  const characters = Array.from(text)
-  return characters.length ? characters.slice(0, DESCRIPTION_LENGTH).join('') : null
+  // the first 320 characters, counted as characters, without building an array of a long text
+  let out = ''
+  let count = 0
+  for (const character of text) {
+    if (count++ === DESCRIPTION_LENGTH) break
+    out += character
+  }
+  return out || null
 }
 
 /**

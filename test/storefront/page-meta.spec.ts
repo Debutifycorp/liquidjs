@@ -1,3 +1,4 @@
+import { Liquid } from '../../src'
 import { renderPage, requestFromUrl, storefrontSampleData as data } from '../../src/shopify'
 import type { StoreData } from '../../src/shopify'
 
@@ -62,6 +63,11 @@ describe('page_description', () => {
     expect(await print('/products/hoodie', '[{{ page_description }}]|{{ page_description | escape }}', store)).toBe('[Salt & pepper, it\'s "fine" now <3 A]|Salt &amp; pepper, it&#39;s &quot;fine&quot; now &lt;3 A')
   })
 
+  it('reads a reference to nothing, or to a surrogate, as the replacement character', async () => {
+    const store: StoreData = { ...data, products: [{ ...product('hoodie'), description: '<p>a&#0;b&#xD800;c&#x110000;d</p>' }] }
+    expect(await description('/products/hoodie', store)).toBe('a\ufffdb\ufffdc\ufffdd')
+  })
+
   it('counts characters, not UTF-16 units, so the 320th does not split an emoji', async () => {
     const store: StoreData = { ...data, products: [{ ...product('hoodie'), description: `<p>${'😀'.repeat(400)}</p>` }] }
     expect(Array.from(await description('/products/hoodie', store))).toHaveLength(320)
@@ -118,25 +124,27 @@ describe('canonical_url', () => {
 describe('page_image', () => {
   // https://shopify.dev/docs/api/liquid/objects/page_image: "The resource's featured image for product and collection pages, and blog posts, is used", otherwise the store's social sharing image (the data holds none). Recordings `page-product*` and `page-collection` print og:image, og:image:secure_url, og:image:width and og:image:height for it; `page-product-variant` prints the product's own image with a variant selected; `page-collection-filtered` (`/collections/all`, which has no image), `page-page`, `page-blog`, `page-article` (no image in the data) and the rest print none.
   const show = '{{ page_image.src }}|{{ page_image.width }}|{{ page_image.height }}'
+  /** An image's `src` is protocol-relative, as Shopify's is. */
+  const src = (url: string) => url.replace(/^https?:/, '')
 
   it('is a product\'s featured image', async () => {
     const first = product('hoodie').images![0]
-    expect(await print('/products/hoodie', show)).toBe(`${first.src}|4096|4096`)
-    expect(await print('/products/hoodie?variant=67774841192747', show)).toBe(`${first.src}|4096|4096`)
-    expect(await print('/en-eu/products/hoodie', show)).toBe(`${first.src}|4096|4096`)
-    expect(await print('/products/frontpack', show)).toBe(`${product('frontpack').images![0].src}|4096|4096`)
+    expect(await print('/products/hoodie', show)).toBe(`${src(first.src)}|4096|4096`)
+    expect(await print('/products/hoodie?variant=67774841192747', show)).toBe(`${src(first.src)}|4096|4096`)
+    expect(await print('/en-eu/products/hoodie', show)).toBe(`${src(first.src)}|4096|4096`)
+    expect(await print('/products/frontpack', show)).toBe(`${src(product('frontpack').images![0].src)}|4096|4096`)
   })
 
   it('is a collection\'s own image', async () => {
     const image = data.collections!.find(c => c.handle === 'tops')!.image!
-    expect(await print('/collections/tops', show)).toBe(`${image.src}|1024|1024`)
-    expect(await print('/collections/tops?sort_by=price-ascending', show)).toBe(`${image.src}|1024|1024`)
+    expect(await print('/collections/tops', show)).toBe(`${src(image.src)}|1024|1024`)
+    expect(await print('/collections/tops?sort_by=price-ascending', show)).toBe(`${src(image.src)}|1024|1024`)
   })
 
   it('is an article\'s image when it has one', async () => {
     const image = { src: 'https://cdn.example/a.jpg', width: 800, height: 600 }
     const store: StoreData = { ...data, blogs: data.blogs!.map(blog => ({ ...blog, articles: blog.articles.map(article => article.handle === 'making-liquid' ? { ...article, image } : article) })) }
-    expect(await print('/blogs/news/making-liquid', show, store)).toBe('https://cdn.example/a.jpg|800|600')
+    expect(await print('/blogs/news/making-liquid', show, store)).toBe('//cdn.example/a.jpg|800|600')
     expect(await print('/blogs/news/new-line-of-tennis-products', show, store)).toBe('||')
   })
 
@@ -204,5 +212,48 @@ describe('default on HTML-safe markup', () => {
   it('keeps the search title HTML-safe through default and assign, so escape leaves it', async () => {
     const layout = '{% assign og_title = page_title | default: shop.name %}{{ og_title | escape }}|{{ "a&b" | default: "x" | escape }}|{{ nothing | default: "<b>" | escape }}'
     expect(await print('/search?q=shirt', layout)).toMatch(/^Search: \d+ results found for &quot;shirt&quot;\|a&amp;b\|&lt;b&gt;$/)
+  })
+
+  it('gives an empty HTML-safe value the default, and a value that holds text no default', async () => {
+    // the vendor collection of an empty term has an empty HTML-safe title
+    expect(await print('/collections/vendors?q=', '{{ page_title | default: shop.name }}|{{ page_title | default: shop.name | escape }}')).toBe('Debutify Parity|Debutify Parity')
+  })
+
+  it('keeps allow_false, and gives the plain engine\'s answers for every other value', async () => {
+    expect(await print('/', '{{ false | default: "d", allow_false: true }}|{{ false | default: "d" }}')).toBe('false|d')
+    const values = ['nil', 'false', 'true', '""', '"x"', '0', '1', '3.5', '"<b>"', 'missing']
+    const layout = values.map(value => `{{ ${value} | default: "d" }}`).join('|')
+    expect(await print('/', layout)).toBe(await new Liquid().parseAndRender(layout))
+  })
+
+  it('gives an empty hash the default, as Ruby does', async () => {
+    expect(await print('/', '{{ shop.metafields | default: "none" }}')).toBe('none')
+  })
+})
+
+describe('titles that come from the request', () => {
+  // `/collections/vendors?q=` and `/collections/types?q=` title the collection with the term, and the layout prints `page_title` unescaped in `<title>`: the term must be inert there, in `og:title` (the layout's `escape`) and wherever a theme prints the collection title
+  const hostile = '</title><script>alert(1)</script>'
+  const layout = '<title>{{ page_title }}</title>|{{ page_title | default: shop.name | escape }}|{{ collection.title }}|{{ collection.title | escape }}|{{ collection.title | json }}'
+  const inert = '&lt;/title&gt;&lt;script&gt;alert(1)&lt;/script&gt;'
+
+  for (const handle of ['vendors', 'types']) {
+    it(`escapes the term of /collections/${handle}`, async () => {
+      const html = await print(`/collections/${handle}?q=${encodeURIComponent(hostile)}`, layout)
+      expect(html).not.toContain('<script>')
+      expect(html).not.toContain('</title><')
+      const [title, og, raw, escaped, json] = html.split('|')
+      expect([title, og, raw, escaped]).toEqual([`<title>${inert}</title>`, inert, inert, inert])
+      // `json` writes its own escapes, which read back as the same text
+      expect(JSON.parse(json)).toBe(inert)
+      expect(await print(`/collections/${handle}?q=${encodeURIComponent('Salt & "Pepper" \'s')}`, '{{ page_title }}|{{ page_title | escape }}')).toBe('Salt &amp; &quot;Pepper&quot; &#39;s|Salt &amp; &quot;Pepper&quot; &#39;s')
+    })
+  }
+
+  it('titles the collection with the vendor or type as before, for a term without markup', async () => {
+    const vendor = data.products![0].vendor!
+    expect(await print(`/collections/vendors?q=${encodeURIComponent(vendor)}`, '{{ page_title }}|{{ collection.title }}|{{ collection.handle }}')).toBe(`${vendor}|${vendor}|vendors`)
+    const type = data.products![0].type!
+    expect(await print(`/collections/types?q=${encodeURIComponent(type)}`, '{{ page_title }}|{{ collection.title }}|{{ collection.handle }}')).toBe(`${type}|${type}|types`)
   })
 })

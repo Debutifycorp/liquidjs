@@ -802,7 +802,7 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
       // the market's root in its default language (`marketRoot`; recordings `page-home-fr-ca` and `page-product-en-eu`)
       secure_url: `https://${data.shop.domain}${marketRoot(data, view.market)}`,
       currency: data.shop.currency,
-      // the formats of the market's currency, which are the shop's own for the shop's currency (recording `page-product-en-eu`: `€{{amount_with_comma_separator}}`); the money filters already print in them
+      // the formats of the market's currency, which are the shop's own for the shop's currency (recording `page-product-en-eu`: `€{{amount_with_comma_separator}}`); the money filters already print in them. https://shopify.dev/docs/api/liquid/objects/shop shows `${{amount}}` for a shop's own currency only, and no recording shows `money_with_currency_format` in another market: it follows `money_format` by symmetry
       money_format: currency.money_format,
       money_with_currency_format: currency.money_with_currency_format,
       locale: data.shop.locale ?? 'en',
