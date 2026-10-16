@@ -1,0 +1,106 @@
+import { findVariant, requestFromUrl } from '../shopify'
+import type { PageRequest, StoreData } from '../shopify'
+
+export type CartAction = 'add' | 'change' | 'update' | 'clear'
+
+export type Route =
+  | { kind: 'page', page: PageRequest, sectionId?: string, sections?: string[] }
+  | { kind: 'not-found', page: PageRequest }
+  | { kind: 'cart-json' }
+  | { kind: 'cart', action: CartAction, format: 'js' | 'form' }
+  | { kind: 'discount', code: string, redirect: string | null }
+  | { kind: 'variant', handle: string, variant: number }
+  | { kind: 'shipping', action: 'prepare' | 'async' | 'rates' }
+  | { kind: 'product-json', handle: string }
+  | { kind: 'suggest-json', page: PageRequest }
+  | { kind: 'recommendations-json', page: PageRequest }
+  | { kind: 'contact' }
+  | { kind: 'localization' }
+  | { kind: 'password' }
+  | { kind: 'notice', notice: 'checkout' | 'account' }
+
+export interface Routed {
+  route: Route
+  localePrefix: string
+  market: string
+  language: string
+  query: URLSearchParams
+}
+
+// https://shopify.dev/docs/api/ajax/reference/cart documents add, change, update and clear as POST at `/cart/<action>.js`, and its bundled section rendering lists `/cart/<action>` without an extension (the `routes` page's `cart_add_url`, `cart_change_url`, `cart_update_url` and `cart_clear_url`, https://shopify.dev/docs/api/liquid/objects/routes), the targets of forms and links. The `.json` spelling is not documented and no fixture pins it: it is accepted as the same endpoint as the `.js` one.
+const CART = /^\/cart\/(add|change|update|clear)(\.js|\.json)?$/
+
+/** One path segment with its percent escapes decoded; a malformed escape leaves the segment as the address wrote it, so a bad address names nothing rather than throwing. */
+function decode (segment: string): string {
+  try {
+    return decodeURIComponent(segment)
+  } catch {
+    return segment
+  }
+}
+
+/** Whether `path` starts with `prefix`, a path of whole segments such as `/p/tok`, compared by decoded segment as the engine's reading of the address does. */
+function within (path: string, prefix: string): boolean {
+  const have = path.split('/')
+  const want = prefix.split('/')
+  return want.length <= have.length && want.every((segment, i) => decode(segment) === decode(have[i]))
+}
+
+/**
+ * What a storefront request asks for, from its method and address: the routes of the spec's "Routes" table. The base path and the locale prefix are taken off first; a page is read by the engine's `requestFromUrl`. Pure: it renders nothing and does no input or output.
+ */
+export function routeRequest (method: string, url: string, data: StoreData, options: { basePath: string, country?: string }): Routed {
+  const trimmedBase = options.basePath.replace(/^\/+|\/+$/g, '')
+  const basePath = trimmedBase ? `/${trimmedBase}` : ''
+  // an address that opens with `//` is a path, not a host (as `requestFromUrl` reads it)
+  const parsed = new URL(url.replace(/^\/{2,}/, '/'), 'https://storefront.invalid')
+  const query = parsed.searchParams
+  const page = requestFromUrl(url, data, { basePath, country: options.country })
+  // the engine's reading of the address finds the locale prefix (engine Task 1) and keeps what follows it percent-encoded in `request.path`, after the base path and the prefix it has just taken off
+  const localePrefix = page.request.localePrefix ?? ''
+  const done = (route: Route): Routed => ({ route, localePrefix, market: page.request.market ?? 'default', language: page.request.language ?? page.locale, query })
+  const notFound = (): Routed => done({ kind: 'not-found', page: { ...page, templateName: '404' } })
+  // an address outside the base path is not the store's, whatever it says after it
+  if (basePath && !within(parsed.pathname, basePath)) return notFound()
+  const path = (page.request.path ?? '/').slice(basePath.length + localePrefix.length).replace(/\/+$/, '') || '/'
+  const verb = method.toUpperCase()
+  const read = verb === 'GET' || verb === 'HEAD'
+  // checkout and the customer account pages are Shopify's, not the storefront's (https://shopify.dev/docs/api/liquid/objects/routes lists `/account/login` and the other account links; checkout has no route there, and its address is Shopify's `/checkouts/cn/<token>`): the notice page answers them, whatever the method
+  if (path === '/checkout' || path === '/checkouts' || path.startsWith('/checkouts/')) return done({ kind: 'notice', notice: 'checkout' })
+  if (path === '/account' || path.startsWith('/account/')) return done({ kind: 'notice', notice: 'account' })
+  // https://shopify.dev/docs/api/ajax/reference/cart: `GET /cart.js` (`/cart.json` is the same cart, undocumented)
+  if (read && (path === '/cart.js' || path === '/cart.json')) return done({ kind: 'cart-json' })
+  const cart = CART.exec(path)
+  if (cart && verb === 'POST') return done({ kind: 'cart', action: cart[1] as CartAction, format: cart[2] ? 'js' : 'form' })
+  // a line's `url_to_remove` is a plain link, so `/cart/change` also answers GET (`/cart/change?id=<key>&quantity=0`, fixtures `ajax-cart-session` and `ajax-cart-en-ca`)
+  if (path === '/cart/change' && read) return done({ kind: 'cart', action: 'change', format: 'form' })
+  // the `cart` form posts to `/cart` (https://shopify.dev/docs/api/liquid/tags/form), which updates the quantities
+  if (path === '/cart' && verb === 'POST') return done({ kind: 'cart', action: 'update', format: 'form' })
+  // https://help.shopify.com/en/manual/discounts/discount-methods/discount-links: `/discount/<code>` applies the code, then redirects (`?redirect=`, fixture `ajax-discount-codes`); an address with no code names no discount
+  const code = read && path.startsWith('/discount/') ? decode(path.slice('/discount/'.length)) : ''
+  if (code) return done({ kind: 'discount', code, redirect: query.get('redirect') })
+  // https://shopify.dev/docs/api/ajax/reference/cart: POST `prepare_shipping_rates.json`, then GET `async_shipping_rates.json` (or the throttled `shipping_rates.json`)
+  if (path === '/cart/prepare_shipping_rates.json' && verb === 'POST') return done({ kind: 'shipping', action: 'prepare' })
+  if (path === '/cart/async_shipping_rates.json' && read) return done({ kind: 'shipping', action: 'async' })
+  if (path === '/cart/shipping_rates.json' && read) return done({ kind: 'shipping', action: 'rates' })
+  // https://shopify.dev/docs/api/ajax/reference/product: `GET /products/<handle>.js`
+  const product = /^\/products\/([^/]+)\.js$/.exec(path)
+  if (product && read) return done({ kind: 'product-json', handle: decode(product[1]) })
+  // https://shopify.dev/docs/api/ajax/reference/predictive-search (`/search/suggest.json`) and https://shopify.dev/docs/api/ajax/reference/product-recommendations (`/recommendations/products.json`): the engine reads each as the page its section-rendering twin answers for
+  const answered = (endpoint: string): PageRequest => requestFromUrl(`${basePath}${localePrefix}${endpoint}${parsed.search}`, data, { basePath, country: options.country })
+  if (path === '/search/suggest.json' && read) return done({ kind: 'suggest-json', page: answered('/search/suggest') })
+  if (path === '/recommendations/products.json' && read) return done({ kind: 'recommendations-json', page: answered('/recommendations/products') })
+  // the forms' targets, https://shopify.dev/docs/api/liquid/tags/form: `contact` posts to `/contact`, `localization` to `/localization` and `storefront_password` to `/password`
+  if (verb === 'POST' && path === '/contact') return done({ kind: 'contact' })
+  if (verb === 'POST' && path === '/localization') return done({ kind: 'localization' })
+  if (verb === 'POST' && path === '/password') return done({ kind: 'password' })
+  // no shopify.dev page documents `/variants/<id>`: as the parity store answers it, a 302 to `/products/<handle>?variant=<id>` (fixture `flow-variant-route`)
+  const variant = /^\/variants\/(\d+)$/.exec(path)
+  const found = variant && read ? findVariant(data, Number(variant[1])) : null
+  if (found) return done({ kind: 'variant', handle: found.product.handle, variant: found.variant.id })
+  if (!read || page.templateName === '404') return notFound()
+  // https://shopify.dev/docs/api/section-rendering: `section_id` answers one section's HTML and `sections` a JSON map of up to five, on any page address; the handler enforces the count
+  const sectionId = query.get('section_id') ?? undefined
+  const sections = query.get('sections')?.split(',').map(s => s.trim()).filter(Boolean)
+  return done({ kind: 'page', page, ...(sectionId ? { sectionId } : {}), ...(sections?.length ? { sections } : {}) })
+}

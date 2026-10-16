@@ -28,6 +28,11 @@
       "module": "./dist/shopify.node.mjs",
       "default": "./dist/shopify.node.js"
     },
+    "./storefront": {
+      "types": "./dist/storefront/index.d.ts",
+      "module": "./dist/storefront.node.mjs",
+      "default": "./dist/storefront.node.js"
+    },
     "./dist/*": {
       "types": [
         "./dist/*.d.ts",
@@ -43,6 +48,9 @@
     "*": {
       "shopify": [
         "dist/shopify/index.d.ts"
+      ],
+      "storefront": [
+        "dist/storefront/index.d.ts"
       ]
     }
   },

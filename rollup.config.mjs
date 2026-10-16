@@ -192,12 +192,49 @@ const shopifyEsm = {
   input: shopifyInput
 }
 
+// The storefront, `@debutify/liquidjs/storefront`: Node only. Its source imports the engine as `../shopify`; that import becomes the external module `@debutify/liquidjs/shopify`, so the engine is one copy per process (Node resolves the package's own name through its `exports`). A plugin names it external under that id: with `external` and `paths`, Rollup makes the relative id absolute first and writes a path relative to the bundle.
+const storefrontInput = './src/storefront/index.ts'
+const storefrontEngine = {
+  name: 'storefront-engine-external',
+  resolveId: (source, importer) => source === '../shopify' && importer !== undefined && /[\\/]src[\\/]storefront[\\/]/.test(importer) ? { id: '@debutify/liquidjs/shopify', external: true } : null
+}
+
+const storefrontCjs = {
+  output: [{
+    file: 'dist/storefront.node.js',
+    format: 'cjs',
+    esModule: true,
+    banner
+  }],
+  external: ['path', 'fs', 'stream', 'crypto'],
+  plugins: [storefrontEngine, versionInjection, typescript(tsconfig('ES2020'))],
+  treeshake,
+  input: storefrontInput
+}
+
+const storefrontEsm = {
+  output: [{
+    file: 'dist/storefront.node.mjs',
+    format: 'esm',
+    banner
+  }],
+  external: ['path', 'fs', 'stream', 'crypto'],
+  plugins: [
+    storefrontEngine,
+    versionInjection,
+    replace(esmRequire),
+    typescript(tsconfig('es6'))
+  ],
+  treeshake,
+  input: storefrontInput
+}
+
 const bundles = []
 const env = process.env.BUNDLES || ''
-if (env.includes('cjs')) bundles.push(nodeCjs, shopifyCjs)
-if (env.includes('esm')) bundles.push(nodeEsm, browserEsm, shopifyEsm)
+if (env.includes('cjs')) bundles.push(nodeCjs, shopifyCjs, storefrontCjs)
+if (env.includes('esm')) bundles.push(nodeEsm, browserEsm, shopifyEsm, storefrontEsm)
 if (env.includes('umd')) bundles.push(browserUmd)
 if (env.includes('min')) bundles.push(browserMin)
-if (bundles.length === 0) bundles.push(nodeCjs, nodeEsm, browserEsm, browserUmd, browserMin, shopifyCjs, shopifyEsm)
+if (bundles.length === 0) bundles.push(nodeCjs, nodeEsm, browserEsm, browserUmd, browserMin, shopifyCjs, shopifyEsm, storefrontCjs, storefrontEsm)
 
 export default bundles
