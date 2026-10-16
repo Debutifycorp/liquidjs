@@ -4,7 +4,7 @@ import type { Context, RouteHandler } from '../../../src/storefront/handler'
 import { harness, VISITOR } from './harness'
 
 const locked = { ...data, shop: { ...data.shop, password_enabled: true } }
-const at = (basePath: string, localePrefix: string) => ({ basePath, routed: { localePrefix } }) as unknown as Context
+const at = (basePath: string, localePrefix: string) => ({ basePath, routed: { localePrefix }, data }) as unknown as Context
 const location = (response: Response) => response.headers.get('location')
 const slow = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 const BASE = { visitor: VISITOR, basePath: '/p/tok/' }

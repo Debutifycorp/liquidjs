@@ -219,7 +219,7 @@ function updateIndex (lines: CartLineState[], id: string): number {
 }
 
 /**
- * `/cart/update.js` and `POST /cart`: `updates` as an object of quantities by variant id or line key (0 removes; a variant that is not in the cart is added as a new line, fixture `ajax-cart-session`, step 8, and one the store lacks is a 422 "Cannot find variant", where shopify.dev says 404, fixture `ajax-cart-errors`, step 5), or as an array of quantities by position (fixture `ajax-cart-session`, step 9; a position past the last line is a 422), then `note`, `attributes` (an empty value removes one, which shopify.dev does not say) and `discount` (comma-separated codes that replace the cart's; an empty string removes them all). https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-update-js. Nothing changes when one part fails. The storefront bounds what a cart can hold: at most `limits.properties` attributes and discount codes, with names and codes of at most `limits.propertyLength` characters.
+ * `/cart/update.js` and `POST /cart`: `updates` as an object of quantities by variant id or line key (0 removes; a variant that is not in the cart is added as a new line, fixture `ajax-cart-session`, step 8, and one the store lacks is a 422 "Cannot find variant", where shopify.dev says 404, fixture `ajax-cart-errors`, step 5), or as an array of quantities by position (fixture `ajax-cart-session`, step 9; a position past the last line is a 422), then `note`, `attributes` (an empty value removes one, which shopify.dev does not say) and `discount` (comma-separated codes that replace the cart's; an empty string removes them all). https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-update-js. Nothing changes when one part fails. The storefront bounds what a cart can hold: at most `limits.properties` attributes and discount codes, with names and codes of at most `limits.propertyLength` characters, attribute values of at most `limits.attributeLength` and a note of at most `limits.noteLength`.
  */
 export function updateCart (state: VisitorState, fields: Fields, data: StoreData, limits: StorefrontLimits): CartResult {
   let current = state
@@ -247,6 +247,8 @@ export function updateCart (state: VisitorState, fields: Fields, data: StoreData
   const cart = { ...current.cart }
   if (fields.note !== undefined) {
     const note = fields.note === null ? '' : text(fields.note)
+    // final review A, I2: no shopify.dev page or recording states a length for the note, so the limit is Debutify's (`DEFAULT_LIMITS.noteLength`)
+    if (note !== undefined && note.length > limits.noteLength) return CART_ERRORS.limit(`The cart note can be at most ${limits.noteLength} characters.`)
     if (note !== undefined) cart.note = note
   }
   if (isFields(fields.attributes)) {
@@ -264,6 +266,8 @@ export function updateCart (state: VisitorState, fields: Fields, data: StoreData
         continue
       }
       if (name.length > limits.propertyLength) return CART_ERRORS.limit(`A cart attribute name can be at most ${limits.propertyLength} characters.`)
+      // final review A, I2: the value was the one free text with no bound (a line property's value is held to `propertyLength` in `propertiesOf`); the limit is Debutify's (`DEFAULT_LIMITS.attributeLength`), as Shopify states none
+      if (value.length > limits.attributeLength) return CART_ERRORS.limit(`A cart attribute value can be at most ${limits.attributeLength} characters.`)
       attributes[name] = value
     }
     if (Object.keys(attributes).length > limits.properties) return CART_ERRORS.limit(`The cart can have at most ${limits.properties} attributes.`)

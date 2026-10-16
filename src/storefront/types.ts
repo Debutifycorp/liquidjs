@@ -21,12 +21,18 @@ export interface StorefrontLimits {
   quantity: number
   properties: number
   propertyLength: number
+  /** Characters in the cart note. */
+  noteLength: number
+  /** Characters in the value of a cart attribute. */
+  attributeLength: number
   sections: number
   search: number
   /** Visitors the default cart store holds. */
   visitors: number
   /** Milliseconds after which the default cart store drops an idle visitor. */
   idleMs: number
+  /** Bytes the default cart store may hold in all, counted as two bytes for each character of each visitor's state as JSON; past it the least recently used visitors go. */
+  storeBytes: number
 }
 
 export const DEFAULT_LIMITS: Readonly<StorefrontLimits> = Object.freeze({
@@ -35,10 +41,15 @@ export const DEFAULT_LIMITS: Readonly<StorefrontLimits> = Object.freeze({
   quantity: 9999,
   properties: 25,
   propertyLength: 255,
+  // no shopify.dev page and no recording states a length for the note or for an attribute's value (https://shopify.dev/docs/api/storefront/latest/mutations/cartAttributesUpdate states only that one input holds at most 250 attributes, and the Ajax cart page states no limit). The note's 5,000 is the figure Dawn merchants report for Shopify's cart note (a Shopify Community answer, not documented), and the attribute value's 1,000 is Debutify's own; both exist to bound what one visitor can make the default store hold (final review A, I2)
+  noteLength: 5000,
+  attributeLength: 1000,
   sections: 5,
   search: 256,
   visitors: 10000,
-  idleMs: 24 * 60 * 60 * 1000
+  idleMs: 24 * 60 * 60 * 1000,
+  // Debutify's: under the other limits one visitor's state is at most about 1.34 MB as JSON (2.68 MB counted, measured: 100 lines of 25 maximal properties, a full note, 25 full attributes and 25 full discount codes), where it was 2.99 MB before the note and attribute values were bounded, so 10,000 visitors could still hold 13 GB; the budget is the stated ceiling of the default store's states (final review A, I2)
+  storeBytes: 256 * 1024 * 1024
 })
 
 export type StorefrontReport = { kind: 'render', report: RenderReport } | { kind: 'error', error: Error }

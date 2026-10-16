@@ -31,7 +31,7 @@ export interface Routed {
 const CART = /^\/cart\/(add|change|update|clear)(\.js|\.json)?$/
 
 /** One path segment with its percent escapes decoded; a malformed escape leaves the segment as the address wrote it, so a bad address names nothing rather than throwing. */
-function decode (segment: string): string {
+export function decode (segment: string): string {
   try {
     return decodeURIComponent(segment)
   } catch {
@@ -51,12 +51,26 @@ function within (path: string, prefix: string): boolean {
   return want.length <= have.length && want.every((segment, i) => decode(segment) === decode(have[i]))
 }
 
+/** The address with its search term (`q`, the only one a page, a section or a list reads) cut to `max` characters, so that a term costs the same on every route: `/search`, a section of it, `/search/suggest` and the vendor and type lists. An address whose term is within `max` (or that has none) comes back as it was; one that is cut comes back as a path with its query and fragment. Final review A, M2: the spec's "search terms up to 256 characters". */
+export function cutSearch (url: string, max: number): string {
+  try {
+    const parsed = new URL(url.replace(/^\/{2,}/, '/'), 'https://storefront.invalid')
+    const term = parsed.searchParams.get('q')
+    if (term === null || term.length <= max) return url
+    parsed.searchParams.set('q', term.slice(0, max))
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`
+  } catch {
+    return url
+  }
+}
+
 /**
- * What a storefront request asks for, from its method and address: the routes of the spec's "Routes" table. The base path and the locale prefix are taken off first; a page is read by the engine's `requestFromUrl`. Pure: it renders nothing and does no input or output.
+ * What a storefront request asks for, from its method and address: the routes of the spec's "Routes" table. The base path and the locale prefix are taken off first; a page is read by the engine's `requestFromUrl`. A search term is cut to `options.search` characters when that is given (`cutSearch`). Pure: it renders nothing and does no input or output.
  */
-export function routeRequest (method: string, url: string, data: StoreData, options: { basePath: string, country?: string }): Routed {
+export function routeRequest (method: string, rawUrl: string, data: StoreData, options: { basePath: string, country?: string, search?: number }): Routed {
   const squeezedBase = squeeze(options.basePath)
   const basePath = squeezedBase === '/' ? '' : squeezedBase
+  const url = options.search === undefined ? rawUrl : cutSearch(rawUrl, options.search)
   // an address that opens with `//` is a path, not a host (as `requestFromUrl` reads it)
   const parsed = new URL(url.replace(/^\/{2,}/, '/'), 'https://storefront.invalid')
   const query = parsed.searchParams

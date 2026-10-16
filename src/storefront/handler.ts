@@ -1,13 +1,13 @@
-import { resolveView } from '../shopify'
+import { localePrefixes, resolveView } from '../shopify'
 import type { StoreData, StoreView, ThemeInput } from '../shopify'
 import { BodyError, readBody } from './body'
 import type { Fields } from './body'
 import { storefrontClientScript } from './client'
 import { errorPage, noticePage } from './html'
 import { pageForPath, renderPageResponse, renderSectionResponse, renderSectionsJson, resourceExists } from './pages'
-import { routeRequest } from './router'
+import { decode, routeRequest } from './router'
 import type { Route, Routed } from './router'
-import { asError, PRIVATE, report, storeRoot, withoutBase } from './support'
+import { asError, checkWhole, PRIVATE, report, storeRoot, withoutBase } from './support'
 import { DEFAULT_LIMITS } from './types'
 import type { HandleOptions, Storefront, StorefrontLimits, StorefrontOptions, VisitorState } from './types'
 import { cartToken, cookieVisitor, emptyVisitor, memoryCartStore, newVisitorKey, visitorCookie, VisitorQueue } from './visitor'
@@ -39,14 +39,43 @@ const resolve = async <T>(value: T | ((request: Request) => T | Promise<T>), req
 // eslint-disable-next-line no-control-regex
 export const STORE_PATH = /^\/(?![/\\])[^\u0000-\u001f\u007f]*$/
 
+/** A segment that names a dot segment once its escapes are decoded, or that hides one behind an encoded slash or backslash (`..%2f`, `%2e%2e%5c`): the address parser leaves those alone, and a server or proxy that decodes `%2f` before it routes would climb with them. An encoded slash or backslash that hides no dot segment (`a%2fb`, `%5Cevil.com`) is a plain character of the path. */
+const hidesClimb = (segment: string) => decode(segment).split(/[/\\]/).some(part => part === '.' || part === '..')
+
+/**
+ * A visitor-written target as a path from the store's root, or undefined when it is not a path on the store. It is resolved the way a browser resolves an address (`new URL`: `.` and `..` segments, in their percent-encoded forms and with backslashes for slashes, are applied, and the parser cannot climb above `/`) before anything is checked or prefixed, so no target can point outside the base path (final review A, I1: `?redirect=/../../client/dashboard`, `%2e%2e` and `return_to` put `Location: /p/tok/../../client/dashboard` on the wire, which a browser resolves to `/client/dashboard`). The result must still be a path on the store (`/..//host` resolves to `//host`) and hold no segment that hides a climb (`hidesClimb`). Every target a visitor writes goes through here: `redirect`, `refererPath`, `storefront_page`, `sections_url` and `X-Storefront-Page`.
+ */
+export function storeTarget (target: unknown): string | undefined {
+  if (typeof target !== 'string' || !STORE_PATH.test(target)) return undefined
+  try {
+    const url = new URL(target, 'http://store.invalid')
+    if (url.host !== 'store.invalid') return undefined
+    const path = `${url.pathname}${url.search}${url.hash}`
+    return STORE_PATH.test(path) && !url.pathname.split('/').some(hidesClimb) ? path : undefined
+  } catch {
+    return undefined
+  }
+}
+
 /** Non-ASCII text as UTF-8 percent escapes, so a `Location` is always a valid header: a character above U+00FF makes `Headers` throw, and one below it would go out as a single non-UTF-8 byte. A lone surrogate becomes U+FFFD. */
 const encodePath = (path: string) => path.replace(/[^\x21-\x7e]+/g, run => Array.from(new TextEncoder().encode(run), byte => `%${byte.toString(16).toUpperCase().padStart(2, '0')}`).join(''))
 
-/** A redirect to a path on this store, under the request's base path and locale prefix. A target that is not a path on the store (a host, `//host`, a backslash, a control character, nothing) is replaced by `fallback`, so a visitor-supplied `redirect` or `return_to` cannot send anyone to another site. https://shopify.dev/docs/api/ajax/reference/cart (forms redirect to the cart); the target rules are the spec's "Redirects". */
+/** Whether `path` is `prefix` or starts with it as a whole segment (`/fr-ca`, `/fr-ca/cart`, `/fr-ca?x=1`, not `/fr-ca-sale`). */
+const startsWithSegment = (path: string, prefix: string) => path === prefix || path.startsWith(`${prefix}/`) || path.startsWith(`${prefix}?`) || path.startsWith(`${prefix}#`)
+
+/**
+ * A redirect to a path on this store, under the request's base path and locale prefix. A target that is not a path on the store (a host, `//host`, a backslash, a control character, a dot segment that climbs out of the path, nothing) is replaced by `fallback`, so a visitor-supplied `redirect` or `return_to` cannot send anyone to another site or out of the store's base path (`storeTarget`). A target that already holds the base path keeps it once, however its segments are written (`/p/%74ok/cart`), and one that names a locale prefix of its own, the request's or another market's or language's, keeps that one, where the request's prefix is put on only a target that names none (final review A, M3: `POST /p/tok/en-ca/cart/add` with `return_to=/p/tok/products/hoodie` went to `/p/tok/en-ca/p/tok/products/hoodie`). https://shopify.dev/docs/api/ajax/reference/cart (forms redirect to the cart); the target rules are the spec's "Redirects".
+ */
 export function redirect (ctx: Context, target: string | null | undefined, fallback = '/'): Response {
-  const path = typeof target === 'string' && STORE_PATH.test(target) ? target : fallback
-  const prefix = `${ctx.basePath}${ctx.routed.localePrefix}`
-  const location = prefix && !(path === prefix || path.startsWith(`${prefix}/`) || path.startsWith(`${prefix}?`)) ? (path === '/' ? prefix : `${prefix}${path}`) : path
+  // the path from the store's root, with the base path taken off; a path with an empty segment after the base (`/p/tok//host`) is no path on the store
+  const fromRoot = (resolved: string | undefined) => {
+    const inStore = resolved === undefined ? undefined : withoutBase(ctx, resolved)
+    return inStore !== undefined && STORE_PATH.test(inStore) ? inStore : undefined
+  }
+  const path = fromRoot(storeTarget(target)) ?? fromRoot(storeTarget(fallback)) ?? '/'
+  const prefix = [ctx.routed.localePrefix, ...localePrefixes(ctx.data).map(entry => entry.prefix)].find(candidate => candidate !== '' && startsWithSegment(path, candidate))
+  const root = `${ctx.basePath}${prefix === undefined ? ctx.routed.localePrefix : ''}`
+  const location = root === '' ? path : `${root}${path === '/' ? '' : path}`
   return new Response(null, { status: 302, headers: { location: encodePath(location), 'cache-control': PRIVATE } })
 }
 
@@ -65,13 +94,15 @@ export function refererPath (ctx: Context): { path: string, search: string } | u
   const referer = named ?? ctx.request.headers.get('referer')
   if (!referer) return undefined
   try {
-    // the named page is a path, the `Referer` an address
-    if (named !== null && !STORE_PATH.test(named)) return undefined
-    const url = named !== null ? new URL(named, 'https://storefront.invalid') : new URL(referer)
+    // the named page is a path, resolved as a redirect target is (`storeTarget`); the `Referer` is an address, and its path is resolved by the same rule
+    const target = named !== null ? storeTarget(named) : undefined
+    if (named !== null && target === undefined) return undefined
+    const url = target !== undefined ? new URL(target, 'https://storefront.invalid') : new URL(referer)
+    const pathname = storeTarget(url.pathname)
     const base = ctx.basePath
-    if (base !== '' && url.pathname !== base && !url.pathname.startsWith(`${base}/`)) return undefined
-    const path = withoutBase(ctx, url.pathname)
-    return STORE_PATH.test(url.pathname) && STORE_PATH.test(path) ? { path, search: url.search } : undefined
+    if (pathname === undefined || (base !== '' && pathname !== base && !pathname.startsWith(`${base}/`))) return undefined
+    const path = withoutBase(ctx, pathname)
+    return STORE_PATH.test(path) ? { path, search: url.search } : undefined
   } catch {
     return undefined
   }
@@ -107,12 +138,12 @@ function cleanBase (basePath: string | undefined): string {
   return parts.length ? `/${parts.join('/')}` : ''
 }
 
-/** The limits with the caller's values laid over the defaults; a limit given as `undefined` keeps its default. */
+/** The limits with the caller's values laid over the defaults; a limit given as `undefined` keeps its default. Every limit given must be a whole number of at least zero, and a `TypeError` here names the one that is not, where the host's bug is (final review A, M6: `body: NaN` built and made every `POST` a 500 at request time, `sections: -1` refused every `?sections=`). */
 function mergeLimits (given: Partial<StorefrontLimits> | undefined): StorefrontLimits {
   const limits = { ...DEFAULT_LIMITS }
   for (const name of Object.keys(DEFAULT_LIMITS) as Array<keyof StorefrontLimits>) {
     const value = given?.[name]
-    if (value !== undefined) limits[name] = value
+    if (value !== undefined) limits[name] = checkWhole(`limits.${name}`, value)
   }
   return limits
 }
@@ -138,11 +169,15 @@ function injectClient (html: string, basePath: string): string {
   return html.slice(0, end) + tag + html.slice(end)
 }
 
-/** The last step of a sandboxed page's answer: any origin may read it, it sets no cookie (the visitor is the option's, never a cookie's), and a document gets the client script. The script is added to HTML that is a document and not a redirect, a `HEAD` answer or a fragment, never to JSON. */
+/** The policy that gives a page its opaque origin and still lets its scripts and forms run (the storefront spec's "Sandboxed pages": `sandbox allow-scripts allow-forms`, since with `allow-scripts` alone the theme's add-to-cart form never reaches its own script). */
+const SANDBOX_POLICY = 'sandbox allow-scripts allow-forms'
+
+/** The last step of a sandboxed page's answer: any origin may read it, it sets no cookie (the visitor is the option's, never a cookie's), it carries the sandbox policy unless the answer has a policy of its own, and a document gets the client script. The script is added to HTML that is a document and not a redirect, a `HEAD` answer or a fragment, never to JSON. The policy is defence in depth (final review A, M5): the isolation of a theme nobody reviewed would otherwise rest on the host remembering the header on every answer. */
 async function sandboxed (response: Response, basePath: string, fragment: boolean): Promise<Response> {
   const headers = new Headers(response.headers)
   headers.delete('set-cookie')
   for (const [name, value] of Object.entries(CORS)) headers.set(name, value)
+  if (!headers.has('content-security-policy')) headers.set('content-security-policy', SANDBOX_POLICY)
   const body = response.body
   const redirect = response.status >= 300 && response.status < 400
   if (body && !fragment && !redirect && (headers.get('content-type') ?? '').toLowerCase().startsWith('text/html')) {
@@ -160,12 +195,44 @@ function failure (error: unknown, options: StorefrontOptions, request: Request):
   return errorPage()
 }
 
+/** Whether a `GET` is a browser prefetching or prerendering the page, not the visitor going to it. Chrome's `<link rel=prefetch>` and speculation rules send `Sec-Purpose: prefetch` (`prefetch;prerender` for a prerender), Safari and older Chrome `Purpose: prefetch`, and Firefox `X-Moz: prefetch` (https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Sec-Purpose, https://developer.mozilla.org/docs/Web/HTTP/Guides/Link_prefetching_FAQ). Only a `GET` can be one, so a `POST` that names a purpose is an ordinary request. */
+function prefetching (request: Request): boolean {
+  if (request.method.toUpperCase() !== 'GET') return false
+  return ['sec-purpose', 'purpose', 'x-moz'].some(name => (request.headers.get(name) ?? '').split(/[;,]/).some(purpose => ['prefetch', 'prerender'].includes(purpose.trim().toLowerCase())))
+}
+
+/** Whether `value` is a plain object, not an array or null. */
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
+
+/** Whether a stored cart is one the cart code can read: lines with a variant, a quantity and properties, a note that is text or null, attributes that are text, and discount codes that are text. */
+const isCart = (cart: unknown): boolean => isRecord(cart) && Array.isArray(cart.lines) &&
+  cart.lines.every(line => isRecord(line) && Number.isFinite(line.variantId) && Number.isFinite(line.quantity) && isRecord(line.properties) && (line.sellingPlanId === undefined || line.sellingPlanId === null || Number.isFinite(line.sellingPlanId))) &&
+  (cart.note === undefined || cart.note === null || typeof cart.note === 'string') &&
+  isRecord(cart.attributes) && Object.values(cart.attributes).every(value => typeof value === 'string') &&
+  Array.isArray(cart.discountCodes) && cart.discountCodes.every(code => typeof code === 'string')
+
+/**
+ * What the cart store returned for a visitor, as a state the storefront can use (final review A, M7). A custom `CartStore` may return anything after a schema change (a row from Postgres, say), and a state without `cart` or `cart.lines` would make every request of that visitor a 500. One that is not a `VisitorState` is replaced by an empty visitor that keeps the country, language and unlocked flag that are valid, and the problem goes to `onReport` as an `error` (the key, a credential, is not in it). The stored state is replaced when the visitor next changes it; a visitor who does not change it is repaired, and reported, on each request.
+ */
+function usable (stored: unknown, key: string, options: StorefrontOptions, request: Request): VisitorState {
+  if (isRecord(stored) && isCart(stored.cart) &&
+    (stored.country === undefined || typeof stored.country === 'string') && (stored.language === undefined || typeof stored.language === 'string') && (stored.unlocked === undefined || typeof stored.unlocked === 'boolean')) return stored as unknown as VisitorState
+  report(options, { kind: 'error', error: new Error('the cart store returned a visitor state that is not a VisitorState (a cart with lines, a note, attributes and discount codes): the visitor starts with an empty cart') }, request)
+  const kept = isRecord(stored) ? stored : {}
+  return {
+    ...emptyVisitor(key),
+    ...(typeof kept.country === 'string' ? { country: kept.country } : {}),
+    ...(typeof kept.language === 'string' ? { language: kept.language } : {}),
+    ...(kept.unlocked === true ? { unlocked: true } : {})
+  }
+}
+
 /**
  * The storefront: one function from a `Request` to a `Response`, for every route of the spec. Visitor state comes from the cart store, keyed by the `cart` cookie or the `visitor` option; a route that changes it runs one at a time per visitor and saves the new state. A render that throws gives a plain 500 page and an `error` report.
  */
 export function createStorefront (options: StorefrontOptions): Storefront {
   const limits = mergeLimits(options.limits)
-  const store = options.cartStore ?? memoryCartStore({ max: limits.visitors, idleMs: limits.idleMs })
+  const store = options.cartStore ?? memoryCartStore({ max: limits.visitors, maxBytes: limits.storeBytes, idleMs: limits.idleMs })
   const queue = new VisitorQueue()
 
   async function handle (request: Request, handleOptions: HandleOptions = {}): Promise<Response> {
@@ -176,6 +243,8 @@ export function createStorefront (options: StorefrontOptions): Storefront {
     if (sandbox && verb === 'OPTIONS') return new Response(null, { status: 204, headers: PREFLIGHT })
     const basePath = cleanBase(handleOptions.basePath)
     const head = verb === 'HEAD'
+    // a `HEAD` and a prefetch change nothing, whatever the route does for a visitor's `GET` (final review A, M4: a prefetcher sends a `GET`, not a `HEAD`, so a prefetched `url_to_remove` or discount link changed the cart); only the `HEAD` answer has no body
+    const readOnly = head || prefetching(request)
     // every answer leaves through here, the error pages too
     const done = (response: Response, cookie?: string, fragment = false) => {
       const finished = finish(response, head, cookie)
@@ -186,13 +255,14 @@ export function createStorefront (options: StorefrontOptions): Storefront {
       const key = handleOptions.visitor ?? fromCookie ?? newVisitorKey()
       const [theme, data] = await Promise.all([resolve(options.theme, request), resolve(options.data, request)])
       // which routes change state, and which read a body, depend only on the method and the address, so both are decided before the visitor's state is read or their turn is taken
-      const first = routeRequest(request.method, request.url, data, { basePath }).route
+      const first = routeRequest(request.method, request.url, data, { basePath, search: limits.search }).route
       const fields = readsBody(first, verb) ? await readBody(request, limits.body) : {}
       const run = async (): Promise<Response> => {
-        const stored = (await store.get(key)) ?? emptyVisitor(key)
+        const given = await store.get(key)
+        const stored = given === undefined ? emptyVisitor(key) : usable(given, key, options, request)
         // the token is shown, never the key itself, whatever the stored cart holds (`cartToken`)
         const visitor: VisitorState = { ...stored, cart: { ...stored.cart, token: cartToken(key, sandbox) } }
-        const routed = routeRequest(request.method, request.url, data, { basePath, country: visitor.country })
+        const routed = routeRequest(request.method, request.url, data, { basePath, country: visitor.country, search: limits.search })
         const view = resolveView(data, { basePath, localePrefix: routed.localePrefix, market: routed.market, language: routed.language })
         const ctx: Context = { request, options, limits, theme, data, routed, basePath, view, visitor, key, sandbox, fields }
         // https://shopify.dev/docs/storefronts/themes/architecture/templates/password: the password page is "shown when password protection is applied to a store". The page does not say how any other address reaches it, so sending every other address there is Debutify's reading (no recording: the parity store was recorded past its password page). The page itself is open as a page; asked for a section (`?section_id=`, `?sections=`) it is any other address, or a section of the theme would show the store's products to a visitor without the password.
@@ -201,14 +271,14 @@ export function createStorefront (options: StorefrontOptions): Storefront {
         const locked = data.shop.password_enabled && !visitor.unlocked && !passwordPage
         if (locked) return done(redirect(ctx, '/password'))
         const answer = await (ROUTE_HANDLERS[routed.route.kind] ?? answerPage)(ctx)
-        // a `HEAD` request changes nothing, whatever the route does for a `GET`: HTTP makes it a safe method (https://www.rfc-editor.org/rfc/rfc9110#section-9.2.1), and a link-style route such as `/discount/<code>` is a `GET` that changes the cart while a link prefetcher sends `HEAD`
-        if (answer.state && !head) {
+        // a `HEAD` request changes nothing, whatever the route does for a `GET`: HTTP makes it a safe method (https://www.rfc-editor.org/rfc/rfc9110#section-9.2.1), and a link-style route such as `/discount/<code>` is a `GET` that changes the cart; a link prefetcher sends a `GET` that says so in `Sec-Purpose`, `Purpose` or `X-Moz`, which changes nothing either (`prefetching`), and sets no cookie
+        if (answer.state && !readOnly) {
           await store.set(key, answer.state)
           return done(answer.response, !handleOptions.visitor && !fromCookie ? visitorCookie(key, basePath) : undefined, answer.fragment)
         }
         return done(answer.response, undefined, answer.fragment)
       }
-      return head || !mutates(first) ? await run() : await queue.run(key, run)
+      return readOnly || !mutates(first) ? await run() : await queue.run(key, run)
     } catch (error) {
       return done(failure(error, options, request))
     }

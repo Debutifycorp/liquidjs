@@ -1,6 +1,7 @@
 import { renderPage, renderSection, requestFromUrl } from '../shopify'
 import type { FormOutcome, PageRequest, StoreData } from '../shopify'
 import { notFoundPage } from './html'
+import { cutSearch } from './router'
 import type { Context } from './handler'
 import { asError, PRIVATE, report, storeRoot } from './support'
 
@@ -87,4 +88,4 @@ export async function renderSectionsJson (ctx: Context, page: PageRequest, ids: 
 }
 
 /** The page a path names, read as a page address under the request's base path. A path starts with the locale prefix when the page should show in that language. */
-export const pageForPath = (ctx: Context, path: string): PageRequest => requestFromUrl(`${ctx.basePath}${path}`, ctx.data, { basePath: ctx.basePath, country: ctx.visitor.country })
+export const pageForPath = (ctx: Context, path: string): PageRequest => requestFromUrl(cutSearch(`${ctx.basePath}${path}`, ctx.limits.search), ctx.data, { basePath: ctx.basePath, country: ctx.visitor.country })

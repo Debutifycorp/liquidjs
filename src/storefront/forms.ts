@@ -3,7 +3,7 @@ import { localePrefixes } from '../shopify'
 import type { StoreData } from '../shopify'
 import type { Fields } from './body'
 import { addToCart, changeCart, clearCart, updateCart } from './cart'
-import { redirect, refererPath, STORE_PATH } from './handler'
+import { redirect, refererPath, storeTarget } from './handler'
 import type { Context, RouteHandler } from './handler'
 import { cartErrorPage } from './html'
 import { pageForPath, renderPageResponse } from './pages'
@@ -129,7 +129,9 @@ const localization: RouteHandler = async ctx => {
   const { prefix, language } = choose(ctx.data, country, typeof asked === 'string' ? asked : here.language)
   const returnTo = ctx.fields.return_to
   const back = returnTo === 'back' ? cameFrom(ctx) : undefined
-  const from = back ? back.path : typeof returnTo === 'string' && STORE_PATH.test(returnTo) ? splitLocale(ctx.data, withoutBase(ctx, returnTo)).rest : '/'
+  // resolved before the base path and the locale prefix are taken off, so a `return_to` that climbs (`/p/tok/../../x`) is the store's `/x` (final review A, I1)
+  const target = storeTarget(returnTo)
+  const from = back ? back.path : target !== undefined ? splitLocale(ctx.data, withoutBase(ctx, target)).rest : '/'
   const state = { ...ctx.visitor, ...(country === undefined ? {} : { country }), ...(language === undefined ? {} : { language }) }
   return { response: redirect(under(ctx, prefix), from), state }
 }

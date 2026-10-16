@@ -3,7 +3,7 @@ import type { CartLineState, PageRequest } from '../shopify'
 import type { Fields } from './body'
 import { addToCart, CART_ERRORS, changeCart, clearCart, updateCart } from './cart'
 import type { CartError, CartResult } from './cart'
-import { redirect, refererPath, STORE_PATH } from './handler'
+import { redirect, refererPath, storeTarget } from './handler'
 import type { Context, RouteHandler } from './handler'
 import { pageForPath, renderSectionsJson } from './pages'
 import type { CartAction, Route } from './router'
@@ -28,11 +28,12 @@ const empty = (status: number) => new Response(null, { status, headers: JSON_HEA
 
 type Item = Record<string, unknown>
 
-/** The page a cart answer's sections render in: `sections_url`, then the `X-Storefront-Page` header, then the `Referer` path, then `/` (the spec's "Section context"). A candidate must be a path on this store (`STORE_PATH`; the spec's "Redirects": `sections_url` must start with a single `/`), and one that is not is passed over for the next. The theme sends `sections_url: window.location.pathname`, which in the sandbox includes the base path, as the header and the referer do. A path that names no locale takes the request's own, so `/en-ca/cart/add.js` without a context renders its sections in the Canadian market. https://shopify.dev/docs/api/ajax/reference/cart#bundled-section-rendering */
+/** The page a cart answer's sections render in: `sections_url`, then the `X-Storefront-Page` header, then the `Referer` path, then `/` (the spec's "Section context"). A candidate must be a path on this store (`storeTarget`; the spec's "Redirects": `sections_url` must start with a single `/`), and one that is not is passed over for the next. The theme sends `sections_url: window.location.pathname`, which in the sandbox includes the base path, as the header and the referer do. A path that names no locale takes the request's own, so `/en-ca/cart/add.js` without a context renders its sections in the Canadian market. https://shopify.dev/docs/api/ajax/reference/cart#bundled-section-rendering */
 function contextPage (ctx: Context, fields: Fields): PageRequest {
   const given = typeof fields.sections_url === 'string' ? fields.sections_url : null
   // the first two name a path as the browser shows it, base path included; the `Referer` comes from the shared reader, which has taken the base path off (and refuses a page outside it)
-  const named = [given, ctx.request.headers.get('x-storefront-page')].find((candidate): candidate is string => candidate !== null && STORE_PATH.test(candidate))
+  // each candidate is resolved as a redirect target is (`storeTarget`: dot segments applied, a path that is none passed over), so `/p/tok/../../x` names the store's `/x` and not a path outside the base path (final review A, I1)
+  const named = [given, ctx.request.headers.get('x-storefront-page')].map(candidate => storeTarget(candidate)).find((candidate): candidate is string => candidate !== undefined)
   const path = named !== undefined ? withoutBase(ctx, named) : refererPath(ctx)?.path ?? '/'
   const page = pageForPath(ctx, path)
   const prefix = ctx.routed.localePrefix

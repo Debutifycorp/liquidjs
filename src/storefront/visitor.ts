@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'crypto'
+import { checkWhole } from './support'
 import { DEFAULT_LIMITS } from './types'
 import type { CartStore, VisitorState } from './types'
 
@@ -36,29 +37,48 @@ export function visitorCookie (key: string, basePath: string): string {
   return `cart=${key}; Path=${path}; HttpOnly; SameSite=Lax`
 }
 
-/** Visitor states in memory, at most `max` of them (the least recently used goes first), each dropped after `idleMs` without use. Reading and writing both count as use. */
-export function memoryCartStore (options: { max?: number, idleMs?: number, now?: () => number } = {}): CartStore {
-  const max = options.max ?? DEFAULT_LIMITS.visitors
-  const idleMs = options.idleMs ?? DEFAULT_LIMITS.idleMs
+/** The bytes a state is counted for in the store's budget: two for each character of its JSON, which is what V8 spends on a string that holds a character above U+00FF, so the budget is not under-counted for text in another script. Object overhead is not counted, so the memory a full store holds is a small multiple of its budget: a few hundred bytes for each visitor. */
+const sizeOf = (state: VisitorState) => JSON.stringify(state).length * 2
+
+/**
+ * Visitor states in memory, at most `max` of them and at most `maxBytes` in all (the least recently used go first), each dropped after `idleMs` without use. Reading and writing both count as use. `maxBytes` is the store's memory ceiling (final review A, I2): a state is counted as two bytes for each character of its JSON (`sizeOf`), and a state that is alone over the budget is not kept (the visitor's earlier state goes with it) and evicts no one. The defaults are `DEFAULT_LIMITS.visitors`, `DEFAULT_LIMITS.idleMs` and `DEFAULT_LIMITS.storeBytes`; each must be a whole number of at least zero.
+ */
+export function memoryCartStore (options: { max?: number, maxBytes?: number, idleMs?: number, now?: () => number } = {}): CartStore {
+  const max = checkWhole('max', options.max ?? DEFAULT_LIMITS.visitors)
+  const maxBytes = checkWhole('maxBytes', options.maxBytes ?? DEFAULT_LIMITS.storeBytes)
+  const idleMs = checkWhole('idleMs', options.idleMs ?? DEFAULT_LIMITS.idleMs)
   const now = options.now ?? Date.now
   // the map is kept in order of use: an entry is deleted and set again whenever it is used, so the first entry is the least recently used
-  const states = new Map<string, { state: VisitorState, seen: number }>()
+  const states = new Map<string, { state: VisitorState, seen: number, bytes: number }>()
+  let held = 0
   const idle = (seen: number) => now() - seen > idleMs
+  const drop = (visitor: string) => {
+    const entry = states.get(visitor)
+    if (entry) held -= entry.bytes
+    states.delete(visitor)
+  }
   return {
     async get (visitor) {
       const entry = states.get(visitor)
       if (!entry) return undefined
       states.delete(visitor)
-      if (idle(entry.seen)) return undefined
+      if (idle(entry.seen)) {
+        held -= entry.bytes
+        return undefined
+      }
       entry.seen = now()
       states.set(visitor, entry)
       return structuredClone(entry.state)
     },
     async set (visitor, state) {
-      states.delete(visitor)
-      states.set(visitor, { state: structuredClone(state), seen: now() })
+      drop(visitor)
+      const bytes = sizeOf(state)
+      if (bytes > maxBytes) return
+      states.set(visitor, { state: structuredClone(state), seen: now(), bytes })
+      held += bytes
       for (const [key, entry] of states) {
-        if (states.size <= max && !idle(entry.seen)) break
+        if (states.size <= max && held <= maxBytes && !idle(entry.seen)) break
+        held -= entry.bytes
         states.delete(key)
       }
     }
