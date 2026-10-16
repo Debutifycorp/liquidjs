@@ -1,4 +1,4 @@
-import { cartJson, discountCodeStatus, renderPage, storefrontSampleData as data } from '../../src/shopify'
+import { cartJson, discountCodeStatus, renderPage, resolveView, storefrontSampleData as data } from '../../src/shopify'
 import type { BuyXGetYDiscountData, CartState, StoreData } from '../../src/shopify'
 import { buildStore } from '../../src/shopify/store/build'
 import { buildCartObject } from '../../src/shopify/store/cart'
@@ -274,6 +274,44 @@ describe('discounts', () => {
       const subscriptions = withDiscounts({ id: 1, type: 'amount_off_products', title: 'Slides', value: { percentage: 10 }, items: { products: ['slides'] }, applies_on_one_time_purchase: false, applies_on_subscription: true })
       expect([built(state([line(SLIDES, 1, 71001)]), subscriptions).total_discount, built(state([line(SLIDES, 1)]), subscriptions).total_discount]).toEqual([225, 0])
     })
+    describe('an order discount and the purchase types (final review B, M4)', () => {
+      // the Admin API gives the `customerGets` of an order discount `appliesOnOneTimePurchase` and `appliesOnSubscription`, https://shopify.dev/docs/api/admin-graphql/latest/input-objects/DiscountCustomerGetsInput; one time slides are 2500 and the same slides on the plan 2250
+      const order = (value: object, extra: object = {}) => withDiscounts({ id: 1, type: 'amount_off_order', title: 'Order', code: 'TEN', value, ...extra } as NonNullable<StoreData['discounts']>[number])
+      const discount = (lines: CartState['lines'], source: StoreData) => built(state(lines, ['TEN']), source).total_discount
+      const mixed = [line(SLIDES, 1), line(SLIDES, 1, 71001)]
+      it('takes a percentage off the one time purchases only unless it says it applies to subscriptions', () => {
+        const ten = { percentage: 10 }
+        expect([discount([line(SLIDES, 1, 71001)], order(ten)), discount([line(SLIDES, 1)], order(ten))]).toEqual([0, 250])
+        expect(discount(mixed, order(ten))).toBe(250)
+        expect(discount(mixed, order(ten, { applies_on_subscription: true }))).toBe(475)
+        expect(discount(mixed, order(ten, { applies_on_one_time_purchase: false, applies_on_subscription: true }))).toBe(225)
+      })
+      it('takes a fixed amount off only as far as the lines of its purchase types go', () => {
+        const ten = { amount: 1000 }
+        expect(discount(mixed, order(ten))).toBe(1000)
+        expect(discount([line(SLIDES, 1, 71001)], order(ten, { applies_on_one_time_purchase: false, applies_on_subscription: true }))).toBe(1000)
+        expect(discount([line(SLIDES, 1, 71001)], order(ten))).toBe(0)
+        expect(discount([line(SLIDES, 1)], order({ amount: 9000 }))).toBe(2500)
+      })
+      it('counts the purchase type\'s total toward its minimum before the product discounts, and the whole cart after them (the help centre: "Before product discounts: the total for the selected purchase type", "After product discounts: the cart subtotal")', () => {
+        const ten = { percentage: 10 }
+        // 2500 of one time purchases against a minimum of 4000; the whole cart is 4750
+        expect(discount(mixed, order(ten, { minimum: { subtotal: 4000 } }))).toBe(0)
+        expect(discount(mixed, order(ten, { minimum: { subtotal: 4000 }, applies_on_subscription: true }))).toBe(475)
+        expect(discount(mixed, order(ten, { minimum: { quantity: 2 } }))).toBe(0)
+        expect(discount(mixed, order(ten, { minimum: { quantity: 2 }, applies_on_subscription: true }))).toBe(475)
+        // two one time slides (5000) and one on the plan (2250); an automatic product discount takes `off` from each one time slides
+        const lines = [line(SLIDES, 2), line(SLIDES, 1, 71001)]
+        const withProductDiscount = (off: number) => withDiscounts(
+          { id: 2, type: 'amount_off_products', title: 'Slides', value: { amount: off, each: true }, items: { products: ['slides'] }, combines_with: { order: true } },
+          { id: 1, type: 'amount_off_order', title: 'Ten', code: 'TEN', value: { percentage: 10 }, minimum: { subtotal: 4800 }, combines_with: { product: true } }
+        )
+        // 300 off each leaves 4400 of one time purchases, under the minimum of 4800 alone, but 5000 before the discount and 6650 in the cart after it hold: 10% of 4400 more
+        expect(discount(lines, withProductDiscount(300))).toBe(600 + 440)
+        // 1250 off each leaves 4750 in the cart, under the minimum, whatever the 5000 before the discount were
+        expect(discount(lines, withProductDiscount(1250))).toBe(2500)
+      })
+    })
   })
 
   describe('free shipping', () => {
@@ -313,6 +351,32 @@ describe('discounts', () => {
       expect(canada.freeShipping.maxPrice).toBe(1000)
       // no country yet: the cart cannot say
       expect(result([line(HOODIE, 1)], ['CA'], limited).freeShipping.applies).toBe(true)
+    })
+    it('keeps its price limit in the shop\'s currency, where the rates are, whatever currency the cart is in (final review B, I3)', () => {
+      const limited = withDiscounts({ id: 1, type: 'free_shipping', title: 'Cheap shipping free', code: 'CHEAP', max_shipping_price: 1000 })
+      const canada = buildStore(limited, resolveView(limited, { market: 'ca' }))
+      const items = (buildCartObject(canada, state([line(HOODIE, 1)], ['CHEAP'])) as any).items
+      const outcome = applyDiscounts(items, limited.discounts ?? [], ['CHEAP'], { collections: new Map(), currency: canada.currency })
+      expect(outcome.freeShipping).toMatchObject({ applies: true, maxPrice: 1000 })
+    })
+    describe('purchase types (final review B, M4)', () => {
+      // the Admin API gives a free shipping discount `appliesOnOneTimePurchase` and `appliesOnSubscription`, https://shopify.dev/docs/api/admin-graphql/latest/input-objects/DiscountCodeFreeShippingInput
+      const free = (extra: object = {}) => withDiscounts({ id: 1, type: 'free_shipping', title: 'Free', code: 'FREE', ...extra } as NonNullable<StoreData['discounts']>[number])
+      it('applies to a cart with a one time purchase and not to one of subscriptions only, unless it says it applies to them', () => {
+        expect(result([line(SLIDES, 1)], ['FREE'], free()).freeShipping.applies).toBe(true)
+        expect(result([line(SLIDES, 1, 71001)], ['FREE'], free()).freeShipping.applies).toBe(false)
+        expect(result([line(SLIDES, 1, 71001)], ['FREE'], free({ applies_on_subscription: true })).freeShipping.applies).toBe(true)
+        expect(result([line(SLIDES, 1)], ['FREE'], free({ applies_on_one_time_purchase: false, applies_on_subscription: true })).freeShipping.applies).toBe(false)
+        expect(result([line(SLIDES, 1), line(SLIDES, 1, 71001)], ['FREE'], free({ applies_on_one_time_purchase: false, applies_on_subscription: true })).freeShipping.applies).toBe(true)
+      })
+      it('counts only the lines of the purchase types it applies to toward its minimum', () => {
+        // one time slides are 2500 and the same slides on the plan 2250
+        const mixed = [line(SLIDES, 1), line(SLIDES, 1, 71001)]
+        expect(result(mixed, ['FREE'], free({ minimum: { subtotal: 3000 } })).freeShipping.applies).toBe(false)
+        expect(result(mixed, ['FREE'], free({ minimum: { subtotal: 3000 }, applies_on_subscription: true })).freeShipping.applies).toBe(true)
+        expect(result(mixed, ['FREE'], free({ minimum: { quantity: 2 } })).freeShipping.applies).toBe(false)
+        expect(result(mixed, ['FREE'], free({ minimum: { quantity: 2 }, applies_on_subscription: true })).freeShipping.applies).toBe(true)
+      })
     })
   })
 
@@ -365,6 +429,76 @@ describe('discounts', () => {
       const cartObject = built(state([line(SUNNIES, 3), line(TSHIRT, 4)], ['EVERY']), repeat)
       expect(cartObject.total_discount).toBe(10000)
       expect(cartObject.discount_applications[0].total_allocated_amount).toBe(10000)
+    })
+    describe('settling the uses on runs of units (final review B, C2)', () => {
+      const SLIDES_MEDIUM = 43695710404630
+      const SLIDES_LARGE = 43695710437398
+      const bogo = withDiscounts({ id: 81000, type: 'buy_x_get_y', title: 'BOGO slides', buys: { items: { products: ['slides'] }, quantity: 1 }, gets: { items: { products: ['slides'] }, quantity: 1, value: { percentage: 50 } } })
+      const timed = <T>(work: () => T): [T, number] => {
+        const start = process.hrtime.bigint()
+        const outcome = work()
+        return [outcome, Number(process.hrtime.bigint() - start) / 1e6]
+      }
+      it('costs the lines of the cart and not its units: three lines of 9,999 slides under an unlimited discount take milliseconds, where one pass over every unit for each use took 8.6 s', () => {
+        const [answer, milliseconds] = timed(() => cartJson(bogo, state([line(SLIDES, 9999), line(SLIDES_MEDIUM, 9999), line(SLIDES_LARGE, 9999)])) as any)
+        expect(milliseconds).toBeLessThan(1000)
+        // 29,997 units are 14,998 uses of one bought and one given, the given at 1250 off
+        expect([answer.item_count, answer.total_discount]).toEqual([29997, 14998 * 1250])
+        // and a hundred lines of the limit's quantity (a million units), which the old settling would have run for hours
+        const lines = Array.from({ length: 100 }, (_, n) => ({ variantId: SLIDES, quantity: 9999, properties: { n: String(n) }, sellingPlanId: null }))
+        const [many, manyMilliseconds] = timed(() => cartJson(bogo, state(lines)) as any)
+        expect(manyMilliseconds).toBeLessThan(3000)
+        expect([many.item_count, many.total_discount]).toEqual([999900, 499950 * 1250])
+      })
+      it('splits the same uses as one pass over every unit would, for any mix of lines, items bought and given, quantities and limits', () => {
+        // the settling the engine did unit by unit until final review B, kept here to hold the runs against
+        const byUnits = (lines: Array<{ units: number, price: number, buys: boolean, gives: boolean }>, buy: number, give: number, limit: number) => {
+          const units = lines.flatMap((entry, at) => Array.from({ length: entry.units }, () => ({ at, price: entry.price, role: null as 'get' | 'buy' | null })))
+          const buyable = units.filter(unit => lines[unit.at].buys)
+          const given = units.filter(unit => lines[unit.at].gives).sort((a, b) => a.price - b.price)
+          for (let uses = 0; uses < limit; uses++) {
+            const gets = given.filter(unit => !unit.role).slice(0, give)
+            if (!gets.length) break
+            const bought: typeof units = []
+            for (const unit of buyable) {
+              if (bought.length >= buy) break
+              if (!unit.role && !gets.includes(unit)) bought.push(unit)
+            }
+            if (bought.length < buy) break
+            for (const unit of gets) unit.role = 'get'
+            for (const unit of bought) unit.role = 'buy'
+          }
+          return lines.map((_, at) => ({ gets: units.filter(unit => unit.at === at && unit.role === 'get').length, buys: units.filter(unit => unit.at === at && unit.role === 'buy').length }))
+        }
+        const stock: Array<[number, string]> = [[HOODIE, 'hoodie'], [SLIDES, 'slides'], [SUNNIES, 'black-sunnies'], [TSHIRT, 'men-t-shirt'], [BEANIE, 'beanie'], [SNEAKERS, 'high-top-sneakers']]
+        const priceOf = (id: number) => data.products!.flatMap(product => product.variants).find(variant => variant.id === id)!.price
+        let seed = 7
+        const random = (below: number) => { seed = (seed * 1103515245 + 12345) % 2147483648; return Math.floor(seed / 2147483648 * below) }
+        const subset = () => { const picked = stock.filter(() => random(2) === 1); return picked.length ? picked : [stock[random(stock.length)]] }
+        for (let round = 0; round < 150; round++) {
+          const chosen = stock.filter(() => random(3) > 0)
+          for (let n = chosen.length - 1; n > 0; n--) { const other = random(n + 1); [chosen[n], chosen[other]] = [chosen[other], chosen[n]] }
+          if (!chosen.length) continue
+          const quantities = chosen.map(() => 1 + random(9))
+          const buys = subset().map(([, handle]) => handle)
+          const gives = subset().map(([, handle]) => handle)
+          const buy = 1 + random(3)
+          const give = 1 + random(3)
+          const limit = random(3) === 0 ? 1 + random(3) : undefined
+          const discount = { id: 1, type: 'buy_x_get_y' as const, title: 'Mix', buys: { items: { products: buys }, quantity: buy }, gets: { items: { products: gives }, quantity: give, value: { percentage: 50 } }, ...(limit ? { uses_per_order: limit } : {}) }
+          const expected = byUnits(chosen.map(([id, handle], at) => ({ units: quantities[at], price: priceOf(id), buys: buys.includes(handle), gives: gives.includes(handle) })), buy, give, limit ?? Infinity)
+          const items = built(state(chosen.map(([id], at) => line(id, quantities[at]))), withDiscounts(discount)).items as any[]
+          const seen = chosen.map(([id], at) => {
+            const parts = items.filter(item => item.variant_id === id)
+            const gets = parts.filter(item => item.line_level_total_discount > 0)
+            const bought = parts.filter(item => item.line_level_total_discount === 0 && item.discount_allocations.length > 0)
+            return { gets: gets.reduce((total, item) => total + item.quantity, 0), buys: bought.reduce((total, item) => total + item.quantity, 0), discount: parts.reduce((total, item) => total + item.line_level_total_discount, 0), at }
+          })
+          for (const [at, entry] of expected.entries()) {
+            expect({ round, gets: seen[at].gets, buys: seen[at].buys, discount: seen[at].discount }).toEqual({ round, gets: entry.gets, buys: entry.buys, discount: Math.round(priceOf(chosen[at][0]) * entry.gets * 50 / 100) })
+          }
+        }
+      })
     })
     it('discounts the cheapest eligible units first, and a fixed amount off each', () => {
       const cheapest = withDiscounts({ id: 1, type: 'buy_x_get_y', title: 'Buy a hoodie, get $10 off a pair of slides or sunnies', code: 'CHEAP', buys: { items: { products: ['hoodie'] }, quantity: 1 }, gets: { items: { products: ['slides', 'black-sunnies'] }, quantity: 1, value: { amount: 1000 } } })

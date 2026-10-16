@@ -382,14 +382,22 @@ export interface AmountOffProductsDiscountData extends DiscountBaseData {
 export interface AmountOffOrderDiscountData extends DiscountBaseData {
   type: 'amount_off_order'
   value: DiscountValueData
+  /** Whether it applies to one time purchases; true when omitted (final review B, M4: the Admin API's `customerGets` of an order discount carries both flags, https://shopify.dev/docs/api/admin-graphql/latest/input-objects/DiscountCustomerGetsInput). */
+  applies_on_one_time_purchase?: boolean
+  /** Whether it applies to subscriptions (lines bought under a selling plan); false when omitted, as for the other discounts (see `allowsPurchase` in `discounts.ts`). */
+  applies_on_subscription?: boolean
 }
 
 export interface FreeShippingDiscountData extends DiscountBaseData {
   type: 'free_shipping'
   /** ISO country codes; every country when omitted. */
   countries?: string[]
-  /** Rates above this price, in the minor unit, are not made free. */
+  /** Rates above this price, in the minor unit of the shop's currency, are not made free. */
   max_shipping_price?: number
+  /** Whether it applies to one time purchases; true when omitted (final review B, M4: https://shopify.dev/docs/api/admin-graphql/latest/input-objects/DiscountCodeFreeShippingInput). */
+  applies_on_one_time_purchase?: boolean
+  /** Whether it applies to subscriptions (lines bought under a selling plan); false when omitted, as for the other discounts (see `allowsPurchase` in `discounts.ts`). */
+  applies_on_subscription?: boolean
 }
 
 export interface BuyXGetYDiscountData extends DiscountBaseData {

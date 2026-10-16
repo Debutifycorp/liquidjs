@@ -27,7 +27,7 @@ export interface DiscountResult {
   lines: DiscountedLine[]
   /** The codes that were entered and do not apply, as they were entered. */
   rejectedCodes: string[]
-  /** `maxPrice` is the dearest rate the discount makes free, in the view's currency, when the discount has a limit. */
+  /** `maxPrice` is the dearest rate the discount makes free when the discount has a limit, in the shop's currency like the rates it is compared with: "The highest shipping rate, in the store's currency, that can be made free" (https://shopify.dev/docs/api/admin-graphql/latest/input-objects/DiscountCodeFreeShippingInput, `maximumShippingPrice`). Final review B, I3: converted into the cart's currency, it would be compared with rates rounded up and the rate it names could miss it. */
   freeShipping: { applies: boolean, discount: LiquidObject | null, maxPrice?: number }
 }
 
@@ -37,6 +37,8 @@ type DiscountClass = 'product' | 'order' | 'shipping'
 interface Piece {
   item: LiquidObject
   units: number
+  /** What it cost before any discount: the order discounts' minimum counts a purchase type's total "before product discounts" (https://help.shopify.com/en/manual/discounts/discount-types/percentage-fixed-amount). */
+  original: number
   price: number
   /** `price` when the order discounts begin: percentages of an order discount are of this, whatever other order discounts have taken (https://help.shopify.com/en/manual/discounts/discount-combinations: "calculated on the original subtotal"). */
   orderBase: number
@@ -51,7 +53,11 @@ const classOf = (discount: DiscountData): DiscountClass => discount.type === 'am
 /** Two discounts combine only when each allows the other's class: "Multiple discounts are applied to an order only when the setting on each discount allows the combination." https://help.shopify.com/en/manual/discounts/discount-combinations */
 const combines = (a: DiscountData, b: DiscountData) => a.combines_with?.[classOf(b)] === true && b.combines_with?.[classOf(a)] === true
 
-/** An amount of the discount's data (the shop currency's minor unit) in the view's currency: converted at the market's rate like a price, but not rounded up to the market's rounding value, as a selling plan's fixed amount is (`planAmount`). No fixture records a discount amount in another currency, so this follows the selling plan precedent (fixture `probe-product-en-eu`). */
+/**
+ * An amount of the discount's data (the shop currency's minor unit) in the view's currency: converted at the market's rate like a price, but not rounded up to the market's rounding value, as a selling plan's fixed amount is (`planAmount`). No fixture records a discount amount in another currency, so this follows the selling plan precedent (fixture `probe-product-en-eu`).
+ *
+ * A minimum purchase amount goes through it too, and is compared with the cart in the currency the shopper sees, in the cart and in the shipping estimate alike (final review B, I3): "If you set a minimum purchase amount for a free shipping discount, then that amount is in your store's default currency", which "is converted to the customer's currency during checkout", where the shopper "needs to reach the equivalent of $75.00 USD in their local currency" (https://help.shopify.com/en/manual/markets/discounts-and-gift-cards, free shipping, the one discount that page gives an example for; the order and product discounts take the same minimum purchase requirement and are read the same way). No recording settles it: a cart can be 99.90 USD, under a minimum of 100.00 USD, and 135.00 CAD, the converted minimum, once the market rounds its price up.
+ */
 const money = (amount: number, ctx: DiscountContext) => Math.round(convert(amount, { ...ctx.currency, rounding: false }))
 
 const productHandle = (item: LiquidObject) => String((item.product as LiquidObject).handle)
@@ -150,10 +156,14 @@ function meetsMinimum (discount: DiscountData, pieces: Piece[], ctx: DiscountCon
   return true
 }
 
+type PurchaseTypes = Pick<AmountOffProductsDiscountData, 'applies_on_one_time_purchase' | 'applies_on_subscription'>
+
 /**
  * Whether a discount applies to the purchase type of a line: a one time purchase or a subscription (a line bought under a selling plan). The default is one time purchases only: `applies_on_one_time_purchase` is true and `applies_on_subscription` false unless the dataset says otherwise. The Admin API page of the discount input (https://shopify.dev/docs/api/admin-graphql/latest/input-objects/DiscountCustomerGetsInput) gives no default; this is as observed on the parity store (Admin API 2026-10): its two automatic discounts were created without the flags and both read `appliesOnOneTimePurchase: true, appliesOnSubscription: false`, and its recording of a subscription line of five slides (fixture `ajax-cart-session`, step 6) carries no discount although the automatic Buy X Get Y on slides exists.
+ *
+ * The order and the free shipping discounts read it the same way (final review B, M4): the Admin API gives both flags to the `customerGets` of an order discount (a basic discount over all items, the same input) and to `DiscountCodeFreeShippingInput` (https://shopify.dev/docs/api/admin-graphql/latest/input-objects/DiscountCodeFreeShippingInput), and the help centre offers the Purchase type to amount off and free shipping discounts alike (https://help.shopify.com/en/manual/products/purchase-options/subscriptions/manage-subscriptions/subscription-discounts). The parity store's order and free shipping discounts were not read for the default (no recording covers a subscription under one), so they follow the ruling for the other two.
  */
-function allowsPurchase (item: LiquidObject, discount: AmountOffProductsDiscountData | BuyXGetYDiscountData): boolean {
+function allowsPurchase (item: LiquidObject, discount: PurchaseTypes): boolean {
   return item.selling_plan_allocation ? discount.applies_on_subscription === true : discount.applies_on_one_time_purchase !== false
 }
 
@@ -181,43 +191,98 @@ function splitAllocations (allocations: LiquidObject[], counts: number[], of: nu
   return parts
 }
 
-interface Unit { piece: Piece, price: number, role: 'buy' | 'get' | null }
+/** A line (or the part of one that a Buy X Get Y has set apart) as the discount settles it: its units are alike, so the run counts how many are still `free`, and how many it has set apart to be bought (`buys`) or given (`gets`), where one object for each unit made the work grow with the units squared (final review B, C2). `held` is how many of its free units the use being planned has already given. */
+interface Run {
+  piece: Piece
+  /** What one unit costs. */
+  price: number
+  free: number
+  gets: number
+  buys: number
+  held: number
+}
+
+/** How many units of `price` a walk over them, one by one, takes to cover `need` (it stops once the sum reaches it), at most `available`. */
+function unitsToCover (price: number, need: number, available: number): number {
+  if (!(price > 0)) return available
+  // the division can be a unit off at the edge
+  let count = Math.ceil(need / price)
+  while (count > 0 && (count - 1) * price >= need) count--
+  while (count * price < need) count++
+  return Math.min(count, available)
+}
 
 /**
- * A Buy X Get Y, https://help.shopify.com/en/manual/discounts/discount-types/buy-x-get-y, settled on single units: each use takes the cheapest units of what is given ("the lower-priced item that the customer chooses is the item that the customer gets at a discount") and then the units that were to be bought (a quantity, or units to the spend), none of them one already counted, so a product that is bought and given at once is bought first and given second (buy 1 get 1 on two pairs discounts one). The uses are unlimited unless the discount gives `uses_per_order`: "Discount usage is unlimited by default." A line that holds units of different kinds is split by kind, as fixture `ajax-discount-automatic-bxgy` shows for the bought pair and the discounted one (the bought unit first, with an allocation of 0, then the discounted unit); units the discount did not touch make a line of their own before them, and a line that was only bought, in whole, gets an allocation of 0 (the T-shirts of BUNDLE, fixture `ajax-discount-codes`, step 6). Whether Shopify also splits bought units from untouched ones on one line is not recorded. Which of the units that tie are taken is the cart's order, which no fixture settles.
+ * A Buy X Get Y, https://help.shopify.com/en/manual/discounts/discount-types/buy-x-get-y, settled on runs of alike units: each use takes the cheapest units of what is given ("the lower-priced item that the customer chooses is the item that the customer gets at a discount") and then the units that were to be bought (a quantity, or units to the spend), none of them one already counted, so a product that is bought and given at once is bought first and given second (buy 1 get 1 on two pairs discounts one). The uses are unlimited unless the discount gives `uses_per_order`: "Discount usage is unlimited by default." A line that holds units of different kinds is split by kind, as fixture `ajax-discount-automatic-bxgy` shows for the bought pair and the discounted one (the bought unit first, with an allocation of 0, then the discounted unit); units the discount did not touch make a line of their own before them, and a line that was only bought, in whole, gets an allocation of 0 (the T-shirts of BUNDLE, fixture `ajax-discount-codes`, step 6). Whether Shopify also splits bought units from untouched ones on one line is not recorded. Which of the units that tie are taken is the cart's order, which no fixture settles.
+ *
+ * The units of a line are alike, so a use is planned on runs, the cheapest line first for what is given and the cart's order for what is bought, and the uses that would repeat the same plan (what is given and what is bought each come from one run that holds enough for them again) are settled together: a cart costs its lines and not its units, where a pass over every unit for each use took 8.6 s for three lines of 9,999 (final review B, C2). Each plan that is not repeated empties a run, so there are about as many plans as lines. A spend that fractions of a unit's price cross is met by the first unit that reaches it, as the unit by unit sum did.
  */
 function applyBuyXGetY (discount: BuyXGetYDiscountData, pieces: Piece[], ctx: DiscountContext, application: LiquidObject): number | null {
-  const units: Unit[] = pieces.flatMap(piece => Array.from({ length: piece.units }, () => ({ piece, price: piece.price / piece.units, role: null })))
   const spend = discount.buys.quantity === undefined
-  const buyable = units.filter(unit => inItems(unit.piece.item, discount.buys.items, ctx) && !(spend && discounted(unit.piece)))
+  // what a use must buy: a spend in the view's currency, or a number of units
+  const target = spend ? money(discount.buys.amount ?? 0, ctx) : Math.ceil(discount.buys.quantity as number)
+  const wanted = Math.trunc(discount.gets.quantity)
+  const runs: Run[] = pieces.map(piece => ({ piece, price: piece.price / piece.units, free: piece.units, gets: 0, buys: 0, held: 0 }))
+  const buyable = runs.filter(run => inItems(run.piece.item, discount.buys.items, ctx) && !(spend && discounted(run.piece)))
   // the purchase types are those of what is given: "customerGets" carries them in the Admin API, so a subscription unit is bought toward a Buy X Get Y but is not discounted by one unless the discount says so
-  const given = units.filter(unit => inItems(unit.piece.item, discount.gets.items, ctx) && allowsPurchase(unit.piece.item, discount)).sort((a, b) => a.price - b.price)
-  const limit = discount.uses_per_order ?? Infinity
+  const given = runs.filter(run => inItems(run.piece.item, discount.gets.items, ctx) && allowsPurchase(run.piece.item, discount)).sort((a, b) => a.price - b.price)
+  // nothing is given when no unit is
+  const limit = wanted > 0 ? discount.uses_per_order ?? Infinity : 0
   let uses = 0
+  let giving = 0
+  let buying = 0
   while (uses < limit) {
-    const gets = given.filter(unit => !unit.role).slice(0, discount.gets.quantity)
-    if (!gets.length) break
-    const bought: Unit[] = []
-    let spent = 0
-    for (const unit of buyable) {
-      if (spend ? spent >= money(discount.buys.amount ?? 0, ctx) : bought.length >= (discount.buys.quantity ?? 0)) break
-      if (unit.role || gets.includes(unit)) continue
-      bought.push(unit)
-      spent += unit.price
+    while (giving < given.length && !given[giving].free) giving++
+    while (buying < buyable.length && !buyable[buying].free) buying++
+    if (giving === given.length) break
+    // the cheapest units that are still free, up to the quantity given
+    const gets: Array<[Run, number]> = []
+    for (let n = giving, left = wanted; n < given.length && left > 0; n++) {
+      const count = Math.min(given[n].free, left)
+      if (!count) continue
+      given[n].held = count
+      gets.push([given[n], count])
+      left -= count
     }
-    if (spend ? spent < money(discount.buys.amount ?? 0, ctx) : bought.length < (discount.buys.quantity ?? 0)) break
-    for (const unit of gets) unit.role = 'get'
-    for (const unit of bought) unit.role = 'buy'
-    uses++
+    // then the first units of the cart that are free and not among those, until the quantity or the spend is met
+    const bought: Array<[Run, number]> = []
+    let spent = 0
+    let taken = 0
+    for (let n = buying; n < buyable.length && (spend ? spent < target : taken < target); n++) {
+      const run = buyable[n]
+      const available = run.free - run.held
+      if (available <= 0) continue
+      const take = spend ? unitsToCover(run.price, target - spent, available) : Math.min(available, target - taken)
+      bought.push([run, take])
+      spent += take * run.price
+      taken += take
+    }
+    for (const [run] of gets) run.held = 0
+    if (spend ? spent < target : taken < target) break
+    // the same plan repeats while the run that gives and the run that is bought (one run, or two) hold enough for it again
+    let times = 1
+    if (gets.length === 1 && gets[0][1] === wanted && bought.length <= 1) {
+      const [giver, given_] = gets[0]
+      const same = bought.length === 1 && bought[0][0] === giver
+      times = Math.floor(giver.free / (given_ + (same ? bought[0][1] : 0)))
+      if (bought.length === 1 && !same) times = Math.min(times, Math.floor(bought[0][0].free / bought[0][1]))
+      times = Math.min(times, limit - uses)
+    }
+    for (const [run, units] of gets) {
+      run.free -= units * times
+      run.gets += units * times
+    }
+    for (const [run, units] of bought) {
+      run.free -= units * times
+      run.buys += units * times
+    }
+    uses += times
   }
   if (!uses) return null
 
   const roles = new Map<Piece, { gets: number, buys: number }>()
-  for (const unit of units) {
-    if (!unit.role) continue
-    const entry = roles.get(unit.piece) ?? { gets: 0, buys: 0 }
-    entry[unit.role === 'get' ? 'gets' : 'buys']++
-    roles.set(unit.piece, entry)
+  for (const run of runs) {
+    if (run.gets || run.buys) roles.set(run.piece, { gets: run.gets, buys: run.buys })
   }
   const value = discount.gets.value
   const amountOff = (piece: Piece, count: number) => {
@@ -252,11 +317,14 @@ function applyBuyXGetY (discount: BuyXGetYDiscountData, pieces: Piece[], ctx: Di
       const shares = splitAllocations(piece.allocations, parts.map(part => part.units), piece.units)
       let units = 0
       let paid = 0
+      let was = 0
       parts.forEach((part, n) => {
         units += part.units
         const through = n === parts.length - 1 ? piece.price : Math.round(piece.price * units / piece.units)
-        const split: Piece = { item: piece.item, units: part.units, price: through - paid, orderBase: 0, allocations: shares[n] }
+        const originalThrough = n === parts.length - 1 ? piece.original : Math.round(piece.original * units / piece.units)
+        const split: Piece = { item: piece.item, units: part.units, original: originalThrough - was, price: through - paid, orderBase: 0, allocations: shares[n] }
         paid = through
+        was = originalThrough
         if (part.role === 'buy') split.allocations.push(allocation(0, application))
         if (part.role === 'get') allocate(split, amount, application)
         next.push(split)
@@ -285,14 +353,16 @@ function applyOne (discount: DiscountData, pieces: Piece[], ctx: DiscountContext
     return sum(given)
   }
   if (discount.type === 'amount_off_order') {
-    if (!pieces.length || !meetsMinimum(discount, pieces, ctx, piece => piece.orderBase)) return null
+    // an order discount is for the lines of its purchase types (`allowsPurchase`, final review B, M4), and its minimum is met twice: "Before product discounts: the total for the selected purchase type" and "After product discounts: the cart subtotal [...] including all purchase types" (https://help.shopify.com/en/manual/discounts/discount-types/percentage-fixed-amount)
+    const targets = pieces.filter(piece => allowsPurchase(piece.item, discount))
+    if (!targets.length || !meetsMinimum(discount, targets, ctx, piece => piece.original) || !meetsMinimum(discount, pieces, ctx, piece => piece.orderBase)) return null
     const value = discount.value
-    const wanted = 'percentage' in value ? Math.round(sum(pieces.map(piece => piece.orderBase)) * value.percentage / 100) : money(value.amount, ctx)
-    const amount = Math.min(wanted, sum(pieces.map(piece => piece.price)))
+    const wanted = 'percentage' in value ? Math.round(sum(targets.map(piece => piece.orderBase)) * value.percentage / 100) : money(value.amount, ctx)
+    const amount = Math.min(wanted, sum(targets.map(piece => piece.price)))
     if (amount <= 0) return null
-    const shares = spread(amount, pieces.map(piece => piece.price))
+    const shares = spread(amount, targets.map(piece => piece.price))
     let total = 0
-    pieces.forEach((piece, n) => {
+    targets.forEach((piece, n) => {
       const share = Math.min(shares[n], piece.price)
       if (share <= 0) return
       allocate(piece, share, application)
@@ -302,7 +372,9 @@ function applyOne (discount: DiscountData, pieces: Piece[], ctx: DiscountContext
   }
   if (discount.type === 'free_shipping') {
     // shipping discounts go last, so the minimum counts what the discounts that combine with it left: "Products are counted towards a minimum purchase amount at their discounted price. If another discount has already lowered a product's price, then the lower price is what counts. This happens only with discounts that can be combined." https://help.shopify.com/en/manual/discounts/discount-types/free-shipping
-    if (!pieces.length || !meetsMinimum(discount, pieces, ctx, piece => piece.price)) return null
+    // and for a cart with a line of its purchase types (`allowsPurchase`, final review B, M4), whose lines are the ones its minimum counts: the free shipping page gives the Purchase type and says no more of how a mixed cart counts, so it is read like an order discount's
+    const targets = pieces.filter(piece => allowsPurchase(piece.item, discount))
+    if (!targets.length || !meetsMinimum(discount, targets, ctx, piece => piece.price)) return null
     // a country the address names is checked; without an address the cart cannot say, so the discount holds
     if (discount.countries && ctx.shippingCountry && !discount.countries.includes(ctx.shippingCountry)) return null
     return 0
@@ -422,7 +494,7 @@ function better (a: Score, b: Score): boolean {
 export function applyDiscounts (items: LiquidObject[], discounts: DiscountData[], codes: string[], ctx: DiscountContext): DiscountResult {
   const entered = enteredCodes(codes)
   const result: DiscountResult = { applications: [], cartLevel: [], lines: [], rejectedCodes: entered, freeShipping: { applies: false, discount: null } }
-  const pieces: Piece[] = items.map(item => ({ item, units: item.quantity as number, price: item.original_line_price as number, orderBase: item.original_line_price as number, allocations: [] }))
+  const pieces: Piece[] = items.map(item => ({ item, units: item.quantity as number, original: item.original_line_price as number, price: item.original_line_price as number, orderBase: item.original_line_price as number, allocations: [] }))
   if (!pieces.length) return result
 
   const candidates: Candidate[] = []
@@ -466,7 +538,7 @@ export function applyDiscounts (items: LiquidObject[], discounts: DiscountData[]
   for (const { candidate, application } of applied) {
     if (candidate.discount.type === 'free_shipping') {
       const limit = candidate.discount.max_shipping_price
-      result.freeShipping = { applies: true, discount: application, ...(limit !== undefined ? { maxPrice: money(limit, ctx) } : {}) }
+      result.freeShipping = { applies: true, discount: application, ...(limit !== undefined ? { maxPrice: limit } : {}) }
       continue
     }
     result.applications.push(application)

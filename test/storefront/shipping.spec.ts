@@ -1,10 +1,11 @@
-import { requestFromUrl, resolveView, shippingRates, storefrontSampleData as data } from '../../src/shopify'
+import { cartJson, requestFromUrl, resolveView, shippingRates, storefrontSampleData as data } from '../../src/shopify'
 import type { CartState, StoreData } from '../../src/shopify'
 import { maskVolatile } from './expect-probe'
 import { loadFixture } from './fixtures'
 
 const HOODIE = 43695847538710
 const SNEAKERS = 43696961355798
+const BEANIE = 43696949592086
 
 const cart = (lines: Array<[number, number]>, codes: string[] = []): CartState => ({ token: '<token>', lines: lines.map(([variantId, quantity]) => ({ variantId, quantity, properties: {}, sellingPlanId: null })), note: null, attributes: {}, discountCodes: codes })
 const withZones = (zones: NonNullable<StoreData['shipping_zones']>): StoreData => ({ ...data, shipping_zones: zones })
@@ -218,6 +219,50 @@ describe('shipping rates', () => {
       expect(summary(shippingRates(canada, cart([[HOODIE, 1]]), us))).toEqual(['Standard 5.00', 'Express 15.00'])
       expect(summary(shippingRates(canada, cart([[HOODIE, 1]]), { country: 'Canada', zip: 'K1A 0B1' }))).toEqual(['Standard 0.00'])
       expect(summary(shippingRates(canada, cart([[HOODIE, 1]]), { country: 'CA', zip: 'K1A 0B1' }))).toEqual(['Standard 0.00'])
+    })
+  })
+
+  describe('free shipping and the view\'s currency (final review B, I3)', () => {
+    // the help centre: "If you set a minimum purchase amount for a free shipping discount, then that amount is in your store's default currency", which "is converted into the shopper's currency", who "needs to reach the equivalent of $75.00 USD in their local currency" (https://help.shopify.com/en/manual/markets/discounts-and-gift-cards): the minimum is compared with the cart in the currency the shopper sees, in the cart and in the estimate alike
+    const beanieAt = (price: number): StoreData => ({
+      ...data,
+      discounts: data.discounts?.filter(discount => discount.code === 'FREESHIP'),
+      products: data.products?.map(product => ({ ...product, variants: product.variants.map(variant => variant.id === BEANIE ? { ...variant, price } : variant) }))
+    })
+    const state = cart([[BEANIE, 1]], ['FREESHIP'])
+    const canada = { country: 'Canada', zip: 'K1A 0B1' }
+    const france = { country: 'France', zip: '75001' }
+    it('makes the rates free when the cart meets the converted minimum, as the cart says: 99.90 USD is 135.00 CAD, the minimum of 100.00 USD', () => {
+      const store = beanieAt(9990)
+      const view = resolveView(store, { market: 'ca' })
+      const answer = cartJson(store, state, view) as any
+      expect([answer.items_subtotal_price, answer.discount_codes]).toEqual([13500, [{ code: 'FREESHIP', applicable: true }]])
+      expect(summary(shippingRates(store, state, canada, view))).toEqual(['Standard 0.00'])
+      // the United States view has the cart at 99.90, under the minimum, in the cart and in the estimate
+      expect((cartJson(store, state) as any).discount_codes).toEqual([{ code: 'FREESHIP', applicable: false }])
+      expect(summary(shippingRates(store, state, { country: 'United States', province: 'CA', zip: '90210' }))).toEqual(['Standard 5.00', 'Express 15.00'])
+    })
+    it('leaves the rates alone when the cart is under the converted minimum, as the cart says', () => {
+      const store = beanieAt(9900)
+      const view = resolveView(store, { market: 'ca' })
+      expect((cartJson(store, state, view) as any).discount_codes).toEqual([{ code: 'FREESHIP', applicable: false }])
+      expect(summary(shippingRates(store, state, canada, view))).toEqual(['Standard 14.00'])
+    })
+    it('agrees with the cart at every price around the minimum, in the Canadian and the European view', () => {
+      for (let price = 9900; price <= 10100; price += 5) {
+        const store = beanieAt(price)
+        for (const [market, address] of [['ca', canada], ['eu', france]] as const) {
+          const view = resolveView(store, { market })
+          const applicable = (cartJson(store, state, view) as any).discount_codes[0].applicable
+          const free = summary(shippingRates(store, state, address, view)).every(rate => rate.endsWith(' 0.00'))
+          expect({ price, market, free }).toEqual({ price, market, free: applicable })
+        }
+      }
+    })
+    it('compares the discount\'s price limit with the rates in the shop\'s currency, so that 10.00 USD stays free under a limit of 10.00 USD in the Canadian view', () => {
+      const limited = { ...data, discounts: [{ id: 9, type: 'free_shipping' as const, title: 'Cheap shipping free', max_shipping_price: 1000 }] }
+      const view = resolveView(limited, { market: 'ca' })
+      expect(summary(shippingRates(limited, cart([[HOODIE, 1]]), canada, view))).toEqual(['Standard 0.00'])
     })
   })
 
