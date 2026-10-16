@@ -265,4 +265,32 @@ describe('markets and localization', () => {
       expect(await renderUrl('/', '{{ localization.available_countries[0].name }}|{{ localization.available_languages[0].name }}', { ...legacy, shop: { ...legacy.shop, locale: 'fr' } })).toBe('France|Français')
     })
   })
+
+  describe('an order in a market\'s view (final review B, M6)', () => {
+    // an order's lines are priced by the view, and so are its shipping, tax, refund and payments, converted like the rest of the view's amounts: the shipping like a rate (rounded up where the market rounds), the others at the market's rate
+    const hoodie = data.products!.find(product => product.handle === 'hoodie')!
+    const order = {
+      id: 5,
+      order_number: 1005,
+      created_at: '2026-01-01T00:00:00Z',
+      line_items: [{ product_handle: 'hoodie', variant_id: hoodie.variants[0].id, quantity: 1 }],
+      shipping_methods: [{ title: 'Standard', price: 1000 }],
+      tax_lines: [{ title: 'Sales tax', rate: 0.1, price: 900 }],
+      total_refunded_amount: 1000,
+      transactions: [{ id: 1, amount: 10900, kind: 'sale', status: 'success', gateway: 'bogus', created_at: '2026-01-01T00:00:00Z' }]
+    }
+    const withOrder: StoreData = { ...data, customer: { id: 1, email: 'a@example.com', orders: [order] } }
+    const totals = (market: string) => {
+      const built = buildStore(withOrder, resolveView(withOrder, { market })).customer as any
+      const placed = built.orders[0]
+      return [placed.line_items[0].price, placed.shipping_price, placed.tax_price, placed.total_price, placed.total_refunded_amount, placed.total_net_amount, placed.transactions[0].amount, built.total_spent]
+    }
+    it('keeps the shop\'s amounts in the primary view', () => {
+      expect(totals('us')).toEqual([9000, 1000, 900, 10900, 1000, 9900, 10900, 9900])
+    })
+    it('converts them all into the currency of the view, so that the total adds the same currency: 90.00 USD is 122.00 CAD, 10.00 of shipping 14.00, 9.00 of tax 12.15', () => {
+      // 12200 + 1400 + 1215 = 14815; 1000 refunded is 1350
+      expect(totals('ca')).toEqual([12200, 1400, 1215, 14815, 1350, 13465, 14715, 13465])
+    })
+  })
 })
