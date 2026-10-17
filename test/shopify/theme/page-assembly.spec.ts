@@ -1,4 +1,4 @@
-import { renderPage, renderSection, requestFromUrl, storefrontSampleData as data } from '../../../src/shopify'
+import { compileTheme, renderPage, renderSection, requestFromUrl, storefrontSampleData as data } from '../../../src/shopify'
 import type { ThemeInput } from '../../../src/shopify'
 
 // What Shopify adds to a page around the theme's own markup. Each case names the parity store's recording it follows; the recordings are private (they hold the themes' markup), so the themes here are minimal inline files over the public sample data.
@@ -68,5 +68,113 @@ describe('<shopify-store> before <shopify-account>', () => {
 
   it('escapes the attributes', async () => {
     expect(await home(homeTheme({ account: ACCOUNT }), '/', 'https://a"b.example')).toContain('store-domain="https://a&quot;b.example"')
+  })
+})
+
+describe('the compiled {% stylesheet %} and {% javascript %} files', () => {
+  // https://shopify.dev/docs/storefronts/themes/best-practices/javascript-and-stylesheet-tags: Shopify collects the `{% stylesheet %}` bodies of the sections, blocks and snippets into one `styles.css`, linked from `content_for_header`, and the `{% javascript %}` bodies of the sections into `scripts.js`, loaded with `defer`, each body in a self-executing function. The parity store links `compiled_assets/styles.css?v=<version>` with the same version on all 19 recorded pages of Horizon 4.3.0, and the file holds every stylesheet of the theme, rendered on the page or not (its source map: `/* START_SECTION:password (INDEX:27) */` on the home page's file)
+  const STYLED = {
+    'sections/hero.liquid': '<h1>Hero</h1>{% stylesheet %}\n  .hero { color: red; }\n{% endstylesheet %}{% javascript %}\n  console.log("hero")\n{% endjavascript %}{% content_for "block", type: "badge", id: "b" %}{% render "price" %}',
+    'sections/unused.liquid': '{% stylesheet %}.unused { display: none; }{% endstylesheet %}{% javascript %}unused(){% endjavascript %}',
+    'sections/plain.liquid': '<p>plain</p>',
+    'blocks/badge.liquid': '<i>badge</i>{% stylesheet %}.badge { color: blue; }{% endstylesheet %}{% javascript %}badge(){% endjavascript %}{% schema %}{"name":"Badge"}{% endschema %}',
+    'snippets/price.liquid': '<b>price</b>{% if false %}{% stylesheet %}\n.price { font-weight: bold; }\n{% endstylesheet %}{% endif %}',
+    'snippets/empty.liquid': '{% stylesheet %}  {% endstylesheet %}'
+  }
+  const styledTheme = (more: Record<string, string> = {}) => homeTheme({}, {
+    ...STYLED,
+    'templates/index.json': '{"sections":{"hero":{"type":"hero"},"plain":{"type":"plain"}},"order":["hero","plain"]}',
+    ...more
+  })
+
+  async function linked (theme: ThemeInput, url = '/'): Promise<string> {
+    const page = requestFromUrl(url, data)
+    return (await renderPage({ theme, templateName: page.templateName, data, locale: page.locale, request: page.request, compiledAssetsUrl: '/p/tok/compiled_assets/' })).html
+  }
+
+  it('holds every stylesheet of the theme\'s sections, blocks and snippets, in Shopify\'s form', () => {
+    const { styles } = compileTheme(styledTheme()).compiledAssets()
+    // the parity store's file, from its source map: a version line, then the sections, the blocks and the snippets, each group under its heading and in file name order, each body trimmed between START and END markers that name the file and its place among the `.liquid` files of the three folders (sections, then blocks, then snippets, each in name order)
+    expect(styles?.body).toBe([
+      '/* SHOPIFY_STYLESHEETS_VERSION: 1.0 */',
+      '',
+      '',
+      '/* CSS from section stylesheet tags */',
+      '/* START_SECTION:hero (INDEX:0) */',
+      '.hero { color: red; }',
+      '/* END_SECTION:hero */',
+      '',
+      '/* START_SECTION:unused (INDEX:2) */',
+      '.unused { display: none; }',
+      '/* END_SECTION:unused */',
+      '',
+      '/* CSS from block stylesheet tags */',
+      '/* START_BLOCK:badge (INDEX:3) */',
+      '.badge { color: blue; }',
+      '/* END_BLOCK:badge */',
+      '',
+      '/* CSS from snippet stylesheet tags */',
+      '/* START_SNIPPET:price (INDEX:5) */',
+      '.price { font-weight: bold; }',
+      '/* END_SNIPPET:price */'
+    ].join('\n'))
+    expect(styles?.version).toMatch(/^[0-9a-f]{20}$/)
+  })
+
+  it('holds every section\'s javascript, each run only when the page names the section, in Shopify\'s form', () => {
+    const { scripts } = compileTheme(styledTheme()).compiledAssets()
+    // the parity store's `scripts.js` for Horizon 4.3.0 (its source map), where `main-collection` is the one section with a `{% javascript %}`
+    expect(scripts?.body).toBe("(function() {\n  var __sections__ = {};\n  (function() {\n    for(var i = 0, s = document.getElementById('sections-script').getAttribute('data-sections').split(','); i < s.length; i++)\n      __sections__[s[i]] = true;\n    })();\n    " +
+      '(function() {\n  if (!__sections__["hero"]) return;\n  try {\n    \n  console.log("hero")\n\n  } catch(e) { console.error(e); }\n})();\n' +
+      '(function() {\n  if (!__sections__["unused"]) return;\n  try {\n    unused()\n  } catch(e) { console.error(e); }\n})();\n' +
+      '})();\n')
+  })
+
+  it('links the files from content_for_header when the page is told where they are served, and inlines nothing of theirs', async () => {
+    const theme = styledTheme()
+    const { styles, scripts } = compileTheme(theme).compiledAssets()
+    const html = await linked(theme)
+    // the parity store's tags (recordings of Horizon 4.3.0 and Dawn 16.0.0): `<link rel="stylesheet" media="screen" href="…/compiled_assets/styles.css?v=…">`, then `<script id="sections-script" data-sections="header" defer="defer" src="…/compiled_assets/scripts.js?v=…"></script>` naming the page's sections that have a `{% javascript %}`
+    expect(html).toContain(`<link rel="stylesheet" media="screen" href="/p/tok/compiled_assets/styles.css?v=${styles!.version}"><script id="sections-script" data-sections="hero" defer="defer" src="/p/tok/compiled_assets/scripts.js?v=${scripts!.version}"></script>`)
+    expect(html).not.toContain('<style data-shopify')
+    expect(html).not.toContain('.hero { color: red; }')
+    expect(html).not.toContain('console.log("hero")')
+    // a block's and a snippet's javascript have files of their own on Shopify (`block-scripts.js`, `snippet-scripts.js`) that no recording shows, so they stay inline
+    expect(html).toContain("<script>document.addEventListener('DOMContentLoaded', function () {\n(function () {\nbadge()\n})();\n});</script>")
+  })
+
+  it('prints no link when the theme has no stylesheet, and no script tag when the page renders no section javascript', async () => {
+    const html = await linked(homeTheme({ plain: '<p>plain</p>' }))
+    expect(html).not.toContain('compiled_assets')
+    const noScript = await linked(styledTheme({ 'templates/index.json': '{"sections":{"plain":{"type":"plain"}},"order":["plain"]}' }))
+    expect(noScript).toContain('/p/tok/compiled_assets/styles.css?v=')
+    expect(noScript).not.toContain('sections-script')
+  })
+
+  it('still inlines a stylesheet from a file outside the three folders', async () => {
+    const html = await linked(styledTheme({ 'layout/theme.liquid': `${LAYOUT}{% stylesheet %}.layout { margin: 0; }{% endstylesheet %}` }))
+    expect(html).toContain('<style data-shopify="stylesheet-tags">.layout { margin: 0; }</style>')
+  })
+
+  it('gives the files a new version when a body changes, and keeps it while none does', () => {
+    const theme = styledTheme()
+    const first = compileTheme(theme).compiledAssets()
+    expect(compileTheme(theme).compiledAssets()).toBe(first)
+    theme.files['sections/plain.liquid'] = '<p>still plain</p>'
+    const same = compileTheme(theme).compiledAssets()
+    expect(same.styles?.version).toBe(first.styles?.version)
+    theme.files['blocks/badge.liquid'] = '{% stylesheet %}.badge { color: green; }{% endstylesheet %}'
+    const changed = compileTheme(theme).compiledAssets()
+    expect(changed.styles?.version).not.toBe(first.styles?.version)
+    expect(changed.styles?.body).toContain('.badge { color: green; }')
+    expect(changed.scripts?.version).toBe(first.scripts?.version)
+  })
+
+  it('inlines the bodies the page rendered when it is not told where the files are served', async () => {
+    // a page rendered with no server behind it (the engine alone, a design tool) has nowhere to load the files from
+    const page = requestFromUrl('/', data)
+    const { html } = await renderPage({ theme: styledTheme(), templateName: page.templateName, data, request: page.request })
+    expect(html).toContain('<style data-shopify="stylesheet-tags">\n  .hero { color: red; }\n\n.badge { color: blue; }</style>')
+    expect(html).not.toContain('compiled_assets')
   })
 })

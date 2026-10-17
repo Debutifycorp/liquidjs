@@ -1,5 +1,6 @@
 import type { ShopifyState } from '../state'
 import { escapeHtml } from '../util/html'
+import { BUNDLED_FILE, CompiledAssets, SECTION_FILE } from './compiled-assets'
 
 /** Where `content_for_header` goes while the layout renders; replaced once the whole page has rendered, so it can include every section's `{% stylesheet %}` and `{% javascript %}`. A render swaps in `newHeaderMarker()`, not this constant. */
 export const HEADER_MARKER = '\u0000content_for_header\u0000'
@@ -21,11 +22,13 @@ function scriptJson (value: unknown): string {
 const rateText = (rate: number) => Number.isInteger(rate) ? rate.toFixed(1) : String(rate)
 
 /**
- * A minimal `content_for_header`: the `hreflang` links of the page in every market and language (https://shopify.dev/docs/storefronts/themes/seo/hreflang, which says Shopify adds them through `content_for_header`; `state.request.alternates` holds them and the parity store prints them first, one a line, before its scripts), then the `window.Shopify` globals themes read (shop, locale, currency, country, routes, design mode, and the customer events API `Shopify.analytics`), then the bodies of the `{% stylesheet %}` tags rendered on the page in one `<style>`, then the `{% javascript %}` bodies, each in its own function, run on `DOMContentLoaded`.
+ * A minimal `content_for_header`: the `hreflang` links of the page in every market and language (https://shopify.dev/docs/storefronts/themes/seo/hreflang, which says Shopify adds them through `content_for_header`; `state.request.alternates` holds them and the parity store prints them first, one a line, before its scripts), then the `window.Shopify` globals themes read (shop, locale, currency, country, routes, design mode, and the customer events API `Shopify.analytics`), then the page's `{% stylesheet %}` and `{% javascript %}` bodies.
  *
- * https://shopify.dev/docs/api/liquid/objects/content_for_header says only that it "dynamically returns all scripts required by Shopify" and that themes must not modify or parse it, and https://shopify.dev/docs/storefronts/themes/architecture/layouts says it goes in the `<head>`. Its content is therefore Debutify's: Shopify serves the stylesheet and javascript bodies as files and adds analytics and app scripts, which a preview leaves out, and the `Shopify` globals here are the ones themes are known to read, not a list from shopify.dev.
+ * With `compiled` (the address the theme's compiled files are served under, and the files), the bodies are linked as the parity store links them, last in its `content_for_header` (recordings of Horizon 4.3.0 and Dawn 16.0.0): `<link rel="stylesheet" media="screen" href="<url>styles.css?v=<version>">` when the theme has a stylesheet in a section, block or snippet (on every page, as the file holds them all), then `<script id="sections-script" data-sections="<names>" defer="defer" src="<url>scripts.js?v=<version>"></script>`, naming the sections rendered on the page that have a `{% javascript %}` in the order first rendered (`data-sections="main-collection"` on Horizon's collection pages, `"header"` on every page of Dawn), when there are any. The bodies those files do not hold are still inlined after them: a stylesheet of a layout or a template, which Shopify does not bundle, and the javascript of blocks and snippets, whose files (`block-scripts.js`, `snippet-scripts.js`) no recording shows. Without `compiled`, every stylesheet body rendered on the page is inlined in one `<style>`, then every javascript body, each in its own function, run on `DOMContentLoaded`.
+ *
+ * https://shopify.dev/docs/api/liquid/objects/content_for_header says only that it "dynamically returns all scripts required by Shopify" and that themes must not modify or parse it, and https://shopify.dev/docs/storefronts/themes/architecture/layouts says it goes in the `<head>`. Its content is therefore Debutify's: Shopify adds analytics and app scripts, which a preview leaves out, and the `Shopify` globals here are the ones themes are known to read, not a list from shopify.dev.
  */
-export function contentForHeader (state: ShopifyState, globals: Record<string | symbol, unknown>): string {
+export function contentForHeader (state: ShopifyState, globals: Record<string | symbol, unknown>, compiled?: { url: string, assets: CompiledAssets }): string {
   const shop = globals.shop as Record<string, unknown>
   const localization = globals.localization as { country?: { iso_code?: string } }
   const request = globals.request as { locale?: { iso_code?: string } }
@@ -42,9 +45,17 @@ export function contentForHeader (state: ShopifyState, globals: Record<string | 
     // The customer events API, https://shopify.dev/docs/api/web-pixels-api/emitting-data: on the online store `Shopify.analytics.publish(name, data, customData)` publishes a custom event and `Shopify.analytics.visitor(info, options)` hands over the visitor's email or phone and "Returns `true` if the visitor method was successful, and returns `false` if the payload was rejected". Shopify's header defines only `replayQueue` and `publish` up front, `publish` a closure that queues `[name, data, customData]` and answers true, and sets `visitor` once its web pixels manager loads (the parity store's recorded home page, recording `page-home`); the page does not say what `publish` returns, so `true` is the parity store's. Defining `visitor` up front, answering whether it was given data, is Debutify's own addition. With no pixels loaded here nothing is delivered: `publish` keeps the event in `events`, which the storefront's sandbox mode reads. Both are closures over `events`, as Shopify's `publish` is over its queue, so they work passed around or called detached.
     'Shopify.analytics = Shopify.analytics || (function () { var events = []; return { events: events, publish: function (name, data, customData) { events.push({ name: String(name), data: data, customData: customData }); return true; }, visitor: function (data, options) { return !!data; } }; })();' +
     '</script>'
-  const css = [...state.assets.stylesheets.values()].join('\n')
+  const styles = compiled?.assets.styles
+  if (compiled && styles) header += `<link rel="stylesheet" media="screen" href="${escapeHtml(`${compiled.url}styles.css?v=${styles.version}`)}">`
+  // a stylesheet the linked file holds is not inlined; one of a layout or template is
+  const css = [...state.assets.stylesheets].filter(([file]) => !(styles && BUNDLED_FILE.test(file))).map(([, body]) => body).join('\n')
   if (css) header += `<style data-shopify="stylesheet-tags">${css.replace(/<\/style/gi, '<\\/style')}</style>`
-  const scripts = [...state.assets.javascripts.values()].map(body => `(function () {\n${body}\n})();`).join('\n')
+  const compiledScripts = compiled?.assets.scripts
+  // a section's javascript is in the linked file (a blank one is in neither); a block's or a snippet's is inlined
+  const linked = (file: string) => !!compiledScripts && SECTION_FILE.test(file)
+  const names = [...state.assets.javascripts].filter(([file, body]) => linked(file) && body.trim() !== '').map(([file]) => SECTION_FILE.exec(file)![1])
+  if (compiled && compiledScripts && names.length) header += `<script id="sections-script" data-sections="${escapeHtml(names.join(','))}" defer="defer" src="${escapeHtml(`${compiled.url}scripts.js?v=${compiledScripts.version}`)}"></script>`
+  const scripts = [...state.assets.javascripts].filter(([file]) => !linked(file)).map(([, body]) => `(function () {\n${body}\n})();`).join('\n')
   if (scripts) header += `<script>document.addEventListener('DOMContentLoaded', function () {\n${scripts.replace(/<\/script/gi, '<\\/script')}\n});</script>`
   return header
 }

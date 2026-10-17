@@ -25,6 +25,7 @@ import { escapeHtml } from '../util/html'
 import { hasOwn, isRecord, own, PLAIN_ID } from '../util/own'
 import { deepMerge, parseThemeJson, parseWrapper } from './json'
 import { contentForHeader, newHeaderMarker, withStoreElements } from './header'
+import { BUNDLED_FILE, compileAssets, CompiledAssets } from './compiled-assets'
 
 /** An Online Store 2.0 theme as a map of its files by path (`sections/header.liquid`). The package never reads the file system. */
 export interface ThemeInput {
@@ -55,6 +56,10 @@ export interface RenderPageOptions {
   renderLimit?: number
   /** LiquidJS's allocation units for the whole page (default: the preset's `memoryLimit`). */
   memoryLimit?: number
+  /**
+   * The address the theme's compiled `{% stylesheet %}` and `{% javascript %}` files are served under, ending in `/` (`/compiled_assets/`, `/p/<token>/compiled_assets/`). With it, `content_for_header` links them as Shopify does: `<link rel="stylesheet" media="screen" href="<url>styles.css?v=<version>">`, and `<script id="sections-script" data-sections="<sections>" defer="defer" src="<url>scripts.js?v=<version>"></script>` when the page rendered a section with a `{% javascript %}`; the server serves `CompiledTheme.compiledAssets()` there (the `/storefront` entry does). Without it, for a page rendered with no server behind it, the bodies the page rendered are inlined in `content_for_header`, which needs no second request.
+   */
+  compiledAssetsUrl?: string
   /** Characters per parsed file (default: the preset's `parseLimit`, 10,000,000). Part of the compiled theme: renders of one `theme` object with different values compile it once per value. */
   parseLimit?: number
   /** `'report'` (default) renders an unknown tag as nothing and reports it; `'error'` makes it a parse error, as for `createShopifyLiquid`. Part of the compiled theme, like `parseLimit`. */
@@ -219,11 +224,13 @@ function presetData (preset: Record<string, unknown>): { settings?: Record<strin
   return out
 }
 
-/** One theme, parsed once: an engine over its files and its parsed JSON, both re-read only when a file's contents change. Of its members only `templates(path)` is public API; the rest serve `renderPage` and may change in any release. */
+/** One theme, parsed once: an engine over its files and its parsed JSON, both re-read only when a file's contents change. Of its members only `templates(path)` and `compiledAssets()` are public API; the rest serve `renderPage` and may change in any release. */
 export class CompiledTheme {
   public readonly liquid: Liquid
   private readonly cache: ThemeCache
   private readonly jsonCache = new Map<string, { source: string, value: unknown }>()
+  /** The last `compiledAssets()`, with the paths and sources it was made from. */
+  private assets?: { paths: string[], sources: Array<string | undefined>, value: CompiledAssets }
 
   /** `own` are the files this theme owns; with a `base`, every other file comes from it, parsed once by it. */
   public constructor (public readonly own: Record<string, string>, options: Pick<RenderPageOptions, 'parseLimit' | 'unknownTags'> = {}, public readonly base?: CompiledTheme) {
@@ -244,6 +251,25 @@ export class CompiledTheme {
 
   public has (path: string): boolean {
     return hasOwn(this.own, path) || !!this.base?.has(path)
+  }
+
+  /** The text of the file at `path`, this theme's own or its base's; undefined when neither has it. */
+  public source (path: string): string | undefined {
+    return hasOwn(this.own, path) ? this.own[path] : this.base?.source(path)
+  }
+
+  /**
+   * The theme's compiled `{% stylesheet %}` and `{% javascript %}` files, `styles.css` and `scripts.js`, which a server serves at `RenderPageOptions.compiledAssetsUrl` (see `compileAssets` for what they hold and in what form). Made from every `.liquid` file of `sections/`, `blocks/` and `snippets/`, which are parsed for it, and made again only when one of them changes, so their versions change with their bodies.
+   */
+  public compiledAssets (): CompiledAssets {
+    const paths = ['sections/', 'blocks/', 'snippets/'].flatMap(folder => this.paths(folder).filter(path => BUNDLED_FILE.test(path)).sort())
+    const sources = paths.map(path => this.source(path))
+    const last = this.assets
+    if (last && last.paths.length === paths.length && last.paths.every((path, i) => path === paths[i] && last.sources[i] === sources[i])) return last.value
+    // a snippet is parsed under the key `render` reads it by, so the page's render and this share one parse
+    const value = compileAssets(paths.map(path => ({ path, templates: () => path.startsWith('snippets/') ? this.parseKey(`partials:${path.slice('snippets/'.length, -'.liquid'.length)}`) : this.templates(path) })))
+    this.assets = { paths, sources, value }
+    return value
   }
 
   /** Paths starting with `prefix`, in key order: the base's, then the overlay's own that the base lacks (the order of `{ ...base.files, ...own }`). */
@@ -441,7 +467,8 @@ class PageRender implements ThemeHooks {
       return `${escapeHtml(this.fail(err))}${content}`
     }
     const html = (yield this.theme.liquid.renderer.renderTemplates(templates, this.child({ content_for_layout: content, content_for_header: this.headerMarker }))) as string
-    return html.split(this.headerMarker).join(contentForHeader(this.state, this.globals))
+    const url = this.options.compiledAssetsUrl
+    return html.split(this.headerMarker).join(contentForHeader(this.state, this.globals, url === undefined ? undefined : { url, assets: this.theme.compiledAssets() }))
   }
 
   /**

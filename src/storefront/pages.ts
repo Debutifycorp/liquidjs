@@ -1,5 +1,5 @@
-import { renderPage, renderSection, requestFromUrl } from '../shopify'
-import type { FormOutcome, PageRequest, StoreData } from '../shopify'
+import { compileTheme, renderPage, renderSection, requestFromUrl } from '../shopify'
+import type { FormOutcome, PageRequest, StoreData, ThemeInput } from '../shopify'
 import { notFoundPage } from './html'
 import { cutSearch, decode } from './router'
 import type { Context } from './handler'
@@ -43,6 +43,36 @@ export function resourceExists (data: StoreData, page: PageRequest): boolean {
   }
 }
 
+/** Where the storefront serves the theme's compiled `{% stylesheet %}` and `{% javascript %}` files, under the base path and outside any locale prefix: Shopify serves them at `/cdn/shop/t/<theme>/compiled_assets/`, beside the theme's `assets/` (the parity store's recordings of Horizon 4.3.0 and Dawn 16.0.0). Here the files are the storefront's own, so they sit under the storefront's base path, where a host that serves the theme's assets elsewhere still forwards them. */
+export const COMPILED_ASSETS = '/compiled_assets/'
+
+/** Shopify's types for the two files (`text/css` and `text/javascript`, as the parity store answers them). */
+const COMPILED_FILES: Record<string, { kind: 'styles' | 'scripts', type: string }> = {
+  'styles.css': { kind: 'styles', type: 'text/css' },
+  'scripts.js': { kind: 'scripts', type: 'text/javascript' }
+}
+
+/**
+ * The answer for a `GET` or `HEAD` of a compiled file (`<base path>/compiled_assets/styles.css` or `scripts.js`), or undefined when the request asks for something else. https://shopify.dev/docs/storefronts/themes/best-practices/javascript-and-stylesheet-tags says Shopify generates the files and links them from `content_for_header`; `CompiledTheme.compiledAssets()` makes them. The file is the theme's, not the visitor's, so it is answered before any visitor state or the storefront password (the password page needs its styles too) and may be cached: with the version the page links (`?v=`), for a year and `immutable`, as the parity store answers `styles.css`; with another version or none, `no-cache`. Its `ETag` is the version, and a request that holds it gets 304. A theme without the file answers 404.
+ */
+export function compiledAssetResponse (request: Request, basePath: string, theme: ThemeInput): Response | undefined {
+  const verb = request.method.toUpperCase()
+  if (verb !== 'GET' && verb !== 'HEAD') return undefined
+  const url = new URL(request.url)
+  const prefix = `${basePath}${COMPILED_ASSETS}`
+  if (!url.pathname.startsWith(prefix)) return undefined
+  const name = url.pathname.slice(prefix.length)
+  const file = Object.prototype.hasOwnProperty.call(COMPILED_FILES, name) ? COMPILED_FILES[name] : undefined
+  if (!file) return undefined
+  const compiled = compileTheme(theme).compiledAssets()[file.kind]
+  if (!compiled) return new Response(verb === 'HEAD' ? null : 'Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': PRIVATE } })
+  const etag = `"${compiled.version}"`
+  const headers = { 'content-type': file.type, etag, 'cache-control': url.searchParams.get('v') === compiled.version ? 'public, max-age=31536000, immutable' : 'no-cache' }
+  const known = (request.headers.get('if-none-match') ?? '').split(',').map(tag => tag.trim().replace(/^W\//, ''))
+  if (known.includes(etag) || known.includes('*')) return new Response(null, { status: 304, headers })
+  return new Response(verb === 'HEAD' ? null : compiled.body, { status: 200, headers })
+}
+
 /** The engine's render options for a page of this request. */
 function renderOptions (ctx: Context, page: PageRequest, form?: FormOutcome) {
   const url = new URL(ctx.request.url)
@@ -55,7 +85,9 @@ function renderOptions (ctx: Context, page: PageRequest, form?: FormOutcome) {
     services: { shopifyAssetUrl: (path: string) => `${ctx.basePath}/shopify-assets/${path}`, ...ctx.services },
     cart: ctx.visitor.cart,
     // https://shopify.dev/docs/storefronts/themes/architecture/section-groups#contextual-section-groups: a group file `<group>.context.<context>.json` with `"market": "<market handle>"` overrides its parent for that market; the page's market is the context when the store data names it (a store with no markets has the engine's stand-in handle `default`, which is no market handle), and no B2B customers exist here, so `b2b` is never set. Which file wins when several match, and what happens when none does, the page does not say: the engine takes the first match and otherwise the group as it is
-    request: { ...page.request, ...(ctx.data.markets?.some(market => market.handle === page.request.market) ? { context: { market: page.request.market } } : {}), host: url.host, origin: url.origin, ...(form ? { form } : {}) }
+    request: { ...page.request, ...(ctx.data.markets?.some(market => market.handle === page.request.market) ? { context: { market: page.request.market } } : {}), host: url.host, origin: url.origin, ...(form ? { form } : {}) },
+    // the theme's compiled stylesheet and javascript files, which `compiledAssetResponse` serves
+    compiledAssetsUrl: `${ctx.basePath}${COMPILED_ASSETS}`
   }
 }
 
