@@ -68,11 +68,13 @@ describe('the files of Shopify\'s global assets', () => {
 
   it('answers 404 for any other path, and for a method that is not a read', async () => {
     const { send } = harness()
-    for (const path of ['', 'nope.js', 'vendor/qrcode.js/more', 'vendor/', 'gift-card/Card.svg', '__proto__', 'constructor', 'gift-card/card.svg%00']) {
+    // a file has one address: the encoded, doubled and trailing-slash spellings (a backslash is read as a slash by `Request` before the storefront sees it; `routeRequest` refuses it when it is given the raw address) of it are not it, and the bare folder is no file
+    const spellings = ['vendor%2Fqrcode.js', 'vendor%2fqrcode.js', '%76endor/qrcode.js', 'vendor//qrcode.js', '/vendor/qrcode.js', 'vendor/qrcode.js/', 'vendor/qrcode.js//', 'gift-card%2Fcard.svg']
+    for (const path of ['', 'nope.js', 'vendor/qrcode.js/more', 'vendor/', 'gift-card/Card.svg', '__proto__', 'constructor', 'gift-card/card.svg%00', ...spellings]) {
       const answer = await send('GET', `/shopify-assets/${path}`)
-      expect([path, answer.status, answer.headers.get('cache-control')]).toEqual([path, 404, 'private, no-store'])
-      expect(answer.text).not.toContain('<svg')
+      expect([path, answer.status, answer.headers.get('cache-control'), answer.text]).toEqual([path, 404, 'private, no-store', 'Not found'])
     }
+    expect([(await send('GET', '/shopify-assets')).status, (await send('GET', '/shopify-assets')).text]).toEqual([404, 'Not found'])
     const post = await send('POST', '/shopify-assets/gift-card/card.svg', '')
     expect(post.status).toBe(404)
   })

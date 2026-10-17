@@ -157,14 +157,15 @@ describe('pages', () => {
       }
       expect((await locked(undefined).send('GET', '/gift_cards/70001/abc123')).status).toBe(302)
     })
-    it('chooses the alternate template the card\'s template_suffix names, when the theme has it', async () => {
+    it('chooses the alternate Liquid template the card\'s template_suffix names, when the theme has it', async () => {
       const files = { ...withCard(card).theme.files, 'templates/gift_card.birthday.liquid': '{% layout none %}birthday|{{ gift_card.code }}|{{ template.suffix }}', 'templates/gift_card.festive.json': '{"layout":false,"sections":{},"order":[]}' }
       const send = (gift: unknown, url = '/gift_cards/70001/abc123') => harness({ theme: { files }, data: { ...data, gift_card: gift } as StoreData }).send('GET', url)
       expect((await send({ ...card, template_suffix: 'birthday' })).text).toBe('birthday|WCGX 7X97 K9HJ DFR8|birthday')
       // a suffix the theme has no file for, a card with none, and a suffix that names a path, show the base template
       for (const suffix of ['missing', null, undefined, '../birthday', 'birthday/x']) expect([suffix, (await send({ ...card, template_suffix: suffix })).text.startsWith('WCGX')]).toEqual([suffix, true])
-      // a JSON alternate template is chosen too, and `?view=` picks one as it does for a product
-      expect((await send({ ...card, template_suffix: 'festive' })).text).toBe('')
+      // https://shopify.dev/docs/storefronts/themes/architecture/templates/gift-card-liquid: "This template can't be a JSON template", so a JSON alternate is never chosen; `?view=` picks a Liquid one as it does for a product
+      expect((await send({ ...card, template_suffix: 'festive' })).text.startsWith('WCGX')).toBe(true)
+      expect((await send(card, '/gift_cards/70001/abc123?view=festive')).text.startsWith('WCGX')).toBe(true)
       expect((await send(card, '/gift_cards/70001/abc123?view=birthday')).text).toBe('birthday|WCGX 7X97 K9HJ DFR8|birthday')
     })
     it('shows a disabled or expired card, which the themes mark themselves with gift_card.enabled and gift_card.expired', async () => {

@@ -226,6 +226,7 @@ export interface GiftCardData {
   qr_identifier?: string | null
   recipient?: Record<string, unknown> | null
   template_suffix?: string | null
+  /** The path the storefront serves the card at, `/gift_cards/<store_id>/<gift_card_token>`, written without the base path (it is printed under the base path and the locale prefix); an absolute address, such as Shopify's own on `checkout.shopify.com`, prints as given and is served at its path. A card with no `url`, or one that is not that path, opens at no address. */
   url?: string | null
 }
 

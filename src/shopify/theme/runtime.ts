@@ -95,7 +95,8 @@ function chooseTemplate (theme: CompiledTheme, name: string, view: string | unde
   for (const candidate of [view, suffix]) {
     if (!candidate || candidate.includes('/') || name.includes('.')) continue
     const full = `${name}.${candidate}`
-    if (theme.has(`templates/${full}.json`) || theme.has(`templates/${full}.liquid`)) return full
+    // https://shopify.dev/docs/storefronts/themes/architecture/templates/gift-card-liquid: "This template can't be a JSON template", so a gift card's alternate is a Liquid file only
+    if ((name !== 'gift_card' && theme.has(`templates/${full}.json`)) || theme.has(`templates/${full}.liquid`)) return full
   }
   return name
 }

@@ -18,8 +18,13 @@ describe('routeRequest', () => {
     expect(kind('HEAD', '/shopify-assets/gift-card/card.svg')).toEqual({ kind: 'shopify-asset', path: 'gift-card/card.svg' })
     expect(kind('GET', '/p/tok/shopify-assets/gift-card/card.svg', '/p/tok')).toEqual({ kind: 'shopify-asset', path: 'gift-card/card.svg' })
     expect(routeRequest('GET', '/fr-ca/shopify-assets/vendor/qrcode.js', data, { basePath: '' })).toMatchObject({ route: { kind: 'shopify-asset', path: 'vendor/qrcode.js' }, localePrefix: '/fr-ca' })
-    expect(kind('GET', '/shopify-assets/a%2Fb.js')).toEqual({ kind: 'shopify-asset', path: 'a/b.js' })
-    expect(kind('GET', '/shopify-assets')).toMatchObject({ kind: 'not-found' })
+    // the path is as the address wrote it, so a spelling that is not a file's exact address names no file
+    expect(kind('GET', '/shopify-assets/vendor%2Fqrcode.js')).toEqual({ kind: 'shopify-asset', path: 'vendor%2Fqrcode.js' })
+    expect(kind('GET', '/shopify-assets//vendor/qrcode.js')).toEqual({ kind: 'shopify-asset', path: '/vendor/qrcode.js' })
+    expect(kind('GET', '/shopify-assets/vendor/qrcode.js/')).toEqual({ kind: 'shopify-asset', path: 'vendor/qrcode.js/' })
+    expect(kind('GET', '/shopify-assets/vendor\\qrcode.js')).toEqual({ kind: 'shopify-asset', path: '' })
+    expect(kind('GET', '/shopify-assets')).toEqual({ kind: 'shopify-asset', path: '' })
+    expect(kind('GET', '/shopify-assets/')).toEqual({ kind: 'shopify-asset', path: '' })
     expect(kind('POST', '/shopify-assets/vendor/qrcode.js')).toMatchObject({ kind: 'not-found' })
   })
   it('routes a gift card address to the gift_card template, under the base path and the locale prefix', () => {
