@@ -1,4 +1,4 @@
-import { localePrefixes, storefrontSampleData as data, themeLanguages, withLanguages } from '../../src/shopify'
+import { localePrefixes, renderPage, storefrontSampleData as data, themeLanguages, withLanguages } from '../../src/shopify'
 import type { StoreData } from '../../src/shopify'
 import { buildLocalization, languageIn } from '../../src/shopify/store/markets'
 import { resolveView } from '../../src/shopify/store/view'
@@ -79,5 +79,23 @@ describe('translations in every language', () => {
     // https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files: "A regional locale such as en-CA can inherit keys from its base language file"
     expect(translator('pt-BR').lookup('base_only')).toBe('só pt')
     expect(translator('pt-PT').lookup('plain')).toBe('simples (pt)')
+  })
+})
+
+describe('schema locale files', () => {
+  it('translate a t: default by the language of the page', async () => {
+    const files = {
+      'layout/theme.liquid': '{{ content_for_layout }}',
+      'sections/s.liquid': '<p>{{ section.settings.label }}</p>{% schema %}{"name":"t:sections.s.name","settings":[{"type":"text","id":"label","label":"x","default":"t:sections.s.default"}]}{% endschema %}',
+      'templates/index.json': '{"sections":{"a":{"type":"s"}},"order":["a"]}',
+      'locales/en.default.json': '{}',
+      'locales/en.default.schema.json': '{"sections":{"s":{"name":"S","default":"Default"}}}',
+      'locales/ja.schema.json': '{"sections":{"s":{"default":"デフォルト"}}}'
+    }
+    const printed = async (locale: string) => /<p>([^<]*)<\/p>/.exec((await renderPage({ theme: { files }, templateName: 'index', locale })).html)?.[1]
+    expect(await printed('en')).toBe('Default')
+    expect(await printed('ja')).toBe('デフォルト')
+    // a language with no schema file, or no such key, reads the default file
+    expect(await printed('de')).toBe('Default')
   })
 })
