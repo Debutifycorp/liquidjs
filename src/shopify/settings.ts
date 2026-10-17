@@ -101,6 +101,9 @@ function fromFileReference (value: unknown, prefix: string): string | undefined 
 
 const TRANSLATABLE = new Set(['text', 'textarea', 'richtext', 'inline_richtext', 'html', 'liquid'])
 
+/** The setting types whose `default` can be a `t:` key: https://shopify.dev/docs/storefronts/themes/architecture/locales/schema-locale-files#content lists `html`, `inline_richtext`, `liquid`, `richtext`, `text`, `textarea`, `url`, `video` and `video_url`. The first six are the text types of `TRANSLATABLE`. */
+const KEY_DEFAULT = new Set([...TRANSLATABLE, 'url', 'video', 'video_url'])
+
 /** What a URL never carries unencoded: whitespace, control characters, quotes, angle brackets and the backtick. One of them in a URL setting could end the attribute or the element the URL is printed in. */
 // eslint-disable-next-line no-control-regex
 const UNSAFE_URL_CHARACTER = /[\s\u0000-\u001f\u007f-\u009f"'<>`]/
@@ -259,7 +262,7 @@ function imageData (definition: SettingDefinition, value: Record<string, unknown
  */
 export function resolveSettingValue (definition: SettingDefinition, stored: unknown, env: SettingsEnv): unknown {
   let value = stored === undefined ? definition.default : stored
-  if (TRANSLATABLE.has(definition.type) && typeof value === 'string' && value.startsWith('t:')) value = env.translator.schemaText(value)
+  if (KEY_DEFAULT.has(definition.type) && typeof value === 'string' && value.startsWith('t:')) value = env.translator.schemaText(value)
   // https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings: for `text`, `textarea`, `html`, `richtext`, `inline_richtext` and `liquid`, "An `empty` object, if nothing has been entered". The empty string is what `== empty` and `== blank` match, prints as nothing and is not nil, as that object is.
   if (TRANSLATABLE.has(definition.type) && (value === undefined || value === null || value === '')) return ''
   switch (definition.type) {
