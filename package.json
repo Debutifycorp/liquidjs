@@ -33,6 +33,10 @@
       "module": "./dist/storefront.node.mjs",
       "default": "./dist/storefront.node.js"
     },
+    "./shopify-library": {
+      "types": "./dist/shopify-library/index.d.ts",
+      "default": "./dist/shopify-library.js"
+    },
     "./dist/*": {
       "types": [
         "./dist/*.d.ts",
@@ -51,6 +55,9 @@
       ],
       "storefront": [
         "dist/storefront/index.d.ts"
+      ],
+      "shopify-library": [
+        "dist/shopify-library/index.d.ts"
       ]
     }
   },

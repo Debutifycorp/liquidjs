@@ -164,6 +164,26 @@ const browserMin = {
 // The Shopify layer, `@debutify/liquidjs/shopify`: Node only. It re-exports the engine, so inside this entry Drops and the engine are one copy; the root entry is a separate bundle with its own. Node loads the CJS builds (the `exports` map's `default`), so `require` and `import` share one copy of each entry; bundlers read the ESM builds through the `module` condition.
 const shopifyInput = './src/shopify/index.ts'
 
+// Shopify's payment icons and font library, `@debutify/liquidjs/shopify-library`: one CommonJS file that both /shopify bundles import by the package's name, as /storefront imports /shopify, so the data (about 4.6 MB) ships once and not in each bundle. Only src/shopify/library.ts imports it.
+const libraryInput = './src/shopify-library/index.ts'
+const libraryAdapter = resolve('src/shopify/library.ts')
+const shopifyLibraryExternal = {
+  name: 'shopify-library-external',
+  resolveId (source, importer) {
+    if (importer === libraryAdapter && source === '../shopify-library') return { id: '@debutify/liquidjs/shopify-library', external: true }
+    return null
+  }
+}
+// the compiler's project is the data folder alone: with the whole of src it would emit every declaration again, `dist/index.d.ts` among them, from a source that never went through versionInjection (this bundle imports none of it), and leave its `[VI]` placeholder in the file
+const libraryTsconfig = tsconfig('ES2020')
+libraryTsconfig.tsconfigOverride.include = ['src/shopify-library']
+const shopifyLibraryCjs = {
+  output: [{ file: 'dist/shopify-library.js', format: 'cjs', esModule: true, banner }],
+  plugins: [typescript(libraryTsconfig)],
+  treeshake,
+  input: libraryInput
+}
+
 const shopifyCjs = {
   output: [{
     file: 'dist/shopify.node.js',
@@ -172,7 +192,7 @@ const shopifyCjs = {
     banner
   }],
   external: ['path', 'fs', 'stream', 'crypto'],
-  plugins: [versionInjection, typescript(tsconfig('ES2020'))],
+  plugins: [shopifyLibraryExternal, versionInjection, typescript(tsconfig('ES2020'))],
   treeshake,
   input: shopifyInput
 }
@@ -185,6 +205,7 @@ const shopifyEsm = {
   }],
   external: ['path', 'fs', 'stream', 'crypto'],
   plugins: [
+    shopifyLibraryExternal,
     versionInjection,
     replace(esmRequire),
     typescript(tsconfig('es6'))
@@ -239,10 +260,10 @@ const storefrontEsm = {
 
 const bundles = []
 const env = process.env.BUNDLES || ''
-if (env.includes('cjs')) bundles.push(nodeCjs, shopifyCjs, storefrontCjs)
+if (env.includes('cjs')) bundles.push(nodeCjs, shopifyCjs, storefrontCjs, shopifyLibraryCjs)
 if (env.includes('esm')) bundles.push(nodeEsm, browserEsm, shopifyEsm, storefrontEsm)
 if (env.includes('umd')) bundles.push(browserUmd)
 if (env.includes('min')) bundles.push(browserMin)
-if (bundles.length === 0) bundles.push(nodeCjs, nodeEsm, browserEsm, browserUmd, browserMin, shopifyCjs, shopifyEsm, storefrontCjs, storefrontEsm)
+if (bundles.length === 0) bundles.push(nodeCjs, nodeEsm, browserEsm, browserUmd, browserMin, shopifyCjs, shopifyEsm, storefrontCjs, storefrontEsm, shopifyLibraryCjs)
 
 export default bundles

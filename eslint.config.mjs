@@ -25,7 +25,7 @@ const arrayBracketEvenSpacing = {
 // LiquidJS's lint rules (eslint-config-standard 12 and @typescript-eslint/recommended, with upstream's overrides) on ESLint's flat config. neostandard is standard's flat-config successor; the rules it adds since standard 12 are off, so upstream's code keeps its style and upstream merges stay clean, and the rules standard 12 had that neostandard dropped are switched back on with their old options.
 export default [
   { linterOptions: { reportUnusedDisableDirectives: 'off' } },
-  { ignores: ['node_modules/', 'dist/', 'demo/', 'coverage/', 'docs/', '**/private.*', 'spec/liquid-spec/', '**/.*'] },
+  { ignores: ['node_modules/', 'dist/', 'demo/', 'coverage/', 'docs/', '**/private.*', 'spec/liquid-spec/', '**/.*', 'src/shopify-library/payment-icons.ts', 'src/shopify-library/font-library.ts'] },
   ...neostandard({ ts: true, noJsx: true, env: ['browser', 'node', 'mocha'] }),
   ...tseslint.configs.recommended.map(config => ({ ...config, files: ['**/*.ts'] })),
   {

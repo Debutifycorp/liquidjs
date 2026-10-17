@@ -1,4 +1,5 @@
-import { createShopifyLiquid, ImageDrop, renderLiquid } from '../../../src/shopify'
+import { createShopifyLiquid, defaultServices, ImageDrop, renderLiquid, shopifyPaymentIcon } from '../../../src/shopify'
+import { PAYMENT_ICONS } from '../../../src/shopify-library'
 import type { ShopifyServices } from '../../../src/shopify'
 import { attribute } from '../../../src/shopify/util/html'
 import { renderWithState } from '../../../src/shopify/render-liquid'
@@ -36,21 +37,30 @@ describe('shopify/filters/assets', () => {
     const { html } = await renderLiquid(liquid, "{{ 'product-1' | placeholder_svg_tag: 'ph' }}|{{ 'visa' | payment_type_svg_tag: class: 'icon' }}")
     expect(html).toBe('<svg class="ph" data-name="product-1"></svg>|<svg class="icon" data-type="visa"></svg>')
   })
-  // https://shopify.dev/docs/api/liquid/filters/payment_type_svg_tag names the six cards in the `<title>` of their icons (Visa, Mastercard, American Express, PayPal, Diners Club, Discover) and shows an empty line after the first three; scenarios `page-home` and `ajax-cart-sections` print the same: `</svg>` and a line break after Visa, Mastercard and American Express, and nothing after the other three
-  it('payment_type_svg_tag names the card in its title, and ends the first three icons with a line break as Shopify does', async () => {
-    const titles: Array<[string, string, string]> = [['visa', 'Visa', '\n'], ['master', 'Mastercard', '\n'], ['american_express', 'American Express', '\n'], ['paypal', 'PayPal', ''], ['diners_club', 'Diners Club', ''], ['discover', 'Discover', '']]
-    for (const [type, title, ending] of titles) {
-      const svg = await render(`{{ '${type}' | payment_type_svg_tag }}`)
-      expect(svg).toContain(`aria-labelledby="pi-${type}"><title id="pi-${type}">${title}</title>`)
-      expect(svg.endsWith('</svg>\n')).toBe(ending === '\n')
-    }
-    expect(await render("{{ 'visa' | payment_type_svg_tag: class: 'icon' }}")).toMatch(/^<svg class="icon" xmlns=/)
-  })
-  it('payment_type_svg_tag keeps the key of a card it has no name for, and escapes it', async () => {
-    const svg = await render("{{ 'jcb' | payment_type_svg_tag }}")
-    expect(svg).toContain('<title id="pi-jcb">jcb</title>')
-    expect(svg.endsWith('</svg>')).toBe(true)
-    expect(await render('{{ type | payment_type_svg_tag }}', { type: '"><b>' })).toContain('<title id="pi-&quot;&gt;&lt;b&gt;">&quot;&gt;&lt;b&gt;</title>')
+  // Shopify prints the files of activemerchant/payment_icons (scenarios page-home, ajax-cart-sections and probe-payment-icons); the probe fixture itself is compared key by key by test/storefront/all-probes.spec.ts
+  describe("payment_type_svg_tag with Shopify's icons", () => {
+    it('holds every file of the pinned commit, the one outside db/payment_icons.yml (bogus) included, as Shopify prints it', () => {
+      expect(Object.keys(PAYMENT_ICONS)).toHaveLength(905)
+      expect(Object.keys(PAYMENT_ICONS)).toEqual(expect.arrayContaining(['visa', 'master', 'american_express', 'paypal', 'diners_club', 'discover', 'generic', 'paidy', 'mcb', 'bogus']))
+    })
+    it('prints the file as the repository holds it, its closing line break included', () => {
+      expect(shopifyPaymentIcon('visa').startsWith('<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 38 24" width="38" height="24" fill="none" aria-labelledby="pi-visa"><title id="pi-visa">Visa</title>')).toBe(true)
+      expect(shopifyPaymentIcon('visa').endsWith('</svg>\n')).toBe(true)
+      expect(shopifyPaymentIcon('paypal').endsWith('</svg>')).toBe(true)
+      expect(shopifyPaymentIcon('master')).toContain('<title id="pi-master">Mastercard</title>')
+    })
+    it('never reads a type from the prototype, and never writes the type it was given: Shopify prints the generic icon for any other type', () => {
+      expect(shopifyPaymentIcon('constructor')).toBe(PAYMENT_ICONS.generic)
+      expect(shopifyPaymentIcon('"><b>')).toBe(PAYMENT_ICONS.generic)
+      expect(shopifyPaymentIcon('')).toBe(PAYMENT_ICONS.generic)
+    })
+    it('puts the class on the <svg> even after an XML prolog, and reads a $ in it literally', async () => {
+      expect(await render("{{ 'paidy' | payment_type_svg_tag: class: 'icon' }}")).toMatch(/^<\?xml version="1\.0"\?><svg class="icon" xmlns=/)
+      expect(await render("{{ 'visa' | payment_type_svg_tag: class: 'a$&b' }}")).toMatch(/^<svg class="a\$&amp;b" xmlns=/)
+    })
+    it('is the default service', () => {
+      expect(defaultServices.paymentTypeSvg).toBe(shopifyPaymentIcon)
+    })
   })
   // https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag
   it('placeholder_svg_tag draws line art for every name the page lists, in the markup the page shows', async () => {

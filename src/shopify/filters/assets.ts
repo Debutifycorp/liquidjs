@@ -39,12 +39,15 @@ function placeholderSvgTag (this: FilterImpl, name: unknown, ...args: unknown[])
   return className ? insertAttributes(svg, attribute('class', className)) : svg
 }
 
-/** The caller's payment icon, with an optional class on the `<svg>`. https://shopify.dev/docs/api/liquid/filters/payment_type_svg_tag */
+/** The payment icon of the `paymentTypeSvg` service (Shopify's own file by default), with an optional class on the `<svg>`, written right after the element name even when the file starts with an XML prolog (`<?xml version="1.0"?><svg class="icon" xmlns=`, scenario `probe-payment-icons`). https://shopify.dev/docs/api/liquid/filters/payment_type_svg_tag */
 function paymentTypeSvgTag (this: FilterImpl, type: unknown, ...args: unknown[]) {
   const { positional, named } = splitArgs(args)
   const className = named.class ?? positional[0]
   const svg = shopifyState(this.context).services.paymentTypeSvg(stringify(type))
-  return className ? insertAttributes(svg, attribute('class', className)) : svg
+  if (!className) return svg
+  const attributes = attribute('class', className)
+  // a function replacer, so a `$&` in the class is not read as a replacement pattern; markup without an `<svg>` element keeps the class on its first tag
+  return /<svg\b/.test(svg) ? svg.replace(/<svg\b/, match => match + attributes) : insertAttributes(svg, attributes)
 }
 
 /** The container Shopify fills with accelerated checkout buttons, `<div data-shopify="payment-button" class="shopify-payment-button">` as https://shopify.dev/docs/api/liquid/filters/payment_button prints it. The page's inside is a `<shopify-accelerated-checkout>` element carrying the shop's access token, shop id and variant data, which this package cannot know; the disabled unbranded "Buy it now" button here is Debutify's stand-in, not Shopify's markup. */
@@ -63,7 +66,7 @@ export const assetFilters: ShopifyFilterSet = {
   stylesheet_tag: { status: 'approx', handler: stylesheetTag },
   script_tag: { status: 'approx', handler: scriptTag },
   placeholder_svg_tag: { status: 'approx', handler: placeholderSvgTag },
-  payment_type_svg_tag: { status: 'approx', handler: paymentTypeSvgTag },
+  payment_type_svg_tag: { status: 'exact', handler: paymentTypeSvgTag },
   payment_button: { status: 'approx', handler: paymentButton },
   payment_terms: { status: 'approx', handler: paymentTerms }
 }

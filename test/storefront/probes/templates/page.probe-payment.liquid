@@ -1,0 +1,12 @@
+{%- layout none -%}
+{"unknown":{{ 'debutify_not_a_type' | payment_type_svg_tag | json }},
+"empty":{{ '' | payment_type_svg_tag | json }},
+"upper":{{ 'Visa' | payment_type_svg_tag | json }},
+"class":{{ 'visa' | payment_type_svg_tag: class: 'icon' | json }},
+"generic":{{ 'generic' | payment_type_svg_tag | json }},
+"unlisted":{{ 'bogus' | payment_type_svg_tag | json }},
+"prolog":{{ 'paidy' | payment_type_svg_tag | json }},
+"prolog_class":{{ 'paidy' | payment_type_svg_tag: class: 'icon' | json }},
+"entities":{{ 'mcb' | payment_type_svg_tag | json }},
+"wallets":[{{ 'apple_pay' | payment_type_svg_tag | json }},{{ 'google_pay' | payment_type_svg_tag | json }},{{ 'shopify_pay' | payment_type_svg_tag | json }}],
+"cards":[{{ 'maestro' | payment_type_svg_tag | json }},{{ 'jcb' | payment_type_svg_tag | json }},{{ 'unionpay' | payment_type_svg_tag | json }}]}
