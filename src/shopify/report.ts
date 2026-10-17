@@ -16,7 +16,7 @@ export type MissingKind = 'template' | 'layout' | 'section' | 'section_group' | 
  * - settings: `invalid_setting`, `unsafe_url`, `color_scheme` and `font_picker` (a value that was rejected or not found);
  * - filter input: `date_format` (an unknown named format) and `money_input` (a value `money` cannot read);
  * - requests: `recommendations` (a recommendations request whose intent is not `related` or `complementary`);
- * - a filter's own name, for an input or argument it could not use: the colour filters, the font filters (`font_face`, `font_modify`, `font_url`), the tag filters whose attribute names were dropped (`image_tag`, `video_tag`, `external_video_tag`, `script_tag`, `stylesheet_tag`) and `media_tag`.
+ * - a filter's own name, for an input or argument it could not use: the colour filters, the font filters (`font_face`, `font_modify`, `font_url`), the tag filters whose attribute names were dropped (`image_tag`, `video_tag`, `external_video_tag`, `script_tag`, `stylesheet_tag`, `preload_tag`, `model_viewer_tag`), `media_tag`, `inline_asset_content` (an asset of another type, or 15 KB or larger), `preload_tag` (no `as`), `structured_data` and `standard_event_data` (an object or event type they do not describe) and `metafield_tag` (a value that is not a metafield, or a type it does not print).
  */
 export type UnsupportedFeature =
   | 'app_block' | 'blocks' | 'content_for' | 'custom_css' | 'disabled_section' | 'locale_file' | 'order' | 'schema' | 'section' | 'section_group' | 'sections' | 'static_block' | 'unsafe_key' | 'wrapper'
@@ -26,6 +26,7 @@ export type UnsupportedFeature =
   | 'brightness_difference' | 'color_brightness' | 'color_contrast' | 'color_darken' | 'color_desaturate' | 'color_difference' | 'color_extract' | 'color_lighten' | 'color_mix' | 'color_modify' | 'color_saturate' | 'color_to_hex' | 'color_to_hsl' | 'color_to_oklch' | 'color_to_rgb' | 'hex_to_rgba'
   | 'font_face' | 'font_modify' | 'font_url'
   | 'external_video_tag' | 'image_tag' | 'media_tag' | 'script_tag' | 'stylesheet_tag' | 'video_tag'
+  | 'inline_asset_content' | 'preload_tag' | 'structured_data' | 'standard_event_data' | 'metafield_tag' | 'model_viewer_tag'
 
 export interface CountEntry {
   name: string

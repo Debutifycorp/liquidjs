@@ -15,6 +15,9 @@ import { colorFilters } from './color'
 import { fontFilters } from './font'
 import { jsonFilters } from './json'
 import { htmlSafeFilters } from './html-safe'
+import { hashFilters } from './hash'
+import { structuredFilters } from './structured'
+import { metafieldFilters } from './metafield'
 
 /** The Shopify filter implementations, one set per module. */
 export const SHOPIFY_FILTER_SETS: readonly ShopifyFilterSet[] = Object.freeze([
@@ -27,7 +30,10 @@ export const SHOPIFY_FILTER_SETS: readonly ShopifyFilterSet[] = Object.freeze([
   colorFilters,
   fontFilters,
   jsonFilters,
-  htmlSafeFilters
+  htmlSafeFilters,
+  hashFilters,
+  structuredFilters,
+  metafieldFilters
 ])
 
 export function shopifyFilterImplementations (): ShopifyFilterSet {

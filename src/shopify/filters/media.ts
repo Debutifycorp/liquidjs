@@ -282,6 +282,37 @@ function mediaTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   return imageTagFor(media)
 }
 
+/** The attributes `model_viewer_tag` writes after the model's `src`, in the order of https://shopify.dev/docs/api/liquid/filters/model_viewer_tag's output; a template's argument of the same name replaces the value in its place. */
+const MODEL_VIEWER_DEFAULTS = ['camera-controls', 'style', 'data-shopify-feature', 'alt', 'poster']
+
+/**
+ * A `<model-viewer>` for a 3D model, https://shopify.dev/docs/api/liquid/filters/model_viewer_tag: `src` (the model's `glb` source), `camera-controls="true"`, `style="--poster-color: transparent;"`, `data-shopify-feature="1.12"`, `alt` (the media's alt text, else the product's title) and `poster` (the preview image with the legacy `image_size`, `small` by default), as the page prints them. Other attributes a template names come first (`<model-viewer interaction-policy="allow-when-focused" src=…`), as the page's example shows; one that names a default attribute replaces its value in place, which the page states ("You can override these attributes") without an example of where it goes, so the place is not pinned.
+ *
+ * A model is a media with `media_type: 'model'` and its `sources` (`url`, `format`), https://shopify.dev/docs/api/liquid/objects/model; the store data has no 3D models (`MediaData` describes images and videos), so a theme meets one only in data a caller supplies. Anything that is not a model prints nothing and is reported.
+ */
+function modelViewerTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
+  const state = shopifyState(this.context)
+  const media = toValue(input) as Record<string, unknown> | undefined
+  if (!media || typeof media !== 'object' || media.media_type !== 'model') {
+    state.report.unsupported('model_viewer_tag', 'only a 3D model media has a model viewer')
+    return ''
+  }
+  const sources = (Array.isArray(media.sources) ? media.sources : []) as Array<Record<string, unknown>>
+  const source = sources.find(entry => stringify(entry.format) === 'glb') ?? sources[0]
+  const { named, order } = splitArgs(args)
+  const preview = imageSource(media.preview_image)
+  const defaults: Record<string, unknown> = {
+    'camera-controls': 'true',
+    style: '--poster-color: transparent;',
+    'data-shopify-feature': '1.12',
+    alt: altOrProductTitle(this.context, media.alt),
+    poster: preview ? state.services.imageUrl(preview.image, legacySize(named.image_size)) : undefined
+  }
+  const extra = namedAttributes(state.report, 'model_viewer_tag', named, order, ['src', 'image_size', ...MODEL_VIEWER_DEFAULTS])
+  const own = MODEL_VIEWER_DEFAULTS.map(name => attribute(name, hasOwn(named, name) ? named[name] : defaults[name])).join('')
+  return `<model-viewer${extra}${attribute('src', source?.url)}${own}></model-viewer>`
+}
+
 export const mediaFilters: ShopifyFilterSet = {
   image_url: { status: 'approx', handler: imageUrl },
   image_tag: { status: 'approx', handler: imageTag },
@@ -289,5 +320,6 @@ export const mediaFilters: ShopifyFilterSet = {
   video_tag: { status: 'approx', handler: videoTag },
   media_tag: { status: 'approx', handler: mediaTag },
   external_video_url: { status: 'approx', handler: externalVideoUrl },
-  external_video_tag: { status: 'approx', handler: externalVideoTag }
+  external_video_tag: { status: 'approx', handler: externalVideoTag },
+  model_viewer_tag: { status: 'approx', handler: modelViewerTag }
 }

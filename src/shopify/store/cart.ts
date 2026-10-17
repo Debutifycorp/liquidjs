@@ -18,6 +18,9 @@ const CART_MARKER = '__cart'
 /** The hidden field that holds the `DiscountResult` of a cart built by `buildCartObject`, which says which entered codes were rejected. */
 const DISCOUNTS_FIELD = '__discounts'
 
+/** The hidden field of a built cart that holds the codes the visitor entered, as the state has them. */
+const CODES_FIELD = '__codes'
+
 /**
  * The hidden fields that hold the visitor's text of a cart, or of a line, as it was stored. The `cart` object a template reads holds it HTML-escaped (`escapedText`), so `/cart.js` and `{{ cart | json }}` read it from here. Fixture `ajax-cart-text`: the parity store keeps the note, the attributes and the line item properties raw (`/cart.js`, step 2) and prints them escaped in Liquid (`cart.note`, `cart.attributes.<name>` and the values of `item.properties`, step 3, and through `json`, step 4), except in `{{ cart | json }}`, which prints them raw (the `ajax` of step 4).
  */
@@ -275,6 +278,7 @@ export function buildCartObject (store: StoreObjects, state: CartState): LiquidO
   hidden(cart, CART_MARKER, true)
   hidden(cart, RAW_TEXT, { note: state.note, attributes } satisfies RawText)
   hidden(cart, DISCOUNTS_FIELD, discounts)
+  hidden(cart, CODES_FIELD, state.discountCodes)
   return cart
 }
 
@@ -424,14 +428,14 @@ export function cartJson (data: StoreData, state: CartState, view: StoreView = r
     // `/cart.js` lists the applications as they are; the answers of add, change and update wrap each in its amount (fixture `ajax-discount-codes`, steps 1 and 8)
     cart_level_discount_applications: (cart.cart_level_discount_applications as LiquidObject[]).map(application => form === 'change' ? { amount: application.total_allocated_amount, discount_application: discountApplicationJson(application, 'change') } : discountApplicationJson(application, 'cart')),
     // the Cart API prints the list last (fixture `ajax-cart-session`, step 1)
-    discount_codes: codeStatus(cart, state)
+    discount_codes: codeStatus(cart)
   }
 }
 
-/** Each entered code with whether it applies: the codes that apply first and then the rejected ones, whatever order they were entered in (fixture `ajax-discount-codes`, step 8: `FREESHIP,WELCOME10` answers `WELCOME10` and then `FREESHIP`). */
-function codeStatus (cart: LiquidObject, state: CartState): Array<{ code: string, applicable: boolean }> {
+/** Each entered code of a built cart with whether it applies: the codes that apply first and then the rejected ones, whatever order they were entered in (fixture `ajax-discount-codes`, step 8: `FREESHIP,WELCOME10` answers `WELCOME10` and then `FREESHIP`). */
+export function codeStatus (cart: LiquidObject): Array<{ code: string, applicable: boolean }> {
   const rejected = new Set((cart[DISCOUNTS_FIELD] as DiscountResult).rejectedCodes.map(code => code.toLowerCase()))
-  const codes = enteredCodes(state.discountCodes).map(code => ({ code, applicable: !rejected.has(code.toLowerCase()) }))
+  const codes = enteredCodes(cart[CODES_FIELD] as string[]).map(code => ({ code, applicable: !rejected.has(code.toLowerCase()) }))
   return [...codes.filter(entry => entry.applicable), ...codes.filter(entry => !entry.applicable)]
 }
 
@@ -439,7 +443,7 @@ function codeStatus (cart: LiquidObject, state: CartState): Array<{ code: string
  * The `discount_codes` of the Cart API's answers, https://shopify.dev/docs/api/ajax/reference/cart: each code of the cart with whether it applies to it. A code applies when it is a discount of the store that the cart qualifies for and that combines with the discounts Shopify picks for it (`applyDiscounts`); none does once the cart is empty (fixture `ajax-discount-codes`, step 14: `clear.js` keeps the codes). A code is read in any case and is answered as it was entered.
  */
 export function discountCodeStatus (data: StoreData, state: CartState, view: StoreView = resolveView(data, {})): Array<{ code: string, applicable: boolean }> {
-  return codeStatus(buildCartObject(buildStore(data, view), state), state)
+  return codeStatus(buildCartObject(buildStore(data, view), state))
 }
 
 /**

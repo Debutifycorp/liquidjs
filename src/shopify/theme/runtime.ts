@@ -446,6 +446,10 @@ class PageRender implements ThemeHooks {
     this.root = new Context({}, theme.liquid.options, { sync: false, globals: this.globals, renderLimit: options.renderLimit, memoryLimit: options.memoryLimit }, { liquid: theme.liquid, errors: this.errors })
   }
 
+  public themeFile (path: string): string | undefined {
+    return this.theme.source(path)
+  }
+
   public async page (): Promise<RenderPageResult> {
     const html = withStoreElements(await toPromise(this.renderDocument()), this.state, this.globals)
     return { html, report: this.state.report.toReport(this.errors, now() - this.started), templateName: this.templateName }

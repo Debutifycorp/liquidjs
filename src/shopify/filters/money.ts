@@ -85,9 +85,36 @@ function moneyWithoutTrailingZeros (this: FilterImpl, input: unknown) {
   return amount === undefined ? '' : formatMoney(amount, shopifyState(this.context).money.format, true)
 }
 
+/** An amount in cents as a plain decimal in currency units, as Ruby prints a float: at least one digit after the point, no thousands separator, no symbol (`1000` is `10.0`, `8295` is `82.95`). */
+export function decimalAmount (cents: number): string {
+  const units = cents / 100
+  return Number.isInteger(units) ? units.toFixed(1) : String(units)
+}
+
+/** The price as a plain decimal, https://shopify.dev/docs/api/liquid/filters/money_amount ("a plain decimal string, without currency symbols, thousand separators, or locale formatting"; `1000` prints `10.0`). The parity store prints Dawn's `data-selected-price-amount="{{ … price | default: 0 | money_amount | escape }}"` as `90.0`, `25.0`, `200.0` and, on the Europe market, `82.95` (private parity recordings of Dawn: `page-product-variant`, `page-product-subscription`, `page-product-requires-plan` and `page-product-en-eu`). Nil and other inputs are read as `money` reads them (`cents`). */
+function moneyAmount (this: FilterImpl, input: unknown) {
+  const amount = cents(this, input)
+  return amount === undefined ? '' : decimalAmount(amount)
+}
+
+/**
+ * The unit price with its measurement, https://shopify.dev/docs/api/liquid/filters/unit_price_with_measurement: a number is formatted with the shop's "HTML without currency" format, as `money` formats it, a string (a price a money filter already formatted) is kept as it is, and `/` and the measurement's `reference_unit` follow (`5000` with a measurement of `kg` prints `$50.00/kg`, and `5000 | money_with_currency` prints `$50.00 CAD/kg`). A `reference_value` other than 1 is written before the unit (`$5.00/100g`), as Shopify's themes printed it before the filter existed (Dawn's `unit-price` snippet: `reference_value` when it is not 1, then `reference_unit`); the page's examples have a value of 1, so that form is not pinned. Without a measurement the price prints alone, and nil prints nothing, which is not pinned either. The store data has no unit prices (`variant.unit_price_measurement` is nil).
+ */
+function unitPriceWithMeasurement (this: FilterImpl, input: unknown, measurement: unknown) {
+  const value = plainValue(toValue(input))
+  const price = typeof value === 'string' ? value : money.call(this, value)
+  const unit = toValue(measurement) as Record<string, unknown> | null | undefined
+  const name = unit && typeof unit === 'object' ? plainValue(toValue(unit.reference_unit)) : undefined
+  if (price === '' || isNil(name) || name === '') return price
+  const reference = Number(plainValue(toValue(unit!.reference_value)))
+  return `${price}/${Number.isFinite(reference) && reference !== 1 ? reference : ''}${String(name)}`
+}
+
 export const moneyFilters: ShopifyFilterSet = {
   money: { status: 'approx', handler: money },
   money_with_currency: { status: 'approx', handler: moneyWithCurrency },
   money_without_currency: { status: 'approx', handler: moneyWithoutCurrency },
-  money_without_trailing_zeros: { status: 'approx', handler: moneyWithoutTrailingZeros }
+  money_without_trailing_zeros: { status: 'approx', handler: moneyWithoutTrailingZeros },
+  money_amount: { status: 'exact', handler: moneyAmount },
+  unit_price_with_measurement: { status: 'approx', handler: unitPriceWithMeasurement }
 }

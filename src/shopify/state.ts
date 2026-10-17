@@ -30,6 +30,8 @@ export interface ThemeHooks {
   renderStaticBlock: (type: string, id: string, params: Record<string, unknown>, ctx: Context) => Generator<unknown, string, unknown>
   /** `{% render block %}`: the block's markup, or `undefined` when `value` is not a block of this page. */
   renderBlockObject?: (value: object, ctx: Context) => Generator<unknown, string | undefined, unknown>
+  /** The text of the theme's file at `path` (`assets/icon-cart.svg`), its base theme's when the theme lays over one, or `undefined` when neither has it; `inline_asset_content` reads assets through it. */
+  themeFile?: (path: string) => string | undefined
 }
 
 export interface ShopifyState {

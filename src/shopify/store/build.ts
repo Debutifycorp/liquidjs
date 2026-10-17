@@ -123,6 +123,15 @@ export const isBuiltVariant = (value: unknown): value is LiquidObject => typeof 
 /** Whether `value` is a product built by `buildProduct` (or selected by `selectProduct`). */
 export const isBuiltProduct = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject)[PRODUCT_MARKER] === true
 
+/** Whether `value` is a collection built by `buildCollection` (or a view of one `collectionView` makes, which keeps its hidden fields). */
+export const isBuiltCollection = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && Object.prototype.hasOwnProperty.call(value, MANUAL_ORDER)
+
+/** The hidden field that marks a built article. */
+const ARTICLE_MARKER = '__article'
+
+/** Whether `value` is an article built by `buildArticle`. */
+export const isBuiltArticle = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject)[ARTICLE_MARKER] === true
+
 /**
  * Makes `object` print as its handle: https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings says of the `product`, `collection`, `page`, `blog` and `article` settings that "outputting the setting directly will return the object's handle". Applied to the object itself, so a setting returns the store's own object and `==`, `contains` and the filters that take the object work as on any other; shopify.dev does not say what the object prints elsewhere (a `product_list` element, `{{ product }}` on a product page), so the same handle is printed there too, on the confirm-on-a-development-store list. The `toString` is not enumerable, so `json`, `inspect` and `for` do not see it.
  */
@@ -459,7 +468,7 @@ function buildPage (data: PageData, prefix: string): LiquidObject {
 /** https://shopify.dev/docs/api/liquid/objects/article, at its URL under `prefix`. Comments are not modelled: `comments` is empty and `comments_enabled?` false. */
 function buildArticle (data: ArticleData, blogHandle: string, prefix: string): LiquidObject {
   const author = data.author ?? ''
-  return printsHandle({
+  const article = printsHandle({
     id: data.id,
     handle: data.handle,
     title: data.title,
@@ -478,6 +487,8 @@ function buildArticle (data: ArticleData, blogHandle: string, prefix: string): L
     'comments_enabled?': false,
     metafields: {}
   })
+  hidden(article, ARTICLE_MARKER, true)
+  return article
 }
 
 /** `articles` newest first, by the time their `published_at` holds (whatever its UTC offset); a tie keeps the order it came in, and an article whose `published_at` is no date sorts after every dated one. */
