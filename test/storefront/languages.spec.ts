@@ -149,7 +149,7 @@ describe('dates in the page\'s language', () => {
   it('writes Arabic dates as the runtime writes them in Arabic', async () => {
     const ar = await page('ar')
     const when = new Date('2018-12-31T16:56:00Z')
-    const intl = (options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('ar', options).format(when)
+    const intl = (options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('ar', { timeZone: 'UTC', ...options }).format(when)
     expect(ar.date).toBe(intl({ year: 'numeric', month: 'long', day: 'numeric' }))
     expect(ar.date).not.toMatch(/December/)
     expect(ar.words).toContain(intl({ weekday: 'long' }))
