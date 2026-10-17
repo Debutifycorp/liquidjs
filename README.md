@@ -89,7 +89,7 @@ One behaviour differs from upstream without an opt-in: the `slice` filter charge
 - **A name written twice prints once.** Every filter that writes named arguments as attributes prints a name written twice where it was first written, with its last value; 1.2 printed it twice.
 - **A media preview image has no `id`.** `media.preview_image.id` is nil, as the parity store prints it, where 1.2 gave the media's id.
 - **A focal point prints as Ruby decimals**: `50.0% 50.0%`, where 1.2 printed `50% 50%`, in `focal_point` and in `image_tag`'s `style`; `1.9231% 9.7917%` is unchanged.
-- **The colour filters return a colour object.** `color_darken`, `color_lighten`, `color_saturate`, `color_desaturate`, `color_modify` and `color_mix` return a `ColorDrop` that prints the text 1.2 returned and also answers `.red`, `.green`, `.blue` and the other fields of a colour. A caller that checks `typeof result === 'string'` reads `String(result)` instead. A `ColorDrop`, a `color` setting's included, writes its text through `json` (`"#334fb4"`).
+- **The colour filters return a colour object.** `color_darken`, `color_lighten`, `color_saturate`, `color_desaturate`, `color_modify` and `color_mix` return a `ColorDrop` that prints the text 1.2 returned and also answers `.red`, `.green`, `.blue` and the other fields of a colour. A caller that checks `typeof result === 'string'` reads `String(result)` instead. A `ColorDrop`, a `color` setting's included, writes its text through `json` (`"#334fb4"`). `size` of the result is 0, as for a `color` setting, where 1.2's string gave its length (7 for `#bfbfbf`).
 
 **Types**
 
@@ -590,8 +590,8 @@ shopify.dev does not pin these outputs, or pins only part of the filter, tag or 
 
 **Filters the themes use**
 
-- [`inline_asset_content`](https://shopify.dev/docs/api/liquid/filters/inline_asset_content) for a missing asset, a name without an SVG, JS or CSS extension (Dawn's `'icon-error' | inline_asset_content` on its password page) or a file of 15 KB or more: each prints nothing and is reported here.
-- [`preload_tag`](https://shopify.dev/docs/api/liquid/filters/preload_tag) without `as` prints nothing and is reported.
+- [`inline_asset_content`](https://shopify.dev/docs/api/liquid/filters/inline_asset_content) for a missing asset, a name without an SVG, JS or CSS extension (Dawn's `'icon-error' | inline_asset_content` on its password page) or a file of 15 KB or more: each prints nothing and is reported here. A Liquid asset (`assets/x.css.liquid`, which Shopify serves as `x.css`) asked for by its served name is reported missing, since only `assets/<name>` is read; none of the three themes has one.
+- [`preload_tag`](https://shopify.dev/docs/api/liquid/filters/preload_tag) without `as` prints the tag without `as` and is reported.
 - [`structured_data`](https://shopify.dev/docs/api/liquid/filters/structured_data) of a product with only the default variant (a `Product`, from the page's example), an article with an image, a variant's SKU or barcode, a taxonomy category, and nil (nothing, not reported).
 - [`standard_event_data`](https://shopify.dev/docs/api/liquid/filters/standard_event_data) of a cart with discount codes or a discounted line, a cart that was created and emptied (null here), a context outside the page's lists (null here), and nil (nothing, not reported).
 - [`login_button`](https://shopify.dev/docs/api/liquid/filters/login_button) prints nothing, since the store has no Shop account to follow; the Follow on Shop button is not pinned.
