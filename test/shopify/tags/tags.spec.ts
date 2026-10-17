@@ -108,6 +108,8 @@ describe('form', () => {
   it('gives an address form the fields of its address, HTML-escaped', async () => {
     expect(await render(`{% form 'customer_address', address %}${fields}{% endform %}`, { address })).toContain('Ana|Ruiz|Ruiz &lt;Ltd&gt;|2 Side Rd||Portland|Oregon|United States|97201|+1 503 555 0100</form>')
     expect(await render(`{% form 'customer_address', address %}{% if form.address2 == blank %}no second line{% endif %}{% endform %}`, { address })).toContain('no second line')
+    // `name`, `email` and `body` are fields of other forms, so an address does not fill them
+    expect(await render("{% form 'customer_address', address %}[{{ form.name }}|{{ form.email }}|{{ form.body }}]{% endform %}", { address: { ...address, name: 'Ana Ruiz', email: 'ana@example.com', body: 'x' } })).toContain('[||]</form>')
   })
   it('gives a new address form no fields', async () => {
     expect(await render(`{% form 'customer_address', customer.new_address %}${fields}{% endform %}`, { customer: {} })).toContain('|||||||||</form>')

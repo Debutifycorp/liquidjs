@@ -1,4 +1,5 @@
 import { storefrontSampleData as data } from '../../../src/shopify'
+import type { StoreData } from '../../../src/shopify'
 import { loadFixture } from '../fixtures'
 import { harness, harnessTheme, line } from './harness'
 
@@ -36,6 +37,20 @@ describe('pages', () => {
     expect((await send('GET', '/en-ca')).text).toContain('[Free shipping for Canada!]')
     expect((await send('GET', '/en-ca/products/hoodie')).text).toContain('[Free shipping for Canada!]')
     expect((await send('GET', '/en-ca?section_id=sections--header-group__banner')).text).toContain('[Free shipping for Canada!]')
+  })
+
+  it('applies no contextual section group file to a store with no markets, whose stand-in market handle `default` is no market', async () => {
+    const files = {
+      ...harnessTheme().files,
+      'layout/theme.liquid': '<!doctype html><html><head>{{ content_for_header }}</head><body>{% sections "header-group" %}{{ content_for_layout }}</body></html>',
+      'sections/banner.liquid': '[{{ section.settings.text }}]{% schema %}{"name":"Banner","settings":[{"type":"text","id":"text","default":"Welcome"}]}{% endschema %}',
+      'sections/header-group.json': '{"type":"header","name":"Header","sections":{"banner":{"type":"banner"}},"order":["banner"]}',
+      'sections/header-group.context.default.json': '{"parent":"header-group.json","context":{"market":"default"},"sections":{"banner":{"settings":{"text":"Default market"}}}}'
+    }
+    const { send } = harness({ theme: { files }, data: { ...data, markets: undefined } as StoreData })
+    const home = (await send('GET', '/')).text
+    expect(home).toContain('[Welcome]')
+    expect(home).not.toContain('Default market')
   })
 
   it('answers ?section_id= and ?sections= on any page', async () => {

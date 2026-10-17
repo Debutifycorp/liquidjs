@@ -87,6 +87,8 @@ const FORM_TYPES: Record<string, FormType> = {
 const hidden = (name: string, value: string, verbatim = false) => `<input type="hidden" name="${escapeHtml(name)}" value="${verbatim ? value : escapeHtml(value)}" />`
 
 /** The values a form keeps from a post, https://shopify.dev/docs/api/liquid/objects/form: `email`, `body`, `name`, `phone`, `first_name` and `last_name` (`null` when not posted), and the others the page lists (`author` of `new_comment`, `message` of the gift card in a `product` form, and the address fields of `customer_address`), which are nil when not posted and so are not set then. */
+/** The fields shopify.dev lists for a `customer_address` form (`name`, `email` and `body` belong to other forms): the ones an existing address fills. */
+const ADDRESS_FIELDS = ['first_name', 'last_name', 'phone', 'company', 'address1', 'address2', 'city', 'province', 'country', 'zip']
 const MORE_POSTED_VALUES = ['author', 'message', 'address1', 'address2', 'city', 'company', 'country', 'province', 'zip']
 
 /**
@@ -169,7 +171,7 @@ export class FormDrop extends Drop {
     // a `customer_address` form for an existing address starts from that address, https://shopify.dev/docs/api/liquid/objects/form: the address fields are the address's until the visitor posts others; a new address form (nil resource) has none
     const address = formType === 'customer_address' ? resource : undefined
     const held = (key: string) => {
-      const value = address ? toValue(address[key]) : undefined
+      const value = address && ADDRESS_FIELDS.includes(key) ? toValue(address[key]) : undefined
       return value === undefined || value === null ? null : escaped(stringify(value))
     }
     const posted = (key: string) => (hasOwn(values, key) ? escaped(values[key]) : held(key))
