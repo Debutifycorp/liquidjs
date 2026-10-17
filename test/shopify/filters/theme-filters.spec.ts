@@ -14,10 +14,11 @@ async function render (source: string, scope: Record<string, unknown> = {}, file
 }
 
 /** A page of the sample store at `url`, rendered with `source` as its template and nothing around it. */
-async function page (url: string, source: string, options: { cart?: CartState, theme?: ThemeInput } = {}) {
-  const { templateName, request, locale } = requestFromUrl(url, data)
+async function page (url: string, source: string, options: { cart?: CartState, theme?: ThemeInput, store?: typeof data } = {}) {
+  const store = options.store ?? data
+  const { templateName, request, locale } = requestFromUrl(url, store)
   const theme = options.theme ?? { files: { 'layout/theme.liquid': '{{ content_for_layout }}', [`templates/${templateName}.liquid`]: source } }
-  return renderPage({ data, theme, templateName, request: { ...request, origin: ORIGIN }, locale, cart: options.cart })
+  return renderPage({ data: store, theme, templateName, request: { ...request, origin: ORIGIN }, locale, cart: options.cart })
 }
 
 const cartOf = (lines: Array<[number, number]>, discountCodes: string[] = []): CartState => ({ token: 'c1', lines: lines.map(([variantId, quantity]) => ({ variantId, quantity, properties: {}, sellingPlanId: null })), note: null, attributes: {}, discountCodes })
@@ -27,7 +28,7 @@ describe('shopify filters the three themes use', () => {
   describe('md5', () => {
     it("hashes the string as the page's example and Horizon's recorded product card do", async () => {
       expect((await render("{{ '' | md5 }}|{{ nil | md5 }}")).html).toBe('d41d8cd98f00b204e9800998ecf8427e|d41d8cd98f00b204e9800998ecf8427e')
-      expect((await render("{{ 'product-card-link-AbHJ5di9SRWw4MDRue__product-card-15428059824427' | md5 }}")).html).toBe('8eaa9140b35554eced3eec874283182d')
+      expect((await render("{{ 'product-card-link-block-1__product-card-42' | md5 }}")).html).toBe('4f3451826fe48eccf3d58fec5b27eeb1')
       expect(filterStatus('md5')).toBe('exact')
     })
   })
@@ -67,6 +68,25 @@ describe('shopify filters the three themes use', () => {
       const base: ThemeInput = { files: { 'layout/theme.liquid': '{{ content_for_layout }}', 'assets/icon-search.svg': svg, 'templates/index.liquid': "{{ 'icon-search.svg' | inline_asset_content }}" } }
       const overlay: ThemeInput = { base, files: { 'templates/index.liquid': "<i>{{ 'icon-search.svg' | inline_asset_content }}</i>" } }
       expect((await page('/', '', { theme: overlay })).html).toBe(`<i>${svg}</i>`)
+    })
+    it('reads only a file under assets/, so a path out of it or an address prints nothing and is reported missing', async () => {
+      const outside = { ...files, 'snippets/s.css': 's{}', 'x.svg': '<svg/>' }
+      const { html, report } = await render("[{{ '../snippets/s.css' | inline_asset_content }}{{ 'https://example.com/x.svg' | inline_asset_content }}{{ '/x.svg' | inline_asset_content }}]", {}, outside)
+      expect(html).toBe('[]')
+      expect(report.missing).toEqual([{ kind: 'resource', name: 'assets/../snippets/s.css' }, { kind: 'resource', name: 'assets/https://example.com/x.svg' }, { kind: 'resource', name: 'assets//x.svg' }])
+    })
+  })
+
+  // the JSON both filters print sits in a <script> or an attribute, so a hostile text must not close it
+  describe('structured_data and standard_event_data escaping', () => {
+    it('writes </script> in a product title as <\\/script>', async () => {
+      const hostile = '</script><script>x</script>'
+      const store = { ...data, products: data.products!.map(entry => entry.handle === 'hoodie' ? { ...entry, title: hostile } : entry) }
+      const { html } = await page('/products/hoodie', "{{ product | structured_data }}|{{ product | standard_event_data: 'view' }}", { store })
+      expect(html).not.toContain('</script>')
+      expect(html).not.toContain('<script>')
+      expect(html.split('|').map(part => JSON.parse(part).name ?? JSON.parse(part).product.title)).toEqual([hostile, hostile])
+      expect(html).toContain('\\u003c\\/script\\u003e\\u003cscript\\u003ex\\u003c\\/script\\u003e')
     })
   })
 
@@ -135,6 +155,15 @@ describe('shopify filters the three themes use', () => {
     it('writes the focal point as Ruby decimals, as the focal_point object prints', async () => {
       const source = '{{ image | image_url: width: 300 | image_tag }}|{{ image.presentation.focal_point }}'
       expect((await render(source, { image: cap({ x: 50, y: 50 }) })).html).toBe(`<img src="${url(300)}" alt="Cap" srcset="${url(300)} 300w" width="300" height="300" style="object-position:50.0% 50.0%;">|50.0% 50.0%`)
+    })
+  })
+
+  // a variant filter shows the matching variant's media as the product's featured_media: its own alt text, its id kept, while its preview_image has none
+  describe('featured_media under a variant filter', () => {
+    it('keeps the media id on a filtered collection and search', async () => {
+      const source = (list: string) => `{% for p in ${list} %}{% if p.handle == 'beanie' or p.handle == 'hoodie-old' %}{{ p.handle }}:{{ p.featured_media.id }}:[{{ p.featured_media.preview_image.id }}];{% endif %}{% endfor %}`
+      expect((await page('/collections/all?filter.v.option.color=Red', source('collection.products'))).html).toBe('beanie:39774611767318:[];hoodie-old:39774600364054:[];')
+      expect((await page('/search?q=hoodie&type=product&filter.v.option.color=Red', source('search.results'))).html).toBe('hoodie-old:39774600364054:[];')
     })
   })
 
