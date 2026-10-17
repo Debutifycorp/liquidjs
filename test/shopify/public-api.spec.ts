@@ -7,7 +7,7 @@ describe('the /shopify entry', () => {
     expect(added).toEqual([
       'ColorDrop', 'ColorSchemeDrop', 'ContentForTag', 'DocTag', 'ExternalVideoUrlDrop', 'FontDrop', 'FormTag', 'ImageDrop', 'ImageUrlDrop', 'JavascriptTag', 'PaginateTag',
       'SHOPIFY_DEFAULT_LIMITS', 'SchemaTag', 'SectionTag', 'SectionsTag', 'SettingsDrop', 'ShopifyLayoutTag', 'ShopifyTablerowTag', 'StyleTag', 'StylesheetTag', 'Translator', 'VideoUrlDrop',
-      'cartJson', 'compileTheme', 'createShopifyLiquid', 'defaultServices', 'discountCodeStatus', 'findVariant', 'isShopifyFontFile', 'lineItemJson', 'lineKey', 'localePrefixes', 'parseWrapper', 'predictiveJson', 'productJson', 'recommendationsJson', 'renderLiquid', 'renderPage', 'renderSection', 'requestFromUrl', 'resolveView', 'sampleStoreData', 'setViewCacheSize', 'shippingRates', 'shopifyFilterRegistry', 'shopifyFontInfo', 'shopifyPaymentIcon', 'stockFor', 'storefrontSampleData'
+      'cartJson', 'compileTheme', 'createShopifyLiquid', 'defaultServices', 'discountCodeStatus', 'findVariant', 'isShopifyFontFile', 'languageOf', 'lineItemJson', 'lineKey', 'localePrefixes', 'parseWrapper', 'predictiveJson', 'productJson', 'recommendationsJson', 'renderLiquid', 'renderPage', 'renderSection', 'requestFromUrl', 'resolveView', 'sampleStoreData', 'setViewCacheSize', 'shippingRates', 'shopifyFilterRegistry', 'shopifyFontInfo', 'shopifyPaymentIcon', 'stockFor', 'storefrontSampleData', 'themeLanguages', 'withLanguages'
     ])
   })
   it('exports CartLinesData, the cart shape 1.0 had, beside the CartData union (final review C, M1)', () => {
