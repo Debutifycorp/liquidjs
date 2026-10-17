@@ -38,10 +38,25 @@ describe('image alt (rows 21; scenarios page-product and page-collections)', () 
     expect(out).toBe('gray-runners[Gray Runners] canvas-sneakers[Canvas Sneakers] white-leather-sneakers[White Leather Sneakers] high-top-sneakers[] gray-leather-sneakers[Gray Leather Sneakers] ')
   })
 
+  it('selects the first matching variant of a product the variant filters narrow, and no variant of one they leave whole (scenario page-collection-filtered: only high-top-sneakers prints "selectedVariant":{…"title":"6"…})', async () => {
+    const out = await render('{% for p in collection.products %}{{ p.handle }}[{{ p.selected_variant.title }}|{{ p.selected_or_first_available_variant.selected }}] {% endfor %}', '/collections/all?filter.v.availability=1&filter.p.product_type=Shoes&sort_by=price-ascending')
+    expect(out).toBe('gray-runners[|false] canvas-sneakers[|false] white-leather-sneakers[|false] high-top-sneakers[6|true] gray-leather-sneakers[|false] ')
+    const event = await render('{% for p in collection.products %}{{ p | standard_event_data: \'view\', context: \'collection\' }}{% endfor %}', '/collections/all?filter.v.availability=1&filter.p.product_type=Shoes&sort_by=price-ascending')
+    expect(event).toContain('"handle":"high-top-sneakers","selectedVariant":{"id":')
+    expect(event).toContain('"selectedOptions":[{"name":"Size","value":"6"}]}')
+    expect(event.match(/"selectedVariant":null/g)).toHaveLength(4)
+  })
+
   it('shows the matching variant\'s media as the bare image in a search filtered by variant too (the same mechanism as the collection page; search is not recorded with variant filters)', async () => {
     const out = await render('{% for r in search.results %}{{ r.handle }}[{{ r.featured_media.alt }}] {% endfor %}', '/search?q=sneakers&filter.v.availability=1&filter.p.product_type=Shoes')
     expect(out).toContain('high-top-sneakers[] ')
     expect(out).toMatch(/canvas-sneakers\[Canvas Sneakers\] /)
+  })
+
+  it('selects the matching variant in a search filtered by variant too', async () => {
+    const out = await render('{% for r in search.results %}{{ r.handle }}[{{ r.selected_variant.title }}] {% endfor %}', '/search?q=sneakers&filter.v.availability=1&filter.p.product_type=Shoes')
+    expect(out).toContain('high-top-sneakers[6] ')
+    expect(out).toMatch(/canvas-sneakers\[\] /)
   })
 
   it('keeps the alt text an image has', async () => {

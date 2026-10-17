@@ -2,7 +2,7 @@ import { HandleMap } from '../objects/handle-map'
 import { variantMedia } from '../objects/image'
 import { SafeHtmlDrop } from '../objects/safe-html'
 import { escapeHtml } from '../util/html'
-import { AUTOMATIC_COLLECTIONS, buildCollection, copyObject, lazy, manualProductsOf } from './build'
+import { AUTOMATIC_COLLECTIONS, buildCollection, copyObject, lazy, manualProductsOf, selectProduct } from './build'
 import type { LiquidObject, StoreObjects } from './build'
 import { applyFilters, buildFilters, filterMatcher, requestQuery } from './filters'
 import type { RequestInput } from './globals'
@@ -17,13 +17,17 @@ type Product = LiquidObject
 
 /** A copy of a built object with `changes` set, keeping its accessors (a collection's `tags` reads the copy's `products`), its hidden fields and its printing as a handle. */
 function copyOf (object: LiquidObject, changes: LiquidObject): LiquidObject {
-  const copy = copyObject(object)
+  return assign(copyObject(object), changes)
+}
+
+/** `copy` with `changes` set, in place. */
+function assign (copy: LiquidObject, changes: LiquidObject): LiquidObject {
   for (const [key, value] of Object.entries(changes)) Object.defineProperty(copy, key, { value, enumerable: true, configurable: true, writable: true })
   return copy
 }
 
 /**
- * The collection a request shows, https://shopify.dev/docs/api/liquid/objects/collection: its products narrowed to the tag path's tags (every tag, https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/tag-filtering), then to the active filters, then sorted by the request's `sort_by` (the collection's default order when it names none or a value the sort options do not list). `products_count` counts the result and `all_products_count` stays the collection's size, as the parity store prints them (fixture `probe-collection-tag`: 6 of 29); `sort_by` is the requested value, empty when the request names none (fixture `probe-collection-all`); `filters` come from the products before the filters, with the active ones marked (`buildFilters`). Under variant filters a product's `url` and `featured_media` are those of its first matching variant (`Matcher.firstVariant`). The built collection is shared by every request of a view, so this returns a copy, which keeps the built collection's `tags` (`buildCollection`): a collection of the store's has the tags of all its products whatever the filters and the page (recorded: page 1, page 3 and `filter.p.tag`, fixtures `probe-collection-suffix`, `-page-3` and `-filtered`; a tag path and a sort are not recorded), and one Shopify makes the tags of its `products`, the page's inside a `paginate` block (fixtures `probe-collection-all` and `probe-collection-page-2`). `path` is the address the filters' links extend, without its query.
+ * The collection a request shows, https://shopify.dev/docs/api/liquid/objects/collection: its products narrowed to the tag path's tags (every tag, https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/tag-filtering), then to the active filters, then sorted by the request's `sort_by` (the collection's default order when it names none or a value the sort options do not list). `products_count` counts the result and `all_products_count` stays the collection's size, as the parity store prints them (fixture `probe-collection-tag`: 6 of 29); `sort_by` is the requested value, empty when the request names none (fixture `probe-collection-all`); `filters` come from the products before the filters, with the active ones marked (`buildFilters`). Under variant filters a product's `url` and `featured_media` are those of its first matching variant (`Matcher.firstVariant`), which is also its `selected_variant` (see `Matcher.firstVariant`). The built collection is shared by every request of a view, so this returns a copy, which keeps the built collection's `tags` (`buildCollection`): a collection of the store's has the tags of all its products whatever the filters and the page (recorded: page 1, page 3 and `filter.p.tag`, fixtures `probe-collection-suffix`, `-page-3` and `-filtered`; a tag path and a sort are not recorded), and one Shopify makes the tags of its `products`, the page's inside a `paginate` block (fixtures `probe-collection-all` and `probe-collection-page-2`). `path` is the address the filters' links extend, without its query.
  */
 export function collectionView (collection: LiquidObject, request: RequestInput, storefrontFilters: FilterData[], currency: ViewCurrency, path: string): LiquidObject {
   // the data's order, not `products`, which is already in the default order: `sort_by=manual` and the ties of every other sort keep the data's
@@ -39,7 +43,9 @@ export function collectionView (collection: LiquidObject, request: RequestInput,
     const variant = matcher.firstVariant(product)
     // the matching variant's media is shown as the bare image: its `alt` is empty where the product's reads the title (scenario `page-collection-filtered`: `<img alt="">` for the card of a product shown through its variant)
     const media = variant?.featured_media
-    return variant ? copyOf(product, { url: variant.url, featured_media: variantMedia(media) ?? product.featured_media }) : product
+    if (!variant) return product
+    // `selectProduct` makes the copy, which the url and the media are then set on
+    return assign(selectProduct(product, variant.id as number), { url: variant.url, featured_media: variantMedia(media) ?? product.featured_media })
   }
   const linked = active.some(([name]) => name.startsWith('filter.v.'))
   const view = copyOf(collection, { products_count: sorted.length, sort_by: named ?? '' })
