@@ -1,6 +1,7 @@
 import { RawBodyTag } from '../../tags/raw-body'
 import type { Context } from '../../context'
 import { shopifyState, ShopifyState } from '../state'
+import { parseJsonc } from '../util/jsonc'
 
 /** A raw-body tag that prints nothing where it stands, so its `blank()` is `true`: a block that holds only one is blank too. Ruby Liquid's `Raw#blank?` is `@body.empty?`, which the engine's `RawBodyTag` follows; `schema`, `javascript` and `stylesheet` are Shopify's own, and Shopify does not document their blankness. `DocTag` follows Ruby's `Doc#blank?` instead. */
 abstract class SilentRawTag extends RawBodyTag {
@@ -21,9 +22,9 @@ abstract class SilentRawTag extends RawBodyTag {
 export class SchemaTag extends SilentRawTag {
   private parsed?: { value: unknown }
 
-  /** The schema, parsed on first use. Throws the JSON error if the body is not valid JSON. */
+  /** The schema, parsed on first use, with comments and trailing commas allowed (https://shopify.dev/docs/storefronts/themes/architecture#json-with-comments: "Users can add comments within `config/settings_schema.json` and within schema tags"). Throws the JSON error if the body is not valid JSON. */
   public get json (): unknown {
-    if (!this.parsed) this.parsed = { value: JSON.parse(this.body) }
+    if (!this.parsed) this.parsed = { value: parseJsonc(this.body) }
     return this.parsed.value
   }
 }

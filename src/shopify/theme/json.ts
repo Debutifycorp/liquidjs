@@ -1,13 +1,11 @@
 import { escapeHtml } from '../util/html'
 import { isRecord, own } from '../util/own'
+import { parseJsonc } from '../util/jsonc'
 
-/** Shopify's editor writes a `/* … *\/` notice at the top of the JSON files it generates (templates, section groups, `settings_data.json`); JSON.parse does not accept it. shopify.dev does not describe the notice. */
-const LEADING_COMMENT = /^\s*\/\*[\s\S]*?\*\//
-
-/** Parses a theme JSON file (template, section group, settings, locale), allowing Shopify's leading comment. Throws `<file>: <JSON error>`. */
+/** Parses a theme JSON file (template, section group, settings, locale) as Shopify does: comments and trailing commas are allowed, including the `/* … *\/` notice the editor writes at the top of the files it generates. https://shopify.dev/docs/storefronts/themes/architecture#json-with-comments. Throws `<file>: <JSON error>`. */
 export function parseThemeJson (source: string, file: string): unknown {
   try {
-    return JSON.parse(source.replace(LEADING_COMMENT, ''))
+    return parseJsonc(source)
   } catch (err) {
     throw new Error(`${file}: ${(err as Error).message}`)
   }
