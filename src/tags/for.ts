@@ -69,7 +69,7 @@ export default class extends Tag {
     ctx.setRegister(continueKey, (hash['offset'] || 0) + collection.length)
     // the loops being rendered, innermost last, as Ruby Liquid keeps them in `registers[:for_stack]`: an `include` shares the context and sees the outer loop as `parentloop`, a `render` has a context of its own and does not
     const stack = ctx.getRegister<ForloopDrop[]>(FOR_STACK, [])
-    const forloop = new ForloopDrop(collection.length, this.collection.getText(), this.variable, stack[stack.length - 1] ?? null)
+    const forloop = new ForloopDrop(collection.length, this.collection.getText(), this.variable, this.liquid.options.forloopParentloop ? stack[stack.length - 1] ?? null : undefined)
     const scope = createScope({ forloop })
     ctx.push(scope)
     stack.push(forloop)

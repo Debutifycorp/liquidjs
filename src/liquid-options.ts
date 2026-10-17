@@ -33,6 +33,8 @@ export interface LiquidOptions {
   jsTruthy?: boolean;
   /** `'ruby'` keeps whole numbers and decimals apart as Shopify Liquid does: `{{ 10 | divided_by: 4 }}` is `2`, `{{ 2.0 }}` prints `2.0`, and decimal arithmetic is exact for decimals within the safe-integer range. Decimal values that reach API callers (`evalValue`, `evalValueSync`, values written by `assign`) are `LiquidFloat` objects: read `.value`, or use `Number(x)`, for the number. Defaults to `'js'`. */
   numberSemantics?: 'js' | 'ruby';
+  /** Give `forloop` a `parentloop`, the `forloop` of the `for` loop it is nested in (nil at the outermost, and in a `render`ed partial, which has a context of its own), as Ruby Liquid does: https://shopify.dev/docs/api/liquid/objects/forloop#forloop-parentloop. Upstream LiquidJS has none, so with `false` `forloop.parentloop` is undefined. Defaults to `false`. */
+  forloopParentloop?: boolean;
   /** Tags whose body is read as raw text up to `end<name>` and never parsed, so `{{` and `{%` inside them are kept as text. A listed `comment` also nests, as in Shopify Liquid. Register a `RawBodyTag` subclass for each new name. The list replaces the default instead of adding to it, so it must include `raw` to keep `{% raw %}` raw: without `raw`, the body of a `{% raw %}` tag is parsed as Liquid. Setting this option, even to the default list, also lets an end tag carry a whitespace-control marker (`{%- endraw %}`, `{% endraw-%}`); under the default list such an end tag stays unclosed, as in upstream LiquidJS. Defaults to `['raw']`. */
   rawTags?: string[];
   /** Write a render error where it happened as `Liquid error (<file> line <n>): <message>` and keep rendering, as Shopify does, instead of throwing. Which errors are written follows Ruby Liquid: an error in a tag that prints nothing (`assign`, `capture`, a block with a blank body), an undefined variable under `strictVariables`, and an undefined filter met while rendering (under `strictFilters` an ordinary one is a parse error and still throws) are only recorded, and a limit (`memoryLimit`, `renderLimit`, `parseLimit`) still throws. Collect the errors with `RenderOptions.errors`. Defaults to `false`. */
@@ -157,6 +159,7 @@ export interface NormalizedFullOptions extends NormalizedOptions {
   cache?: LiquidCache;
   jsTruthy: boolean;
   numberSemantics: 'js' | 'ruby';
+  forloopParentloop: boolean;
   rawTags: string[];
   inlineErrors: boolean;
   topLevelSize: boolean;
@@ -201,6 +204,7 @@ export const defaultOptions: NormalizedFullOptions = {
   dynamicPartials: true,
   jsTruthy: false,
   numberSemantics: 'js',
+  forloopParentloop: false,
   // frozen, and compared by identity in the tokenizer: a list given as an option is a different array, even when it reads ['raw']
   rawTags: Object.freeze(['raw']) as string[],
   inlineErrors: false,

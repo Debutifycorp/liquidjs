@@ -80,6 +80,7 @@ export function createShopifyLiquid (options: ShopifyLiquidOptions = {}): Liquid
   const state = createState(options)
   const liquid = new ShopifyLiquid({
     numberSemantics: 'ruby',
+    forloopParentloop: true,
     rawTags: [...SHOPIFY_RAW_TAGS],
     inlineErrors: true,
     jsTruthy: false,

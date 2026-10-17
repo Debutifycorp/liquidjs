@@ -67,6 +67,14 @@ describe('tags/for', function () {
     return expect(html).toBe('hello,world,')
   })
   describe('parentloop', function () {
+    beforeEach(function () {
+      liquid = new Liquid({ forloopParentloop: true })
+    })
+    it('is nil by default, as in upstream LiquidJS, even in a nested loop and in strict variables mode', async function () {
+      const plain = new Liquid()
+      expect(await plain.parseAndRender('{% for i in (1..2) %}{% for j in (1..2) %}[{{ forloop.parentloop.index }}]{% endfor %}{% endfor %}', scope)).toBe('[][][][]')
+      expect(await new Liquid({ strictVariables: true }).parseAndRender('{% for i in (1..2) %}{% if forloop.parentloop %}x{% endif %}{% endfor %}', scope).catch((e: Error) => e.message)).toMatch(/undefined variable: forloop\.parentloop/)
+    })
     it('is the forloop of the enclosing loop, at any depth', async function () {
       expect(await liquid.parseAndRender('{% for i in (1..2) %}{% for j in (1..2) %}{{ forloop.parentloop.index }}.{{ forloop.index }} {% endfor %}{% endfor %}', scope)).toBe('1.1 1.2 2.1 2.2 ')
       expect(await liquid.parseAndRender('{% for i in (1..2) %}{% for j in (1..2) %}{% for k in (1..2) %}{{ forloop.parentloop.parentloop.index }}.{{ forloop.parentloop.index0 }}.{{ forloop.index }} {% endfor %}{% endfor %}{% endfor %}', scope)).toBe('1.0.1 1.0.2 1.1.1 1.1.2 2.0.1 2.0.2 2.1.1 2.1.2 ')
@@ -76,7 +84,7 @@ describe('tags/for', function () {
       expect(await liquid.parseAndRender('{% for i in (1..2) %}[{{ forloop.parentloop }}{{ forloop.parentloop.index }}]{% for j in (1..2) %}{% break %}{% endfor %}({{ forloop.parentloop.index }}){% endfor %}', scope)).toBe('[]()[]()')
     })
     it('reaches through include and not into render', async function () {
-      const engine = new Liquid({ templates: { inner: '{% for j in (1..2) %}{{ forloop.parentloop.index }}-{{ forloop.index }} {% endfor %}' } })
+      const engine = new Liquid({ forloopParentloop: true, templates: { inner: '{% for j in (1..2) %}{{ forloop.parentloop.index }}-{{ forloop.index }} {% endfor %}' } })
       expect(await engine.parseAndRender("{% for i in (1..2) %}{% include 'inner' %}{% endfor %}")).toBe('1-1 1-2 2-1 2-2 ')
       expect(await engine.parseAndRender("{% for i in (1..2) %}{% render 'inner' %}{% endfor %}")).toBe('-1 -2 -1 -2 ')
     })

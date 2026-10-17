@@ -7,6 +7,7 @@ Debutify's fork of [LiquidJS](https://github.com/harttle/liquidjs) for rendering
 | Option | Default | Effect |
 | --- | --- | --- |
 | `numberSemantics` | `'js'` | `'ruby'` keeps whole numbers and decimals apart as Shopify Liquid does (`{{ 10 \| divided_by: 4 }}` is `2`, `{{ 2.0 }}` prints `2.0`, `{{ 2.0 \| json }}` is `2.0` where the runtime has `JSON.rawJSON`, decimal arithmetic is exact). |
+| `forloopParentloop` | `false` | `true` gives `forloop` a `parentloop`, the `forloop` of the `for` loop it is nested in (nil at the outermost loop and in a `render`ed partial, which has a context of its own), as Ruby Liquid does; a loop in an `include` sees the loop around the `include`. With `false` `forloop.parentloop` is undefined, as in upstream LiquidJS. The Shopify preset (`createShopifyLiquid`) sets it to `true`. |
 | `rawTags` | `['raw']` | Tags whose bodies are never parsed; register a `RawBodyTag` subclass for each new name. A listed `comment` nests. The list replaces the default, so include `raw` to keep `{% raw %}` raw. |
 | `inlineErrors` | `false` | Write render errors inline (`Liquid error (line 1): …`) and keep rendering; collect them with `render(tpl, scope, { errors })`. |
 | `topLevelSize` | `true` | `false` makes an undefined top-level `size` print nothing, as Ruby Liquid does, instead of the number of keys in the render's globals as upstream LiquidJS does; a `size` that a scope or the globals define, and the `size` of a value (`list.size`), are not affected. The Shopify preset sets it to `false`. |
@@ -41,7 +42,7 @@ One behaviour differs from upstream without an opt-in: the `slice` filter charge
 
 ## Upgrading from 1.2
 
-1.2.1 is a patch release: everything 1.2.0 exports is still exported, and the root entry (`@debutify/liquidjs`) is unchanged. This is every change a 1.2.0 caller can see.
+1.2.1 is a patch release: everything 1.2.0 exports is still exported, and the root entry (`@debutify/liquidjs`) behaves as 1.2.0 unless you opt into the new `forloopParentloop` option. This is every change a 1.2.0 caller can see.
 
 **Theme files**
 
@@ -98,7 +99,7 @@ One behaviour differs from upstream without an opt-in: the `slice` filter charge
 
 **Engine**
 
-- **`forloop.parentloop` is the enclosing loop's `forloop`.** https://shopify.dev/docs/api/liquid/objects/forloop documents it, nil outside a nested loop; upstream LiquidJS and 1.2.0 had none, so our theme's slideshow marked no thumbnail active. As in Ruby Liquid, a loop in an `include` sees the loop around the `include`, and a loop in a `render` does not. This is in the root entry too (`@debutify/liquidjs`), and `ForloopDrop` takes the parent loop as an optional fourth argument. To do: nothing.
+- **`forloop.parentloop` is the enclosing loop's `forloop`.** https://shopify.dev/docs/api/liquid/objects/forloop documents it, nil outside a nested loop; upstream LiquidJS and 1.2.0 had none, so our theme's slideshow marked no thumbnail active. As in Ruby Liquid, a loop in an `include` sees the loop around the `include`, and a loop in a `render` does not. It is on through the Shopify layer (`createShopifyLiquid` sets `forloopParentloop: true`) and opt-in on the root entry (`@debutify/liquidjs`): with the option off, which is the default, `forloop.parentloop` reads nil, as in upstream LiquidJS and 1.2.0. `ForloopDrop` takes the parent loop as an optional fourth argument, and has no `parentloop` without it. To do: nothing for a Shopify theme; a root-entry caller that wants it sets `forloopParentloop: true`.
 
 **Pages**
 

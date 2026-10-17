@@ -5,6 +5,7 @@ describe('createShopifyLiquid', () => {
   const render = (source: string, scope: object = {}) => renderLiquid(liquid, source, scope)
 
   it('uses Ruby number semantics', async () => expect((await render('{{ 10 | divided_by: 4 }} {{ 2.0 }}')).html).toBe('2 2.0'))
+  it('gives a nested loop its parentloop', async () => expect((await render('{% for i in (1..2) %}{% for j in (1..2) %}{{ forloop.parentloop.index }}.{{ forloop.index }} {% endfor %}[{{ forloop.parentloop.index }}]{% endfor %}')).html).toBe('1.1 1.2 []2.1 2.2 []'))
   it('nests comments', async () => expect((await render('a{% comment %}x{% comment %}y{% endcomment %}z{% endcomment %}b')).html).toBe('ab'))
   it('writes render errors inline and keeps going', async () => {
     const { html, report } = await render('a{{ 1 | divided_by: 0 }}b')
