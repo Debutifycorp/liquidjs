@@ -292,6 +292,12 @@ describe('views and the URL prefix', () => {
     expect(await html('/collections/all')).toContain('/p/tok/fr-ca/collections/all|')
     expect(await html('https://example.com/collections/all')).toContain('https://example.com/collections/all|')
     expect(await html('//cdn.example.com/x')).toContain('//cdn.example.com/x|')
+    const printed = async (value: string) => (await html(value)).split('|')[0]
+    expect(await printed('/')).toBe('/p/tok/fr-ca')
+    expect(await printed('/search?q=a')).toBe('/p/tok/fr-ca/search?q=a')
+    // only a page of the store takes the prefix: a file, and a path that already names a market, stay as written, so nothing is prefixed twice
+    expect(await printed('/cdn/shop/files/guide.pdf')).toBe('/cdn/shop/files/guide.pdf')
+    expect(await printed('/en-ca/pages/a')).toBe('/en-ca/pages/a')
     const plain = requestFromUrl('/', data)
     expect((await renderPage({ theme: { files: link('/collections/all') }, templateName: 'index', data, request: plain.request, locale: plain.locale })).html).toContain('/collections/all|')
   })

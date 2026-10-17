@@ -112,15 +112,18 @@ const RESOLVING = Symbol('resolving')
 /** The contexts dynamic sources read their objects through, one per resolution: a `liquid` setting read through one of them is nil, so a dynamic source reads values and never runs a theme's code. Kept per context, not as a count, so that renders running at the same time do not see each other's. */
 const SOURCE_CONTEXTS = new WeakSet<Context>()
 const RESOURCE_URL = /^shopify:\/\/(collections|products|pages|blogs|policies)\/(.+)$/
+/** The root-relative paths of the storefront's own pages: the root, and the first segment of the routes a theme links (`collections`, `products`, `pages`, `blogs`, `cart`, `search`, `policies`, `account`). Which other paths Shopify localizes is not known. */
+const STOREFRONT_ROUTE = /^\/(?:(?:collections|products|pages|blogs|cart|search|policies|account)(?:[/?#]|$)|[?#]|$)/
 
-/** The storefront path a `url` setting's `shopify://` value points at, under `prefix`; other values pass through, blanks are nil. shopify.dev documents the Liquid side only (a `url` setting is "a string that contains the selected URL", nil when empty, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings#url); the stored `shopify://` forms are taken from exported themes and are on the "confirm on a development store" list. The prefix is the parity store's (scenario `page-home-fr-ca`: `shopify://collections/all` prints `/fr-ca/collections/all`); a path or an address written out is not a resource link and stays as written, which no recording pins. */
+/** The storefront path a `url` setting's `shopify://` value points at, under `prefix`; other values pass through, blanks are nil. shopify.dev documents the Liquid side only (a `url` setting is "a string that contains the selected URL", nil when empty, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings#url); the stored `shopify://` forms are taken from exported themes and are on the "confirm on a development store" list. The prefix is the parity store's (scenario `page-home-fr-ca`: `shopify://collections/all` prints `/fr-ca/collections/all`); an address written out is not a resource link and stays as written. A root-relative path takes the prefix only when it is a page of the store (see `STOREFRONT_ROUTE`); any other path stays as written. */
 export function settingUrl (value: unknown, prefix = ''): string | null {
   if (typeof value !== 'string' || !value) return null
   if (value === 'shopify://search' || value === 'shopify://search/') return withPrefix(prefix, '/search')
   if (value === 'shopify://cart') return withPrefix(prefix, '/cart')
   const match = RESOURCE_URL.exec(value)
-  // a root-relative path (Horizon's `empty_cart_button_link` default `/collections/all`) is a page of the store too, so it takes the prefix as well: the parity store prints `/fr-ca/collections/all` and `/en-eu/collections/all` for it (scenarios `page-home-fr-ca` and `page-product-en-eu` of the Horizon recording); an address with a host, or starting `//`, is left as it is
-  return match ? withPrefix(prefix, `/${match[1]}/${match[2]}`) : withPrefix(prefix, value)
+  // a root-relative path to a page of the store (Horizon's `empty_cart_button_link` default `/collections/all`) takes the prefix as well: the parity store prints `/fr-ca/collections/all` and `/en-eu/collections/all` for it (scenarios `page-home-fr-ca` and `page-product-en-eu` of the Horizon recording). Only that path is recorded; a file under `/cdn/`, and a path that already starts with a market (`/en-ca/x`), are left as written, so the prefix is not put on twice. An address with a host, or starting `//`, is left as it is too
+  if (match) return withPrefix(prefix, `/${match[1]}/${match[2]}`)
+  return STOREFRONT_ROUTE.test(value) ? withPrefix(prefix, value) : value
 }
 
 function fromFileReference (value: unknown, prefix: string): string | undefined {
