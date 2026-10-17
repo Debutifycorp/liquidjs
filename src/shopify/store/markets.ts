@@ -140,14 +140,25 @@ function languageData (data: StoreData, iso: string): LanguageData {
 /**
  * The language `iso` as https://shopify.dev/docs/api/liquid/objects/shop_locale describes it, in the view: `endonym_name` is its name in itself, `primary` is whether it is the store's primary language, and `name` is "the name of the locale in the store's primary locale" by that page, so `French` on a store whose primary language is English. On the French pages the parity store prints `français`, not `French`, for the French language (fixture `probe-page-fr-ca`), so there the fixture wins: a view in another language than the store's primary one names its own language by its endonym and any other by `Intl.DisplayNames` in the view's language (`anglais`; no fixture shows one, so it is the same idea applied, with the dataset's name when the runtime has none).
  */
-export function languageIn (data: StoreData, view: StoreView, iso: string): { iso_code: string, name: string, endonym_name: string, primary: boolean } {
+export function languageIn (data: StoreData, view: StoreView, iso: string): { iso_code: string, name: string, endonym_name: string, primary: boolean, direction: 'ltr' | 'rtl' } {
   const primary = primaryLanguage(data)
+  const direction = directionOf(iso)
   // the legacy `localization` names the store's one language, and the page's locale is named after it whatever its code (`request.locale.name` was that language's name, `endonym_name` its endonym or name)
   const legacy = legacyLocalization(data)?.language
-  if (legacy) return { iso_code: iso, name: legacy.name, endonym_name: legacy.endonym_name ?? legacy.name, primary: iso === primary }
+  if (legacy) return { iso_code: iso, name: legacy.name, endonym_name: legacy.endonym_name ?? legacy.name, primary: iso === primary, direction }
   const language = languageData(data, iso)
   const name = view.language === primary ? language.name : iso === view.language ? language.endonym_name : nameIn(view.language, 'language', iso) ?? language.name
-  return { iso_code: iso, name, endonym_name: language.endonym_name, primary: iso === primary }
+  return { iso_code: iso, name, endonym_name: language.endonym_name, primary: iso === primary, direction }
+}
+
+/** The languages written right to left, by their ISO 639 code: Arabic, Aramaic, Central Kurdish, Dhivehi, Persian, Hebrew, Kashmiri, Pashto, Sindhi, Syriac, Uyghur, Urdu and Yiddish, and the scripts that write them (`-Arab`, `-Hebr`, `-Syrc`, `-Thaa`, `-Nkoo`, `-Adlm`, `-Rohg`). */
+const RTL_LANGUAGES = new Set(['ar', 'arc', 'ckb', 'dv', 'fa', 'he', 'iw', 'ks', 'ps', 'sd', 'syr', 'ug', 'ur', 'yi'])
+const RTL_SCRIPTS = new Set(['arab', 'hebr', 'syrc', 'thaa', 'nkoo', 'adlm', 'rohg'])
+
+/** https://shopify.dev/docs/api/liquid/objects/shop_locale#shop_locale-direction: "Returns `rtl` for right-to-left locales and `ltr` for left-to-right locales", for an IETF tag such as `ar`, `fa-IR` or `pa-Arab`. Which locales are right to left is not listed there; this is the usual list. */
+function directionOf (iso: string): 'ltr' | 'rtl' {
+  const [language, ...rest] = iso.toLowerCase().split(/[-_]/)
+  return RTL_LANGUAGES.has(language) || rest.some(part => RTL_SCRIPTS.has(part)) ? 'rtl' : 'ltr'
 }
 
 /** The base path of a view: its prefix without its own locale prefix, since `resolveView` writes the prefix as the base path followed by the locale prefix. */
