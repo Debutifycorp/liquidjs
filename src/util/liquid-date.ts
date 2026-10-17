@@ -118,6 +118,10 @@ export class LiquidDate {
   getShortWeekdayName () {
     return this.format({ weekday: 'short' }) ?? dayNamesShort[this.displayDate.getDay()]
   }
+  /** The date as `Intl.DateTimeFormat(locale, options)` writes it (the locale the date was made with); undefined when the runtime has no `Intl`. */
+  formatWith (options: Intl.DateTimeFormatOptions): string | undefined {
+    return this.format(options)
+  }
   valid () {
     return !isNaN(this.getTime())
   }

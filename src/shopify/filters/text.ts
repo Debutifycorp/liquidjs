@@ -1,5 +1,6 @@
 import type { FilterImpl } from '../../template/filter-impl-options'
 import { date as engineDate } from '../../filters/date'
+import { parseDate } from '../../filters/parse-date'
 import { isNil, LiquidDate, strftime, stringify, toEnumerable, toValue } from '../../util'
 import { getDateTimeFormat } from '../../util/intl'
 import { attribute, escapeChar, escapeHtml } from '../util/html'
@@ -132,24 +133,64 @@ function readable (filter: FilterImpl, input: unknown, timezone?: number | strin
   return instant === undefined ? input : new Date(instant)
 }
 
-function resolveDate (filter: FilterImpl, input: unknown): LiquidDate | undefined {
+function resolveDate (filter: FilterImpl, input: unknown, locale?: string): LiquidDate | undefined {
   const value = toValue(readable(filter, input))
   if (isNil(value) || value === '') return undefined
   if (typeof value === 'string') filter.context.memoryLimit.use(value.length)
   const init = typeof value === 'number' || (typeof value === 'string' && ALL_DIGITS.test(value)) ? Number(value) * 1000 : value as string | Date
-  const date = new LiquidDate(init, filter.context.opts.locale, filter.context.opts.timezoneOffset)
+  const date = new LiquidDate(init, locale ?? filter.context.opts.locale, filter.context.opts.timezoneOffset)
   return date.valid() ? date : undefined
 }
 
-function namedFormat (filter: FilterImpl, name: string): string {
+/** A format: a strftime string, or (for a language other than English) a function that writes the date with `Intl`. */
+type DateFormat = string | ((when: LiquidDate) => string | undefined)
+
+/**
+ * The language a page's dates are written in, when it is not English: the page's locale (`Translator.locale`). https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files, "Date and time localization": the `date` and `time_tag` filters "have default format options that will display in the appropriate format for the store's active language". English (`en`, `en-CA`) keeps the strings above, which the parity recordings pin, and the options' own locale for `%A %a %B %b`; undefined for it.
+ */
+function dateLocale (filter: FilterImpl): string | undefined {
+  const locale = shopifyState(filter.context).translator.locale
+  return /^en(?:-|$)/i.test(locale) ? undefined : locale
+}
+
+/**
+ * The named formats of a language other than English, written by `Intl.DateTimeFormat` for it: the page says only that the defaults "display in the appropriate format for the store's active language", not what each prints, so these are Debutify's reading, not pinned (the order of the parts and the words come from the runtime's CLDR data, which is what Shopify's Ruby `I18n` data is not; `on_date` has no preposition, which `Intl` cannot supply; the zone is not printed in `default`).
+ */
+const DATE = { year: 'numeric', month: 'long', day: 'numeric' } as const
+const ABBREVIATED = { year: 'numeric', month: 'short', day: 'numeric' } as const
+const TIME = { hour: 'numeric', minute: '2-digit' } as const
+const INTL_FORMATS: Record<string, Intl.DateTimeFormatOptions> = {
+  abbreviated_date: ABBREVIATED,
+  basic: { year: 'numeric', month: '2-digit', day: '2-digit' },
+  date: DATE,
+  date_at_time: { ...DATE, ...TIME },
+  default: { weekday: 'short', ...ABBREVIATED, ...TIME },
+  on_date: ABBREVIATED,
+  short: { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' },
+  long: { ...DATE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }
+}
+
+/** The built-in format `name` for the language (`undefined` is English). The English string where the language has none (a runtime with no `Intl`, or a name that is not built in). */
+function builtinFormat (name: string, locale: string | undefined): DateFormat | undefined {
+  if (!hasOwn(DATE_FORMATS, name)) return undefined
+  if (locale === undefined) return DATE_FORMATS[name]
+  const options = INTL_FORMATS[name]
+  return (when: LiquidDate) => when.formatWith(options) ?? strftime(when, DATE_FORMATS[name])
+}
+
+function namedFormat (filter: FilterImpl, name: string): DateFormat {
   const state = shopifyState(filter.context)
-  const fromLocale = state.translator.lookup(`date_formats.${name}`)
+  // a format the theme's own locale file names (the active language's, as the page says: not the default file's) wins over a built-in one
+  const fromLocale = state.translator.lookupOwn(`date_formats.${name}`)
   if (typeof fromLocale === 'string') return fromLocale
-  if (hasOwn(DATE_FORMATS, name)) return DATE_FORMATS[name]
+  const builtin = builtinFormat(name, dateLocale(filter))
+  if (builtin !== undefined) return builtin
   // https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files: "If a custom format is missing in the locale file of the active language, then a Liquid error is rendered." The page gives no message; this wording is Debutify's and not pinned.
   state.report.unsupported('date_format', name)
   throw new Error(`invalid date format '${name}': it is not a built-in format and the locale file has no date_formats.${name}`)
 }
+
+const write = (when: LiquidDate, format: DateFormat, filter: FilterImpl) => typeof format === 'function' ? format(when) ?? '' : strftime(when, format, filter.context.memoryLimit)
 
 /**
  * The engine's `date`, with `now` and `today` read from the `currentTime` service, Shopify's `format:` names, and zone-less strings read in the preset's zone. https://shopify.dev/docs/api/liquid/filters/date: strftime formats, `'now'` and `'today'` output the current timestamp, `format:` takes a name or a `date_formats` key of the theme's locale file. The page has no timezone argument; the engine's optional second positional one is kept and not pinned by shopify.dev.
@@ -158,18 +199,27 @@ function date (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const { positional, named } = splitArgs(args)
   const timezone = positional[1] as number | string | undefined
   const format = named.format !== undefined ? namedFormat(this, stringify(named.format)) : positional[0] as string | undefined
-  return engineDate.call(this, readable(this, input, timezone) as string | Date, format, timezone)
+  const locale = dateLocale(this)
+  // English goes through the engine's `date` as before
+  if (locale === undefined && typeof format !== 'function') return engineDate.call(this, readable(this, input, timezone) as string | Date, format, timezone)
+  const value = readable(this, input, timezone) as string | Date
+  this.context.memoryLimit.use(((value as string)?.length ?? 0) + ((timezone as string)?.length ?? 0))
+  const when = parseDate(value, this.context.opts, timezone, locale)
+  if (!when) return value
+  const chosen = format === undefined || format === null ? this.context.opts.dateFormat : typeof format === 'function' ? format : stringify(format)
+  return write(when, chosen, this)
 }
 
 /** https://shopify.dev/docs/api/liquid/filters/time_tag: a `<time>` tag whose `datetime` is UTC `YYYY-MM-DDThh:mm:ssZ` by default (`2022-04-14 16:56:02 -0400` prints `2022-04-14T20:56:02Z`; the page infers UTC from its examples only), `datetime:` takes a strftime format, `format:` a name or `date_formats` key; with neither, the text is the `date` format (not pinned by shopify.dev). Zone-less strings are read as `date` reads them. */
 function timeTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
-  const when = resolveDate(this, input)
+  const locale = dateLocale(this)
+  const when = resolveDate(this, input, locale)
   if (!when) return ''
   const { positional, named } = splitArgs(args)
-  const format = positional.length ? stringify(positional[0]) : named.format !== undefined ? namedFormat(this, stringify(named.format)) : DATE_FORMATS.date
+  const format = positional.length ? stringify(positional[0]) : named.format !== undefined ? namedFormat(this, stringify(named.format)) : builtinFormat('date', locale)!
   const utc = new LiquidDate(when.dateValue(), this.context.opts.locale, 0)
   const datetime = named.datetime !== undefined ? strftime(when, stringify(named.datetime)) : strftime(utc, '%Y-%m-%dT%H:%M:%SZ')
-  return `<time datetime="${escapeHtml(datetime)}">${escapeHtml(strftime(when, format))}</time>`
+  return `<time datetime="${escapeHtml(datetime)}">${escapeHtml(write(when, format, this))}</time>`
 }
 
 /** Name, company, street lines, `city province zip`, country, as in the examples on https://shopify.dev/docs/api/liquid/filters/format_address. The name is the address's `name` ("a combination of the first and last names", https://shopify.dev/docs/api/liquid/objects/address), or its first and last name when there is no `name`. The page says the components follow the address's locale; that order is not modelled, and where the company goes is not pinned. */

@@ -107,7 +107,9 @@ function choose (data: StoreData, country: string | undefined, language: string 
   const markets = data.markets ?? []
   const market = markets.find(m => m.countries.some(c => c.iso_code === country)) ?? markets.find(m => m.primary) ?? markets[0]
   const languages = market ? market.languages : (data.languages ?? []).map(l => l.iso_code)
-  const chosen = language !== undefined && languages.includes(language) ? language : languages[0]
+  // a code in another case (`pt-br` for `pt-BR`) is the same language: Shopify's form posts the code as the theme prints it, so a hand-built link is the only way to send another case
+  const asked = language === undefined ? undefined : languages.find(iso => iso.toLowerCase() === language.toLowerCase())
+  const chosen = asked ?? languages[0]
   const prefix = localePrefixes(data).find(p => p.market === (market?.handle ?? 'default') && p.language === chosen)?.prefix ?? ''
   return { prefix, language: chosen }
 }

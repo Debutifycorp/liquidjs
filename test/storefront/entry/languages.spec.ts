@@ -94,6 +94,9 @@ describe('languages: theme', () => {
     expect(dawn.headers.get('location')).toBe('/p/tok/ar/pages/about')
     const back = await send('POST', '/p/tok/ar/localization', form({ language_code: 'en', return_to: '/p/tok/ar/pages/about' }))
     expect(back.headers.get('location')).toBe('/p/tok/pages/about')
+    // a code in another case is the same language
+    const lower = await send('POST', '/p/tok/localization', form({ language_code: 'pt-br', return_to: '/p/tok/pages/about' }))
+    expect(lower.headers.get('location')).toBe('/p/tok/pt-br/pages/about')
     // the token route works under a language prefix
     const page = await send('GET', '/p/tok/de')
     expect(page.status).toBe(200)

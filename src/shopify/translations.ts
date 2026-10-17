@@ -31,7 +31,7 @@ function forLocale<T> (map: Record<string, T> | undefined, locale: string): T | 
   return map && hasOwn(map, locale) ? map[locale] : undefined
 }
 
-/** The files a key is looked up in, in order: the locale's own (`pt-BR`), then its base language's (`pt`), then the default locale's, each once. https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files: "A regional locale such as `en-CA` can inherit keys from its base language file". The page does not say that a key missing from every file of the locale falls back to the default locale's (the usual reading, and the parity store's), so that step is not pinned. */
+/** The files a key is looked up in, in order: the locale's own (`pt-BR`), then its base language's (`pt`), then the default locale's, each once. Not pinned by shopify.dev: its storefront locale files page says "A regional locale such as `en-CA` can inherit keys from its base language file" only of Shopify-provided keys (`shopify.*` and `customer_accounts.*`, in "Checkout and system messages"), and says nothing of a theme's own keys, nor that a key missing from the locale's files falls back to the default locale's. The chain is Debutify's reading; the second step is what 1.2.0 did when a theme had no regional file. */
 function chain (locale: string, defaultLocale: string): string[] {
   return [...new Set([locale, locale.split('-')[0], defaultLocale, defaultLocale.split('-')[0]])]
 }
@@ -48,6 +48,16 @@ export class Translator {
   public constructor (private readonly input: TranslationsInput) {
     this.locale = input.locale
     this.defaultLocale = input.defaultLocale
+  }
+
+  /** A key in the active language's own files only (its file and its base language's), never the default locale's: https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files says "If a custom format is missing in the locale file of the active language, then a Liquid error is rendered". The default locale's file is the active language's when the page is in the default locale. */
+  public lookupOwn (key: string): string | LocaleTree | undefined {
+    const path = key.split('.')
+    for (const locale of [...new Set([this.locale, this.locale.split('-')[0]])]) {
+      const found = dig(forLocale(this.input.locales, locale), path)
+      if (found !== undefined) return found
+    }
+    return undefined
   }
 
   public lookup (key: string, section?: SectionLocales): string | LocaleTree | undefined {

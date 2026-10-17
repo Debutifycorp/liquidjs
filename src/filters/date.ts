@@ -1,6 +1,6 @@
-import { toValue, stringify, isString, isNumber, LiquidDate, strftime, isNil } from '../util'
+import { toValue, stringify, strftime, isNil } from '../util'
 import { FilterImpl } from '../template'
-import { NormalizedFullOptions } from '../liquid-options'
+import { parseDate } from './parse-date'
 
 export function date (this: FilterImpl, v: string | Date, format?: string, timezoneOffset?: number | string) {
   const size = ((v as string)?.length ?? 0) + ((timezoneOffset as string)?.length ?? 0)
@@ -40,29 +40,4 @@ function stringify_date (this: FilterImpl, v: string | Date, month_type: string,
       : strftime(date, `${d}%q ${month_type} %Y`, ml)
   }
   return strftime(date, `%d ${month_type} %Y`, ml)
-}
-
-function parseDate (v: string | Date, opts: NormalizedFullOptions, timezoneOffset?: number | string): LiquidDate | undefined {
-  let date: LiquidDate | undefined
-  const defaultTimezoneOffset = timezoneOffset ?? opts.timezoneOffset
-  const locale = opts.locale
-  v = toValue(v)
-  if (isNil(v)) {
-    return undefined
-  } else if (v === 'now' || v === 'today') {
-    date = new LiquidDate(Date.now(), locale, defaultTimezoneOffset)
-  } else if (isNumber(v)) {
-    date = new LiquidDate(v * 1000, locale, defaultTimezoneOffset)
-  } else if (isString(v)) {
-    if (/^\d+$/.test(v)) {
-      date = new LiquidDate(+v * 1000, locale, defaultTimezoneOffset)
-    } else if (opts.preserveTimezones && timezoneOffset === undefined) {
-      date = LiquidDate.createDateFixedToTimezone(v, locale)
-    } else {
-      date = new LiquidDate(v, locale, defaultTimezoneOffset)
-    }
-  } else {
-    date = new LiquidDate(v, locale, defaultTimezoneOffset)
-  }
-  return date.valid() ? date : undefined
 }

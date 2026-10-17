@@ -68,7 +68,7 @@ export interface StorefrontOptions {
   limits?: Partial<StorefrontLimits>
   /** The most views of the store data kept (default 16). A view is a full copy of the store's objects for one base path, market and language, built the first time a request needs it and kept for the next ones; the least recently used is dropped past this number. About 40 MB per view for 5,000 products and 45,000 variants. */
   viewCacheSize?: number
-  /** `'theme'`: the store is published in every language the theme has a storefront locale file for, in all its markets, besides the languages its data lists. Each is served at its own subfolder (`/de`, `/pt-br`, and `/de-ca` in a market with the subfolder `ca`), appears in `localization.available_languages`, and `POST /localization` moves a visitor to it. Content with no translation in the language shows the primary language's text. Without the option the store's languages are the ones its data lists. */
+  /** `'theme'`: the store is published in every language the theme has a storefront locale file for, besides the languages its data lists, in the primary market (another market keeps its own languages). Each is served at its own subfolder (`/de`, `/pt-br`), appears in `localization.available_languages`, and `POST /localization` moves a visitor to it. Content with no translation in the language shows the primary language's text. Without the option the store's languages are the ones its data lists. */
   languages?: 'theme'
   /** The password `POST /password` accepts when the store data says the store is password protected (`shop.password_enabled`). */
   password?: string
