@@ -87,7 +87,6 @@ const FORM_TYPES: Record<string, FormType> = {
 const hidden = (name: string, value: string, verbatim = false) => `<input type="hidden" name="${escapeHtml(name)}" value="${verbatim ? value : escapeHtml(value)}" />`
 
 /** The values a form keeps from a post, https://shopify.dev/docs/api/liquid/objects/form: `email`, `body`, `name`, `phone`, `first_name` and `last_name` (`null` when not posted), and the others the page lists (`author` of `new_comment`, `message` of the gift card in a `product` form, and the address fields of `customer_address`), which are nil when not posted and so are not set then. */
-type PostedValue = 'email' | 'body' | 'name' | 'phone' | 'first_name' | 'last_name'
 const MORE_POSTED_VALUES = ['author', 'message', 'address1', 'address2', 'city', 'company', 'country', 'province', 'zip']
 
 /**
@@ -149,7 +148,7 @@ export class FormErrorsDrop extends Drop {
 /**
  * The `form` object inside `{% form %}`. https://shopify.dev/docs/api/liquid/objects/form: `password_needed` is `true` for `customer_login`, `posted_successfully?` always `true` for `customer_address`, `id` is `new` and `set_as_default_checkbox` the single-quoted `<input type='checkbox' id='address_default_address_new' …>` in its example. The page's example key is `password_needed?` while its property list says `password_needed`, so only the latter exists here. `form.id` for the other form types is the markup's `id` (the page gives no example).
  *
- * A form of the type the request's outcome (`RequestInput.form`) names shows it: `posted_successfully?` is `posted`, `errors` is a `FormErrorsDrop` over the outcome's errors (`null` when it has none, as the page says "or nil if none"), and the posted values (`PostedValue`, `MORE_POSTED_VALUES`), HTML-escaped and HTML-safe (`escaped`). Every other form is as nothing had been posted: not posted, no errors, and `null` for the six main fields and nil for the rest (the page shows address fields filled from the posted address, which a preview has none of). The properties are assigned in the order they had before a post was carried, so a form with no outcome prints through `json` as it did.
+ * A form of the type the request's outcome (`RequestInput.form`) names shows it: `posted_successfully?` is `posted`, `errors` is a `FormErrorsDrop` over the outcome's errors (`null` when it has none, as the page says "or nil if none"), and the posted values (the six main fields and `MORE_POSTED_VALUES`), HTML-escaped and HTML-safe (`escaped`). Every other form is as nothing had been posted: not posted, no errors, and `null` for the six main fields and nil for the rest. A `customer_address` form for an existing address starts from that address: its `first_name`, `last_name`, `phone`, `company`, `address1`, `address2`, `city`, `province`, `country` (the country's name) and `zip` are the address's, HTML-escaped like a posted value, until the visitor posts others; a new address form (`customer.new_address` is nil here) has none. The properties are assigned in the order they had before a post was carried, so a form with no outcome prints through `json` as it did.
  */
 export class FormDrop extends Drop {
   public readonly errors: FormErrorsDrop | null
@@ -167,7 +166,13 @@ export class FormDrop extends Drop {
   public constructor (public readonly formType: string, public readonly resource: Resource, id: string, outcome?: FormOutcome, translate: (field: string) => string = capitalised) {
     super()
     const values = outcome?.values ?? {}
-    const posted = (key: PostedValue) => (hasOwn(values, key) ? escaped(values[key]) : null)
+    // a `customer_address` form for an existing address starts from that address, https://shopify.dev/docs/api/liquid/objects/form: the address fields are the address's until the visitor posts others; a new address form (nil resource) has none
+    const address = formType === 'customer_address' ? resource : undefined
+    const held = (key: string) => {
+      const value = address ? toValue(address[key]) : undefined
+      return value === undefined || value === null ? null : escaped(stringify(value))
+    }
+    const posted = (key: string) => (hasOwn(values, key) ? escaped(values[key]) : held(key))
     this.errors = outcome?.errors && Object.keys(outcome.errors).length ? new FormErrorsDrop(outcome.errors, translate) : null
     this.email = posted('email')
     this.body = posted('body')
@@ -180,7 +185,8 @@ export class FormDrop extends Drop {
     this['posted_successfully?'] = formType === 'customer_address' || !!outcome?.posted
     this.set_as_default_checkbox = `<input type='checkbox' id='address_default_address_${escapeHtml(id)}' name='address[default]' value='1'>`
     for (const key of MORE_POSTED_VALUES) {
-      if (hasOwn(values, key)) this[key] = escaped(values[key])
+      const value = posted(key)
+      if (value) this[key] = value
     }
   }
 }

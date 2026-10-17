@@ -75,6 +75,14 @@ describe('form state', () => {
     expect(await html({ type: 'customer_address', posted: false })).toContain('[address true]')
   })
 
+  it('starts an address form from the customer\'s address and lets a posted field win', async () => {
+    const home = { id: 11, first_name: 'Ana', last_name: 'Ruiz', address1: '1 Main St', city: 'Springfield', province: 'Oregon', province_code: 'OR', country: 'United States', country_code: 'US', zip: '97477' }
+    const theme = { files: { ...probeTheme().files, 'templates/customers/addresses.liquid': "{%- for address in customer.addresses -%}{%- form 'customer_address', address -%}[{{ form.first_name }}|{{ form.address1 }}|{{ form.city }}|{{ form.country }}|{{ form.zip }}]{%- endform -%}{%- endfor -%}" } }
+    const show = async (form?: FormOutcome) => (await renderPage({ theme, templateName: 'customers/addresses', data: { ...data, customer: { id: 7, addresses: [home] } }, request: requestFromUrl('/account/addresses', data, form ? { form } : {}).request })).html
+    expect(await show()).toContain('[Ana|1 Main St|Springfield|United States|97477]')
+    expect(await show({ type: 'customer_address', posted: false, values: { address1: '9 Posted St', zip: '' } })).toContain('[Ana|9 Posted St|Springfield|United States|]')
+  })
+
   it('takes translated field names from the theme\'s shopify.<form type>.form translations', async () => {
     const locales = { 'locales/en.default.json': JSON.stringify({ shopify: { customer_login: { form: { password: 'Your password' } } } }) }
     const out = await html({ type: 'customer_login', posted: false, errors: { password: ['is required'], email: ['is invalid'] } }, locales)

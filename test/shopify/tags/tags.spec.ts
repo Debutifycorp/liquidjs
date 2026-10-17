@@ -102,6 +102,16 @@ describe('form', () => {
   // https://shopify.dev/docs/api/liquid/objects/form
   it('gives a new address form the id new, a successful post and the single-quoted default checkbox', async () => expect(await render("{% form 'customer_address', customer.new_address %}{{ form.id }}|{{ form.posted_successfully? }}|{{ form.set_as_default_checkbox }}{% endform %}", { customer: { new_address: {} } })).toContain("new|true|<input type='checkbox' id='address_default_address_new' name='address[default]' value='1'></form>"))
   it('gives an existing address form its own id', async () => expect(await render("{% form 'customer_address', address %}{{ form.id }}|{{ form.set_as_default_checkbox }}{% endform %}", { address: { id: 42 } })).toContain("42|<input type='checkbox' id='address_default_address_42' name='address[default]' value='1'>"))
+  // https://shopify.dev/docs/api/liquid/objects/form lists the fields of a customer_address form (address1, address2, city, company, country, first_name, last_name, phone, province, zip); an address form for an existing address starts from that address
+  const address = { id: 42, first_name: 'Ana', last_name: 'Ruiz', company: 'Ruiz <Ltd>', address1: '2 Side Rd', address2: null, city: 'Portland', province: 'Oregon', country: { iso_code: 'US', name: 'United States', toString: () => 'United States' }, zip: '97201', phone: '+1 503 555 0100' }
+  const fields = '{{ form.first_name }}|{{ form.last_name }}|{{ form.company }}|{{ form.address1 }}|{{ form.address2 }}|{{ form.city }}|{{ form.province }}|{{ form.country }}|{{ form.zip }}|{{ form.phone }}'
+  it('gives an address form the fields of its address, HTML-escaped', async () => {
+    expect(await render(`{% form 'customer_address', address %}${fields}{% endform %}`, { address })).toContain('Ana|Ruiz|Ruiz &lt;Ltd&gt;|2 Side Rd||Portland|Oregon|United States|97201|+1 503 555 0100</form>')
+    expect(await render(`{% form 'customer_address', address %}{% if form.address2 == blank %}no second line{% endif %}{% endform %}`, { address })).toContain('no second line')
+  })
+  it('gives a new address form no fields', async () => {
+    expect(await render(`{% form 'customer_address', customer.new_address %}${fields}{% endform %}`, { customer: {} })).toContain('|||||||||</form>')
+  })
   it('says a login needs a password and other forms do not', async () => {
     expect(await render("{% form 'customer_login' %}{{ form.password_needed }}|{{ form.posted_successfully? }}{% endform %}")).toContain('true|false</form>')
     expect(await render("{% form 'contact' %}{{ form.password_needed }}{% endform %}")).toContain('false</form>')
