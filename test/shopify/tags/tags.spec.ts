@@ -187,7 +187,15 @@ describe('paginate', () => {
     expect(await render('{% paginate items by 4 %}{{ paginate.parts.size }}|{{ paginate.pages }}|{{ paginate.previous }}|{{ paginate.next }}|{{ paginate | default_pagination }}{% endpaginate %}', { items: [1, 2] })).toBe('0|1|||')
     expect(await render('{% paginate items by 4 %}{{ paginate.parts.size }}|{{ paginate.pages }}|{{ paginate.previous.url }}{% endpaginate %}', { items: [1, 2] }, { page: 2 })).toBe('0|1|/?page=1')
     expect(buildPaginate(0, 4, 1, '/').parts).toEqual([])
-    expect(buildPaginate(5, 4, 1, '/').parts.map(part => part.title)).toEqual(['1', '2'])
+    expect(buildPaginate(5, 4, 1, '/').parts.map(part => part.title)).toEqual([1, 2])
+  })
+  // Dawn 16.0.0 and the private theme mark the current page with `{%- if part.title == paginate.current_page -%}`, and the parity store marks page 2 of the private theme's collection that way (audit D1, finding E1: `aria-current="page"` on Shopify, a plain `<span>` in 1.2.0); Horizon 4.3.0 reads `part.title | plus: 0` and compares the gap with `'&hellip;'`
+  it('gives a page part its number as the title, so it equals current_page, and the gap the text &hellip;', async () => {
+    const items = Array.from({ length: 10 }, (_, i) => i)
+    const source = "{% paginate items by 1 %}{% for part in paginate.parts %}{% if part.title == paginate.current_page %}[{{ part.title }}]{% elsif part.title == '&hellip;' %}~{% else %}{{ part.title | plus: 0 }}{% endif %},{% endfor %}{% endpaginate %}"
+    expect(await render(source, { items }, { page: 2 })).toBe('1,[2],3,4,~,10,')
+    expect(await render('{% paginate items by 1 %}{{ paginate.parts[1].title }}|{{ paginate | default_pagination }}{% endpaginate %}', { items: [1, 2, 3] }, { page: 2 })).toBe('2|<span class="prev"><a href="/?page=1" title="">&laquo; Previous</a></span> <span class="page"><a href="/?page=1" title="">1</a></span> <span class="page current">2</span> <span class="page"><a href="/?page=3" title="">3</a></span> <span class="next"><a href="/?page=3" title="">Next &raquo;</a></span>')
+    expect(buildPaginate(10, 1, 2, '/').parts.map(part => part.title)).toEqual([1, 2, 3, 4, '&hellip;', 10])
   })
   it('exposes the paginate object', async () => expect(await render('{% paginate items by 2 %}{{ paginate.pages }}/{{ paginate.items }}/{{ paginate.current_offset }}{% endpaginate %}', { items: [1, 2, 3] }, { page: 2 })).toBe('2/3/2'))
   it('leaves the array whole outside the block', async () => expect(await render('{% paginate items by 2 %}{{ items | size }}{% endpaginate %}{{ items | size }}', { items: [1, 2, 3] })).toBe('23'))

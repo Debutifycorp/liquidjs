@@ -11,8 +11,9 @@ import { isTagToken, toEnumerable, toValue } from '../../util'
 import { shopifyState } from '../state'
 import { withQuery } from '../util/query'
 
+/** A part of the pagination, https://shopify.dev/docs/api/liquid/objects/part. A page's part has the page's number as its `title`, the gap's has `&hellip;`. */
 export interface PaginatePart {
-  title: string
+  title: number | string
   url: string | null
   is_link: boolean
 }
@@ -36,6 +37,8 @@ export const PAGINATION_LIMIT = 25000
 /**
  * The `paginate` object. Pages around the current one get links (a page is in the window when it is fewer than `windowSize` pages from the current one, which reproduces the `window_size: 1` example on https://shopify.dev/docs/api/liquid/tags/paginate: 7 pages on page 1 give `1 … 7 Next`); the first and last page always do; each gap collapses into one `&hellip;` part. The default window of 3 is not pinned by shopify.dev: the 4-page examples on the paginate and default_pagination pages show every page, which a window of 3 also does. The part titles `Next &raquo;` and `&laquo; Previous` are the ones on https://shopify.dev/docs/api/liquid/filters/default_pagination.
  *
+ * A page's part has the page's number as its `title`, a number, so it equals `current_page`: Dawn 16.0.0 and the private theme mark the current page with `{%- if part.title == paginate.current_page -%}`, and the parity store marks page 2 of the private theme's collection that way (`aria-current="page"`, audit D1 finding E1), where 1.2.0's text `"2"` never equalled the number 2. It prints as `2` all the same. https://shopify.dev/docs/api/liquid/objects/part types `title` as a string and shows `"title": "2"`, which that comparison could not match; what `part.title == '2'` gives on Shopify is not pinned (false here). The gap's `title` is the text `&hellip;`.
+ *
  * A single page has no parts (nor `previous` or `next`): Dawn 16.0.0's collection list prints its pagination only `if paginate.parts.size > 0`, and the parity store prints none on its one page of collections (Dawn's recording `page-collections`), where 1.2.0 gave the page a `current` part; `pages` is 1 then and `previous` and `next` are nil (fixture `probe-collection-suffix-filtered`). https://shopify.dev/docs/api/liquid/objects/paginate says only that `parts` are "used to build pagination navigation". The shape follows that page and https://shopify.dev/docs/api/liquid/objects/part.
  *
  * Each link keeps the request's `query` (its filters, sort and `view`) and sets `page`, the pairs ordered by name (`withQuery`), as the parity store prints them (fixtures `probe-collection-filter-combined`: `?filter.p.tag=accessories&filter.v.availability=1&page=2&sort_by=price-descending&view=probe`, and `probe-collection-page-2`, whose previous link names page 1).
@@ -50,10 +53,10 @@ export function buildPaginate (items: number, pageSize: number, currentPage: num
   let gap = false
   for (let page = 1; pages > 1 && page <= pages; page++) {
     if (page === currentPage) {
-      parts.push({ title: String(page), url: null, is_link: false })
+      parts.push({ title: page, url: null, is_link: false })
       gap = false
     } else if (page === 1 || page === pages || Math.abs(page - currentPage) < windowSize) {
-      parts.push({ title: String(page), url: url(page), is_link: true })
+      parts.push({ title: page, url: url(page), is_link: true })
       gap = false
     } else if (!gap) {
       parts.push({ title: '&hellip;', url: null, is_link: false })

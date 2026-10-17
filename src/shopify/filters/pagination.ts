@@ -14,13 +14,13 @@ function defaultPagination (this: FilterImpl, input: unknown, ...args: unknown[]
   const anchor = named.anchor ? `#${escapeHtml(named.anchor)}` : ''
   const link = (url: string | null, text: string) => `<a href="${url}${anchor}" title="">${text}</a>`
   const html: string[] = []
-  if (paginate.previous?.url) html.push(`<span class="prev">${link(paginate.previous.url, named.previous ? stringify(named.previous) : paginate.previous.title)}</span>`)
+  if (paginate.previous?.url) html.push(`<span class="prev">${link(paginate.previous.url, named.previous ? stringify(named.previous) : String(paginate.previous.title))}</span>`)
   for (const part of paginate.parts) {
-    if (part.is_link) html.push(`<span class="page">${link(part.url, part.title)}</span>`)
-    else if (part.title === String(paginate.current_page)) html.push(`<span class="page current">${part.title}</span>`)
+    if (part.is_link) html.push(`<span class="page">${link(part.url, String(part.title))}</span>`)
+    else if (String(part.title) === String(paginate.current_page)) html.push(`<span class="page current">${part.title}</span>`)
     else html.push(`<span class="deco">${part.title}</span>`)
   }
-  if (paginate.next?.url) html.push(`<span class="next">${link(paginate.next.url, named.next ? stringify(named.next) : paginate.next.title)}</span>`)
+  if (paginate.next?.url) html.push(`<span class="next">${link(paginate.next.url, named.next ? stringify(named.next) : String(paginate.next.title))}</span>`)
   return html.join(' ')
 }
 
