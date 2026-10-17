@@ -345,7 +345,7 @@ describe('shopify/objects/image', () => {
     const header = new ImageDrop({ src: BEAKERS, focal_point: { x: 1.923076923, y: 9.791666667 } })
     expect(await run('{{ i.presentation.focal_point }}', { i: header })).toBe('1.9231% 9.7917%')
     expect(await run('{{ i.presentation.focal_point.x }} {{ i.presentation.focal_point.y }}', { i: header })).toBe('1.923076923 9.791666667')
-    expect(await run('{{ i.presentation.focal_point }}|{{ i.presentation.focal_point.x }}', { i: new ImageDrop({ src: BEAKERS }) })).toBe('50% 50%|50')
+    expect(await run('{{ i.presentation.focal_point }}|{{ i.presentation.focal_point.x }}', { i: new ImageDrop({ src: BEAKERS }) })).toBe('50.0% 50.0%|50')
     expect(await run('{{ image.presentation.focal_point }}', { image: new ImageDrop(data) })).toBe('50% 25%')
   })
   // https://shopify.dev/docs/api/liquid/objects/image#image-media_type

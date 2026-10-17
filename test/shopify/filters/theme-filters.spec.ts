@@ -1,4 +1,4 @@
-import { createShopifyLiquid, renderPage, requestFromUrl, storefrontSampleData } from '../../../src/shopify'
+import { createShopifyLiquid, ImageDrop, renderPage, requestFromUrl, storefrontSampleData } from '../../../src/shopify'
 import type { CartState, ThemeInput } from '../../../src/shopify'
 import { filterStatus } from '../../../src/shopify/filters'
 import { renderWithState } from '../../../src/shopify/render-liquid'
@@ -110,6 +110,35 @@ describe('shopify filters the three themes use', () => {
       const { html, report } = await page('/collections/tops', "[{{ nil | standard_event_data: 'view' }}]")
       expect(html).toBe('[]')
       expect(report.unsupported.filter(entry => entry.feature === 'standard_event_data')).toEqual([])
+    })
+  })
+
+  // https://shopify.dev/docs/api/liquid/filters/image_tag, and the parity store's resource cards and product media of Horizon
+  describe('image_tag', () => {
+    const cap = (focal?: { x: number, y: number }) => new ImageDrop({ src: '//shop.example/cdn/shop/files/cap.jpg?v=1', width: 1024, height: 1024, alt: 'Cap', focal_point: focal })
+    const url = (width: number) => `//shop.example/cdn/shop/files/cap.jpg?v=1&amp;width=${width}`
+    it('prints loading after the size, then the named attributes as written, and stops the srcset at the URL width', async () => {
+      const source = "{{ image | image_url: width: 500 | image_tag: loading: 'lazy', class: 'card', widths: '240, 352, 832, 1200', sizes: 'auto', ref: '', style: 'object-position: 50.0% 50.0%;' }}"
+      expect((await render(source, { image: cap() })).html).toBe(`<img src="${url(500)}" alt="Cap" srcset="${url(240)} 240w, ${url(352)} 352w" width="500" height="500" loading="lazy" class="card" sizes="auto" ref="" style="object-position: 50.0% 50.0%;">`)
+    })
+    it('prints loading before a sizes written first, and a name written twice once, where it was first written, with its last value', async () => {
+      const source = "{{ image | image_url: width: 500 | image_tag: sizes: '50vw', loading: 'lazy', ref: 'a', class: 'x', ref: 'b' }}|{{ image | image_url: width: 500 | image_tag: ref: 'a', class: 'x', ref: nil }}"
+      const [first, second] = (await render(source, { image: cap() })).html.split('|')
+      expect(first).toBe(`<img src="${url(500)}" alt="Cap" srcset="${url(352)} 352w" width="500" height="500" loading="lazy" sizes="50vw" ref="b" class="x">`)
+      expect(second).toBe(`<img src="${url(500)}" alt="Cap" srcset="${url(352)} 352w" width="500" height="500" class="x">`)
+    })
+    it('writes the focal point as Ruby decimals, as the focal_point object prints', async () => {
+      const source = '{{ image | image_url: width: 300 | image_tag }}|{{ image.presentation.focal_point }}'
+      expect((await render(source, { image: cap({ x: 50, y: 50 }) })).html).toBe(`<img src="${url(300)}" alt="Cap" srcset="${url(300)} 300w" width="300" height="300" style="object-position:50.0% 50.0%;">|50.0% 50.0%`)
+    })
+  })
+
+  // https://shopify.dev/docs/api/liquid/filters/default: Ruby's filter returns its input itself
+  describe('default', () => {
+    it('keeps an image, so image_url and image_tag still know its size', async () => {
+      const image = new ImageDrop({ src: '//shop.example/cdn/shop/files/cap.jpg?v=1', width: 1000, height: 500 })
+      const source = "{% assign card = missing | default: image %}{{ card | image_url: width: 200 | image_tag: srcset: nil }}|{{ image | default: 'none' }}|{{ nil | default: 'none' }}"
+      expect((await render(source, { image })).html).toBe('<img src="//shop.example/cdn/shop/files/cap.jpg?v=1&amp;width=200" alt="" width="200" height="100">|//shop.example/cdn/shop/files/cap.jpg?v=1|none')
     })
   })
 

@@ -4,7 +4,7 @@ import { LiquidFloat } from '../../util/liquid-float'
 export interface FilterArgs {
   positional: unknown[]
   named: Record<string, unknown>
-  /** Named argument names in the order the template wrote them. */
+  /** Named argument names in the order the template wrote them, each once. */
   order: string[]
 }
 
@@ -23,8 +23,9 @@ export function splitArgs (args: unknown[]): FilterArgs {
   const order: string[] = []
   for (const arg of args) {
     if (Array.isArray(arg) && arg.length === 2 && typeof arg[0] === 'string') {
+      // a name written twice keeps its first place and its last value, as Shopify writes it: Horizon's `product-media` passes `ref:` twice to `image_tag`, and the parity store prints one `ref` attribute where the first one stood (private parity recordings of Horizon)
+      if (!order.includes(arg[0])) order.push(arg[0])
       named[arg[0]] = plainValue(arg[1])
-      order.push(arg[0])
     } else {
       positional.push(plainValue(arg))
     }

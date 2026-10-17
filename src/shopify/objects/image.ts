@@ -1,13 +1,16 @@
 import { Drop } from '../../drop'
 import { toValue } from '../../util'
-import { LiquidFloat } from '../../util/liquid-float'
+import { LiquidFloat, formatRubyFloat } from '../../util/liquid-float'
 import type { ImageData, ImageUrlParams } from '../types'
 
 const AS_MEDIA = Symbol('asMedia')
 const TITLE = Symbol('title')
 const PREVIEW = Symbol('preview')
 
-/** The `focal_point` object: `x` and `y` in percent (50 when none is set) that prints as `X% Y%`, each rounded to four decimals (`1.9231% 9.7917%`). https://shopify.dev/docs/api/liquid/objects/focal_point and https://shopify.dev/docs/api/liquid/objects/image_presentation */
+/** A focal point as Shopify writes it, `X% Y%` with each value rounded to four decimals and written as a Ruby decimal (`50.0% 50.0%`). */
+export const focalText = (point: { x: number, y: number }): string => `${formatRubyFloat(Number(point.x.toFixed(4)))}% ${formatRubyFloat(Number(point.y.toFixed(4)))}%`
+
+/** The `focal_point` object: `x` and `y` in percent (50 when none is set) that prints as `X% Y%`, each rounded to four decimals and written as a Ruby decimal (`1.9231% 9.7917%`, and `50.0% 50.0%` for the centre, as the parity store prints it in Horizon's resource cards, private parity recordings of Horizon). https://shopify.dev/docs/api/liquid/objects/focal_point and https://shopify.dev/docs/api/liquid/objects/image_presentation */
 export class FocalPointDrop extends Drop {
   public readonly x: number
   public readonly y: number
@@ -19,7 +22,7 @@ export class FocalPointDrop extends Drop {
   }
 
   public valueOf () {
-    return `${Number(this.x.toFixed(4))}% ${Number(this.y.toFixed(4))}%`
+    return focalText(this)
   }
 }
 

@@ -576,7 +576,7 @@ describe('shopify/settings forms', () => {
   it('keeps what it must of an image given as data, and drops the rest', async () => {
     const image = (value: unknown, overrides: Partial<SettingsEnv> = {}) => one({ type: 'image_picker', id: 'pic' }, value, overrides)
     const ok = image({ src: '/a.png', width: 10, height: 5, id: 3, alt: 'A red bag, front & back', focal_point: { x: 10, y: '20' } }).value as any
-    expect([ok.src, ok.width, ok.height, ok.id, ok.alt, text(ok.presentation.focal_point)]).toEqual(['/a.png', 10, 5, 3, 'A red bag, front & back', '10% 20%'])
+    expect([ok.src, ok.width, ok.height, ok.id, ok.alt, text(ok.presentation.focal_point)]).toEqual(['/a.png', 10, 5, 3, 'A red bag, front & back', '10.0% 20.0%'])
     const odd = image({ src: 'https://c.example/a.png', width: '10" onload="x', height: NaN, id: '3', alt: 7, focal_point: { x: 'a', y: 1 }, extra: '<img>' }).value as any
     expect([odd.src, odd.width, odd.height, odd.id, odd.alt, text(odd.presentation.focal_point)]).toEqual(['//c.example/a.png', null, null, null, '', '50% 50%'])
     for (const src of ['javascript:alert(1)', 'https://c.example/a.png" onerror="x', 'https://c.example/a b.png', '/a<b', '', 7, null]) {

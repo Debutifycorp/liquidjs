@@ -6,7 +6,7 @@ import { attribute, escapeHtml, namedAttributes } from '../util/html'
 import { splitArgs } from '../util/args'
 import { hasOwn } from '../util/own'
 import { currentFrame, shopifyState, ShopifyState } from '../state'
-import { ImageDrop, ImageUrlDrop, imageSource } from '../objects/image'
+import { focalText, ImageDrop, ImageUrlDrop, imageSource } from '../objects/image'
 import { SafeHtmlDrop } from '../objects/safe-html'
 import type { ImageData, ImageUrlParams } from '../types'
 import type { ShopifyFilterSet } from './types'
@@ -72,7 +72,7 @@ function widthsFrom (value: unknown): number[] {
 }
 
 /**
- * `<img>` for an `image_url`, matching every example on https://shopify.dev/docs/api/liquid/filters/image_tag: `src`, `alt`, `srcset`, `width`, `height`, `sizes`, focal-point `style`, `loading`, then other attributes in the order given. `width`/`height` default to the URL's size and aspect ratio; naming one keeps only that one; `nil` removes it.
+ * `<img>` for an `image_url`, matching every example on https://shopify.dev/docs/api/liquid/filters/image_tag and the parity store: `src`, `alt`, `srcset`, `width`, `height`, `loading`, the focal-point `style` when no `style` is named, then the other named attributes, `sizes` included, in the order the template wrote them (the page's `loading` example prints `loading` before the `class` written first; the parity store prints `loading="lazy" class=… sizes="auto" ref="" … style=…` for Horizon's resource cards, which name `loading`, `class`, `widths`, `sizes`, `ref`, `data-media-id` and `style`, and `loading=… sizes=… class=…` for its product media, which name `sizes` before `loading`, private parity recordings of Horizon). A name written twice prints once, where it was first written, with its last value (`splitArgs`). `width`/`height` default to the URL's size and aspect ratio; naming one keeps only that one; `nil` removes it. The `srcset` stops at the URL's width, `widths` included (Horizon's resource cards ask for `240, 352, 832, 1200` from a 500-pixel URL, and the parity store prints `240w` and `352w`). Where the focal-point `style` goes when `loading` is also printed is not pinned (the page's focal-point example has no `loading`).
  */
 function imageTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const state = shopifyState(this.context)
@@ -98,7 +98,7 @@ function imageTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
     srcset = named.srcset === null || named.srcset === undefined ? undefined : stringify(named.srcset)
   } else if (url && urlWidth) {
     const max = Math.min(urlWidth, image.width ?? Infinity)
-    let widths = hasOwn(named, 'widths') ? widthsFrom(named.widths) : DEFAULT_SRCSET_WIDTHS.filter(w => w <= max)
+    let widths = (hasOwn(named, 'widths') ? widthsFrom(named.widths) : [...DEFAULT_SRCSET_WIDTHS]).filter(w => w <= max)
     const asked = Number(width)
     if (!hasOwn(named, 'widths') && hasOwn(named, 'width') && Number.isFinite(asked) && asked > 0 && asked <= max) widths.push(asked)
     if (!widths.length) widths = [max]
@@ -115,11 +115,10 @@ function imageTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   let html = `<img src="${escapeHtml(src)}"${attribute('alt', hasOwn(named, 'alt') ? named.alt ?? '' : url?.alt ?? '')}`
   if (srcset) html += attribute('srcset', srcset)
   html += attribute('width', width) + attribute('height', height)
-  if (hasOwn(named, 'sizes')) html += attribute('sizes', named.sizes)
-  if (image.focal_point && !hasOwn(named, 'style')) html += attribute('style', `object-position:${Number(image.focal_point.x.toFixed(4))}% ${Number(image.focal_point.y.toFixed(4))}%;`)
   const loading = hasOwn(named, 'loading') ? named.loading : (named.preload !== true && lazyByDefault(state) ? 'lazy' : undefined)
   html += attribute('loading', loading)
-  html += namedAttributes(state.report, 'image_tag', named, order, ['alt', 'width', 'height', 'sizes', 'widths', 'srcset', 'preload', 'loading'])
+  if (image.focal_point && !hasOwn(named, 'style')) html += attribute('style', `object-position:${focalText(image.focal_point)};`)
+  html += namedAttributes(state.report, 'image_tag', named, order, ['alt', 'width', 'height', 'widths', 'srcset', 'preload', 'loading'])
   // HTML-safe, so `| escape` after it changes nothing, as on Shopify (see `SafeHtmlDrop`)
   return new SafeHtmlDrop(html + '>')
 }
