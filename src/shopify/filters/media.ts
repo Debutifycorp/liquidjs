@@ -52,9 +52,8 @@ function imageUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
   }
   // the URL names the size that was asked for, held to the 5760 maximum; it is not cut to the image's own size (scenario `page-collections`: a request for 1500 pixels of an image 1024 pixels wide is `width=1500` in the address)
   const asked = withinLimit(params, MAX_DIMENSION)
-  // what `image_tag` writes as the size and builds its srcset from stays within the image, though the URL asks for more: no recording has an `image_tag` of an `image_url` wider than its image, and shopify.dev's wording (the size is taken "from the image URL", the `srcset` goes "up to the maximum defined in the image URL") points the other way, so this is Debutify's choice, on the list of behaviours to confirm
-  const within = withinLimit(asked, Math.min(MAX_DIMENSION, source.image.width || Infinity), Math.min(MAX_DIMENSION, source.image.height || Infinity))
-  return new ImageUrlDrop(shopifyState(this.context).services.imageUrl(source.image, asked), source.image, within, source.alt)
+  // `image_tag` writes the size and builds its srcset from the URL's size, as the parity store prints it: Horizon's `image_url: width: 3840 | image_tag: widths: …` of a collection image 1024 pixels wide is width="3840" height="3840" with a candidate for every width up to 3840 (scenario `page-collections` of the Horizon recording)
+  return new ImageUrlDrop(shopifyState(this.context).services.imageUrl(source.image, asked), source.image, asked, source.alt)
 }
 
 /** `params` with `width` and `height` scaled by one factor so that neither is over its limit (`maxHeight` is `maxWidth` when not given): a request over a limit keeps its ratio. */
@@ -97,7 +96,7 @@ function imageTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   if (hasOwn(named, 'srcset')) {
     srcset = named.srcset === null || named.srcset === undefined ? undefined : stringify(named.srcset)
   } else if (url && urlWidth) {
-    const max = Math.min(urlWidth, image.width ?? Infinity)
+    const max = urlWidth
     let widths = (hasOwn(named, 'widths') ? widthsFrom(named.widths) : [...DEFAULT_SRCSET_WIDTHS]).filter(w => w <= max)
     const asked = Number(width)
     if (!hasOwn(named, 'widths') && hasOwn(named, 'width') && Number.isFinite(asked) && asked > 0 && asked <= max) widths.push(asked)
