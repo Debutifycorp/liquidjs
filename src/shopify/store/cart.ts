@@ -4,11 +4,11 @@ import { stripTags } from '../../util/strip-tags'
 import { HandleMap } from '../objects/handle-map'
 import type { ImageDrop } from '../objects/image'
 import { escapeHtml } from '../util/html'
-import { buildStore, hidden } from './build'
+import { buildStore, hidden, lazy, unitPrice } from './build'
 import type { LiquidObject, StoreObjects } from './build'
 import { applyDiscounts, discountAllocationJson, discountApplicationJson, enteredCodes } from './discounts'
 import type { DiscountResult } from './discounts'
-import type { CartData, CollectionData, ProductData, StoreData, VariantData } from './types'
+import type { CartData, CollectionData, ProductData, StoreData, UnitPriceMeasurementData, VariantData } from './types'
 import { resolveView, withPrefix } from './view'
 import type { StoreView } from './view'
 
@@ -192,8 +192,15 @@ function lineItem (store: StoreObjects, state: CartLineState, index: number): Li
     grams: variant.weight,
     gift_card: false,
     options_with_values: (product.options as string[]).map((name, i) => ({ name, value: (variant.options as string[])[i] ?? null })),
-    unit_price_measurement: null
+    unit_price_measurement: variant.unit_price_measurement,
+    // https://shopify.dev/docs/api/liquid/objects/line_item: a cart line can be removed and its quantity changed (`instructions`), has no components and no parent: the store data has no bundles, and Dawn and Horizon read the defaults so (`can_remove` and `can_update_quantity` true)
+    instructions: { can_remove: true, can_update_quantity: true },
+    item_components: [],
+    parent_relationship: null,
+    fulfillment: null
   }
+  // "The price reflects any discounts that are applied to the line item" (https://shopify.dev/docs/api/liquid/objects/line_item#line_item-unit_price), so it is read from the final price when asked, after the discounts are allocated
+  lazy(item, 'unit_price', () => unitPrice(item.final_price as number, variant.unit_price_measurement as UnitPriceMeasurementData | null))
   hidden(item, 'untranslated_product_title', untranslatedTitle)
   hidden(item, LINE_MARKER, true)
   hidden(item, RAW_PROPERTIES, state.properties)

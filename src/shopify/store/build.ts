@@ -17,7 +17,7 @@ import { byTitle, SORT_VALUES, sortProducts } from './sort'
 import { translateData } from './translate'
 import { resolveView, viewKey, withoutPrefix, withPrefix } from './view'
 import type { StoreView } from './view'
-import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, PolicyData, ProductData, SellingPlanData, SellingPlanGroupData, StoreData, TransactionData, VariantData } from './types'
+import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, PolicyData, ProductData, SellingPlanData, SellingPlanGroupData, StoreAvailabilityData, StoreData, TransactionData, UnitPriceMeasurementData, VariantData } from './types'
 
 /**
  * Turns `StoreData` into the objects Liquid reads, computing what Shopify derives (URLs, price ranges, the first available variant, option values) so templates find every field they expect. Built objects are plain objects, readable under `ownPropertyOnly`; images become `ImageDrop`s and handle-keyed collections `HandleMap`s. Field lists follow https://shopify.dev/docs/api/liquid/objects, object by object as each builder cites.
@@ -221,8 +221,40 @@ function buildAllocation ({ group, plan, data }: PlanOffer, price: number, curre
   }
 }
 
+/** Each unit of measure as a multiple of its type's base unit (millilitre, gram, millimetre, square metre, item): the units of https://shopify.dev/docs/api/liquid/objects/unit_price_measurement's `quantity_unit` and `reference_unit`, by the codes of Shopify's Admin API (`ML`, `KG`, `FLOZ`…), compared without regard to case. */
+const UNIT_SIZES: Record<string, number> = { ml: 1, cl: 10, l: 1000, m3: 1e6, floz: 29.5735, pt: 473.176, qt: 946.353, gal: 3785.41, mg: 0.001, g: 1, kg: 1000, oz: 28.3495, lb: 453.592, mm: 1, cm: 10, m: 1000, in: 25.4, ft: 304.8, yd: 914.4, m2: 1, ft2: 0.092903, item: 1 }
+
+/** The unit price of `price` (minor units) under `measurement`: the price of `reference_value` `reference_unit` of what `quantity_value` `quantity_unit` cost, rounded to the minor unit (https://shopify.dev/docs/api/liquid/objects/variant#variant-unit_price: "The unit price of the variant in the currency's subunit"). Nil without a measurement, or with a unit this table does not know. How Shopify rounds is not pinned. */
+export function unitPrice (price: number, measurement: UnitPriceMeasurementData | null | undefined): number | null {
+  if (!measurement) return null
+  const quantity = own(UNIT_SIZES, String(measurement.quantity_unit).toLowerCase())
+  const reference = own(UNIT_SIZES, String(measurement.reference_unit).toLowerCase())
+  if (quantity === undefined || reference === undefined || !(measurement.quantity_value > 0)) return null
+  return Math.round(price * (measurement.reference_value * reference) / (measurement.quantity_value * quantity))
+}
+
+/** The hidden field that holds a variant's store availabilities; `store_availabilities` shows them only where the variant page says (`showAvailabilities`). */
+const STORE_AVAILABILITIES = '__store_availabilities'
+
+/** https://shopify.dev/docs/api/liquid/objects/store_availability, with its https://shopify.dev/docs/api/liquid/objects/location: pickup and a physical storefront default to true. */
+function buildStoreAvailability (data: StoreAvailabilityData, prefix: string): LiquidObject {
+  const location = data.location
+  return {
+    available: data.available,
+    pick_up_enabled: data.pick_up_enabled ?? true,
+    pick_up_time: data.pick_up_time ?? null,
+    physical_storefront: data.physical_storefront ?? true,
+    location: { id: location.id, name: location.name, address: location.address ? buildAddress(location.address, false, prefix) : null, latitude: location.latitude ?? null, longitude: location.longitude ?? null, metafields: {} }
+  }
+}
+
+/** Sets each variant's `store_availabilities`: https://shopify.dev/docs/api/liquid/objects/variant#variant-store_availabilities says "The array is defined in only the following cases: `variant.selected` is `true`; The variant is the product's first available variant", so the selected variants and the one `shown` get theirs and every other variant nil. */
+function showAvailabilities (variants: LiquidObject[], shown: LiquidObject | null): void {
+  for (const variant of variants) variant.store_availabilities = variant.selected || (shown !== null && variant.id === shown.id) ? variant[STORE_AVAILABILITIES] : null
+}
+
 /** https://shopify.dev/docs/api/liquid/objects/variant. `url` carries `?variant=<id>` as that page documents. `inventory_quantity`, `inventory_policy` (`deny` unless the data says `continue`), `inventory_management` (nil unless the data says `shopify`), `weight` (grams, 0 when the data has none) and `requires_shipping` (true unless the data says otherwise) come from the data, as that page lists them and as the parity store prints them (fixtures `probe-product-default` and `ajax-product-js`). `selected` is false here: it is the request that selects a variant (`selectProduct`). `unit_price_measurement` is left empty and `quantity_rule` holds Shopify's defaults; shopify.dev documents the fields but this layer has no data for them. `selling_plan_allocations` is one allocation per plan of every group that offers the variant (`plans`, see `buildSellingPlanGroup`), `requires_selling_plan` the product's, and `selected_selling_plan_allocation` nil until a request selects a plan (`selectSellingPlan`). `featured_image` and `featured_media` are the product's own image, so they carry the `position` of the matching entry in `product.images` and `product.media` (nil when the product does not list that image); shopify.dev does not say so, and it goes on the confirm-on-a-development-store list with the counting base. `price` and `compare_at_price` are in the view's currency when `currency` is given (`convert`: the market's rate, price adjustment and rounding, https://help.shopify.com/en/manual/international/pricing/exchange-rates), the dataset's shop-currency amounts otherwise; a variant without a compare-at price keeps nil. A market that hides compare-at prices (`ViewCurrency.hide_compare_at_prices`, Shopify's "Hide compare-at" setting, https://help.shopify.com/en/manual/compliance/legal/pricing-indication-directive) gives its variants none: nil, as the parity store prints the hoodie's on-sale variant in the Europe market (fixture `probe-product-en-eu-hoodie`). */
-function buildVariant (variant: VariantData, productUrl: string, productImages: ImageData[], productMedia: MediaData[], currency?: ViewCurrency, plans: PlanOffer[] = [], requiresPlan = false, title = '', resolve?: MetafieldResolver): LiquidObject {
+function buildVariant (variant: VariantData, productUrl: string, productImages: ImageData[], productMedia: MediaData[], currency?: ViewCurrency, plans: PlanOffer[] = [], requiresPlan = false, title = '', resolve?: MetafieldResolver, prefix = ''): LiquidObject {
   const options = [variant.option1, variant.option2, variant.option3].filter((option): option is string => typeof option === 'string')
   const featured = variant.image ? new ImageDrop(variant.image, false, positionIn(productImages, variant.image), title) : null
   const price = currency ? convert(variant.price, currency) : variant.price
@@ -248,7 +280,11 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
     requires_shipping: variant.requires_shipping ?? true,
     taxable: true,
     weight: variant.weight ?? 0,
-    unit_price_measurement: null,
+    barcode: variant.barcode ?? null,
+    unit_price_measurement: variant.unit_price_measurement ? { ...variant.unit_price_measurement } : null,
+    unit_price: unitPrice(price, variant.unit_price_measurement),
+    // "in the current customer context": the data's volume prices, each in the view's currency
+    quantity_price_breaks: (variant.quantity_price_breaks ?? []).map(entry => ({ minimum_quantity: entry.minimum_quantity, price: currency ? convert(entry.price, currency) : entry.price })),
     selling_plan_allocations: plans.map(offer => buildAllocation(offer, price, currency)),
     requires_selling_plan: requiresPlan,
     selected_selling_plan_allocation: null,
@@ -257,6 +293,7 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
   }
   // marks a built variant for the `json` filter, which prints it with `variantLiquidJson`, and its images with the place they have in it
   hidden(built, VARIANT_MARKER, true)
+  hidden(built, STORE_AVAILABILITIES, (variant.store_availabilities ?? []).map(entry => buildStoreAvailability(entry, prefix)))
   if (featured) hidden(featured as unknown as LiquidObject, IMAGE_ROLE, { role: 'variant_image', variant: built } satisfies ImageRole)
   if (built.featured_media) hidden(built.featured_media as LiquidObject, IMAGE_ROLE, { role: 'variant_media', variant: built } satisfies ImageRole)
   return built
@@ -302,13 +339,14 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
   const groups = groupData.map(group => buildSellingPlanGroup(group, currency))
   const variants = data.variants.map(variant => {
     const offers = groupData.flatMap((group, g) => offersVariant(group, variant) ? group.selling_plans.map((plan, i) => ({ group: groups[g], plan: (groups[g].selling_plans as LiquidObject[])[i], data: plan })) : [])
-    return buildVariant(variant, url, data.images ?? [], mediaData, currency, offers, !!data.requires_selling_plan, data.title, resolve)
+    return buildVariant(variant, url, data.images ?? [], mediaData, currency, offers, !!data.requires_selling_plan, data.title, resolve, prefix)
   })
   const options = data.options ?? ['Title']
   const prices = variants.map(variant => variant.price as number)
   const compares = variants.map(variant => variant.compare_at_price as number | null).filter((price): price is number => typeof price === 'number')
   const firstAvailable = variants.find(variant => variant.available) ?? null
   const firstOrAvailable = firstAvailable ?? variants[0] ?? null
+  showAvailabilities(variants, firstOrAvailable)
   const infos = optionValueInfos(data, options, variants, prefix)
   const optionsWithValues = buildOptions(options, infos, variants, options.map((_, i) => firstOrAvailable ? (firstOrAvailable.options as string[])[i] ?? null : null), firstOrAvailable)
   const product: LiquidObject = {
@@ -350,7 +388,8 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
     selected_selling_plan_allocation: null,
     selected_or_first_available_selling_plan_allocation: ((firstOrAvailable?.selling_plan_allocations as LiquidObject[] | undefined) ?? [])[0] ?? null,
     'gift_card?': false,
-    'quantity_price_breaks_configured?': false,
+    // https://shopify.dev/docs/api/liquid/objects/product#product-quantity_price_breaks_configured?: whether the product "has at least one variant with quantity price breaks in the current customer context"
+    'quantity_price_breaks_configured?': variants.some(variant => (variant.quantity_price_breaks as unknown[]).length > 0),
     // the suffix of the alternate template the product uses, https://shopify.dev/docs/api/liquid/objects/product#product-template_suffix; nil when it uses the base template (fixture `probe-product-default`)
     template_suffix: data.template_suffix ?? null,
     created_at: data.created_at ?? null,
@@ -381,6 +420,7 @@ export function selectProduct (product: LiquidObject, variantId: number | undefi
   copy.selected_variant = copyOf(picked.variant)
   copy.selected_or_first_available_variant = copy.selected_variant
   copy.first_available_variant = copyOf(product.first_available_variant)
+  showAvailabilities(copy.variants as LiquidObject[], (copy.first_available_variant ?? (copy.variants as LiquidObject[])[0] ?? null) as LiquidObject | null)
   refreshOptions(copy, picked.values)
   return copy
 }
@@ -704,7 +744,8 @@ function buildLineItems (lines: Array<{ product_handle: string, variant_id: numb
       properties: {},
       discount_allocations: [],
       line_level_discount_allocations: [],
-      unit_price_measurement: null,
+      unit_price_measurement: variant.unit_price_measurement,
+      unit_price: unitPrice(price, variant.unit_price_measurement as UnitPriceMeasurementData | null),
       selling_plan_allocation: null,
       requires_shipping: true,
       gift_card: false
