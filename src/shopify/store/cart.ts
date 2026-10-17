@@ -140,9 +140,10 @@ function builtVariant (store: StoreObjects, variantId: number): BuiltVariant | u
   return index.get(variantId)
 }
 
-/** Line item properties as a template reads them: by name (`item.properties.Engraving`) and as pairs (`for property in item.properties`), and printed by `json` as the parity store prints them, a list of `[name, value]` pairs (`[]` for none, fixture `ajax-cart-session`, step 11). */
+/** Line item properties as a template reads them: by name (`item.properties.Engraving`) and as pairs (`for property in item.properties`), and printed by `json` as the parity store prints them, a list of `[name, value]` pairs (`[]` for none, fixture `ajax-cart-session`, step 11). Its `size` reads nil, unless a property is named `size`: Dawn's cart drawer opens its `<dl>` and prints `<p class="product-option"></p>` for a line with no properties, no selling plan and only the default variant (`item.product.has_only_default_variant == false or item.properties.size != 0 or item.selling_plan_allocation != null`), and the parity store prints exactly that for black-sunnies (recording `ajax-cart-sections` of Dawn), which only a `size` that is not 0 explains; this is the inference from that recording, shopify.dev's line_item page does not describe the type of `properties`. */
 function propertiesOf (properties: Record<string, string>): Record<string, string> {
   const copy = readableText(properties)
+  if (!('size' in copy)) Object.defineProperty(copy, 'size', { value: undefined, enumerable: false })
   Object.defineProperty(copy, 'toJSON', { value: () => Object.entries(copy), enumerable: false })
   return copy
 }

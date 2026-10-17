@@ -332,6 +332,16 @@ describe('cart', () => {
       })
       expect(html.html).toBe('Engraving=Hi;|Hi|[["Engraving","Hi"]]|[]|{}')
     })
+    it('reads nothing for a line\'s properties.size, so Dawn\'s `item.properties.size != 0` holds for a line with none (recording ajax-cart-sections of Dawn: `<dl></dl><p class="product-option"></p>` for black-sunnies)', async () => {
+      const source = '{{ cart.items[0].properties.size | json }}|{% if cart.items[0].properties.size != 0 %}shown{% endif %}|{{ cart.items[1].properties.size | json }}|{{ cart.items[2].properties.size }}|{{ cart.items[1].properties.Engraving }}'
+      const html = await renderPage({
+        theme: { files: { ...probeTheme().files, 'templates/cart.liquid': source } },
+        templateName: 'cart',
+        data,
+        cart: state([line(BLACK_SUNNIES, 1), line(HOODIE, 1, { Engraving: 'Hi' }), line(SLIDES_SMALL, 1, { size: 'XL' })])
+      })
+      expect(html.html).toBe('null|shown|null|XL|Hi')
+    })
     it('shows a cart handed to the render over the store data\'s, and the data\'s when none is handed', async () => {
       const theme = { files: { ...probeTheme().files, 'templates/cart.liquid': '{{ cart.item_count }}:{{ cart.items[0].title }}' } }
       expect((await renderPage({ theme, templateName: 'cart', data, cart: state([line(HOODIE, 2)]) })).html).toBe('2:Hoodie - Green / Small')
