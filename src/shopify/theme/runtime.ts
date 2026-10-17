@@ -325,6 +325,16 @@ export class CompiledTheme {
     return this.liquid.parseFileSync(path.replace(/\.liquid$/, ''))
   }
 
+  /** The languages the theme has a storefront locale file for (`locales/<language>.json`, with the default file's language first), https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files. The schema locale files (`<language>.schema.json`) are not storefront languages. In the order the theme's files are listed. */
+  public languages (): string[] {
+    const found: Array<{ code: string, isDefault: boolean }> = []
+    for (const path of this.paths('locales/')) {
+      const match = LOCALE_FILE.exec(path)
+      if (match && !match[3]) found.push({ code: match[1], isDefault: !!match[2] })
+    }
+    return [...found.filter(f => f.isDefault), ...found.filter(f => !f.isDefault)].map(f => f.code)
+  }
+
   /**
    * The translations for `locale`: storefront and schema locale files, with the `*.default.json` locale as fallback. https://shopify.dev/docs/storefronts/themes/architecture/locales names the files (`locales/en.default.json`, `locales/fr.json`, and `locales/en.default.schema.json` for the editor's strings).
    *
@@ -389,6 +399,11 @@ function compileLaidOver (theme: ThemeInput, engine: { parseLimit: number, unkno
     byOptions.set(key, result)
   }
   return result
+}
+
+/** The languages `theme` has a storefront locale file for, the default file's language first (`CompiledTheme.languages`). */
+export function themeLanguages (theme: ThemeInput): string[] {
+  return compileTheme(theme).languages()
 }
 
 /** A contextual section group file applies when every key it names matches the request's context. https://shopify.dev/docs/storefronts/themes/architecture/section-groups#contextual-section-groups says its `context` holds `"market": "market-handle"` or `"b2b": true`; combining both keys is not pinned. */

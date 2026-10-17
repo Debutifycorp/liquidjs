@@ -15,16 +15,19 @@ export interface LocalePrefix { prefix: string, market: string, language: string
 const primaryMarket = (data: StoreData): MarketData | undefined => data.markets?.find(m => m.primary) ?? data.markets?.[0]
 const shopLanguage = (data: StoreData) => data.languages?.[0]?.iso_code ?? data.shop.locale ?? 'en'
 
+/** A language's subfolder: its IETF tag in lower case (`pt-BR` is `pt-br`, `zh-TW` is `zh-tw`). https://help.shopify.com/en/manual/international/languages/requirements writes every subfolder it shows in lower case (`/de`, `/en-ca`, `/es-mx`) and does not say how a language tag with a region (`pt-BR`) is written; lower case is Debutify's reading, on the "confirm on a development store" list. */
+const slug = (language: string) => language.toLowerCase()
+
 /**
- * Every locale prefix the store serves, https://shopify.dev/docs/storefronts/themes/markets/multiple-currencies-languages: the primary market's other languages at `/<language>`, and each other market at `/<language>-<subfolder>` for each of its languages.
+ * Every locale prefix the store serves, https://shopify.dev/docs/storefronts/themes/markets/multiple-currencies-languages: the primary market's other languages at `/<language>`, and each other market at `/<language>-<subfolder>` for each of its languages. The language is written in lower case (`slug`).
  */
 export function localePrefixes (data: StoreData): LocalePrefix[] {
   const out: LocalePrefix[] = []
   const primary = primaryMarket(data)
-  for (const language of primary?.languages.slice(1) ?? (data.languages ?? []).slice(1).map(l => l.iso_code)) out.push({ prefix: `/${language}`, market: primary?.handle ?? 'default', language })
+  for (const language of primary?.languages.slice(1) ?? (data.languages ?? []).slice(1).map(l => l.iso_code)) out.push({ prefix: `/${slug(language)}`, market: primary?.handle ?? 'default', language })
   for (const market of data.markets ?? []) {
     if (market === primary || !market.subfolder) continue
-    for (const language of market.languages) out.push({ prefix: `/${language}-${market.subfolder}`, market: market.handle, language })
+    for (const language of market.languages) out.push({ prefix: `/${slug(language)}-${market.subfolder}`, market: market.handle, language })
   }
   return out
 }

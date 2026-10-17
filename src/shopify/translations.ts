@@ -28,10 +28,12 @@ function dig (tree: LocaleTree | undefined, path: string[]): string | LocaleTree
 }
 
 function forLocale<T> (map: Record<string, T> | undefined, locale: string): T | undefined {
-  if (!map) return undefined
-  if (hasOwn(map, locale)) return map[locale]
-  const language = locale.split('-')[0]
-  return hasOwn(map, language) ? map[language] : undefined
+  return map && hasOwn(map, locale) ? map[locale] : undefined
+}
+
+/** The files a key is looked up in, in order: the locale's own (`pt-BR`), then its base language's (`pt`), then the default locale's, each once. https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files: "A regional locale such as `en-CA` can inherit keys from its base language file". The page does not say that a key missing from every file of the locale falls back to the default locale's (the usual reading, and the parity store's), so that step is not pinned. */
+function chain (locale: string, defaultLocale: string): string[] {
+  return [...new Set([locale, locale.split('-')[0], defaultLocale, defaultLocale.split('-')[0]])]
 }
 
 /**
@@ -50,8 +52,7 @@ export class Translator {
 
   public lookup (key: string, section?: SectionLocales): string | LocaleTree | undefined {
     const path = key.split('.')
-    const locales = this.locale === this.defaultLocale ? [this.locale] : [this.locale, this.defaultLocale]
-    for (const locale of locales) {
+    for (const locale of chain(this.locale, this.defaultLocale)) {
       const fromFile = dig(forLocale(this.input.locales, locale), path)
       if (fromFile !== undefined) return fromFile
       if (section && path[0] === 'sections' && path[1] === section.type) {
@@ -66,7 +67,7 @@ export class Translator {
   public schemaText (value: unknown): unknown {
     if (typeof value !== 'string' || !value.startsWith('t:')) return value
     const path = value.slice(2).split('.')
-    for (const locale of [this.locale, this.defaultLocale]) {
+    for (const locale of chain(this.locale, this.defaultLocale)) {
       const text = dig(forLocale(this.input.schemaLocales, locale), path)
       if (typeof text === 'string') return text
     }

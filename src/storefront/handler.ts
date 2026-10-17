@@ -1,4 +1,4 @@
-import { localePrefixes, resolveView, setViewCacheSize } from '../shopify'
+import { localePrefixes, resolveView, setViewCacheSize, themeLanguages, withLanguages } from '../shopify'
 import type { ShopifyServices, StoreData, StoreView, ThemeInput } from '../shopify'
 import { BodyError, readBody } from './body'
 import type { Fields } from './body'
@@ -261,7 +261,9 @@ export function createStorefront (options: StorefrontOptions): Storefront {
       // the theme's compiled stylesheet and javascript hold no visitor state: answered before any is read, and before the data and services are resolved, which they do not need; with caching of their own, and open to a visitor who has not passed the password
       const asset = compiledAssetResponse(request, basePath, theme)
       if (asset) return sandbox ? sandboxed(asset, basePath, true) : asset
-      const [data, services] = await Promise.all([resolve(options.data, request), resolve(options.services ?? {}, request)])
+      const [given, services] = await Promise.all([resolve(options.data, request), resolve(options.services ?? {}, request)])
+      // the store in the theme's languages (`StorefrontOptions.languages`); the same object for the same data and theme languages, so its views stay cached
+      const data = options.languages === 'theme' ? withLanguages(given, themeLanguages(theme)) : given
       // set before any route runs, so the Ajax answers that build a view obey it as much as the pages do
       if (options.viewCacheSize !== undefined) setViewCacheSize(data, options.viewCacheSize)
       // which routes change state, and which read a body, depend only on the method and the address, so both are decided before the visitor's state is read or their turn is taken
