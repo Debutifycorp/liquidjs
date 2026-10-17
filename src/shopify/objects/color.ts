@@ -44,4 +44,9 @@ export class ColorDrop extends Drop {
   public valueOf () {
     return this.text
   }
+
+  /** `json` writes the colour as its text (`"#334fb4"`), as it wrote a colour filter's result before the filters returned colour objects; what Shopify writes for a colour object is not pinned. */
+  public toJSON () {
+    return this.text
+  }
 }

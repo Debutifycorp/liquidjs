@@ -44,6 +44,20 @@ describe('shopify/filters/color', () => {
     expect(await render(source, { c: color })).toBe('#334fb4|51 79 180 1.0|227 56 45|51 79 180|51 79 180 / 1.0|47% 0.16 268|47% 0.16 268 / 1.0|0.16|#283e8c')
     expect(ColorDrop.from('')).toBeUndefined()
   })
+  // Dawn's layout/theme.liquid assigns `background | color_darken: 25` and prints its `.red`, `.green` and `.blue`; the parity store prints `191,191,191` for white
+  it('returns a colour object from color_darken, color_lighten, color_saturate, color_desaturate, color_modify and color_mix', async () => {
+    const source = [
+      "{% assign c = '#ffffff' | color_darken: 25 %}{{ c }} {{ c.red }},{{ c.green }},{{ c.blue }}",
+      "{% assign c = '#000000' | color_lighten: 50 %}{{ c }} {{ c.red }},{{ c.green }},{{ c.blue }}",
+      "{% assign c = '#EA5AB9' | color_saturate: 30 %}{{ c.red }}",
+      "{% assign c = '#EA5AB9' | color_desaturate: 30 %}{{ c.green }}",
+      "{% assign c = '#EA5AB9' | color_modify: 'red', 255 %}{{ c }} {{ c.red }}",
+      "{% assign c = '#EA5AB9' | color_modify: 'alpha', 0.85 %}{{ c }} {{ c.alpha }}",
+      "{% assign c = '#E800B0' | color_mix: '#00936F', 50 %}{{ c }} {{ c.blue }}",
+      "{{ '#ffffff' | color_darken: 25 | json }}"
+    ].join('|')
+    expect(await render(source)).toBe('#bfbfbf 191,191,191|#808080 128,128,128|255|118|#ff5ab9 255|rgba(234, 90, 185, 0.85) 0.85|#744a90 144|"#bfbfbf"')
+  })
 })
 
 describe('shopify/filters/color: forms the pages describe but give no example for', () => {
