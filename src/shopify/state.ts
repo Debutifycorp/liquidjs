@@ -43,7 +43,7 @@ export interface ShopifyState {
   /** The currency of the view's market and its rate against the shop's (`Shopify.currency` in `content_for_header`); the shop's currency at rate 1 when unset. */
   currency?: { iso_code: string, rate: number }
   frames: Frame[]
-  /** `{% stylesheet %}` and `{% javascript %}` bodies met while rendering, by file, in the order first rendered; `content_for_header` inlines them. https://shopify.dev/docs/api/liquid/tags/stylesheet and https://shopify.dev/docs/api/liquid/tags/javascript say how the bodies are loaded only by reference, and https://shopify.dev/docs/api/liquid/objects/content_for_header says only that it returns the scripts Shopify requires, so inlining the bodies there is Debutify's choice. */
+  /** `{% stylesheet %}` and `{% javascript %}` bodies met while rendering, by file (its theme path), in the order first rendered; `content_for_header` inlines them, or links the compiled files that hold them and names the page's sections for `scripts.js` (see `contentForHeader`). */
   assets: { stylesheets: Map<string, string>, javascripts: Map<string, string> }
   runtime?: ThemeHooks
   /** The engine of the page being rendered, through which `render` and `include` look snippets up: a section parsed once by a base theme's engine renders the snippet of the overlay being rendered, when the overlay replaces it. Unset for a render that is not a theme page: the tag then uses the engine that parsed it. Debutify's device for theme overlays; Shopify has no counterpart to cite. */
