@@ -111,7 +111,7 @@ function imageTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
     }).join(', ')
   }
 
-  let html = `<img src="${escapeHtml(src)}"${attribute('alt', hasOwn(named, 'alt') ? named.alt ?? '' : url?.alt ?? '')}`
+  let html = `<img src="${escapeHtml(src)}"${attribute('alt', hasOwn(named, 'alt') ? named.alt : url?.alt ?? '')}`
   if (srcset) html += attribute('srcset', srcset)
   html += attribute('width', width) + attribute('height', height)
   const loading = hasOwn(named, 'loading') ? named.loading : (named.preload !== true && lazyByDefault(state) ? 'lazy' : undefined)

@@ -165,6 +165,16 @@ describe('shopify filters the three themes use', () => {
       expect((await page('/collections/all?filter.v.option.color=Red', source('collection.products'))).html).toBe('beanie:39774611767318:[];hoodie-old:39774600364054:[];')
       expect((await page('/search?q=hoodie&type=product&filter.v.option.color=Red', source('search.results'))).html).toBe('hoodie-old:39774600364054:[];')
     })
+
+    // scenario `page-collection-filtered` of Horizon 4.3.0: the card passes `alt: media.alt` to image_tag, and Shopify prints no alt attribute for a product shown through its variant, where the unfiltered card prints the product's title
+    it('has no alt text of its own, so image_tag with that alt prints none, where the unfiltered media reads the product title', async () => {
+      const source = "{% for p in collection.products %}{% if p.handle == 'beanie' %}{% if p.featured_media.alt == nil %}nil{% else %}{{ p.featured_media.alt }}{% endif %}|{{ p.featured_media.preview_image | image_url: width: 100 | image_tag: alt: p.featured_media.alt, class: 'm' }}{% endif %}{% endfor %}"
+      const filtered = (await page('/collections/all?filter.v.option.color=Red', source)).html
+      expect(filtered).toMatch(/^nil\|<img src="[^"]+" srcset="[^"]+" width="100" height="100" class="m">$/)
+      expect(filtered).not.toContain('alt=')
+      const unfiltered = (await page('/collections/all', source)).html
+      expect(unfiltered).toMatch(/^Beanie\|<img src="[^"]+" alt="Beanie" /)
+    })
   })
 
   // https://shopify.dev/docs/api/liquid/filters/default: Ruby's filter returns its input itself

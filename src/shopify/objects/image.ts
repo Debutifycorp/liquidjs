@@ -36,7 +36,8 @@ export class ImageDrop extends Drop {
   public readonly height: number | null
   /** A decimal, as Shopify documents it, so `{{ 1 | divided_by: image.aspect_ratio }}` stays a float division for square or 2:1 images. */
   public readonly aspect_ratio: LiquidFloat | null
-  public readonly alt: string
+  /** The alt text, else the title of the product the image belongs to; nil for the media a variant filter shows as a product's `featured_media` when it has no alt text of its own (`bare`). */
+  public readonly alt: string | null
   public readonly id: number | null
   /** `image` for product media, nil for images from anywhere else. https://shopify.dev/docs/api/liquid/objects/image#image-media_type */
   public readonly media_type: 'image' | null
@@ -50,7 +51,7 @@ export class ImageDrop extends Drop {
   private [PREVIEW]?: ImageDrop
 
   /** `asMedia` marks an image reached as product media (`product.media`, `featured_media`), the only images whose `preview_image` and `media_type` are set. `position` is the image's place in the product's `images` or `media`. `title` is the title of the product when the image is one of the product's own (`product.images`, `featured_image`, `media`, `featured_media`), which `alt` reads when the image has no alt text of its own: the parity store prints such an image's alt as its product's title (scenarios `page-product` and `page-collections`: `<img alt="Beanie">` from `card_product.featured_media.alt`, where the dataset's image has none), while `product | json` and the Ajax answer print its own, `null` (fixture `probe-product-default`). The images of a variant read the title too (scenario `page-product`: the modal's `product.selected_or_first_available_variant.featured_media.alt` is the title). */
-  public constructor (data: ImageData, asMedia = false, position: number | null = null, title = '') {
+  public constructor (data: ImageData, asMedia = false, position: number | null = null, title = '', nilAlt = false) {
     super()
     Object.defineProperty(this, 'data', { value: data, enumerable: false })
     this[AS_MEDIA] = asMedia
@@ -60,7 +61,7 @@ export class ImageDrop extends Drop {
     this.width = data.width ?? null
     this.height = data.height ?? null
     this.aspect_ratio = data.width && data.height ? new LiquidFloat(data.width / data.height) : null
-    this.alt = data.alt || title
+    this.alt = data.alt || (nilAlt ? null : title)
     this.id = data.id ?? null
     this.media_type = asMedia ? 'image' : null
     this.presentation = { focal_point: new FocalPointDrop(data.focal_point) }
@@ -73,9 +74,9 @@ export class ImageDrop extends Drop {
     return this[PREVIEW]
   }
 
-  /** The same media with its own alt text and not the product's title, its `id` kept: what a variant filter shows as a product's `featured_media` (`collectionView`, `buildSearch`). Not `preview_image`, whose `id` is nil, since `product.featured_media` is a media object with an id (https://shopify.dev/docs/api/liquid/objects/media) and Horizon's card gallery prints `slide_id: media.id` for it. */
+  /** The same media with its own alt text and not the product's title, its `id` kept: what a variant filter shows as a product's `featured_media` (`collectionView`, `buildSearch`). Not `preview_image`, whose `id` is nil, since `product.featured_media` is a media object with an id (https://shopify.dev/docs/api/liquid/objects/media) and Horizon's card gallery prints `slide_id: media.id` for it. Its `alt` is nil when the media has none of its own, not the empty string: Horizon's card passes `alt: media.alt` to `image_tag`, and the parity store prints no `alt` attribute for the card of a product shown through its variant (scenario `page-collection-filtered`, element `<img class="product-media__image">`), where `alt: ''` prints `alt=""`. */
   public bare (): ImageDrop {
-    return this[AS_MEDIA] && this[TITLE] && !this.data.alt ? new ImageDrop(this.data, true, this.position) : this
+    return this[AS_MEDIA] && this[TITLE] && !this.data.alt ? new ImageDrop(this.data, true, this.position, '', true) : this
   }
 
   public valueOf () {

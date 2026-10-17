@@ -260,6 +260,12 @@ describe('shopify/filters/media', () => {
     const plain = await render('{{ product | image_url: width: 200 | image_tag }}')
     expect(await render('{% assign thumb = product | image_url: width: 200 | image_tag %}{{ thumb.size }} {{ thumb | size }}')).toBe(`${plain.length} ${plain.length}`)
   })
+  // Shopify prints no alt attribute for `alt: nil` (Horizon 4.3.0 passes `alt: media.alt` and the parity store prints none for a media without alt text), as it prints none for `ref: nil`; `alt: ''` still prints `alt=""`
+  it('image_tag leaves out an alt that is nil and keeps an empty one', async () => {
+    expect(await render('{{ product | image_url: width: 200 | image_tag: alt: nil, class: "a" }}')).not.toContain('alt=')
+    expect(await render('{{ product | image_url: width: 200 | image_tag: alt: missing, class: "a" }}')).not.toContain('alt=')
+    expect(await render('{{ product | image_url: width: 200 | image_tag: alt: "", class: "a" }}')).toContain(' alt="" ')
+  })
   it('image_tag writes the focal point as object-position', async () => {
     const header = { src: `${HOST}/files/potions-header.png?v=1650325393`, width: 1300, height: 750, focal_point: { x: 1.923076923, y: 9.791666667 } }
     expect(await render('{{ header | image_url: width: 300 | image_tag }}', { header })).toBe(`<img src="${HOST}/files/potions-header.png?v=1650325393&amp;width=300" alt="" srcset="${HOST}/files/potions-header.png?v=1650325393&amp;width=300 300w" width="300" height="173" style="object-position:1.9231% 9.7917%;">`)
