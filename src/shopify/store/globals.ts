@@ -84,6 +84,8 @@ export interface RequestInput {
   country?: string
   /** The collection of `/collections/<handle>/products/<product>`, which Shopify sets as the `collection` global on that product page. */
   collection?: string
+  /** The id of the variant of a Section Rendering request on `/variants/<id>`, which the section reads as `product_variant` (https://shopify.dev/docs/storefronts/themes/delivery-fulfillment/pickup-availability). */
+  productVariant?: number
 }
 
 /** The route paths of the primary locale, https://shopify.dev/docs/api/liquid/objects/routes lists them for the default locale. */
@@ -264,11 +266,22 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     metaobjects: {},
     country_option_tags: store.country_option_tags,
     all_country_option_tags: store.all_country_option_tags,
+    // https://shopify.dev/docs/storefronts/themes/delivery-fulfillment/pickup-availability: a section requested at `/variants/<id>/?section_id=…` reads that variant as `product_variant`, and "can't access the Liquid product object"; a variant the store lacks is nil, which the router answers before it renders anything
+    ...(request.productVariant !== undefined ? { product_variant: variantObject(store, request.productVariant) } : {}),
     ...(pageType === 'gift_card' ? { gift_card: store.gift_card } : {}),
     ...(pageType === 'customers/order' ? { order: orderFor(store.customer, request.resource, report) } : {}),
     ...resources
   }
   return { globals, linklists, request: { path, origin, page, prefix: view.prefix, query: request.query, alternates: pageType === '404' ? [] : alternates(data, view, path, request.searchTerms, pageType) } }
+}
+
+/** The built variant with `id`, or nil when the store has none. */
+function variantObject (store: StoreObjects, id: number): LiquidObject | null {
+  for (const product of HandleMap.values(store.products)) {
+    const found = (product.variants as LiquidObject[]).find(variant => variant.id === id)
+    if (found) return found
+  }
+  return null
 }
 
 /** The path of the canonical URL: the page's path, and for a search with a term its `?q=` (recording `page-search`: `rel="canonical"` and `og:url` are `/search?q=shirt`). Any other query, a search's `type` and filters included, is left out, as the hreflang links leave it out. The term is form-encoded (a space is `+`, as the hreflang links write it); how Shopify encodes a space or a quote in `canonical_url` is not recorded. */

@@ -10,6 +10,7 @@ export type Route =
   | { kind: 'cart', action: CartAction, format: 'js' | 'form' }
   | { kind: 'discount', code: string, redirect: string | null }
   | { kind: 'variant', handle: string, variant: number }
+  | { kind: 'variant-gone' }
   | { kind: 'shipping', action: 'prepare' | 'async' | 'rates' }
   | { kind: 'product-json', handle: string }
   | { kind: 'suggest-json', page: PageRequest }
@@ -114,13 +115,18 @@ export function routeRequest (method: string, rawUrl: string, data: StoreData, o
   if (verb === 'POST' && path === '/contact') return done({ kind: 'contact' })
   if (verb === 'POST' && path === '/localization') return done({ kind: 'localization' })
   if (verb === 'POST' && path === '/password') return done({ kind: 'password' })
-  // no shopify.dev page documents `/variants/<id>`: as the parity store answers it, a 302 to `/products/<handle>?variant=<id>` (fixture `flow-variant-route`)
-  const variant = /^\/variants\/(\d+)$/.exec(path)
-  const found = variant && read ? findVariant(data, Number(variant[1])) : null
-  if (found) return done({ kind: 'variant', handle: found.product.handle, variant: found.variant.id })
-  if (!read || page.templateName === '404') return notFound()
   // https://shopify.dev/docs/api/section-rendering: `section_id` answers one section's HTML and `sections` a JSON map of up to five, on any page address; the handler enforces the count
   const sectionId = query.get('section_id') ?? undefined
   const sections = query.get('sections')?.split(',').map(s => s.trim()).filter(Boolean)
-  return done({ kind: 'page', page, ...(sectionId ? { sectionId } : {}), ...(sections?.length ? { sections } : {}) })
+  const asked = { ...(sectionId ? { sectionId } : {}), ...(sections?.length ? { sections } : {}) }
+  // no shopify.dev page documents `/variants/<id>` itself: as the parity store answers it, a 302 to `/products/<handle>?variant=<id>` (fixture `flow-variant-route`)
+  const variant = /^\/variants\/(\d+)$/.exec(path)
+  const found = variant && read ? findVariant(data, Number(variant[1])) : null
+  // a section requested at a variant's address is rendered, not redirected: https://shopify.dev/docs/storefronts/themes/delivery-fulfillment/pickup-availability says the request "needs to be prefixed with a /variants/[variant-id] parameter", and the parity store answered `/variants/<id>/?section_id=pickup-availability` with 200, `text/html; charset=utf-8` and the section's wrapper, no redirect; the section reads the variant as `product_variant` and has no `product` (the page is the 404 template's, as the address names no other)
+  if (found && (sectionId || sections?.length)) return done({ kind: 'page', page: { ...page, request: { ...page.request, productVariant: found.variant.id } }, ...asked })
+  if (found) return done({ kind: 'variant', handle: found.product.handle, variant: found.variant.id })
+  // the same request for a variant the store lacks answered 404 with an empty body typed `text/html; charset=utf-8` on the parity store, one observation (the address of a section the theme lacks answers alike)
+  if (variant && read && (sectionId || sections?.length)) return done({ kind: 'variant-gone' })
+  if (!read || page.templateName === '404') return notFound()
+  return done({ kind: 'page', page, ...asked })
 }

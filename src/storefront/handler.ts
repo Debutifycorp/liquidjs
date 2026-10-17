@@ -119,6 +119,7 @@ function backHref (ctx: Context): string {
 async function answerPage (ctx: Context): Promise<Answer> {
   const route = ctx.routed.route
   if (route.kind === 'not-found') return { response: await renderPageResponse(ctx, route.page, 404) }
+  if (route.kind === 'variant-gone') return { response: new Response('', { status: 404, headers: { 'content-type': 'text/html; charset=utf-8' } }), fragment: true }
   if (route.kind === 'notice') {
     return { response: ctx.options.notice ? await ctx.options.notice(route.notice, ctx.request) : noticePage(route.notice, backHref(ctx)) }
   }

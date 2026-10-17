@@ -46,6 +46,19 @@ describe('forms', () => {
     const answer = await send('GET', `${step.url}?view=probe`)
     expect([answer.status, answer.headers.get('location')]).toEqual([step.status, step.location])
   })
+  it('renders a section asked for at a variant\'s address, as the pickup availability fetch does', async () => {
+    // https://shopify.dev/docs/storefronts/themes/delivery-fulfillment/pickup-availability: the request "needs to be prefixed with a /variants/[variant-id] parameter", the section reads `product_variant` and "can't access the Liquid product object". The parity store answered `/variants/<id>/?section_id=pickup-availability` with 200, `text/html; charset=utf-8` and `<div id="shopify-section-pickup-availability" class="shopify-section"></div>` (a store with no pickup location); a variant it lacks answered 404 with an empty body of the same type (read once, not a fixture)
+    const files = { ...harnessTheme().files, 'sections/pickup-availability.liquid': "{%- assign pick_up_availabilities = product_variant.store_availabilities | where: 'pick_up_enabled', true -%}{%- if pick_up_availabilities.size > 0 -%}<p>pickup</p>{%- endif -%}", 'sections/variant-probe.liquid': '[{{ product_variant.id }}|{{ product_variant.title }}|{{ product.title }}]' }
+    const { send } = harness({ theme: { files } })
+    const pickup = await send('GET', '/variants/43695846653974/?section_id=pickup-availability')
+    expect([pickup.status, pickup.headers.get('content-type'), pickup.text]).toEqual([200, 'text/html; charset=utf-8', '<div id="shopify-section-pickup-availability" class="shopify-section"></div>'])
+    expect((await send('GET', '/variants/43695846653974?section_id=variant-probe')).text).toBe('<div id="shopify-section-variant-probe" class="shopify-section">[43695846653974|Red / Medium|]</div>')
+    expect((await send('GET', '/variants/43695846653974?sections=variant-probe,missing')).json).toEqual({ 'variant-probe': '<div id="shopify-section-variant-probe" class="shopify-section">[43695846653974|Red / Medium|]</div>', missing: null })
+    expect((await send('GET', '/variants/43695846653974?section_id=missing')).status).toBe(404)
+    const gone = await send('GET', '/variants/1/?section_id=pickup-availability')
+    expect([gone.status, gone.headers.get('content-type'), gone.text]).toEqual([404, 'text/html; charset=utf-8', ''])
+    expect((await send('GET', '/variants/43695846653974/')).status).toBe(302)
+  })
   it('switches country and language and redirects under the new locale prefix', async () => {
     for (const name of ['flow-localization-country', 'flow-localization-language']) {
       const { send } = harness()

@@ -26,6 +26,12 @@ describe('routeRequest', () => {
     // Shopify answers /variants/<id> with a 302 to its product page and drops the rest of the query (fixture `flow-variant-route`), so it is a redirect and not a page; an unknown variant is a 404 like any unknown address (no recording)
     expect(kind('GET', '/variants/43695846653974?view=probe')).toEqual({ kind: 'variant', handle: 'hoodie', variant: 43695846653974 })
     expect(kind('GET', '/variants/1')).toMatchObject({ kind: 'not-found' })
+    // a section asked for at a variant's address is rendered with that variant as `product_variant`, not redirected (the parity store answered `/variants/<id>/?section_id=pickup-availability` with 200 and the section); a variant the store lacks answers 404 with no page
+    expect(kind('GET', '/variants/43695846653974/?section_id=pickup-availability')).toMatchObject({ kind: 'page', sectionId: 'pickup-availability', page: { request: { productVariant: 43695846653974 } } })
+    expect(kind('GET', '/variants/43695846653974?sections=a,b')).toMatchObject({ kind: 'page', sections: ['a', 'b'], page: { request: { productVariant: 43695846653974 } } })
+    expect(kind('GET', '/variants/43695846653974?section_id=')).toEqual({ kind: 'variant', handle: 'hoodie', variant: 43695846653974 })
+    expect(kind('GET', '/variants/1/?section_id=pickup-availability')).toEqual({ kind: 'variant-gone' })
+    expect(kind('POST', '/variants/43695846653974?section_id=pickup-availability')).toMatchObject({ kind: 'not-found' })
     expect(kind('POST', '/cart/prepare_shipping_rates.json')).toEqual({ kind: 'shipping', action: 'prepare' })
     expect(kind('GET', '/cart/async_shipping_rates.json')).toEqual({ kind: 'shipping', action: 'async' })
     expect(kind('GET', '/cart/shipping_rates.json')).toEqual({ kind: 'shipping', action: 'rates' })
