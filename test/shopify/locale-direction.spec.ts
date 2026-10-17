@@ -20,4 +20,10 @@ describe('shop_locale.direction', () => {
     expect(await render('{{ request.locale.direction }}|{% for l in shop.published_locales %}{{ l.iso_code }}={{ l.direction }} {% endfor %}|{{ localization.language.direction }}', page('en', ''))).toBe('ltr|en=ltr ar=rtl he=rtl pa-Arab=rtl |ltr')
     expect(await render('<html dir="{{ request.locale.direction | default: \'ltr\' }}">', page('ar', '/ar'))).toBe('<html dir="rtl">')
   })
+  it('knows N\'Ko, Dari, Western Punjabi, South Azerbaijani and Mazanderani as right to left', async () => {
+    const languages = ['nqo', 'prs', 'pnb', 'azb', 'mzn', 'fa-AF', 'zh-TW']
+    const many: StoreData = { ...data, markets: [{ ...data.markets![0], languages: ['en', ...languages] }], languages: [data.languages![0], ...languages.map(iso => ({ iso_code: iso, name: iso, endonym_name: iso }))] }
+    const { globals } = buildGlobals({ store: buildStore(many), data: many, templateName: 'index', request: {}, locale: 'en', report: new ReportCollector() })
+    expect(await render('{% for l in shop.published_locales %}{{ l.iso_code }}={{ l.direction }} {% endfor %}', globals)).toBe('en=ltr nqo=rtl prs=rtl pnb=rtl azb=rtl mzn=rtl fa-AF=rtl zh-TW=ltr ')
+  })
 })

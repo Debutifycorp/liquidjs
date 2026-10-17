@@ -19,6 +19,11 @@ describe('link.handle', () => {
     expect(await render("{% for l in linklists['main-menu'].links %}HeaderMenu-{{ l.handle }}{% for c in l.links %}/{{ c.handle }}{% endfor %} {% endfor %}|{{ linklists['main-menu'].links.first.data_sharing_opt_out_icon | json }}", { linklists }))
       .toBe('HeaderMenu-news HeaderMenu-mens-womens/tops HeaderMenu-summer-sale |null')
   })
+  it('gives a link whose title handleizes to nothing its position, and a repeated handle a number, so no two siblings share one', async () => {
+    const menus: StoreData = { ...data, linklists: [{ handle: 'main-menu', title: 'Main menu', links: [{ title: 'ホーム', url: '/' }, { title: '  ', url: '/a' }, { title: 'Sale', url: '/b' }, { title: 'Sale', url: '/c' }, { title: 'Sale', url: '/d', links: [{ title: 'Sale', url: '/e' }] }, { title: 'Café Été', url: '/f' }] }] }
+    const linklists = buildLinklists(buildStore(menus).linklists, '/')
+    expect(await render("{% for l in linklists['main-menu'].links %}{{ l.handle }}{% for c in l.links %}/{{ c.handle }}{% endfor %} {% endfor %}", { linklists })).toBe('link-1 link-2 sale sale-1 sale-2/sale caf-t ')
+  })
   it('keeps the primary language\'s handle on a translated menu', async () => {
     const store = buildStore(data, resolveView(data, { language: 'fr', localePrefix: '/fr' }))
     const linklists = buildLinklists(store.linklists, '/fr', store.prefix)

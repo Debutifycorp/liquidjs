@@ -39,8 +39,11 @@ export function resourceExists (data: StoreData, page: PageRequest): boolean {
     case 'article': return (data.blogs ?? []).some(b => b.articles.some(a => `${b.handle}/${a.handle}` === resource))
     // https://shopify.dev/docs/storefronts/themes/architecture/templates/gift-card-liquid and https://shopify.dev/docs/api/liquid/objects/gift_card say nothing of a card that does not exist, so the theme's 404 template answers it, as it does an unknown product or page (not pinned). A disabled or expired card is shown: the themes mark it with `gift_card.enabled` and `gift_card.expired`
     case 'gift_card': return resource === giftCardResource(data)
-    // a policy is at `/policies/<type with hyphens>` (`privacy_policy` at `/policies/privacy-policy`), and one with no body is not set: the parity store answers 404 for the policies it has none of
-    case 'policy': return (data.shop.policies ?? []).some(p => p.body && p.type.replace(/_/g, '-') === resource)
+    // a policy is at `/policies/<type with hyphens>` (`privacy_policy` at `/policies/privacy-policy`), and one with no body is not set: the parity store answers 404 for the policies it has none of. As `buildStore` reads them, the first entry of a type counts and a type Shopify has not is ignored
+    case 'policy': {
+      const first = (data.shop.policies ?? []).find(p => POLICY_TYPES.has(p.type) && p.type.replace(/_/g, '-') === resource)
+      return Boolean(first?.body)
+    }
     default: return true
   }
 }
@@ -74,6 +77,9 @@ export function compiledAssetResponse (request: Request, basePath: string, theme
   if (known.includes(etag) || known.includes('*')) return new Response(null, { status: 304, headers })
   return new Response(verb === 'HEAD' ? null : compiled.body, { status: 200, headers })
 }
+
+/** The policy types a shop can set (`PolicyData['type']`), the ones `buildStore` serves. */
+const POLICY_TYPES = new Set<string>(['privacy_policy', 'refund_policy', 'shipping_policy', 'terms_of_service', 'subscription_policy', 'contact_information', 'legal_notice'])
 
 /** The engine's render options for a page of this request. */
 function renderOptions (ctx: Context, page: PageRequest, form?: FormOutcome) {

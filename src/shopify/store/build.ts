@@ -8,7 +8,7 @@ import type { OptionValueInfo } from '../objects/product-option'
 import type { ImageData } from '../types'
 import { escapeHtml } from '../util/html'
 import { handleize } from '../util/handleize'
-import { own } from '../util/own'
+import { hasOwn, own } from '../util/own'
 import { buildCartObject, cartStateOf } from './cart'
 import { buildFilters } from './filters'
 import { buildLocalization, currencyOf, enabledCurrencies, marketRoot } from './markets'
@@ -420,12 +420,13 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
 }
 
 /**
- * The product a request shows: `?variant=<id>` selects that variant (https://shopify.dev/docs/api/liquid/objects/product#product-selected_variant: "The currently selected variant of the product", "On product pages, it is based on the variant ID set in the variant URL parameter", nil when none is), which `selected_or_first_available_variant` then returns "regardless of its availability" (https://shopify.dev/docs/api/liquid/objects/product#product-selected_or_first_available_variant); the variant's `selected` is true (https://shopify.dev/docs/api/liquid/objects/variant#variant-selected) and each option's `selected_value` is the selected variant's (https://shopify.dev/docs/api/liquid/objects/product_option). An id the product does not have selects nothing, as the parity store renders it (fixture `probe-product-unknown-variant`). Without a `?variant=` the product's option value ids in `?option_values=` select (`optionValues`, `pickByOptionValues`). The built product is shared by every request of a view, so a selection returns a copy (with its hidden properties) and leaves the shared one alone. On the confirm-on-a-development-store list: the copy is not the same object as the store's product, so `{% if product == all_products[product.handle] %}` and `collections.x.products contains product` are false on a product page with `?variant=` and true without it, and shopify.dev and the parity store's recordings do not say what Shopify answers.
+ * The product a request shows: `?variant=<id>` selects that variant (https://shopify.dev/docs/api/liquid/objects/product#product-selected_variant: "The currently selected variant of the product", "On product pages, it is based on the variant ID set in the variant URL parameter", nil when none is), which `selected_or_first_available_variant` then returns "regardless of its availability" (https://shopify.dev/docs/api/liquid/objects/product#product-selected_or_first_available_variant); the variant's `selected` is true (https://shopify.dev/docs/api/liquid/objects/variant#variant-selected) and each option's `selected_value` is the selected variant's (https://shopify.dev/docs/api/liquid/objects/product_option). An id the product does not have selects nothing, as the parity store renders it (fixture `probe-product-unknown-variant`), and then `?option_values=` is not read either. Without a `?variant=` the product's option value ids in `?option_values=` select (`optionValues`, `pickByOptionValues`). The built product is shared by every request of a view, so a selection returns a copy (with its hidden properties) and leaves the shared one alone. On the confirm-on-a-development-store list: the copy is not the same object as the store's product, so `{% if product == all_products[product.handle] %}` and `collections.x.products contains product` are false on a product page with `?variant=` and true without it, and shopify.dev and the parity store's recordings do not say what Shopify answers.
  */
 export function selectProduct (product: LiquidObject, variantId: number | undefined, optionValues?: number[]): LiquidObject {
   const variants = product.variants as LiquidObject[]
   const byId = variantId === undefined ? undefined : variants.find(variant => variant.id === variantId)
-  const picked = byId ? { variant: byId, values: byId.options as string[] } : optionValues?.length ? pickByOptionValues(product, optionValues) : undefined
+  // a `?variant=` the product does not have selects nothing, even beside `?option_values=`: `?variant=` wins whether or not it is known (no recording holds both, so this is not pinned)
+  const picked = byId ? { variant: byId, values: byId.options as string[] } : variantId === undefined && optionValues?.length ? pickByOptionValues(product, optionValues) : undefined
   if (!picked) return product
   const copy = copyObject(product)
   copy.variants = variants.map(variant => Object.assign(copyObject(variant, 'product'), { selected: variant === picked.variant }))
@@ -611,6 +612,18 @@ const POLICY_TITLES: Record<PolicyData['type'], string> = { privacy_policy: 'Pri
 /** The handle of a policy type, which its address ends with: `privacy_policy` is at `/policies/privacy-policy`, as the parity store's footer links it (its recordings of Dawn and Horizon). */
 export const policyHandle = (type: string): string => type.replace(/_/g, '-')
 
+/** The policies a shop has set: the first entry of each type `POLICY_TITLES` names, when its body is not empty. A later entry of the same type and a type outside that list are ignored, so `shop.<type>`, `shop.policies` and `/policies/<handle>` always agree. */
+function setPolicies (list: PolicyData[] | undefined): PolicyData[] {
+  const seen = new Set<string>()
+  const set: PolicyData[] = []
+  for (const policy of list ?? []) {
+    if (!hasOwn(POLICY_TITLES, policy.type) || seen.has(policy.type)) continue
+    seen.add(policy.type)
+    if (policy.body) set.push(policy)
+  }
+  return set
+}
+
 /** https://shopify.dev/docs/api/liquid/objects/policy: `id`, `title`, `body` (HTML) and `url`, "the relative URL of the policy", under `prefix` (the parity store links `/fr-ca/policies/privacy-policy` on its French pages). */
 function buildPolicy (data: PolicyData, prefix: string): LiquidObject {
   return { id: data.id ?? null, title: data.title || POLICY_TITLES[data.type] || data.type, body: data.body, url: withPrefix(prefix, `/policies/${policyHandle(data.type)}`) }
@@ -684,10 +697,10 @@ function linkType (url: string): string {
 }
 
 /**
- * One menu link, https://shopify.dev/docs/api/liquid/objects/link. Its `url` sits under `prefix` (`withPrefix`), as a link of the parity store's menu does under a locale prefix (fixture `probe-page-fr-ca`); `type` and the comparisons below read the store's own path, without the prefix, and so does the request `path`, which carries it. `current` is true when the link's path is the request path and `active` when it is the path or a parent of it ("matches, or contains, the link's url"); both ignore query strings, `current` also reads a product in a collection as the product, and `child_active` and `child_current` look at the children. `levels` counts the nested levels below the link. `object` is always nil: the page says it is the article, blog, collection, metaobject, page, policy or product the link points at, which this layer does not resolve from a URL. `handle` is the data's, else its title handleized, the title of the store's primary language (`translateData` keeps it on a translated link): the parity store prints Dawn's `HeaderMenu-{{ link.handle }}` as `HeaderMenu-news` for the link `News`, and as the same on its French pages, where the link reads `Actualités` (its recordings `page-home` and `page-home-fr-ca`); the handle of a link whose data gives none is the engine's choice beyond those recordings. `data_sharing_opt_out_icon` is nil: the page gives it to the data-sale opt-out link Shopify adds, which the store data has no setting for.
+ * One menu link, https://shopify.dev/docs/api/liquid/objects/link. Its `url` sits under `prefix` (`withPrefix`), as a link of the parity store's menu does under a locale prefix (fixture `probe-page-fr-ca`); `type` and the comparisons below read the store's own path, without the prefix, and so does the request `path`, which carries it. `current` is true when the link's path is the request path and `active` when it is the path or a parent of it ("matches, or contains, the link's url"); both ignore query strings, `current` also reads a product in a collection as the product, and `child_active` and `child_current` look at the children. `levels` counts the nested levels below the link. `object` is always nil: the page says it is the article, blog, collection, metaobject, page, policy or product the link points at, which this layer does not resolve from a URL. `handle` is the one `buildLinks` gives it: the data's, else its title handleized, the title of the store's primary language (`translateData` keeps it on a translated link): the parity store prints Dawn's `HeaderMenu-{{ link.handle }}` as `HeaderMenu-news` for the link `News`, and as the same on its French pages, where the link reads `Actualités` (its recordings `page-home` and `page-home-fr-ca`); the handle of a link whose data gives none is the engine's choice beyond those recordings. `data_sharing_opt_out_icon` is nil: the page gives it to the data-sale opt-out link Shopify adds, which the store data has no setting for.
  */
-function buildLink (data: LinkData, path: string, prefix: string): LiquidObject {
-  const links = (data.links ?? []).map(child => buildLink(child, path, prefix))
+function buildLink (data: LinkData, path: string, prefix: string, handle: string): LiquidObject {
+  const links = buildLinks(data.links ?? [], path, prefix)
   const here = withoutPrefix(prefix, path)
   const current = linkPath(data.url) === linkPath(here)
   const target = stripQuery(data.url)
@@ -697,7 +710,7 @@ function buildLink (data: LinkData, path: string, prefix: string): LiquidObject 
   const active = current || (holdsPagesBelow && stripQuery(here).startsWith(`${target}/`))
   return {
     title: data.title,
-    handle: data.handle ?? handleize(data.title),
+    handle,
     url: withPrefix(prefix, data.url),
     type: linkType(data.url),
     active,
@@ -712,13 +725,30 @@ function buildLink (data: LinkData, path: string, prefix: string): LiquidObject 
 }
 
 /**
+ * The links of one list, each with its own handle among its siblings: the data's handle, else its title handleized (`buildLink`). A handle that comes out empty (a title of only non-Latin letters, such as `ホーム`, which `handleize` drops) is `link-<position>`, and one a sibling already has gets `-1`, `-2` and so on, so every `HeaderMenu-{{ link.handle }}` id of a list is its own. Shopify's menu item handles for such titles are not recorded, so both fallbacks are the engine's and not pinned.
+ */
+function buildLinks (list: LinkData[], path: string, prefix: string): LiquidObject[] {
+  const used = new Set<string>()
+  return list.map((link, i) => {
+    let handle = link.handle || handleize(link.title) || `link-${i + 1}`
+    if (used.has(handle)) {
+      let n = 1
+      while (used.has(`${handle}-${n}`)) n++
+      handle = `${handle}-${n}`
+    }
+    used.add(handle)
+    return buildLink(link, path, prefix, handle)
+  })
+}
+
+/**
  * The `linklists` object for one request path, https://shopify.dev/docs/api/liquid/objects/linklists (each menu is https://shopify.dev/docs/api/liquid/objects/linklist), with its links under `prefix`. A menu prints as its handle, as the parity store prints a `link_list` setting: Horizon's `menu="{{ customer_account_menu }}"` came out `menu="customer-account-main-menu"` (shopify.dev says so only of the `product`, `collection`, `page`, `blog` and `article` settings, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings; for a menu it is recorded, not documented).
  *
  * A handle that names no menu is nil, so `linklists['x'].links` is nil and a loop over it prints nothing: shopify.dev does not say what a missing menu gives, but its `link_list` setting is "blank, if either no selection has been made or the selection no longer exists". Whether Shopify gives nil or an empty menu to `linklists['x']` itself is not pinned.
  */
 export function buildLinklists (lists: LinkListData[], path: string, prefix = ''): HandleMap<LiquidObject> {
   return new HandleMap(lists.map(list => {
-    const links = list.links.map(link => buildLink(link, path, prefix))
+    const links = buildLinks(list.links, path, prefix)
     return [list.handle, printsHandle({ handle: list.handle, title: list.title, links, levels: links.length ? 1 + Math.max(...links.map(link => link.levels as number)) : 0 })]
   }))
 }
@@ -1084,7 +1114,7 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   // the articles keep the store data's order here, which the search and the predictive search rank their ties by (fixture `probe-search-prefix`: the older article of two equal matches comes first), while a blog lists them newest first
   const articles = new HandleMap(HandleMap.values(blogs).flatMap(blog => articlesInDataOrder(blog).map(article => [`${blog.handle}/${article.handle}`, article] as [string, LiquidObject])))
   // a policy with no body is not set (Shopify answers its address with 404, as the parity store does for the four it has none of)
-  const policies = (source.shop.policies ?? []).filter(policy => policy.body).map(policy => ({ type: policy.type, built: buildPolicy(policy, prefix) }))
+  const policies = setPolicies(source.shop.policies).map(policy => ({ type: policy.type, built: buildPolicy(policy, prefix) }))
   const policyOf = (type: PolicyData['type']) => policies.find(policy => policy.type === type)?.built ?? null
   const objects: StoreObjects = {
     data,

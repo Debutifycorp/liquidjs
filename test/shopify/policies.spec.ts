@@ -49,6 +49,15 @@ describe('shop policies', () => {
     const { html } = await renderPage({ theme, data, templateName: page.templateName, request: page.request })
     expect(html).toBe('<title>Privacy policy</title><main data-template="" data-page="policy"><div class="shopify-policy__container">\n  <div class="shopify-policy__title">\n    <h1>Privacy policy</h1>\n  </div>\n\n  <div class="shopify-policy__body">\n    <div class="rte">\n        <p>Private.</p>\n    </div>\n  </div>\n</div>\n</main>https://s.example/policies/privacy-policy')
   })
+  it('takes the first entry of a type and ignores a type Shopify has not, in the shop and at the policy address alike', async () => {
+    const doubled: StoreData = { ...data, shop: { ...data.shop, policies: [{ type: 'terms_of_service', body: '<p>First.</p>' }, { type: 'terms_of_service', body: '<p>Second.</p>' }, { type: 'cancellation_policy' as 'legal_notice', body: '<p>Odd.</p>' }] } }
+    const { shop } = buildStore(doubled)
+    expect(await render('{{ shop.policies | size }}|{{ shop.terms_of_service.body }}', { shop })).toBe('1|<p>First.</p>')
+    const page = requestFromUrl('/policies/terms-of-service', doubled)
+    const { html } = await renderPage({ theme: { files: { 'layout/theme.liquid': '{{ content_for_layout }}' } }, data: doubled, templateName: page.templateName, request: page.request })
+    expect(html).toContain('<p>First.</p>')
+    expect(html).not.toContain('Second')
+  })
   it('answers the policy pages through the storefront, and 404 for a policy that is not set', async () => {
     const { send } = harness()
     const found = await send('GET', '/policies/privacy-policy')

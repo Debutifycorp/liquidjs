@@ -151,8 +151,8 @@ export function languageIn (data: StoreData, view: StoreView, iso: string): { is
   return { iso_code: iso, name, endonym_name: language.endonym_name, primary: iso === primary, direction }
 }
 
-/** The languages written right to left, by their ISO 639 code: Arabic, Aramaic, Central Kurdish, Dhivehi, Persian, Hebrew, Kashmiri, Pashto, Sindhi, Syriac, Uyghur, Urdu and Yiddish, and the scripts that write them (`-Arab`, `-Hebr`, `-Syrc`, `-Thaa`, `-Nkoo`, `-Adlm`, `-Rohg`). */
-const RTL_LANGUAGES = new Set(['ar', 'arc', 'ckb', 'dv', 'fa', 'he', 'iw', 'ks', 'ps', 'sd', 'syr', 'ug', 'ur', 'yi'])
+/** The languages written right to left, by their ISO 639 code: Arabic, Aramaic, South Azerbaijani, Central Kurdish, Dhivehi, Persian, Hebrew, Kashmiri, Mazanderani, N'Ko, Western Punjabi, Dari, Pashto, Sindhi, Syriac, Uyghur, Urdu and Yiddish, and the scripts that write them (`-Arab`, `-Hebr`, `-Syrc`, `-Thaa`, `-Nkoo`, `-Adlm`, `-Rohg`). */
+const RTL_LANGUAGES = new Set(['ar', 'arc', 'azb', 'ckb', 'dv', 'fa', 'he', 'iw', 'ks', 'mzn', 'nqo', 'pnb', 'prs', 'ps', 'sd', 'syr', 'ug', 'ur', 'yi'])
 const RTL_SCRIPTS = new Set(['arab', 'hebr', 'syrc', 'thaa', 'nkoo', 'adlm', 'rohg'])
 
 /** https://shopify.dev/docs/api/liquid/objects/shop_locale#shop_locale-direction: "Returns `rtl` for right-to-left locales and `ltr` for left-to-right locales", for an IETF tag such as `ar`, `fa-IR` or `pa-Arab`. Which locales are right to left is not listed there; this is the usual list. */

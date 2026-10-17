@@ -59,8 +59,9 @@ describe('product_option_value', () => {
     expect(await render('{{ p.selected_variant.id }}|{{ p.selected_variant.selected }}', { p: selectProduct(product, undefined, [clay, small]) })).toBe('3|true')
     // unknown ids select nothing
     expect(selectProduct(product, undefined, [9, 10])).toBe(product)
-    // `?variant=` wins
+    // `?variant=` wins, also when the product has no such variant
     expect(await render('{{ p.selected_variant.id }}', { p: selectProduct(product, 2, [clay, small]) })).toBe('2')
+    expect(selectProduct(product, 99, [clay, small])).toBe(product)
   })
   it('selects no variant for a combination no variant has', async () => {
     const product = buildProduct({ ...tee, variants: tee.variants.filter(variant => variant.id !== 4) })
