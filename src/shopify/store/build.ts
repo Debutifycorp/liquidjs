@@ -4,6 +4,7 @@ import { buildOptions, keepOptionInfo, optionInfoOf, optionValueId, OptionsByNam
 import type { OptionValueInfo } from '../objects/product-option'
 import type { ImageData } from '../types'
 import { escapeHtml } from '../util/html'
+import { handleize } from '../util/handleize'
 import { own } from '../util/own'
 import { buildCartObject, cartStateOf } from './cart'
 import { buildFilters } from './filters'
@@ -612,7 +613,7 @@ function linkType (url: string): string {
 }
 
 /**
- * One menu link, https://shopify.dev/docs/api/liquid/objects/link. Its `url` sits under `prefix` (`withPrefix`), as a link of the parity store's menu does under a locale prefix (fixture `probe-page-fr-ca`); `type` and the comparisons below read the store's own path, without the prefix, and so does the request `path`, which carries it. `current` is true when the link's path is the request path and `active` when it is the path or a parent of it ("matches, or contains, the link's url"); both ignore query strings, `current` also reads a product in a collection as the product, and `child_active` and `child_current` look at the children. `levels` counts the nested levels below the link. `object` is always nil: the page says it is the article, blog, collection, metaobject, page, policy or product the link points at, which this layer does not resolve from a URL. `handle` and `data_sharing_opt_out_icon` are not built.
+ * One menu link, https://shopify.dev/docs/api/liquid/objects/link. Its `url` sits under `prefix` (`withPrefix`), as a link of the parity store's menu does under a locale prefix (fixture `probe-page-fr-ca`); `type` and the comparisons below read the store's own path, without the prefix, and so does the request `path`, which carries it. `current` is true when the link's path is the request path and `active` when it is the path or a parent of it ("matches, or contains, the link's url"); both ignore query strings, `current` also reads a product in a collection as the product, and `child_active` and `child_current` look at the children. `levels` counts the nested levels below the link. `object` is always nil: the page says it is the article, blog, collection, metaobject, page, policy or product the link points at, which this layer does not resolve from a URL. `handle` is the data's, else its title handleized, the title of the store's primary language (`translateData` keeps it on a translated link): the parity store prints Dawn's `HeaderMenu-{{ link.handle }}` as `HeaderMenu-news` for the link `News`, and as the same on its French pages, where the link reads `Actualités` (its recordings `page-home` and `page-home-fr-ca`); the handle of a link whose data gives none is the engine's choice beyond those recordings. `data_sharing_opt_out_icon` is nil: the page gives it to the data-sale opt-out link Shopify adds, which the store data has no setting for.
  */
 function buildLink (data: LinkData, path: string, prefix: string): LiquidObject {
   const links = (data.links ?? []).map(child => buildLink(child, path, prefix))
@@ -625,6 +626,7 @@ function buildLink (data: LinkData, path: string, prefix: string): LiquidObject 
   const active = current || (holdsPagesBelow && stripQuery(here).startsWith(`${target}/`))
   return {
     title: data.title,
+    handle: data.handle ?? handleize(data.title),
     url: withPrefix(prefix, data.url),
     type: linkType(data.url),
     active,
@@ -633,7 +635,8 @@ function buildLink (data: LinkData, path: string, prefix: string): LiquidObject 
     child_current: links.some(link => link.current || link.child_current),
     levels: links.length ? 1 + Math.max(...links.map(link => link.levels as number)) : 0,
     links,
-    object: null
+    object: null,
+    data_sharing_opt_out_icon: null
   }
 }
 

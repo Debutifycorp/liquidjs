@@ -1,3 +1,4 @@
+import { handleize } from '../util/handleize'
 import { own } from '../util/own'
 import type { LinkData, LinkListData, ResourceTranslations, StoreData } from './types'
 
@@ -13,11 +14,11 @@ function apply<T extends object> (item: T, fields: ResourceTranslations | undefi
   return out
 }
 
-/** The menu's links with their titles replaced in order, children right after their parent, as `TranslationsData.menus` lists them; a link past the end of `titles`, or whose translated title is empty, keeps its title. */
+/** The menu's links with their titles replaced in order, children right after their parent, as `TranslationsData.menus` lists them; a link past the end of `titles`, or whose translated title is empty, keeps its title. Each keeps the handle of its own title (`LinkData.handle`), which a translation does not change. */
 function translateLinks (links: LinkData[], titles: string[], at = { i: 0 }): LinkData[] {
   return links.map(link => {
     const title = titles[at.i++] || link.title
-    return { ...link, title, ...(link.links ? { links: translateLinks(link.links, titles, at) } : {}) }
+    return { ...link, title, handle: link.handle ?? handleize(link.title), ...(link.links ? { links: translateLinks(link.links, titles, at) } : {}) }
   })
 }
 

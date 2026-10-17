@@ -5,6 +5,7 @@ import { getDateTimeFormat } from '../../util/intl'
 import { attribute, escapeChar, escapeHtml } from '../util/html'
 import { SafeHtmlDrop } from '../objects/safe-html'
 import { namedForDisplay, plainValue, splitArgs } from '../util/args'
+import { handleize } from '../util/handleize'
 import { hasOwn } from '../util/own'
 import { shopifyState } from '../state'
 import { withoutPrefix } from '../store/view'
@@ -25,11 +26,6 @@ function escapeOnce (this: FilterImpl, input: unknown) {
   const text = stringify(input)
   this.context.memoryLimit.use(text.length)
   return text.replace(ESCAPE_ONCE, escapeChar)
-}
-
-/** Lower-case, quotes and brackets dropped, other non-word runs as single hyphens, no leading or trailing hyphen: the reference algorithm in liquid-spec's docs/implementers/shopify-theme-filters.md. https://shopify.dev/docs/api/liquid/filters/handleize only shows `Health potion` becoming `health-potion`; it does not state the rules for other characters, so they (and non-ASCII text, which this drops to hyphens) are not pinned by shopify.dev. */
-export function handleize (input: unknown): string {
-  return stringify(input).toLowerCase().replace(/['"()[\]]/g, '').replace(/[^a-z0-9_]+/g, '-').replace(/^-+|-+$/g, '')
 }
 
 /** The singular for a count of 1, the plural otherwise. https://shopify.dev/docs/api/liquid/filters/pluralize ("applies English pluralization rules"; its example prints `2 items`). The count is read as Ruby's `to_i` does (`1.5` is 1, so it is singular), following liquid-spec's reference `count.to_i == 1` (docs/implementers/shopify-theme-filters.md at the ref pinned in spec/liquid-spec/Gemfile); shopify.dev does not pin a fractional, negative or non-numeric count. */
