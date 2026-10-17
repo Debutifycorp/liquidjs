@@ -205,6 +205,15 @@ describe('shopify/store', () => {
     const product = buildGlobals({ store: issued, templateName: 'product', request: {}, locale: 'en', report: new ReportCollector() })
     expect(await render('{% if gift_card == nil %}none{% endif %}', product.globals)).toBe('none')
   })
+  it('prints the gift card\'s url under the base path and the locale prefix, and leaves an absolute one as it is', async () => {
+    const urlIn = async (url: string, view?: { market: string, language: string, prefix: string }) => {
+      const built = buildStore({ ...sampleStoreData, gift_card: { balance: 1, initial_value: 1, code: 'ABCD', url } }, view)
+      return render('{{ gift_card.url }}', buildGlobals({ store: built, templateName: 'gift_card', request: {}, locale: 'en', report: new ReportCollector() }).globals)
+    }
+    expect(await urlIn('/gift_cards/1/abc')).toBe('/gift_cards/1/abc')
+    expect(await urlIn('/gift_cards/1/abc', { market: 'default', language: 'en', prefix: '/p/tok' })).toBe('/p/tok/gift_cards/1/abc')
+    expect(await urlIn('https://checkout.shopify.com/gift_cards/1/abc', { market: 'default', language: 'en', prefix: '/p/tok' })).toBe('https://checkout.shopify.com/gift_cards/1/abc')
+  })
   it('prints country_option_tags and all_country_option_tags as option tags: a --- option, then each country with its subregions in data-provinces', async () => {
     const canada = { name: 'Canada', provinces: [['Alberta', 'Alberta'], ['British Columbia', 'British Columbia']] as Array<[string, string]> }
     const data = { ...sampleStoreData, country_option_tags: [canada, { name: 'Afghanistan' }], all_country_option_tags: [{ name: 'Afghanistan' }, canada, { name: "Côte d'Ivoire" }] }

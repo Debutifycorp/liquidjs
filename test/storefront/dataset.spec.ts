@@ -2,6 +2,8 @@ import { readdirSync } from 'fs'
 import { join } from 'path'
 import { createShopifyLiquid, renderLiquid, sampleStoreData, storefrontSampleData } from '../../src/shopify'
 import { buildLinklists, buildStore } from '../../src/shopify/store/build'
+import { resourceExists } from '../../src/storefront/pages'
+import { routeRequest } from '../../src/storefront/router'
 import { renderProbeHtml, PROBE_DIR } from './probe'
 
 describe('storefrontSampleData', () => {
@@ -23,6 +25,21 @@ describe('storefrontSampleData', () => {
     const linklists = buildLinklists(buildStore(data).linklists, '/')
     const source = "{% for l in linklists['customer-account-main-menu'].links %}{{ l.title }}:{{ l.type }}:{{ l.url }} {% endfor %}{{ linklists['customer-account-main-menu'] }}"
     expect((await renderLiquid(createShopifyLiquid(), source, { linklists })).html).toBe('Orders:customer_account_page_link:/account/orders Profile:customer_account_page_link:/account/profile customer-account-main-menu')
+  })
+  it('issues one gift card that the gift card route opens, in the sample store too', () => {
+    for (const store of [data, sampleStoreData]) {
+      const card = store.gift_card
+      expect(card).toMatchObject({ enabled: true, expired: false, currency: 'USD' })
+      expect(card?.code).toMatch(/^[A-Z0-9]{4}( [A-Z0-9]{4}){3}$/)
+      expect(card?.initial_value).toBeGreaterThan(card?.balance ?? Infinity)
+      expect(card?.balance).toBeGreaterThan(0)
+      expect(card?.url).toMatch(/^\/gift_cards\/\d+\/[0-9a-f]{32}$/)
+      const routed = routeRequest('GET', card?.url ?? '', store, { basePath: '' }).route
+      expect(routed).toMatchObject({ kind: 'page', page: { templateName: 'gift_card' } })
+      expect(routed.kind === 'page' && resourceExists(store, routed.page)).toBe(true)
+      const built = buildStore(store).gift_card as Record<string, unknown>
+      expect(built).toMatchObject({ code: card?.code, balance: card?.balance, url: card?.url, last_four_characters: card?.code.slice(-4) })
+    }
   })
   it('uses unique ids and handles', () => {
     const products = data.products ?? []

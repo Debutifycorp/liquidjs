@@ -13,6 +13,14 @@ describe('routeRequest', () => {
     expect(kind('GET', '/nope')).toMatchObject({ kind: 'not-found' })
     expect(kind('POST', '/products/hoodie')).toMatchObject({ kind: 'not-found' })
   })
+  it('routes a gift card address to the gift_card template, under the base path and the locale prefix', () => {
+    expect(kind('GET', '/gift_cards/1/abc')).toMatchObject({ kind: 'page', page: { templateName: 'gift_card', request: { resource: '1/abc', path: '/gift_cards/1/abc' } } })
+    expect(kind('HEAD', '/gift_cards/1/abc/')).toMatchObject({ kind: 'page', page: { templateName: 'gift_card', request: { resource: '1/abc' } } })
+    expect(kind('GET', '/p/tok/gift_cards/1/abc', '/p/tok')).toMatchObject({ kind: 'page', page: { templateName: 'gift_card', request: { resource: '1/abc', path: '/p/tok/gift_cards/1/abc' } } })
+    expect(routeRequest('GET', '/fr-ca/gift_cards/1/abc', data, { basePath: '' })).toMatchObject({ route: { kind: 'page', page: { templateName: 'gift_card' } }, localePrefix: '/fr-ca', market: 'ca' })
+    expect(kind('GET', '/gift_cards/abc')).toMatchObject({ kind: 'not-found' })
+    expect(kind('POST', '/gift_cards/1/abc')).toMatchObject({ kind: 'not-found' })
+  })
   it('routes the Ajax and form endpoints', () => {
     expect(kind('GET', '/cart.js')).toEqual({ kind: 'cart-json' })
     expect(kind('GET', '/cart.json')).toEqual({ kind: 'cart-json' })

@@ -1,7 +1,7 @@
 import { renderPage, renderSection, requestFromUrl } from '../shopify'
 import type { FormOutcome, PageRequest, StoreData } from '../shopify'
 import { notFoundPage } from './html'
-import { cutSearch } from './router'
+import { cutSearch, decode } from './router'
 import type { Context } from './handler'
 import { asError, PRIVATE, report, storeRoot } from './support'
 
@@ -11,6 +11,18 @@ const HTML = { 'content-type': 'text/html; charset=utf-8', 'cache-control': PRIV
 const PSEUDO_COLLECTIONS = ['all', 'vendors', 'types']
 
 const collectionExists = (data: StoreData, handle: string) => PSEUDO_COLLECTIONS.includes(handle) || (data.collections ?? []).some(c => c.handle === handle)
+
+/** The `<store_id>/<gift_card_token>` the store's gift card is served at: the path of its `url`, which reads `/gift_cards/<store_id>/<gift_card_token>` (https://shopify.dev/docs/api/liquid/objects/gift_card#gift_card-url; an absolute `url` keeps its host, which the storefront does not serve). Undefined for a store with no card, a card with no `url`, or a `url` that is not that path. */
+function giftCardResource (data: StoreData): string | undefined {
+  const url = data.gift_card?.url
+  if (!url) return undefined
+  try {
+    const parts = new URL(url, 'https://storefront.invalid').pathname.split('/').filter(Boolean).map(decode)
+    return parts.length === 3 && parts[0] === 'gift_cards' ? `${parts[1]}/${parts[2]}` : undefined
+  } catch {
+    return undefined
+  }
+}
 
 /** Whether the resource a page names exists, so a missing one shows the theme's 404 template with status 404 (https://shopify.dev/docs/storefronts/themes/architecture/templates/404 names the template and not the status; `page-not-found` is a page recording that part S's comparison checks, not a fixture). A product under a collection (`/collections/<c>/products/<p>`) needs both, and the collection is read as the collection page reads it; whether Shopify also asks that the collection holds the product is not pinned, and here it does not. */
 export function resourceExists (data: StoreData, page: PageRequest): boolean {
@@ -25,6 +37,8 @@ export function resourceExists (data: StoreData, page: PageRequest): boolean {
     case 'blog': return (data.blogs ?? []).some(b => b.handle === resource)
     // the resource is `<blog>/<article>`: compared whole, so a handle that held a `/` could not be read as two
     case 'article': return (data.blogs ?? []).some(b => b.articles.some(a => `${b.handle}/${a.handle}` === resource))
+    // https://shopify.dev/docs/storefronts/themes/architecture/templates/gift-card-liquid and https://shopify.dev/docs/api/liquid/objects/gift_card say nothing of a card that does not exist, so the theme's 404 template answers it, as it does an unknown product or page (not pinned). A disabled or expired card is shown: the themes mark it with `gift_card.enabled` and `gift_card.expired`
+    case 'gift_card': return resource === giftCardResource(data)
     default: return true
   }
 }

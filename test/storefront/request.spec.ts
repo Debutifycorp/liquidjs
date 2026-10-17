@@ -21,6 +21,11 @@ describe('requestFromUrl', () => {
       ['/cart', 'cart', undefined],
       ['/recommendations/products?product_id=10489561382934&limit=4&intent=related', 'index', undefined],
       ['/password', 'password', undefined],
+      // https://shopify.dev/docs/storefronts/themes/architecture/templates/gift-card-liquid: `/gift_cards/<store_id>/<gift_card_token>`
+      ['/gift_cards/56174706753/0011c591fc720d0a51b80cdb694f969e', 'gift_card', '56174706753/0011c591fc720d0a51b80cdb694f969e'],
+      ['/gift_cards/56174706753', '404', undefined],
+      ['/gift_cards', '404', undefined],
+      ['/gift_cards/1/2/3', '404', undefined],
       ['/policies/refund-policy', '404', undefined],
       ['/nope', '404', undefined]
     ]

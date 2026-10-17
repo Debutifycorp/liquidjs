@@ -137,6 +137,8 @@ export function requestFromUrl (url: string, data: StoreData, options: { basePat
   if (kind === 'collections' && (a === 'vendors' || a === 'types') && !b) return page('collection', { resource: a, searchTerms: params.get('q') ?? '' })
   if (kind === 'collections' && a && parts.length <= 3) return page('collection', { resource: a, ...(b ? { tags: tagsOf(rawParts[2]) } : {}) })
   if (kind === 'pages' && a && !b) return page('page', { resource: a })
+  // https://shopify.dev/docs/storefronts/themes/architecture/templates/gift-card-liquid hosts the page at `/gift_cards/[store_id]/[gift_card_token]`, and https://shopify.dev/docs/api/liquid/objects/gift_card#gift_card-url shows a card's `url` as that path on Shopify's checkout domain (`checkout.shopify.com`); the storefront serves the same path, and the resource is `<store_id>/<gift_card_token>` as the article's is `<blog>/<article>`
+  if (kind === 'gift_cards' && parts.length === 3) return page('gift_card', { resource: `${a}/${b}` })
   // `/blogs/<blog>/tagged/<tag>[+<tag>]`, https://shopify.dev/docs/storefronts/themes/architecture/templates/blog (filter articles by tag)
   if (kind === 'blogs' && parts.length === 4 && b === 'tagged') return page('blog', { resource: a, tags: tagsOf(rawParts[3]) })
   if (kind === 'blogs' && a && b && !c) return page('article', { resource: `${a}/${b}` })

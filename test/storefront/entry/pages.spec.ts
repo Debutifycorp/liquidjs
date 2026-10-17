@@ -106,6 +106,53 @@ describe('pages', () => {
     expect([french.status, body(french.text)]).toEqual([404, 'https://store.invalid/fr-ca/404|/fr-ca/404|404|404'])
   })
 
+  describe('the gift card page', () => {
+    // https://shopify.dev/docs/storefronts/themes/architecture/templates/gift-card-liquid: the `gift_card` template, shown with the card as `gift_card`; https://shopify.dev/docs/api/liquid/objects/gift_card gives the card's `url` as `/gift_cards/<store_id>/<gift_card_token>` on Shopify's checkout domain, which the storefront serves at the same path
+    const card = { balance: 4500, initial_value: 5000, code: 'WCGX 7X97 K9HJ DFR8', url: '/gift_cards/70001/abc123' }
+    const withCard = (giftCard: unknown, handleOptions?: { basePath: string, visitor: string }) => {
+      const theme = harnessTheme()
+      theme.files['templates/gift_card.liquid'] = '{% layout none %}{{ gift_card.code }}|{{ gift_card.balance }}|{{ gift_card.enabled }}|{{ gift_card.expired }}|{{ gift_card.url }}|{{ request.page_type }}|{{ canonical_url }}'
+      return harness({ theme, data: { ...data, gift_card: giftCard } as StoreData }, handleOptions)
+    }
+    it('renders the gift_card template at the card\'s address, with the card as gift_card', async () => {
+      const { send } = withCard(card)
+      const answer = await send('GET', '/gift_cards/70001/abc123')
+      expect([answer.status, answer.headers.get('content-type'), answer.headers.get('cache-control')]).toEqual([200, 'text/html; charset=utf-8', 'private, no-store'])
+      expect(answer.text).toBe('WCGX 7X97 K9HJ DFR8|4500|true|false|/gift_cards/70001/abc123|gift_card|https://store.invalid/gift_cards/70001/abc123')
+      expect((await send('HEAD', '/gift_cards/70001/abc123')).status).toBe(200)
+    })
+    it('serves the card\'s url under the base path, so the url is the address that answers', async () => {
+      const { send } = withCard(card, { visitor: 'test-visitor-key-0001', basePath: '/p/tok' })
+      const answer = await send('GET', '/p/tok/gift_cards/70001/abc123')
+      expect(answer.status).toBe(200)
+      expect(answer.text).toBe('WCGX 7X97 K9HJ DFR8|4500|true|false|/p/tok/gift_cards/70001/abc123|gift_card|https://store.invalid/p/tok/gift_cards/70001/abc123')
+      expect((await send('GET', answer.text.split('|')[4])).status).toBe(200)
+    })
+    it('serves the path of an absolute url, which prints as the data gives it', async () => {
+      const { send } = withCard({ ...card, url: 'https://checkout.shopify.com/gift_cards/56174706753/0011c591fc720d0a51b80cdb694f969e' })
+      const answer = await send('GET', '/gift_cards/56174706753/0011c591fc720d0a51b80cdb694f969e')
+      expect([answer.status, answer.text.split('|')[4]]).toEqual([200, 'https://checkout.shopify.com/gift_cards/56174706753/0011c591fc720d0a51b80cdb694f969e'])
+    })
+    it('answers the theme\'s 404 template with status 404 for a card the store does not hold', async () => {
+      const issued = withCard(card)
+      for (const url of ['/gift_cards/70001/nope', '/gift_cards/1/abc123', '/gift_cards/abc123', '/gift_cards/70001/abc123/more', '/gift_cards']) {
+        const answer = await issued.send('GET', url)
+        expect([url, answer.status, answer.text.includes('<h1>Not found</h1>')]).toEqual([url, 404, true])
+      }
+      // a card with no address, and a store with no card, have nothing to open
+      for (const absent of [{ ...card, url: undefined }, undefined]) {
+        const answer = await withCard(absent).send('GET', '/gift_cards/70001/abc123')
+        expect([answer.status, answer.text.includes('<h1>Not found</h1>')]).toEqual([404, true])
+      }
+    })
+    it('shows a disabled or expired card, which the themes mark themselves with gift_card.enabled and gift_card.expired', async () => {
+      const disabled = await withCard({ ...card, enabled: false }).send('GET', '/gift_cards/70001/abc123')
+      expect([disabled.status, disabled.text.split('|').slice(2, 4)]).toEqual([200, ['false', 'false']])
+      const expired = await withCard({ ...card, expired: true, expires_on: '2024-01-01' }).send('GET', '/gift_cards/70001/abc123')
+      expect([expired.status, expired.text.split('|').slice(2, 4)]).toEqual([200, ['true', 'true']])
+    })
+  })
+
   it('answers 404 for a section of a page that does not exist, and for a product under a collection that does not', async () => {
     const { send } = harness()
     for (const url of ['/products/nope?section_id=cart-count', '/products/nope?sections=cart-count', '/collections/nope/products/hoodie', '/collections/tops/products/nope']) {

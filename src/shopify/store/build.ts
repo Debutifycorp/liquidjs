@@ -635,8 +635,8 @@ function countryOptionTags (countries: CountryOptionData[]): string {
   return [option('---', []), ...countries.map(country => option(country.name, country.provinces ?? []))].join('\n')
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/gift_card, with the properties that page lists: `last_four_characters` is the code's last four characters (spaces left out, as its example's code `WCGX 7X97 K9HJ DFR8` ends `DFR8`), `currency` defaults to the shop's, `enabled` to true, `expired` to false, `product` and `variant` are the store's own objects, and every other property the data leaves out is nil. */
-function buildGiftCard (data: GiftCardData, products: HandleMap<LiquidObject>, currency: string): LiquidObject {
+/** https://shopify.dev/docs/api/liquid/objects/gift_card, with the properties that page lists: `last_four_characters` is the code's last four characters (spaces left out, as its example's code `WCGX 7X97 K9HJ DFR8` ends `DFR8`), `currency` defaults to the shop's, `enabled` to true, `expired` to false, `product` and `variant` are the store's own objects, and every other property the data leaves out is nil. `url` is the data's, a path such as `/gift_cards/<store_id>/<gift_card_token>` printed under `prefix` (the address the storefront serves the card at) or an absolute address as it is (Shopify's own, on `checkout.shopify.com`). */
+function buildGiftCard (data: GiftCardData, products: HandleMap<LiquidObject>, currency: string, prefix: string): LiquidObject {
   const product = data.product_handle ? HandleMap.get(products, data.product_handle) ?? null : null
   const variant = product && data.variant_id !== undefined ? (product.variants as LiquidObject[]).find(entry => entry.id === data.variant_id) ?? null : null
   return {
@@ -658,7 +658,7 @@ function buildGiftCard (data: GiftCardData, products: HandleMap<LiquidObject>, c
     qr_identifier: data.qr_identifier ?? null,
     recipient: data.recipient ?? null,
     template_suffix: data.template_suffix ?? null,
-    url: data.url ?? null
+    url: data.url ? withPrefix(prefix, data.url) : null
   }
 }
 
@@ -977,7 +977,7 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
     currency,
     country_option_tags: countryOptionTags(shippingCountries),
     all_country_option_tags: countryOptionTags(data.all_country_option_tags ?? shippingCountries),
-    gift_card: data.gift_card ? buildGiftCard(data.gift_card, products, data.shop.currency) : null,
+    gift_card: data.gift_card ? buildGiftCard(data.gift_card, products, data.shop.currency, prefix) : null,
     storefrontFilters: data.filters ?? []
   }
   // the cart reads the products, the currency and the prefix of the objects above
