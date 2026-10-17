@@ -24,7 +24,7 @@ import type { BlockData, LocaleTree, SectionData } from '../types'
 import { escapeHtml } from '../util/html'
 import { hasOwn, isRecord, own, PLAIN_ID } from '../util/own'
 import { deepMerge, parseThemeJson, parseWrapper } from './json'
-import { contentForHeader, newHeaderMarker } from './header'
+import { contentForHeader, newHeaderMarker, withStoreElements } from './header'
 
 /** An Online Store 2.0 theme as a map of its files by path (`sections/header.liquid`). The package never reads the file system. */
 export interface ThemeInput {
@@ -404,7 +404,7 @@ class PageRender implements ThemeHooks {
   }
 
   public async page (): Promise<RenderPageResult> {
-    const html = await toPromise(this.renderDocument())
+    const html = withStoreElements(await toPromise(this.renderDocument()), this.state, this.globals)
     return { html, report: this.state.report.toReport(this.errors, now() - this.started), templateName: this.templateName }
   }
 

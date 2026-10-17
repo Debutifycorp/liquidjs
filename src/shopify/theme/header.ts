@@ -48,3 +48,38 @@ export function contentForHeader (state: ShopifyState, globals: Record<string | 
   if (scripts) header += `<script>document.addEventListener('DOMContentLoaded', function () {\n${scripts.replace(/<\/script/gi, '<\\/script')}\n});</script>`
   return header
 }
+
+/** What `withStoreElements` stops at: the opening of a script, a style, a textarea or a comment, whose text it skips to the closing tag as the HTML parser does (a `<shopify-account` inside one is text, not an element), and the opening of an account element. */
+const OPENING = /<(script|style|textarea)(?=[\s/>])|<!--|<shopify-account(?=[\s/>])/gi
+
+/**
+ * The page with Shopify's store element before every `<shopify-account>` element: `<shopify-store store-domain="<origin>" country="<country>" language="<language>"></shopify-store>` and a line break, right before the theme's `<shopify-account`, its indentation left before the store element. https://shopify.dev/docs/api/storefront-web-components/components/shopify-store says the element sets up "your credentials and market configuration for a storefront", with `store-domain` ("The myshopify.com domain of the store"), `country` and `language`, and https://shopify.dev/docs/storefronts/themes/customer-engagement/account-component says a theme prints only `<shopify-account>`; neither says that Shopify adds the store element. The parity store does, on every page of Horizon 4.3.0 and Dawn 16.0.0 (their private parity recordings), with the market's country and the page's language (`country="CA" language="fr"` under `/fr-ca`, `country="DE" language="en"` under `/en-eu`, as `Shopify.country` and `Shopify.locale` print them), and `store-domain` the address the page is served at: the parity store's own on its preview, and `https://kith.com` on kith.com, whose `Shopify.shop` is `kithnyc.myshopify.com`, so not the myshopify.com domain the page names. Debutify's, not pinned: an element in a script, a style, a textarea or a comment gets none (its text is not an element), every account element gets its own (each recorded page has one), and a section rendered alone gets none.
+ */
+export function withStoreElements (html: string, state: ShopifyState, globals: Record<string | symbol, unknown>): string {
+  if (!/<shopify-account[\s/>]/i.test(html)) return html
+  const localization = globals.localization as { country?: { iso_code?: string } } | undefined
+  const request = globals.request as { locale?: { iso_code?: string } } | undefined
+  const shop = globals.shop as { domain?: unknown } | undefined
+  const domain = state.request.origin || `https://${String(shop?.domain ?? '')}`
+  const store = `<shopify-store store-domain="${escapeHtml(domain)}" country="${escapeHtml(localization?.country?.iso_code ?? '')}" language="${escapeHtml(request?.locale?.iso_code ?? '')}"></shopify-store>\n`
+  // one pass: each search starts where the last one ended, and a text element with no closing tag ends the search, so a page full of unclosed scripts costs no more than one that closes them
+  const opening = new RegExp(OPENING.source, OPENING.flags)
+  let out = ''
+  let copied = 0
+  for (let found = opening.exec(html); found; found = opening.exec(html)) {
+    if (found[0] === '<!--') {
+      const end = html.indexOf('-->', opening.lastIndex)
+      if (end === -1) break
+      opening.lastIndex = end + 3
+    } else if (found[1]) {
+      const closing = new RegExp(`</${found[1]}(?=[\\s/>])`, 'gi')
+      closing.lastIndex = opening.lastIndex
+      if (!closing.exec(html)) break
+      opening.lastIndex = closing.lastIndex
+    } else {
+      out += html.slice(copied, found.index) + store
+      copied = found.index
+    }
+  }
+  return out + html.slice(copied)
+}
