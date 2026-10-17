@@ -65,7 +65,7 @@ One behaviour differs from upstream without an opt-in: the `slice` filter charge
 **New, with nothing to change**
 
 - `shopifyPaymentIcon`, `shopifyFontInfo` and `isShopifyFontFile` are exported from `@debutify/liquidjs/shopify`: the default `paymentTypeSvg` and `fontInfo` services, and the path check. `FontInfo` has the optional `files`.
-- The package has an internal entry, `@debutify/liquidjs/shopify-library` (`dist/shopify-library.js`, about 4.8 MB: the icons and the font library as data), that both `/shopify` bundles load by the package's name, so the data ships once. It is not part of the public API; a host that copies only some of the package's files must keep it, and `NOTICE.md` carries the licence of the icons.
+- The package has an internal entry, `@debutify/liquidjs/shopify-library` (`dist/shopify-library.js`, about 4.8 MB: the icons and the font library as data), that both `/shopify` bundles load by the package's name, so the data ships once. It is not part of the public API; a host that copies only some of the package's files must keep it, and `NOTICE.md` carries the licence of the icons. It is CommonJS, also under the `/shopify` ESM build, so a bundler that reads the `module` condition needs CommonJS interop (Rollup with `@rollup/plugin-commonjs`, which webpack, esbuild and Vite do on their own); loading it adds about 30 ms and 16 MB the first time `/shopify` is imported.
 
 ## Upgrading from 1.0
 

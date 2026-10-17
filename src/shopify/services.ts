@@ -29,7 +29,7 @@ export interface ShopifyServices {
 
 const FONT_HANDLE = /^([a-z0-9_]+?)_([nio])([1-9])$/
 
-/** Reads a Shopify font handle (`<family>_<style><weight / 100>`, e.g. `assistant_n4`). shopify.dev lists handles but does not define their grammar (https://shopify.dev/docs/storefronts/themes/architecture/settings/fonts), so this reading and the guessed variants (regular, italic, bold and bold italic) are Debutify's and not pinned. It is no longer the default `fontInfo` (Shopify's library is, `shopifyFontInfo`); a host with a font outside the library can wrap it. */
+/** Reads a Shopify font handle (`<family>_<style><weight / 100>`, e.g. `assistant_n4`). shopify.dev lists handles but does not define their grammar (https://shopify.dev/docs/storefronts/themes/architecture/settings/fonts), so this reading and the guessed variants (regular, italic, bold and bold italic) are Debutify's and not pinned. It is no longer the default `fontInfo` (Shopify's library is, `shopifyFontInfo`) and is internal: a host with fonts outside the library passes a `fontInfo` of its own. */
 export function parseFontHandle (handle: string): FontInfo | undefined {
   const match = FONT_HANDLE.exec(handle)
   if (!match) return undefined
