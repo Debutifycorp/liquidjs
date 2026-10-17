@@ -3,7 +3,7 @@ import type { StoreData } from '../../../src/shopify'
 import { buildStore } from '../../../src/shopify/store/build'
 import { redirect, ROUTE_HANDLERS } from '../../../src/storefront/handler'
 import type { Context, RouteHandler } from '../../../src/storefront/handler'
-import { harness, VISITOR } from './harness'
+import { harness, harnessTheme, VISITOR } from './harness'
 
 const locked = { ...data, shop: { ...data.shop, password_enabled: true } }
 const at = (basePath: string, localePrefix: string) => ({ basePath, routed: { localePrefix }, data }) as unknown as Context
@@ -320,5 +320,28 @@ describe('viewCacheSize (final review B, I2)', () => {
     const c = buildStore(own, view('/p/c'))
     await get('/p/d', '/cart.js')
     expect(buildStore(own, view('/p/c'))).toBe(c)
+  })
+})
+
+describe('services per request', () => {
+  const theme = { files: { ...harnessTheme().files, 'templates/page.probe-services.liquid': "{%- layout none -%}{{ 'theme.css' | asset_url }}" } }
+  const handleOptions = { visitor: VISITOR, basePath: '/p/tok' }
+
+  it('calls a services function once per request, with the request handle was given', async () => {
+    const seen: string[] = []
+    const { send } = harness({
+      theme,
+      services: (request: Request) => {
+        seen.push(request.url)
+        return { assetUrl: (path: string) => `${new URL(request.url).pathname.split('/').slice(0, 3).join('/')}/assets/${path}` }
+      }
+    }, handleOptions)
+    expect((await send('GET', '/p/tok/pages/about?view=probe-services')).text).toBe('/p/tok/assets/theme.css')
+    expect(seen).toEqual(['https://store.invalid/p/tok/pages/about?view=probe-services'])
+  })
+
+  it('still takes a services object', async () => {
+    const { send } = harness({ theme, services: { assetUrl: (path: string) => `/cdn/${path}` } }, handleOptions)
+    expect((await send('GET', '/p/tok/pages/about?view=probe-services')).text).toBe('/cdn/theme.css')
   })
 })

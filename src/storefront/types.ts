@@ -60,7 +60,8 @@ export interface StorefrontOptions {
   /** The theme, with an optional `base`, or a function of the request. Each theme object is compiled once and kept by the engine. */
   theme: PerRequest<ThemeInput>
   data: PerRequest<StoreData>
-  services?: Partial<ShopifyServices>
+  /** Merged over `defaultServices` for every render, or a function of the request that returns them, called once per request like `theme` and `data`. */
+  services?: PerRequest<Partial<ShopifyServices>>
   cartStore?: CartStore
   /** Replaces the notice page shown for checkout and the account pages. */
   notice?: (kind: 'checkout' | 'account', request: Request) => Response | Promise<Response>

@@ -1,5 +1,5 @@
 import { localePrefixes, resolveView, setViewCacheSize } from '../shopify'
-import type { StoreData, StoreView, ThemeInput } from '../shopify'
+import type { ShopifyServices, StoreData, StoreView, ThemeInput } from '../shopify'
 import { BodyError, readBody } from './body'
 import type { Fields } from './body'
 import { storefrontClientScript } from './client'
@@ -18,6 +18,8 @@ export interface Context {
   limits: StorefrontLimits
   theme: ThemeInput
   data: StoreData
+  /** The services of this request: `options.services`, called with the request when it is a function. */
+  services: Partial<ShopifyServices>
   routed: Routed
   basePath: string
   view: StoreView
@@ -253,7 +255,7 @@ export function createStorefront (options: StorefrontOptions): Storefront {
     try {
       const fromCookie = handleOptions.visitor ? undefined : cookieVisitor(request)
       const key = handleOptions.visitor ?? fromCookie ?? newVisitorKey()
-      const [theme, data] = await Promise.all([resolve(options.theme, request), resolve(options.data, request)])
+      const [theme, data, services] = await Promise.all([resolve(options.theme, request), resolve(options.data, request), resolve(options.services ?? {}, request)])
       // set before any route runs, so the Ajax answers that build a view obey it as much as the pages do
       if (options.viewCacheSize !== undefined) setViewCacheSize(data, options.viewCacheSize)
       // which routes change state, and which read a body, depend only on the method and the address, so both are decided before the visitor's state is read or their turn is taken
@@ -266,7 +268,7 @@ export function createStorefront (options: StorefrontOptions): Storefront {
         const visitor: VisitorState = { ...stored, cart: { ...stored.cart, token: cartToken(key, sandbox) } }
         const routed = routeRequest(request.method, request.url, data, { basePath, country: visitor.country, search: limits.search })
         const view = resolveView(data, { basePath, localePrefix: routed.localePrefix, market: routed.market, language: routed.language })
-        const ctx: Context = { request, options, limits, theme, data, routed, basePath, view, visitor, key, sandbox, fields }
+        const ctx: Context = { request, options, limits, theme, data, services, routed, basePath, view, visitor, key, sandbox, fields }
         // https://shopify.dev/docs/storefronts/themes/architecture/templates/password: the password page is "shown when password protection is applied to a store". The page does not say how any other address reaches it, so sending every other address there is Debutify's reading (no recording: the parity store was recorded past its password page). The page itself is open as a page; asked for a section (`?section_id=`, `?sections=`) it is any other address, or a section of the theme would show the store's products to a visitor without the password.
         const route = routed.route
         const passwordPage = route.kind === 'password' || (route.kind === 'page' && route.page.templateName === 'password' && !route.sectionId && !route.sections)

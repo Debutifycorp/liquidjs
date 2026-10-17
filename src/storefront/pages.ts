@@ -37,7 +37,7 @@ function renderOptions (ctx: Context, page: PageRequest, form?: FormOutcome) {
     templateName: page.templateName,
     data: ctx.data,
     locale: page.locale,
-    services: ctx.options.services,
+    services: ctx.services,
     cart: ctx.visitor.cart,
     request: { ...page.request, host: url.host, origin: url.origin, ...(form ? { form } : {}) }
   }
