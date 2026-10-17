@@ -48,6 +48,15 @@ describe('the compiled asset files', () => {
     expect((await unlocked.send('GET', '/p/tok/')).text).toContain(`href="/p/tok/compiled_assets/styles.css?v=${styles!.version}"`)
   })
 
+  it('resolves only the theme for a compiled file, not the data or the services', async () => {
+    const calls = { data: 0, services: 0 }
+    const { send } = harness({ theme: styledTheme(), data: () => { calls.data++; return data as StoreData }, services: () => { calls.services++; return {} } })
+    expect((await send('GET', '/compiled_assets/styles.css')).status).toBe(200)
+    expect(calls).toEqual({ data: 0, services: 0 })
+    await send('GET', '/')
+    expect(calls).toEqual({ data: 1, services: 1 })
+  })
+
   it('answers 404 for a file the theme does not have, and for another method', async () => {
     const { send } = harness()
     expect((await send('GET', '/compiled_assets/styles.css')).status).toBe(404)
