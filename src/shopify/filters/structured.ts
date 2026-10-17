@@ -83,11 +83,11 @@ function standardEventData (this: FilterImpl, input: unknown, ...args: unknown[]
     const code = stringify((value.currency as LiquidObject | undefined)?.iso_code ?? currencyCode(this, state))
     const cart = lines.length
       ? {
-          totalQuantity: value.item_count,
-          cost: { totalAmount: moneyJson(this, state, value.total_price, code) },
-          lines: lines.map(line => ({ id: line.key, quantity: line.quantity, cost: { totalAmount: moneyJson(this, state, line.final_line_price, code) } })),
-          discountCodes: codeStatus(value)
-        }
+        totalQuantity: value.item_count,
+        cost: { totalAmount: moneyJson(this, state, value.total_price, code) },
+        lines: lines.map(line => ({ id: line.key, quantity: line.quantity, cost: { totalAmount: moneyJson(this, state, line.final_line_price, code) } })),
+        discountCodes: codeStatus(value)
+      }
       : null
     return printJson(this, { context: context !== null && CART_CONTEXTS.has(context) ? context : null, cart })
   }

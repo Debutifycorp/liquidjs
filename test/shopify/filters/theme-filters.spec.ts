@@ -235,7 +235,7 @@ describe('shopify filters the three themes use', () => {
       { title: { value: 'France only' }, jurisdictions: { value: ['FR'] } },
       { title: { value: 'Everywhere' } }
     ]
-    const titles = "{% assign shown = list | applicable_disclosures %}{% for d in shown %}{{ d.title.value }};{% endfor %}"
+    const titles = '{% assign shown = list | applicable_disclosures %}{% for d in shown %}{{ d.title.value }};{% endfor %}'
 
     it('returns the empty list for nil, as when the product has no disclosures', async () => {
       expect((await render('{{ nil | applicable_disclosures | json }}|{{ product.metafields.shopify.disclosure.value | applicable_disclosures | size }}')).html).toBe('[]|0')
