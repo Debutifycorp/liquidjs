@@ -205,6 +205,17 @@ describe('shopify/store', () => {
     const product = buildGlobals({ store: issued, templateName: 'product', request: {}, locale: 'en', report: new ReportCollector() })
     expect(await render('{% if gift_card == nil %}none{% endif %}', product.globals)).toBe('none')
   })
+  it('shows a direct render of the gift_card template at the card\'s own address, or a two-segment one when it has none', async () => {
+    const pathOf = async (card: Record<string, unknown> | undefined, prefix = '') => {
+      const built = buildStore({ ...sampleStoreData, gift_card: card && { balance: 1, initial_value: 1, code: 'ABCD', ...card } }, prefix ? { market: 'default', language: 'en', prefix } : undefined)
+      const page = buildGlobals({ store: built, templateName: 'gift_card', request: prefix ? { basePath: prefix } : {}, locale: 'en', report: new ReportCollector() })
+      return render('{{ request.path }}|{{ canonical_url }}', page.globals)
+    }
+    expect(await pathOf({ url: '/gift_cards/7/abc' })).toBe('/gift_cards/7/abc|https://sample-store.example/gift_cards/7/abc')
+    expect(await pathOf({ url: '/gift_cards/7/abc' }, '/p/tok')).toBe('/p/tok/gift_cards/7/abc|https://sample-store.example/p/tok/gift_cards/7/abc')
+    expect(await pathOf({ url: 'https://checkout.shopify.com/gift_cards/7/abc' }, '/p/tok')).toBe('/p/tok/gift_cards/7/abc|https://sample-store.example/p/tok/gift_cards/7/abc')
+    for (const card of [{}, { url: null }, undefined, { url: 'https://checkout.shopify.com/' }]) expect(await pathOf(card)).toBe('/gift_cards/1/sample|https://sample-store.example/gift_cards/1/sample')
+  })
   it('prints the gift card\'s url under the base path and the locale prefix, and leaves an absolute one as it is', async () => {
     const urlIn = async (url: string, view?: { market: string, language: string, prefix: string }) => {
       const built = buildStore({ ...sampleStoreData, gift_card: { balance: 1, initial_value: 1, code: 'ABCD', url } }, view)

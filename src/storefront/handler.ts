@@ -7,6 +7,7 @@ import { errorPage, noticePage } from './html'
 import { pageForPath, renderPageResponse, renderSectionResponse, renderSectionsJson, resourceExists } from './pages'
 import { decode, routeRequest } from './router'
 import type { Route, Routed } from './router'
+import { shopifyAssetResponse } from './shopify-assets'
 import { asError, checkWhole, PRIVATE, report, storeRoot, withoutBase } from './support'
 import { DEFAULT_LIMITS } from './types'
 import type { HandleOptions, Storefront, StorefrontLimits, StorefrontOptions, VisitorState } from './types'
@@ -151,10 +152,10 @@ function mergeLimits (given: Partial<StorefrontLimits> | undefined): StorefrontL
   return limits
 }
 
-/** The last step of every answer, including the error pages: it holds visitor state (or may), so it is never cached; a `HEAD` answer has no body; the visitor's cookie, when there is one, is added. The headers are copied, so an answer whose headers are immutable (`Response.redirect`) works too. */
-function finish (response: Response, head: boolean, cookie?: string): Response {
+/** The last step of every answer, including the error pages: it holds visitor state (or may), so it is never cached, except the files of Shopify's global assets, which hold none (`keepCache`); a `HEAD` answer has no body; the visitor's cookie, when there is one, is added. The headers are copied, so an answer whose headers are immutable (`Response.redirect`) works too. */
+function finish (response: Response, head: boolean, cookie?: string, keepCache = false): Response {
   const headers = new Headers(response.headers)
-  headers.set('cache-control', PRIVATE)
+  if (!keepCache) headers.set('cache-control', PRIVATE)
   if (cookie) headers.append('set-cookie', cookie)
   return new Response(head ? null : response.body, { status: response.status, statusText: response.statusText, headers })
 }
@@ -249,8 +250,8 @@ export function createStorefront (options: StorefrontOptions): Storefront {
     // a `HEAD` and a prefetch change nothing, whatever the route does for a visitor's `GET` (final review A, M4: a prefetcher sends a `GET`, not a `HEAD`, so a prefetched `url_to_remove` or discount link changed the cart); only the `HEAD` answer has no body
     const readOnly = head || prefetching(request)
     // every answer leaves through here, the error pages too
-    const done = (response: Response, cookie?: string, fragment = false) => {
-      const finished = finish(response, head, cookie)
+    const done = (response: Response, cookie?: string, fragment = false, keepCache = false) => {
+      const finished = finish(response, head, cookie, keepCache)
       return sandbox ? sandboxed(finished, basePath, fragment) : finished
     }
     try {
@@ -261,6 +262,11 @@ export function createStorefront (options: StorefrontOptions): Storefront {
       if (options.viewCacheSize !== undefined) setViewCacheSize(data, options.viewCacheSize)
       // which routes change state, and which read a body, depend only on the method and the address, so both are decided before the visitor's state is read or their turn is taken
       const first = routeRequest(request.method, request.url, data, { basePath, search: limits.search }).route
+      // the files of Shopify's global assets hold no visitor's state and the gift card page loads them, so they are answered before the visitor is read and whatever the storefront password says; only a file that exists keeps its public cache
+      if (first.kind === 'shopify-asset') {
+        const asset = shopifyAssetResponse(first.path, request)
+        return done(asset, undefined, true, asset.status === 200 || asset.status === 304)
+      }
       const fields = readsBody(first, verb) ? await readBody(request, limits.body) : {}
       const run = async (): Promise<Response> => {
         const given = await store.get(key)
@@ -273,7 +279,9 @@ export function createStorefront (options: StorefrontOptions): Storefront {
         // https://shopify.dev/docs/storefronts/themes/architecture/templates/password: the password page is "shown when password protection is applied to a store". The page does not say how any other address reaches it, so sending every other address there is Debutify's reading (no recording: the parity store was recorded past its password page). The page itself is open as a page; asked for a section (`?section_id=`, `?sections=`) it is any other address, or a section of the theme would show the store's products to a visitor without the password.
         const route = routed.route
         const passwordPage = route.kind === 'password' || (route.kind === 'page' && route.page.templateName === 'password' && !route.sectionId && !route.sections)
-        const locked = data.shop.password_enabled && !visitor.unlocked && !passwordPage
+        // https://shopify.dev/docs/storefronts/themes/architecture/templates/gift-card-liquid: Shopify hosts the gift card page "on the `checkout.shopify.com` domain", outside the storefront password, so a card the store holds opens without it (the page alone: its sections, and an address that names no card, which would show the theme's 404 page with the store's header, stay behind it)
+        const giftCardPage = route.kind === 'page' && route.page.templateName === 'gift_card' && !route.sectionId && !route.sections && resourceExists(data, route.page)
+        const locked = data.shop.password_enabled && !visitor.unlocked && !passwordPage && !giftCardPage
         if (locked) return done(redirect(ctx, '/password'))
         const answer = await (ROUTE_HANDLERS[routed.route.kind] ?? answerPage)(ctx)
         // a `HEAD` request changes nothing, whatever the route does for a `GET`: HTTP makes it a safe method (https://www.rfc-editor.org/rfc/rfc9110#section-9.2.1), and a link-style route such as `/discount/<code>` is a `GET` that changes the cart; a link prefetcher sends a `GET` that says so in `Sec-Purpose`, `Purpose` or `X-Moz`, which changes nothing either (`prefetching`), and sets no cookie

@@ -18,6 +18,7 @@ export type Route =
   | { kind: 'contact' }
   | { kind: 'localization' }
   | { kind: 'password' }
+  | { kind: 'shopify-asset', path: string }
   | { kind: 'notice', notice: 'checkout' | 'account' }
 
 export interface Routed {
@@ -107,6 +108,8 @@ export function routeRequest (method: string, rawUrl: string, data: StoreData, o
   // https://shopify.dev/docs/api/ajax/reference/product: `GET /products/<handle>.js`
   const product = /^\/products\/([^/]+)\.js$/.exec(path)
   if (product && read) return done({ kind: 'product-json', handle: decode(product[1]) })
+  // https://shopify.dev/docs/api/liquid/filters/shopify_asset_url: the file of Shopify's global assets that a theme names, which the storefront serves at `/shopify-assets/<path>` (`shopifyAssetUrl`'s default); a path that is not one of its files is answered there too, with 404
+  if (read && path.startsWith('/shopify-assets/')) return done({ kind: 'shopify-asset', path: decode(path.slice('/shopify-assets/'.length)) })
   // https://shopify.dev/docs/api/ajax/reference/predictive-search (`/search/suggest.json`) and https://shopify.dev/docs/api/ajax/reference/product-recommendations (`/recommendations/products.json`): the engine reads each as the page its section-rendering twin answers for
   const answered = (endpoint: string): PageRequest => requestFromUrl(`${basePath}${localePrefix}${endpoint}${parsed.search}`, data, { basePath, country: options.country })
   if (path === '/search/suggest.json' && read) return done({ kind: 'suggest-json', page: answered('/search/suggest') })

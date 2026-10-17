@@ -112,7 +112,7 @@ describe('pages', () => {
     const withCard = (giftCard: unknown, handleOptions?: { basePath: string, visitor: string }) => {
       const theme = harnessTheme()
       theme.files['templates/gift_card.liquid'] = '{% layout none %}{{ gift_card.code }}|{{ gift_card.balance }}|{{ gift_card.enabled }}|{{ gift_card.expired }}|{{ gift_card.url }}|{{ request.page_type }}|{{ canonical_url }}'
-      return harness({ theme, data: { ...data, gift_card: giftCard } as StoreData }, handleOptions)
+      return { theme, ...harness({ theme, data: { ...data, gift_card: giftCard } as StoreData }, handleOptions) }
     }
     it('renders the gift_card template at the card\'s address, with the card as gift_card', async () => {
       const { send } = withCard(card)
@@ -144,6 +144,28 @@ describe('pages', () => {
         const answer = await withCard(absent).send('GET', '/gift_cards/70001/abc123')
         expect([answer.status, answer.text.includes('<h1>Not found</h1>')]).toEqual([404, true])
       }
+    })
+    it('shows the card to a visitor who has not passed the storefront password, as Shopify hosts the page on its checkout domain, outside it', async () => {
+      const locked = (gift: unknown) => harness({ theme: withCard(gift).theme, data: { ...data, shop: { ...data.shop, password_enabled: true }, gift_card: gift } as StoreData, password: 'open' })
+      const { send } = locked(card)
+      const answer = await send('GET', '/gift_cards/70001/abc123')
+      expect([answer.status, answer.text.split('|')[0]]).toEqual([200, 'WCGX 7X97 K9HJ DFR8'])
+      // every other address of the store stays behind the password, and so does an address that names no card (it would show the theme's 404 page, with the store's header)
+      for (const url of ['/', '/products/hoodie', '/gift_cards/70001/nope', '/gift_cards/abc123', '/gift_cards/70001/abc123?section_id=cart-count']) {
+        const other = await send('GET', url)
+        expect([url, other.status, other.headers.get('location')]).toEqual([url, 302, '/password'])
+      }
+      expect((await locked(undefined).send('GET', '/gift_cards/70001/abc123')).status).toBe(302)
+    })
+    it('chooses the alternate template the card\'s template_suffix names, when the theme has it', async () => {
+      const files = { ...withCard(card).theme.files, 'templates/gift_card.birthday.liquid': '{% layout none %}birthday|{{ gift_card.code }}|{{ template.suffix }}', 'templates/gift_card.festive.json': '{"layout":false,"sections":{},"order":[]}' }
+      const send = (gift: unknown, url = '/gift_cards/70001/abc123') => harness({ theme: { files }, data: { ...data, gift_card: gift } as StoreData }).send('GET', url)
+      expect((await send({ ...card, template_suffix: 'birthday' })).text).toBe('birthday|WCGX 7X97 K9HJ DFR8|birthday')
+      // a suffix the theme has no file for, a card with none, and a suffix that names a path, show the base template
+      for (const suffix of ['missing', null, undefined, '../birthday', 'birthday/x']) expect([suffix, (await send({ ...card, template_suffix: suffix })).text.startsWith('WCGX')]).toEqual([suffix, true])
+      // a JSON alternate template is chosen too, and `?view=` picks one as it does for a product
+      expect((await send({ ...card, template_suffix: 'festive' })).text).toBe('')
+      expect((await send(card, '/gift_cards/70001/abc123?view=birthday')).text).toBe('birthday|WCGX 7X97 K9HJ DFR8|birthday')
     })
     it('shows a disabled or expired card, which the themes mark themselves with gift_card.enabled and gift_card.expired', async () => {
       const disabled = await withCard({ ...card, enabled: false }).send('GET', '/gift_cards/70001/abc123')

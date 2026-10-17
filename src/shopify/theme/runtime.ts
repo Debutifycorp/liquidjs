@@ -79,12 +79,14 @@ export interface RenderSectionResult extends RenderPageResult {
   assets: { stylesheets: string[], javascripts: string[] }
 }
 
-/** The templates whose resource carries a `template_suffix` (https://shopify.dev/docs/api/liquid/objects/product, https://shopify.dev/docs/api/liquid/objects/collection and https://shopify.dev/docs/api/liquid/objects/page). */
-const SUFFIXED_TEMPLATES = new Set(['product', 'collection', 'page'])
+/** The templates whose resource carries a `template_suffix` (https://shopify.dev/docs/api/liquid/objects/product, https://shopify.dev/docs/api/liquid/objects/collection, https://shopify.dev/docs/api/liquid/objects/page and https://shopify.dev/docs/api/liquid/objects/gift_card, whose `template_suffix` is "the name of the custom template assigned to the gift card"). */
+const SUFFIXED_TEMPLATES = new Set(['product', 'collection', 'page', 'gift_card'])
 
 /** The `template_suffix` of the resource the base template `name` shows, the one `buildGlobals` shows (`requestedResource`). Undefined for a template without such a resource, or when the store has none. */
 function suffixOf (store: StoreObjects, name: string, resource: string | undefined): string | null | undefined {
   if (!SUFFIXED_TEMPLATES.has(name)) return undefined
+  // the gift card is the store's one card, not a resource the request names
+  if (name === 'gift_card') return store.gift_card?.template_suffix as string | null | undefined
   return requestedResource(store, name, resource)?.template_suffix as string | null | undefined
 }
 

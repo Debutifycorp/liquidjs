@@ -137,11 +137,19 @@ export function requestedResource (store: StoreObjects, name: string, resource: 
   return resource ? HandleMap.get(map, resource) : HandleMap.values(map)[0]
 }
 
-const PATHS: Record<string, string> = { index: '/', cart: '/cart', search: '/search', 'list-collections': '/collections', 404: '/404', password: '/password', gift_card: '/gift_cards/sample' }
+const PATHS: Record<string, string> = { index: '/', cart: '/cart', search: '/search', 'list-collections': '/collections', 404: '/404', password: '/password', gift_card: '/gift_cards/1/sample' }
 
 /** The path a template is served from when the caller gives none: the resource's own URL (already under the view's prefix), or the storefront path of the template under `prefix`. shopify.dev's request page (https://shopify.dev/docs/api/liquid/objects/request) documents `path` as the page's path but not the path of each template, so the account and gift card paths here are the conventional ones and are not pinned. */
-function defaultPath (pageType: string, template: TemplateDrop, resource: LiquidObject | null, prefix: string): string {
+function defaultPath (pageType: string, template: TemplateDrop, resource: LiquidObject | null, prefix: string, giftCard?: LiquidObject | null): string {
   if (resource) return String(resource.url)
+  // the gift card is served at its `url` (https://shopify.dev/docs/api/liquid/objects/gift_card#gift_card-url: `/gift_cards/<store_id>/<gift_card_token>` on Shopify's checkout domain), so a page of it is shown there, under `prefix`
+  if (pageType === 'gift_card' && giftCard?.url) {
+    const url = String(giftCard.url)
+    // a path is already under the view's prefix (`buildGiftCard`); an absolute address, such as Shopify's own, is served at its path
+    if (url.startsWith('/') && !url.startsWith('//')) return url
+    const absolute = /^https?:\/\/[^/?#]+(\/[^?#]+)/.exec(url)
+    if (absolute) return withPrefix(prefix, absolute[1])
+  }
   const known = own(PATHS, pageType)
   if (known) return withPrefix(prefix, known)
   if (template.directory === 'customers') return withPrefix(prefix, template.name === 'account' ? '/account' : `/account/${template.name}`)
@@ -212,7 +220,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   const resource = kind ? resources[template.name] : null
   const host = request.host ?? String(store.shop.domain)
   const origin = request.origin ?? `https://${host}`
-  const path = request.path ?? defaultPath(pageType, template, resource, view.prefix)
+  const path = request.path ?? defaultPath(pageType, template, resource, view.prefix, store.gift_card)
   // the collection as the request shows it: its tags, filters and sort order; the filters' links extend the address without its query
   if (template.name === 'collection' && resource) resources.collection = collectionView(resource, request, store.storefrontFilters, store.currency, path.split('?')[0])
   const page = request.page ?? 1
