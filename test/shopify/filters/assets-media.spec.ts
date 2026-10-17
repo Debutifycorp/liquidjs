@@ -74,13 +74,42 @@ describe('shopify/filters/assets', () => {
     const drawings = new Set<string>()
     for (const name of names) {
       const svg = await render(`{{ '${name}' | placeholder_svg_tag }}`)
-      expect(svg).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 525\.5 525\.5">(<path d="[^"]+"\/>)+<\/svg>$/)
+      expect(svg).toMatch(/^<svg [^>]*viewBox="0 0 \d+(\.\d)? \d+(\.\d)?"[^>]*>(<path [^>]*d="[^"]+"\/>)+<\/svg>$/)
       drawings.add(svg)
     }
     expect(drawings.size).toBe(names.length)
     const image = await render("{{ 'image' | placeholder_svg_tag }}")
     expect(await render("{{ 'collection-1' | placeholder_svg_tag: 'placeholder-svg' }}")).toBe((await render("{{ 'collection-1' | placeholder_svg_tag }}")).replace('<svg ', '<svg class="placeholder-svg" '))
     expect(await render("{{ 'not-a-name' | placeholder_svg_tag }}")).toBe(image)
+  })
+  // The parity store's recordings of the three themes (Horizon 4.3.0 and Dawn 16.0.0 home and collections pages, the private theme's home and product pages) pin the outer element per name: the attributes and their order, with the class first. The drawing inside is Debutify's own, drawn to fit that viewBox.
+  describe('placeholder_svg_tag outer element', () => {
+    const open = async (name: string, klass = '') => (await render(`{{ '${name}' | placeholder_svg_tag${klass ? `: '${klass}'` : ''} }}`)).replace(/^(<svg[^>]*>).*$/, '$1')
+    it('keeps the 525.5 square for the names the private theme recorded', async () => {
+      for (const name of ['image', 'product-1', 'product-4', 'collection-1', 'collection-3']) {
+        expect(await open(name, 'placeholder-svg')).toBe('<svg class="placeholder-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 525.5 525.5">')
+      }
+    })
+    it('prints lifestyle-2 on a 1052 by 400 viewBox, with no fill or preserveAspectRatio', async () => {
+      expect(await open('lifestyle-2', 'placeholder-svg')).toBe('<svg class="placeholder-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1052 400">')
+    })
+    it('prints hero-apparel-1 as Horizon and Dawn record it', async () => {
+      expect(await open('hero-apparel-1', 'hero__media')).toBe('<svg class="hero__media" preserveAspectRatio="xMaxYMid slice" viewBox="0 0 1300 730" fill="none" xmlns="http://www.w3.org/2000/svg">')
+      expect(await open('hero-apparel-1')).toBe('<svg preserveAspectRatio="xMaxYMid slice" viewBox="0 0 1300 730" fill="none" xmlns="http://www.w3.org/2000/svg">')
+    })
+    it('prints collection-apparel-4 as Horizon records it, with its own width and height', async () => {
+      expect(await open('collection-apparel-4')).toBe('<svg preserveAspectRatio="xMidYMid slice" width="448" height="448" viewBox="0 0 448 448" fill="none" xmlns="http://www.w3.org/2000/svg">')
+    })
+    it('fits the drawing inside the viewBox and gives it a fill where the svg itself has none', async () => {
+      expect(await render("{{ 'hero-apparel-1' | placeholder_svg_tag }}")).toMatch(/<path fill="currentColor" transform="translate\(285\) scale\(1\.389\)" d="/)
+      expect(await render("{{ 'collection-apparel-4' | placeholder_svg_tag }}")).toMatch(/<path fill="currentColor" transform="scale\(0\.853\)" d="/)
+      expect(await render("{{ 'lifestyle-2' | placeholder_svg_tag }}")).toMatch(/<path transform="translate\(326\) scale\(0\.761\)" d="/)
+      expect(await render("{{ 'product-1' | placeholder_svg_tag }}")).toMatch(/<path d="/)
+    })
+    it('gives every apparel name the frame of its family: hero names the wide one, the others the 448 square', async () => {
+      for (const name of ['hero-apparel-2', 'hero-apparel-3']) expect(await open(name)).toContain('viewBox="0 0 1300 730"')
+      for (const name of ['product-apparel-1', 'collection-apparel-1', 'blog-apparel-2', 'detailed-apparel-1']) expect(await open(name)).toContain('width="448" height="448" viewBox="0 0 448 448"')
+    })
   })
   it('shopify_asset_url uses its own service, not asset_url', async () => {
     expect(await render("{{ 'option_selection.js' | shopify_asset_url }}|{{ 'a.js' | asset_url }}", {}, {}, { shopifyAssetUrl: path => `//shopify.test/${path}` })).toBe(`//shopify.test/option_selection.js|${assetUrl('a.js')}`)
@@ -187,15 +216,22 @@ describe('shopify/filters/media', () => {
     expect(await render('{{ product | image_url: width: 7200, height: 3600 }}')).toBe(url('height=2880&v=1683744744&width=5760'))
     expect(await render('{{ product | image_url: width: 800, height: 800 }}')).toBe(url('height=800&v=1683744744&width=800'))
   })
-  // the size image_tag writes and the sizes of its srcset stay within the image, though the URL it was given asks for more (not pinned by a recording)
-  it('image_tag keeps its width, height and srcset within the original, whatever the URL asks for', async () => {
+  // The parity store pins it on Horizon's collection cards (page-collections of the Horizon recording): `image_url: width: 3840 | image_tag: widths: …` of a collection image 1024 pixels wide prints width="3840" height="3840" and a `srcset` of every width up to 3840, so the size and the candidates follow the URL, not the image.
+  it('image_tag takes its width, height and srcset from the URL, even past the original', async () => {
     const small = { title: 'Small', featured_image: { src: BEAKERS, width: 1000, height: 600, alt: 'Small' } }
     const url = (query: string) => `${HOST}/files/science-beakers-blue-light-new.jpg?${query}`
     const tag = await render("{{ product | image_url: width: 1500, height: 1500, crop: 'center' | image_tag }}", { product: small })
     expect(tag).toContain(`src="${url('crop=center&amp;height=1500&amp;v=1683744744&amp;width=1500')}"`)
-    expect(tag).toContain('width="600" height="600"')
-    expect(tag).toContain(`${url('crop=center&amp;height=352&amp;v=1683744744&amp;width=352')} 352w`)
-    expect(await render('{{ product | image_url: width: 1500 | image_tag }}', { product: small })).toContain('width="1000" height="600"')
+    expect(tag).toContain('width="1500" height="1500"')
+    expect(tag).toContain(`${url('crop=center&amp;height=1200&amp;v=1683744744&amp;width=1200')} 1200w`)
+    expect(tag).not.toContain('1920w')
+    expect(await render('{{ product | image_url: width: 1500 | image_tag }}', { product: small })).toContain('width="1500" height="900"')
+  })
+  it('image_tag lists every width of widths up to the URL width, as Horizon\'s resource cards print them', async () => {
+    const collection = { title: 'Men', featured_image: { src: BEAKERS, width: 1024, height: 1024, alt: 'Men' } }
+    const tag = await render("{{ image | image_url: width: 3840 | image_tag: widths: '240, 352, 832, 1200, 1600, 1920, 2560, 3840', class: 'resource-image__image' }}", { image: collection })
+    expect(tag).toContain('width="3840" height="3840"')
+    expect(tag.match(/ (\d+)w/g)).toEqual([' 240w', ' 352w', ' 832w', ' 1200w', ' 1600w', ' 1920w', ' 2560w', ' 3840w'])
   })
   it('the image_url result is a string to filters that read strings', async () => {
     expect(await render('{{ product | image_url: width: 450 | size }}')).toBe(String(`${BEAKERS}&width=450`.length))
