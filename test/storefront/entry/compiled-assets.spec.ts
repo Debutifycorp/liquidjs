@@ -1,5 +1,5 @@
 import { compileTheme, storefrontSampleData as data } from '../../../src/shopify'
-import type { StoreData, ThemeInput } from '../../../src/shopify'
+import type { CompiledAssets, CompiledFile, StoreData, ThemeInput } from '../../../src/shopify'
 import { harness, harnessTheme, VISITOR } from './harness'
 
 // The storefront links the theme's compiled `{% stylesheet %}` and `{% javascript %}` files from `content_for_header` and serves them itself, as Shopify does from `compiled_assets/` (https://shopify.dev/docs/storefronts/themes/best-practices/javascript-and-stylesheet-tags; the parity store's recordings of Horizon 4.3.0 and Dawn 16.0.0).
@@ -18,7 +18,9 @@ function styledTheme (): ThemeInput {
 describe('the compiled asset files', () => {
   it('links them from the page and serves them, with their type and a validator that follows the bodies', async () => {
     const theme = styledTheme()
-    const { styles, scripts } = compileTheme(theme).compiledAssets()
+    // the return type is named from the entry
+    const assets: CompiledAssets = compileTheme(theme).compiledAssets()
+    const { styles, scripts }: { styles: CompiledFile | null, scripts: CompiledFile | null } = assets
     const { send } = harness({ theme })
     const page = await send('GET', '/')
     expect(page.text).toContain(`<link rel="stylesheet" media="screen" href="/compiled_assets/styles.css?v=${styles!.version}"><script id="sections-script" data-sections="hero" defer="defer" src="/compiled_assets/scripts.js?v=${scripts!.version}"></script>`)
