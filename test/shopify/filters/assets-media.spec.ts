@@ -216,6 +216,12 @@ describe('shopify/filters/media', () => {
     expect(await render('{{ product | image_url: width: 7200, height: 3600 }}')).toBe(url('height=2880&v=1683744744&width=5760'))
     expect(await render('{{ product | image_url: width: 800, height: 800 }}')).toBe(url('height=800&v=1683744744&width=800'))
   })
+  it('image_tag holds the width it works out from a height alone to the 5760 maximum, keeping the ratio', async () => {
+    const wide = { title: 'Wide', featured_image: { src: BEAKERS, width: 1000, height: 600, alt: 'Wide' } }
+    const tag = await render('{{ product | image_url: height: 6000 | image_tag }}', { product: wide })
+    expect(tag).toContain('width="5760" height="3456"')
+    expect(await render('{{ product | image_url: height: 600 | image_tag }}', { product: wide })).toContain('width="1000" height="600"')
+  })
   // The parity store pins it on Horizon's collection cards (page-collections of the Horizon recording): `image_url: width: 3840 | image_tag: widths: …` of a collection image 1024 pixels wide prints width="3840" height="3840" and a `srcset` of every width up to 3840, so the size and the candidates follow the URL, not the image.
   it('image_tag takes its width, height and srcset from the URL, even past the original', async () => {
     const small = { title: 'Small', featured_image: { src: BEAKERS, width: 1000, height: 600, alt: 'Small' } }

@@ -32,7 +32,7 @@ function lazyByDefault (state: ShopifyState): boolean {
 /**
  * Returns the image's CDN URL through the `imageUrl` service; `image_tag` reads the image and parameters from the result. https://shopify.dev/docs/api/liquid/filters/image_url
  *
- * The page's Caution says that without a `width` or `height` "an error is returned", but Shopify's reference theme (Dawn, recorded in liquid-spec's Dawn template) prints `{{ image | image_url }}` with no size as the last `srcset` candidate, so this package reads the Caution as "no resize happens": the URL has no `width` or `height` (the `crop: 'region'` examples on the page print one too), and any other parameter given is kept. A `width` or `height` that is empty, nil or not above zero counts as omitted. What Shopify prints for the sizeless form is not pinned by shopify.dev, so it goes on the "confirm on a development store" list. The page's Note says an image "can never be resized to be larger than its original dimensions", which is what the CDN does with the URL; the parity store keeps the size the template asked for in the URL (scenario `page-collections`: a request for 1500 pixels of an image 1024 pixels wide is `width=1500` in the address), so `width` and `height` stop only at the 5760 maximum the page gives. When both are given and one is over the maximum, both are scaled by the same factor, so a square request stays a square; shopify.dev does not say how the ratio is handled when a request is too large, so this proportional clamp is not pinned. `image_tag` writes the size and builds its srcset within the image's own size. `quality` stays within the page's 10 to 90.
+ * The page's Caution says that without a `width` or `height` "an error is returned", but Shopify's reference theme (Dawn, recorded in liquid-spec's Dawn template) prints `{{ image | image_url }}` with no size as the last `srcset` candidate, so this package reads the Caution as "no resize happens": the URL has no `width` or `height` (the `crop: 'region'` examples on the page print one too), and any other parameter given is kept. A `width` or `height` that is empty, nil or not above zero counts as omitted. What Shopify prints for the sizeless form is not pinned by shopify.dev, so it goes on the "confirm on a development store" list. The page's Note says an image "can never be resized to be larger than its original dimensions", which is what the CDN does with the URL; the parity store keeps the size the template asked for in the URL (scenario `page-collections`: a request for 1500 pixels of an image 1024 pixels wide is `width=1500` in the address), so `width` and `height` stop only at the 5760 maximum the page gives. When both are given and one is over the maximum, both are scaled by the same factor, so a square request stays a square; shopify.dev does not say how the ratio is handled when a request is too large, so this proportional clamp is not pinned. `image_tag` writes the size and builds its srcset from the URL's size, as the parity store prints Horizon's collection cards (a 3840 pixel request of a 1024 pixel image is `width="3840"`, with a candidate for every width up to 3840). `quality` stays within the page's 10 to 90.
  */
 function imageUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const source = imageSource(input)
@@ -82,8 +82,14 @@ function imageTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const image: ImageData = url?.image ?? { src }
   const params = url?.params ?? {}
   const aspect = image.width && image.height ? image.width / image.height : undefined
-  const urlWidth = params.width ?? (params.height && aspect ? Math.round(params.height * aspect) : image.width)
-  const urlHeight = params.height ?? (urlWidth && aspect ? Math.round(urlWidth / aspect) : image.height)
+  let urlWidth = params.width ?? (params.height && aspect ? Math.round(params.height * aspect) : image.width)
+  let urlHeight = params.height ?? (urlWidth && aspect ? Math.round(urlWidth / aspect) : image.height)
+  // a height alone makes the width from the aspect ratio, which may pass the 5760 maximum: both are scaled to keep the ratio, as `imageUrl` does for a request with two sides
+  if (!params.width && params.height && aspect) {
+    const held = withinLimit({ width: urlWidth, height: params.height }, MAX_DIMENSION)
+    urlWidth = held.width
+    urlHeight = held.height
+  }
 
   let width: unknown = urlWidth
   let height: unknown = urlHeight
