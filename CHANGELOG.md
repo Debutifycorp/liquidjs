@@ -1,3 +1,72 @@
+# [1.3.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v1.2.0...debutify-v1.3.0) (2026-10-17)
+
+
+### Bug Fixes
+
+* **shopify:** a customer_address form starts from the fields of its address ([c1ea0fd](https://github.com/Debutifycorp/liquidjs/commit/c1ea0fdd5d4aa55331c70d4021772b75dde47634))
+* **shopify:** a form given a nil or empty return_to prints no return_to input, as the parity store prints Horizon's localization form ([84dab64](https://github.com/Debutifycorp/liquidjs/commit/84dab64d31429b717069e6240e43e2c7c39a177a))
+* **shopify:** a line item's properties.size reads nil, so Dawn's cart drawer prints the empty dl and plan paragraph Shopify prints ([3f4a2f2](https://github.com/Debutifycorp/liquidjs/commit/3f4a2f2640ddd7207618b29e60742fc4519602aa))
+* **shopify:** a media preview image has a nil id, so Horizon's resource cards print no data-media-id on their first image ([7011ea2](https://github.com/Debutifycorp/liquidjs/commit/7011ea261705f1b774e60332fa96e00540bf7f82))
+* **shopify:** a page prints Shopify's <shopify-store> before every <shopify-account>, with the origin, country and language ([fd0ed53](https://github.com/Debutifycorp/liquidjs/commit/fd0ed53f2734d5941eb0145a560a233fa9a36606))
+* **shopify:** a paginate page part's title is its number, so part.title == paginate.current_page marks the current page as on Shopify ([336edcd](https://github.com/Debutifycorp/liquidjs/commit/336edcdc2deadd36591dad04928d5dd54d214928))
+* **shopify:** a t: default is read through the schema locale files for url, video and video_url settings too ([8ee37e4](https://github.com/Debutifycorp/liquidjs/commit/8ee37e4262fd16a7b8a603a905edf295330428dd))
+* **shopify:** a variant filter's featured_media keeps the media id, while its preview_image still has none ([2ae0fcb](https://github.com/Debutifycorp/liquidjs/commit/2ae0fcb826f3324262bd1f70db502ab6635c84f2))
+* **shopify:** an address form fills only the address's fields, and a store with no markets gets no section group context ([42d9b58](https://github.com/Debutifycorp/liquidjs/commit/42d9b585d735dc3eb78509a7d78ec7bec60f35bb))
+* **shopify:** colour filters return a colour object that answers red, green and blue, as Dawn's background contrast needs ([2f5741e](https://github.com/Debutifycorp/liquidjs/commit/2f5741e591e32af43f80a4aabfbc7189edcf63a1))
+* **shopify:** each inlined javascript body runs in a try that logs its error, and an empty compiledAssetsUrl inlines instead of linking relative files ([8a5c73d](https://github.com/Debutifycorp/liquidjs/commit/8a5c73d221f89bd283b76e91647a204b53611443))
+* **shopify:** export the CompiledAssets and CompiledFile types that compiledAssets() returns ([a45be80](https://github.com/Debutifycorp/liquidjs/commit/a45be8053f225a7416dfcbced86668162d98aa7f))
+* **shopify:** find, find_index and has read a number as a place in a string and nil as no value, and concat appends a drop that iterates ([f605369](https://github.com/Debutifycorp/liquidjs/commit/f605369266303c2ed45f3a840577667c5bbb230c))
+* **shopify:** give product_option_value a size and put the locale prefix before a root-relative url setting ([85dc633](https://github.com/Debutifycorp/liquidjs/commit/85dc63340e10edd447b094e8d03054045d52547d))
+* **shopify:** hold the width image_tag works out from a height alone to 5760, and say in the image_url comment that image_tag follows the URL ([e4a27f3](https://github.com/Debutifycorp/liquidjs/commit/e4a27f35caee6bb38597c8cc65a2ae647594de52))
+* **shopify:** image_tag gets its height through default, stops widths at the URL width, and prints the parity store's attribute order and focal point ([8d8fe53](https://github.com/Debutifycorp/liquidjs/commit/8d8fe53f54a2b1376aa115526a136079874f4bc1))
+* **shopify:** image_tag prints no alt for a nil alt, and a variant filter's bare featured_media has a nil alt, as Horizon's filtered card prints ([3458038](https://github.com/Debutifycorp/liquidjs/commit/3458038db4dc0b5cdd46dc46191277eb8e462299))
+* **shopify:** link the theme's compiled stylesheet and section javascript from content_for_header, and serve them from the storefront, as Shopify does ([0c50010](https://github.com/Debutifycorp/liquidjs/commit/0c50010c7e630e8f64080cfd55c84a1c7884fb58))
+* **shopify:** make forloop.parentloop an opt-in option, forloopParentloop, that the Shopify preset turns on; the root entry reads nil as upstream ([f197e83](https://github.com/Debutifycorp/liquidjs/commit/f197e83159169dece969e6c86d5f401a622433e5))
+* **shopify:** page_description is the shop's description on the collection list and the search page, as the parity store prints them ([a1d1952](https://github.com/Debutifycorp/liquidjs/commit/a1d195293572a035e83e14fb4d673f3402e8df18))
+* **shopify:** paginate gives a single page no parts, as the parity store prints Dawn's one page of collections ([c26f945](https://github.com/Debutifycorp/liquidjs/commit/c26f9452888fdc98682b6270422a5ce2ef450314))
+* **shopify:** powered_by_link prints Shopify's link, in English or French, as the parity store prints it ([60f4e1d](https://github.com/Debutifycorp/liquidjs/commit/60f4e1db93665a49c67c85290e22231412a959ea))
+* **shopify:** print Shopify's outer <svg> for each placeholder name and fit Debutify's drawing to its viewBox ([294d952](https://github.com/Debutifycorp/liquidjs/commit/294d952117968e72bdbccd9e531676cf0469c577))
+* **shopify:** put the locale prefix only on a url setting that is the root or a page of the store, never twice ([67f0d96](https://github.com/Debutifycorp/liquidjs/commit/67f0d963147183d2e945abe71c1bf254d70ed318))
+* **shopify:** rating, measurement and rich text metafield values print their rating, value and unit, and HTML; bad numbers are nil ([2b70dd4](https://github.com/Debutifycorp/liquidjs/commit/2b70dd4ee91623b3d9ada9c4bb7a0e0ad50cf44a))
+* **shopify:** read a byte order mark or no-break space outside a string as white space in theme JSON, as 1.2.0 did before a notice ([bccdaef](https://github.com/Debutifycorp/liquidjs/commit/bccdaef9cdba9db2696cbf065c129e57cbe77399))
+* **shopify:** read each file's stylesheet and javascript from a parse of its own, so files a render parsed first are in the compiled files ([5d7d432](https://github.com/Debutifycorp/liquidjs/commit/5d7d432c25996313dbe7083b7e4097c3cbf888dc))
+* **shopify:** select the first matching variant of a product that variant filters narrow, so Dawn's view event prints selectedVariant ([12637ad](https://github.com/Debutifycorp/liquidjs/commit/12637ad31a91d6c024ddb21b641fb62dc630ac6c))
+* **shopify:** size image_tag and its srcset from the image_url, past the original, as Horizon's collection cards print them ([3eab588](https://github.com/Debutifycorp/liquidjs/commit/3eab588de9c71be090838f7629477b46c77c5e90))
+* **shopify:** theme JSON files accept // and /* */ comments and trailing commas anywhere, as shopify.dev says Shopify does ([a48da46](https://github.com/Debutifycorp/liquidjs/commit/a48da46436ba2f9fd0a84cd27a29e687b454e2bc))
+* **shopify:** unique link handles among siblings, an unknown ?variant= wins, first policy per known type, more right-to-left languages ([0afee4a](https://github.com/Debutifycorp/liquidjs/commit/0afee4ab2438b44caaaeb77d46eb7e0b4c4051f9))
+* **shopify:** vendor and type collections have current_vendor and current_type, Shopify's collections no id, own images the title as alt ([15fbd6b](https://github.com/Debutifycorp/liquidjs/commit/15fbd6b10200a326dac453ec6771144bc404eb54))
+* **shopify:** write Debutify's own layout rules for a policy page instead of a copy of Shopify's stylesheet ([522b2c0](https://github.com/Debutifycorp/liquidjs/commit/522b2c0fbd93dfaf3e9af72ccaf700ff37ed86a3))
+* **storefront:** a compiled file is answered from the theme alone, before the data and services are resolved ([a2f975a](https://github.com/Debutifycorp/liquidjs/commit/a2f975a9614f13533989ba6c2d087b150d8333cf))
+* **storefront:** apply the contextual section group file of the page's market ([91f74aa](https://github.com/Debutifycorp/liquidjs/commit/91f74aa830cfaae53be409a147c258a0feeba196))
+* **storefront:** render a section asked for at a variant's address instead of redirecting, as the pickup availability fetch needs ([bd3c961](https://github.com/Debutifycorp/liquidjs/commit/bd3c961ec89509e3c738d0566db7aa12d95c28d6))
+* **storefront:** serve each global asset at its exact address only, keep a gift card template Liquid, and document GiftCardData.url ([d264912](https://github.com/Debutifycorp/liquidjs/commit/d264912bc90ab401f546580ab5a0f5d399ac6303))
+* **tags:** keep no for_stack register in the root entry unless forloopParentloop is on ([c124b31](https://github.com/Debutifycorp/liquidjs/commit/c124b313510c89c9a81be92dc30d96f988a78d2c))
+
+
+### Features
+
+* forloop.parentloop is the enclosing loop's forloop, through include and not into render, as Shopify Liquid has it ([db8f95e](https://github.com/Debutifycorp/liquidjs/commit/db8f95e3e95ca71e5cb80a10028d83abd3595b63))
+* **shopify:** a language has its direction, rtl for a right-to-left language and ltr otherwise ([9e283d8](https://github.com/Debutifycorp/liquidjs/commit/9e283d8a104336a50aed658430f3d1d4a7d03ba4))
+* **shopify:** a policy page carries the rules of the stylesheet Shopify links for it ([e74e32f](https://github.com/Debutifycorp/liquidjs/commit/e74e32f8c107dac0525341f486a091d9626f6e9f))
+* **shopify:** date and time_tag formats and day and month names follow the page's language, and date_formats keys come from its locale file ([bff0616](https://github.com/Debutifycorp/liquidjs/commit/bff0616a821a3543d1c80afc12b648d904766f54))
+* **shopify:** implement the stub filters Horizon and Dawn use: md5, preload_tag, inline_asset_content, structured_data, standard_event_data, more ([f07ddea](https://github.com/Debutifycorp/liquidjs/commit/f07ddeab15b88c58899dc7ba647277a9005564ab))
+* **shopify:** menu links have a handle, their title handleized in the primary language, so each submenu id is its own ([481b898](https://github.com/Debutifycorp/liquidjs/commit/481b8989ec8b7ef1ced6bcda6ac9f8a3748f0a16))
+* **shopify:** metafields are metafield objects with value, type and list?, typed by their type, and still print as stored ([ee182a9](https://github.com/Debutifycorp/liquidjs/commit/ee182a94d4da10ed01116b13806829f0e2e183e8))
+* **shopify:** option values are product_option_value objects with id, availability, selection, variant and swatch; ?option_values= selects ([a415141](https://github.com/Debutifycorp/liquidjs/commit/a415141f869ce178f8bb76e2559666959ac3c0f0))
+* **shopify:** resolve dynamic sources, closest and palette references in settings, prefix theme block ids, keep drops in default and first ([7b8bb20](https://github.com/Debutifycorp/liquidjs/commit/7b8bb2005bba3848b50af1daa546bf9587eb7c86))
+* **shopify:** the sample stores hold the customer account menu every store has, and a menu prints as its handle ([aa244d7](https://github.com/Debutifycorp/liquidjs/commit/aa244d76b38864f7f9edbc5b3083d9f8aaa6a01f))
+* **shopify:** the shop has its policies and password message, and /policies/<handle> renders the policy in the theme layout ([4f5fa3f](https://github.com/Debutifycorp/liquidjs/commit/4f5fa3f9ae8edd916c077923645f22f31149dd54))
+* **shopify:** variants have barcode, unit price, volume prices and store availabilities; cart lines instructions and unit price ([80318ed](https://github.com/Debutifycorp/liquidjs/commit/80318edde1475903f87a6b4c76f7a1ec34f7e681))
+* **shopify:** videos have aspect_ratio and duration, and product images attached_to_variant?, variants and product_id ([f24ba54](https://github.com/Debutifycorp/liquidjs/commit/f24ba54616c8bad543ef2978c771acf46883ef8a))
+* **storefront:** publish the store in every language the theme has a locale file for (languages: 'theme'), regional locales inherit their base ([e179b1f](https://github.com/Debutifycorp/liquidjs/commit/e179b1fc4202ddf9973aed2f6fe70081c04ac8fa))
+* **storefront:** serve the gift card page at /gift_cards/<store_id>/<token>, print the card's url under the base path, and issue a sample gift card ([f4e21ec](https://github.com/Debutifycorp/liquidjs/commit/f4e21ec2d2e79c01ee42a4bc4ad6da701b8dae11))
+* **storefront:** serve the global assets the gift card page loads, open the page past the password, and read the card's template_suffix ([448859f](https://github.com/Debutifycorp/liquidjs/commit/448859f0f33d9f3b6fc7822c9e23eb68ad08e391))
+
+
+### Upstream
+
+Based on [LiquidJS 10.30.0](https://github.com/harttle/liquidjs/releases/tag/v10.30.0).
+
 # [1.2.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v1.1.0...debutify-v1.2.0) (2026-10-17)
 
 
