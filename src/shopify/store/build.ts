@@ -310,9 +310,11 @@ function optionValueInfos (data: ProductData, options: string[], variants: Liqui
   const taken = new Set<number>()
   const given = data.option_values ?? {}
   const listed = options.map((_, i) => unique(variants.map(variant => (variant.options as string[])[i]).filter(value => value !== undefined)))
-  for (const [i, name] of options.entries()) for (const value of listed[i]) {
-    const id = own(own(given, name), value)?.id
-    if (typeof id === 'number') taken.add(id)
+  for (const [i, name] of options.entries()) {
+    for (const value of listed[i]) {
+      const id = own(own(given, name), value)?.id
+      if (typeof id === 'number') taken.add(id)
+    }
   }
   return options.map((name, i) => listed[i].map(value => {
     const extra = own(own(given, name), value)
@@ -1060,8 +1062,9 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   const source = translateData(data, view.language)
   const currency = currencyOf(data, view)
   // a reference metafield points at an object of this view, which is read when the metafield's `value` is (`MetafieldDrop`), after the view is built
-  let ready: StoreObjects | undefined
+  const finished: { objects?: StoreObjects } = {}
   const resolve: MetafieldResolver = (kind, key) => {
+    const ready = finished.objects
     if (!ready) return null
     if (kind === 'variant') return HandleMap.values(ready.products).flatMap(product => product.variants as LiquidObject[]).find(variant => String(variant.id) === key) ?? null
     const map = kind === 'product' ? ready.products : kind === 'collection' ? ready.collections : kind === 'page' ? ready.pages : undefined
@@ -1141,6 +1144,6 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   }
   // the cart reads the products, the currency and the prefix of the objects above
   objects.cart = buildCartObject(objects, cartStateOf(data.cart))
-  ready = objects
+  finished.objects = objects
   return objects
 }

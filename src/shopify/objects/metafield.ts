@@ -162,4 +162,3 @@ export function buildMetafields (data: Metafields | undefined, resolve?: Metafie
   }
   return out
 }
-
