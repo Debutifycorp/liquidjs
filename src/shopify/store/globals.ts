@@ -186,10 +186,22 @@ export interface PageGlobals {
   request: { path: string, origin: string, page: number, prefix: string, alternates: Array<{ hreflang: string, path: string }>, query?: Array<[string, string]> }
 }
 
+/** The words of `powered_by_link` by language: English is https://shopify.dev/docs/api/liquid/objects/powered_by_link's example and French what the parity store prints on its `fr-ca` home page (private parity recording `page-home-fr-ca` of Horizon). Shopify's words in other languages are not recorded, so they print in English here. */
+const POWERED_BY: Record<string, string> = {
+  en: 'Powered by Shopify',
+  fr: 'Commerce électronique propulsé par Shopify'
+}
+
+/** `powered_by_link`, https://shopify.dev/docs/api/liquid/objects/powered_by_link: the page's link, `<a target="_blank" rel="nofollow" href="https://www.shopify.com?utm_campaign=poweredby&amp;utm_medium=shopify&amp;utm_source=onlinestore">Powered by Shopify</a>`, as the parity store prints it on Horizon's footer (private parity recordings `page-article` and the rest), with its words in the page's language. The page says the link goes to "a localized version of `shopify.com`, based on the locale of the store"; the parity store, whose locale is English, prints the same address on its French page, and what a store in another locale links to is not pinned. */
+function poweredByLink (language: string | undefined): string {
+  const words = own(POWERED_BY, String(language ?? '').toLowerCase().split('-')[0]) ?? POWERED_BY.en
+  return `<a target="_blank" rel="nofollow" href="https://www.shopify.com?utm_campaign=poweredby&amp;utm_medium=shopify&amp;utm_source=onlinestore">${words}</a>`
+}
+
 /**
  * The global objects of one page, each following its page under https://shopify.dev/docs/api/liquid/objects: `shop`, `cart`, `customer`, `localization`, `collections`, `all_products`, `pages`, `blogs`, `articles`, `linklists`, `images`, `routes`, `template`, `request` (`page_type`, `path`, `host`, `origin`, `locale`, `design_mode`, `visual_preview_mode`), `page_title`, `page_description`, `page_image`, `canonical_url`, `handle`, `current_page`, `current_tags`, `search`, `recommendations`, `predictive_search`, `powered_by_link`, `additional_checkout_buttons`, `content_for_additional_checkout_buttons`, `metaobjects`, `country_option_tags`, `all_country_option_tags`, `gift_card` on the `gift_card` template (https://shopify.dev/docs/api/liquid/objects/gift_card, nil when the store data issues none), `order` on the `customers/order` template (https://shopify.dev/docs/api/liquid/objects/order, the customer's order `orderFor` picks), and the template's resource under its own name (`product`, `collection`, `page`, `blog`, `article`; an article also sets `blog`).
  *
- * Choices shopify.dev does not pin, for the "confirm on a development store" list: `canonical_url` is the origin plus the path, with no query string, as the parity store prints it (fixtures `probe-page-*`: `/pages/about?view=probe` has `https://<host>/pages/about`), except a search's `?q=` (recording `page-search`: `/search?q=shirt`), and no page number, which no fixture records (the page says only that it is the canonical URL of the current page); `page_title` is the resource's title, Shopify's words for a template without one (`templateTitle`) or the shop's name, without the shop-name suffix a live store adds; `page_description` and `page_image` are the resource's text and featured image (`pageDescription`, `pageImage`); `powered_by_link` is empty because the link points at shopify.com, which a Debutify store does not show; `search` runs only when the request has `searchTerms` (`buildSearch`, whose matching is Debutify's), `recommendations` is performed only for a request's `recommendations` (`buildRecommendations`, whose related products are Debutify's) and carries `performed` beside `performed?` (shopify.dev names only `performed?`, but liquid-spec's recorded Shopify environments hold both, so a template that reads `recommendations.performed` takes the same branch as on a store), and `metaobjects` is empty.
+ * Choices shopify.dev does not pin, for the "confirm on a development store" list: `canonical_url` is the origin plus the path, with no query string, as the parity store prints it (fixtures `probe-page-*`: `/pages/about?view=probe` has `https://<host>/pages/about`), except a search's `?q=` (recording `page-search`: `/search?q=shirt`), and no page number, which no fixture records (the page says only that it is the canonical URL of the current page); `page_title` is the resource's title, Shopify's words for a template without one (`templateTitle`) or the shop's name, without the shop-name suffix a live store adds; `page_description` and `page_image` are the resource's text and featured image (`pageDescription`, `pageImage`); `powered_by_link` is Shopify's link (`poweredByLink`); `search` runs only when the request has `searchTerms` (`buildSearch`, whose matching is Debutify's), `recommendations` is performed only for a request's `recommendations` (`buildRecommendations`, whose related products are Debutify's) and carries `performed` beside `performed?` (shopify.dev names only `performed?`, but liquid-spec's recorded Shopify environments hold both, so a template that reads `recommendations.performed` takes the same branch as on a store), and `metaobjects` is empty.
  */
 export function buildGlobals (input: GlobalsInput): PageGlobals {
   const { store, request, report } = input
@@ -268,7 +280,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     recommendations: buildRecommendations({ ...store, cart }, request.recommendations, report),
     // https://shopify.dev/docs/api/liquid/objects/predictive_search: only a Predictive Search API request has it; any other page has none, and the recording prints nil (fixture `ajax-sections-page`)
     ...(request.predictive ? { predictive_search: buildPredictiveSearch(store, request.predictive, input.data) } : {}),
-    powered_by_link: '',
+    powered_by_link: poweredByLink(request.language ?? input.locale),
     additional_checkout_buttons: false,
     content_for_additional_checkout_buttons: '',
     metaobjects: {},
