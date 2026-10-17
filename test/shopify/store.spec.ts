@@ -86,6 +86,13 @@ describe('shopify/store', () => {
     expect(await render("{% for l in linklists['main-menu'].links %}{{ l.title }}:{{ l.active }}:{{ l.child_active }}:{{ l.levels }} {% endfor %}", { linklists }))
       .toBe('Home:false:false:0 Catalog:false:true:1 Contact:false:false:0 ')
   })
+  it('prints a menu as its handle, and gives a handle that names no menu nothing', async () => {
+    const e = env()
+    const linklists = buildLinklists(store.linklists, '/')
+    expect(await render("{{ linklists['main-menu'] }}|{{ linklists.footer }}", { linklists })).toBe('main-menu|footer')
+    expect(await render("{% for l in linklists['nope'].links %}{{ l.title }}{% endfor %}[{{ linklists['nope'].links.size }}][{{ linklists['nope'].title }}]{% unless linklists['nope'] %}nil{% endunless %}", { linklists })).toBe('[][]nil')
+    expect(await render('{{ s.menu }}|{{ s.gone }}|{% unless s.gone %}nil{% endunless %}', { s: new SettingsDrop([{ type: 'link_list', id: 'menu' }, { type: 'link_list', id: 'gone' }], { menu: 'main-menu', gone: 'customer-account-main-menu' }, e) })).toBe('main-menu||nil')
+  })
   it('takes price, compare-at price and the first available variant from all the variants', async () => {
     const odd = buildStore({
       shop: { name: 'Odd', domain: 'odd.example', currency: 'USD' },
@@ -717,10 +724,10 @@ describe('shopify/settings fidelity', () => {
     const settings = new SettingsDrop([{ type: 'product', id: 'p' }, { type: 'collection', id: 'c' }], { p: 'classic-tee', c: 'apparel' }, env())
     expect(await render('{{ s.p.url | within: s.c }}|{{ s.p | image_url: width: 100 }}|{{ s.c.products.first.title }}|{{ s.p.variants[0].product.title }}', { s: settings })).toBe('/collections/apparel/products/classic-tee|/sample/images/classic-tee.jpg?width=100|Classic Tee|Classic Tee')
   })
-  it('leaves menus and lists as they are', async () => {
+  it('prints a menu as its handle and leaves lists as they are', async () => {
     const settings = new SettingsDrop([{ type: 'link_list', id: 'menu' }, { type: 'collection_list', id: 'cols' }], { menu: 'main-menu', cols: ['apparel'] }, env())
     expect(await render('{{ s.menu.title }}|{{ s.cols.size }}|{{ s.cols[0].title }}|{{ s.cols[0].handle }}', { s: settings })).toBe('Main menu|1|Apparel|apparel')
-    expect(String(SettingsDrop.value(settings, 'menu'))).toBe('[object Object]')
+    expect(String(SettingsDrop.value(settings, 'menu'))).toBe('main-menu')
     // the elements of a list are the store's objects, which print as their handle (unpinned by shopify.dev)
     expect(String((SettingsDrop.value(settings, 'cols') as unknown[])[0])).toBe('apparel')
   })

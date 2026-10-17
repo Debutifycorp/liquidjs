@@ -573,11 +573,15 @@ function buildLink (data: LinkData, path: string, prefix: string): LiquidObject 
   }
 }
 
-/** The `linklists` object for one request path, https://shopify.dev/docs/api/liquid/objects/linklists (each menu is https://shopify.dev/docs/api/liquid/objects/linklist), with its links under `prefix`. */
+/**
+ * The `linklists` object for one request path, https://shopify.dev/docs/api/liquid/objects/linklists (each menu is https://shopify.dev/docs/api/liquid/objects/linklist), with its links under `prefix`. A menu prints as its handle, as the parity store prints a `link_list` setting: Horizon's `menu="{{ customer_account_menu }}"` came out `menu="customer-account-main-menu"` (shopify.dev says so only of the `product`, `collection`, `page`, `blog` and `article` settings, https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings; for a menu it is recorded, not documented).
+ *
+ * A handle that names no menu is nil, so `linklists['x'].links` is nil and a loop over it prints nothing: shopify.dev does not say what a missing menu gives, but its `link_list` setting is "blank, if either no selection has been made or the selection no longer exists". Whether Shopify gives nil or an empty menu to `linklists['x']` itself is not pinned.
+ */
 export function buildLinklists (lists: LinkListData[], path: string, prefix = ''): HandleMap<LiquidObject> {
   return new HandleMap(lists.map(list => {
     const links = list.links.map(link => buildLink(link, path, prefix))
-    return [list.handle, { handle: list.handle, title: list.title, links, levels: links.length ? 1 + Math.max(...links.map(link => link.levels as number)) : 0 }]
+    return [list.handle, printsHandle({ handle: list.handle, title: list.title, links, levels: links.length ? 1 + Math.max(...links.map(link => link.levels as number)) : 0 })]
   }))
 }
 

@@ -1,6 +1,7 @@
 import { readdirSync } from 'fs'
 import { join } from 'path'
-import { storefrontSampleData } from '../../src/shopify'
+import { createShopifyLiquid, renderLiquid, sampleStoreData, storefrontSampleData } from '../../src/shopify'
+import { buildLinklists, buildStore } from '../../src/shopify/store/build'
 import { renderProbeHtml, PROBE_DIR } from './probe'
 
 describe('storefrontSampleData', () => {
@@ -13,6 +14,15 @@ describe('storefrontSampleData', () => {
     expect(data.shipping_zones?.length).toBe(3)
     expect(Object.keys(data.translations ?? {})).toEqual(['fr'])
     expect(data.filters?.map(f => f.attribute)).toEqual(['availability', 'price', 'vendor', 'product_type', 'tag', 'option', 'option', 'metafield'])
+  })
+  it('holds the three menus every Shopify store has, in the sample store too', async () => {
+    for (const lists of [data.linklists ?? [], sampleStoreData.linklists ?? []]) {
+      expect(lists.map(l => l.handle)).toEqual(['main-menu', 'footer', 'customer-account-main-menu'])
+      expect(lists[2]).toEqual({ handle: 'customer-account-main-menu', title: 'Customer account main menu', links: [{ title: 'Orders', url: '/account/orders' }, { title: 'Profile', url: '/account/profile' }] })
+    }
+    const linklists = buildLinklists(buildStore(data).linklists, '/')
+    const source = "{% for l in linklists['customer-account-main-menu'].links %}{{ l.title }}:{{ l.type }}:{{ l.url }} {% endfor %}{{ linklists['customer-account-main-menu'] }}"
+    expect((await renderLiquid(createShopifyLiquid(), source, { linklists })).html).toBe('Orders:customer_account_page_link:/account/orders Profile:customer_account_page_link:/account/profile customer-account-main-menu')
   })
   it('uses unique ids and handles', () => {
     const products = data.products ?? []

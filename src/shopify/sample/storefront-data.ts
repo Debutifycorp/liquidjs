@@ -1,4 +1,5 @@
 import type { PageData, ProductData, StoreData, VariantData } from '../store/types'
+import { customerAccountMainMenu } from './default-menus'
 import { mockShopCatalog } from './mock-shop'
 
 /** Deep-freezes the dataset, like `sampleStoreData`. */
@@ -93,7 +94,7 @@ export const storefrontSampleData: StoreData = freeze({
   collections: catalog.collections,
   pages,
   blogs: catalog.blogs,
-  linklists: catalog.linklists,
+  linklists: [...catalog.linklists, structuredClone(customerAccountMainMenu)],
   filters: [
     { attribute: 'availability' },
     { attribute: 'price' },
