@@ -30,6 +30,10 @@ function blankOut (source: string): string {
     const c = source[i]
     if (c === ' ' || c === '\n' || c === '\r' || c === '\t') {
       i++
+    } else if (c === '\uFEFF' || c === '\u00A0') {
+      // a byte order mark or a no-break space outside a string: 1.2.0 read them before a leading notice comment, and an editor can save either
+      blanks.push({ start: i, end: i + 1 })
+      i++
     } else if (c === '"') {
       i++
       while (i < length && source[i] !== '"') i += source[i] === '\\' ? 2 : 1

@@ -37,6 +37,11 @@ describe('shopify/util/jsonc comments and trailing commas', () => {
 { /* open */ "a" /* key */ : /* colon */ 1 /* value */ , /* comma */ "b": [ /* in array */ 2, 3 /* last */ ] /* before brace */ } /* end */`
     expect(parseJsonc(source)).toEqual({ a: 1, b: [2, 3] })
   })
+  it('reads a byte order mark or a no-break space outside a string as white space', () => {
+    expect(parseJsonc('\uFEFF/* notice */ { "a": 1 }')).toEqual({ a: 1 })
+    expect(parseJsonc('\uFEFF{ "a": 1 }')).toEqual({ a: 1 })
+    expect(parseJsonc('\u00A0/* notice */\u00A0{ "a": "keeps \u00A0 inside" }')).toEqual({ a: 'keeps \u00A0 inside' })
+  })
   it('reads a // or /* inside a string as text, URLs included', () => {
     expect(parseJsonc('{ "url": "https://x.example/a//b", "c": "a /* not */ b", "d": "// nor this" }'))
       .toEqual({ url: 'https://x.example/a//b', c: 'a /* not */ b', d: '// nor this' })
