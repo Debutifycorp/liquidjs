@@ -66,6 +66,22 @@ describe('tags/for', function () {
     const html = await engine.parseAndRender(src, scope)
     return expect(html).toBe('hello,world,')
   })
+  describe('parentloop', function () {
+    it('is the forloop of the enclosing loop, at any depth', async function () {
+      expect(await liquid.parseAndRender('{% for i in (1..2) %}{% for j in (1..2) %}{{ forloop.parentloop.index }}.{{ forloop.index }} {% endfor %}{% endfor %}', scope)).toBe('1.1 1.2 2.1 2.2 ')
+      expect(await liquid.parseAndRender('{% for i in (1..2) %}{% for j in (1..2) %}{% for k in (1..2) %}{{ forloop.parentloop.parentloop.index }}.{{ forloop.parentloop.index0 }}.{{ forloop.index }} {% endfor %}{% endfor %}{% endfor %}', scope)).toBe('1.0.1 1.0.2 1.1.1 1.1.2 2.0.1 2.0.2 2.1.1 2.1.2 ')
+      expect(liquid.parseAndRenderSync('{% for i in (1..2) %}{% for j in (1..1) %}{% if forloop.parentloop.last %}last{% endif %}{% endfor %}{% endfor %}', scope)).toBe('last')
+    })
+    it('is nil outside a nested loop, also after an inner loop breaks', async function () {
+      expect(await liquid.parseAndRender('{% for i in (1..2) %}[{{ forloop.parentloop }}{{ forloop.parentloop.index }}]{% for j in (1..2) %}{% break %}{% endfor %}({{ forloop.parentloop.index }}){% endfor %}', scope)).toBe('[]()[]()')
+    })
+    it('reaches through include and not into render', async function () {
+      const engine = new Liquid({ templates: { inner: '{% for j in (1..2) %}{{ forloop.parentloop.index }}-{{ forloop.index }} {% endfor %}' } })
+      expect(await engine.parseAndRender("{% for i in (1..2) %}{% include 'inner' %}{% endfor %}")).toBe('1-1 1-2 2-1 2-2 ')
+      expect(await engine.parseAndRender("{% for i in (1..2) %}{% render 'inner' %}{% endfor %}")).toBe('-1 -2 -1 -2 ')
+    })
+  })
+
   describe('illegal', function () {
     it('should reject when for not closed', function () {
       const src = '{%for c in alpha%}{{c}}'

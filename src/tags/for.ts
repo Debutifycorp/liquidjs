@@ -6,6 +6,7 @@ import { Parser } from '../parser'
 import { Arguments } from '../template'
 
 const MODIFIERS = ['offset', 'limit', 'reversed']
+const FOR_STACK = 'for_stack'
 
 type valueOf<T> = T[keyof T]
 
@@ -66,14 +67,22 @@ export default class extends Tag {
     }, collection)
 
     ctx.setRegister(continueKey, (hash['offset'] || 0) + collection.length)
-    const scope = createScope({ forloop: new ForloopDrop(collection.length, this.collection.getText(), this.variable) })
+    // the loops being rendered, innermost last, as Ruby Liquid keeps them in `registers[:for_stack]`: an `include` shares the context and sees the outer loop as `parentloop`, a `render` has a context of its own and does not
+    const stack = ctx.getRegister<ForloopDrop[]>(FOR_STACK, [])
+    const forloop = new ForloopDrop(collection.length, this.collection.getText(), this.variable, stack[stack.length - 1] ?? null)
+    const scope = createScope({ forloop })
     ctx.push(scope)
-    for (const item of collection) {
-      scope[this.variable] = item
-      ctx.continueCalled = ctx.breakCalled = false
-      yield r.renderTemplates(this.templates, ctx, emitter)
-      if (ctx.breakCalled) break
-      scope.forloop.next()
+    stack.push(forloop)
+    try {
+      for (const item of collection) {
+        scope[this.variable] = item
+        ctx.continueCalled = ctx.breakCalled = false
+        yield r.renderTemplates(this.templates, ctx, emitter)
+        if (ctx.breakCalled) break
+        scope.forloop.next()
+      }
+    } finally {
+      stack.pop()
     }
     ctx.continueCalled = ctx.breakCalled = false
     ctx.pop()
