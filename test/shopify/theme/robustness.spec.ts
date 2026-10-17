@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { renderPage, renderSection } from '../../../src/shopify'
+import { renderPage, renderSection } from './bare-block-ids'
 import { legacySampleData } from '../legacy-sample'
 import { loadTheme } from './load-fixture'
 

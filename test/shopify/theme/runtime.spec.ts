@@ -1,5 +1,6 @@
 import { join } from 'path'
-import { compileTheme, renderPage, renderSection } from '../../../src/shopify'
+import { compileTheme } from '../../../src/shopify'
+import { renderPage, renderSection } from './bare-block-ids'
 import { legacySampleData } from '../legacy-sample'
 import { loadTheme } from './load-fixture'
 
@@ -14,7 +15,8 @@ describe('shopify/theme/runtime', () => {
     expect(html).toContain(':root { --accent: 51 79 180; }')
     expect(html).toContain('<!-- BEGIN sections: header-group --><div id="shopify-section-sections--header-group__announcement" class="shopify-section shopify-section-group-header-group announcement-bar-section"><p class="announcement">Free shipping|header|1</p><span>Hello</span><span>Hi</span>')
     expect(html).toContain('<header-wrapper id="shopify-section-sections--header-group__header" class="shopify-section shopify-section-group-header-group"><header><a href="/" aria-current="page">Home</a><a href="/collections/all">Catalog</a><a href="/pages/contact">Contact</a><span class="cart-count">2</span></header>')
-    expect(html).toContain('<div id="shopify-section-template--index__hero" class="shopify-section hero-section"><h1>Hello {{ shop.name }}</h1><p>Hello, Sample Store!</p><p>Made with care</p><p>Schema subheading</p>')
+    // the hero's saved heading `Hello {{ shop.name }}` is a dynamic source, which a text setting resolves
+    expect(html).toContain('<div id="shopify-section-template--index__hero" class="shopify-section hero-section"><h1>Hello Sample Store</h1><p>Hello, Sample Store!</p><p>Made with care</p><p>Schema subheading</p>')
     expect(html).toContain('<svg class="icon icon-star" data-section="template--index__hero"></svg>')
     expect(html).toContain('<div id="shopify-section-template--index__featured" class="shopify-section"><h2>Home page</h2><a href="/products/classic-tee">Classic Tee $25.00</a><a href="/products/canvas-bag">Canvas Bag $45.00</a><i>2/1</i>')
     expect(html).toContain('<div id="shopify-section-footer" class="shopify-section"><footer>© Fixture|footer||static</footer>')

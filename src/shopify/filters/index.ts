@@ -18,6 +18,7 @@ import { htmlSafeFilters } from './html-safe'
 import { hashFilters } from './hash'
 import { structuredFilters } from './structured'
 import { metafieldFilters } from './metafield'
+import { enumerableFilters } from './enumerable'
 
 /** The Shopify filter implementations, one set per module. */
 export const SHOPIFY_FILTER_SETS: readonly ShopifyFilterSet[] = Object.freeze([
@@ -33,7 +34,8 @@ export const SHOPIFY_FILTER_SETS: readonly ShopifyFilterSet[] = Object.freeze([
   htmlSafeFilters,
   hashFilters,
   structuredFilters,
-  metafieldFilters
+  metafieldFilters,
+  enumerableFilters
 ])
 
 export function shopifyFilterImplementations (): ShopifyFilterSet {

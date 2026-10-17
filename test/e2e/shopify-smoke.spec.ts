@@ -60,7 +60,8 @@ describe('bin/shopify-smoke.mjs', () => {
       'sections/deck.liquid': "{% capture all %}{% content_for 'blocks' %}{% endcapture %}{% unless all == '[a][c]' %}{{ 'x' | nested_wrong }}{% endunless %}{% schema %}{\"name\":\"Deck\",\"blocks\":[{\"type\":\"@theme\"}],\"presets\":[{\"name\":\"Deck\",\"blocks\":{\"row-1\":{\"type\":\"row\",\"blocks\":{\"c\":{\"type\":\"cell\"},\"a\":{\"type\":\"cell\"}},\"block_order\":[\"a\",\"c\"]}},\"block_order\":[\"row-1\"]}]}{% endschema %}",
       'sections/tree.liquid': "{% capture all %}{% content_for 'blocks' %}{% endcapture %}{% unless all == '[b0_0][mine][b1_0][b1_1]' %}{{ 'x' | ids_wrong }}{% endunless %}{% schema %}{\"name\":\"Tree\",\"blocks\":[{\"type\":\"@theme\"}],\"presets\":[{\"name\":\"Tree\",\"blocks\":[{\"type\":\"row\",\"blocks\":[{\"type\":\"cell\"},{\"type\":\"cell\",\"id\":\"mine\"}]},{\"type\":\"row\",\"blocks\":[{\"type\":\"cell\"},{\"type\":\"cell\"}]}]}]}{% endschema %}",
       'blocks/row.liquid': "{% content_for 'blocks' %}{% schema %}{\"name\":\"Row\",\"tag\":null,\"blocks\":[{\"type\":\"@theme\"}]}{% endschema %}",
-      'blocks/cell.liquid': '[{{ block.id }}]{% schema %}{"name":"Cell","tag":null}{% endschema %}'
+      // a theme block's id is `<prefix>__<key>`; the smoke script gives the key
+      'blocks/cell.liquid': '[{{ block.id | split: "__" | last }}]{% schema %}{"name":"Cell","tag":null}{% endschema %}'
     })
     const { status, stdout, stderr } = smoke([dir, '--json', '--presets', '--strict'])
     expect(stderr).toBe('')

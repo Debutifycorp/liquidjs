@@ -1,5 +1,6 @@
 import { join } from 'path'
-import { createShopifyLiquid, renderLiquid, renderPage, renderSection } from '../../../src/shopify'
+import { createShopifyLiquid, renderLiquid } from '../../../src/shopify'
+import { renderPage, renderSection } from './bare-block-ids'
 import { loadTheme } from './load-fixture'
 
 const theme = loadTheme(join(__dirname, '../fixtures/theme'))

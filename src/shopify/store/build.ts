@@ -1086,6 +1086,9 @@ export function buildStore (data: StoreData, view?: StoreView): StoreObjects {
   return objects
 }
 
+/** Shopify's title for the collection `all` in the languages the parity store prints it in, by language code: `Produits` in French (recording `page-home-fr-ca` of the Dawn theme, where a featured collection section picks `all`: "Afficher tous les produits de la collection Produits"). Any other language keeps `Products`, the English title, which shopify.dev does not pin for other languages either. */
+const ALL_TITLES: Record<string, string> = { fr: 'Produits' }
+
 /** The objects of `data` in `view`: every resource is built from `source`, `data` in the view's language (`translateData`), while the market, its currency and the localization come from `data`, which the language does not change. */
 function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   const { prefix } = view
@@ -1103,7 +1106,7 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   const products = new HandleMap((source.products ?? []).map(product => [product.handle, buildProduct(product, prefix, currency, resolve)]))
   // Every shop answers `collections.all` with all its products. https://shopify.dev/docs/api/liquid/objects/collections
   // its default order is by title (fixture `probe-collection-all`)
-  const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (source.products ?? []).map(product => product.handle), sort_order: 'title-ascending' }, products, data.filters, prefix, currency)
+  const all = buildCollection({ id: 0, handle: 'all', title: own(ALL_TITLES, view.language.split('-')[0].toLowerCase()) ?? 'Products', products: (source.products ?? []).map(product => product.handle), sort_order: 'title-ascending' }, products, data.filters, prefix, currency)
   // a collection Shopify makes has no id: the parity store prints Dawn's and Horizon's `data-collection-id="{{ collection.id }}"` empty on `/collections/all` (their recordings `page-collection-filtered`)
   all.id = null
   // `collections` lists the store's collections alphabetically by title, whatever order the data has them in: https://shopify.dev/docs/api/liquid/objects/collections shows its example sorted so, and the parity store lists /collections that way (scenario `page-collections`: Accessories, Bottoms, Featured, Home page, Men, Shoes, Tops, Unisex, Women)

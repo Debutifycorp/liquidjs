@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { renderPage, renderSection } from '../../../src/shopify'
+import { renderPage, renderSection } from './bare-block-ids'
 import { loadTheme } from './load-fixture'
 
 const theme = loadTheme(join(__dirname, '../fixtures/theme'))
@@ -46,6 +46,12 @@ describe('shopify/theme colour schemes', () => {
     const files = { ...theme.files, 'templates/lookup.liquid': "{% layout none %}{{ settings.color_schemes['scheme-1'].settings.text }}|{{ settings.color_schemes['scheme-2'].settings.background }}|[{{ settings.color_schemes['scheme-9'].settings.text }}]|{{ settings.color_schemes.size }}" }
     const { html } = await renderPage({ theme: { files }, templateName: 'lookup' })
     expect(html).toBe('#121212|#336699|[]|2')
+  })
+  // the parity store prints Dawn's `color-{{ settings.color_schemes | first }}` as `color-scheme-1` (recording `page-search` of the Dawn theme): `first` gives the group's first scheme, which prints as its id
+  it('gives the first scheme to first', async () => {
+    const files = { ...theme.files, 'templates/first.liquid': '{% layout none %}{{ settings.color_schemes | first }}|{% assign s = settings.color_schemes | first %}{{ s.settings.text }}' }
+    const { html } = await renderPage({ theme: { files }, templateName: 'first' })
+    expect(html).toBe('scheme-1|#121212')
   })
   it('reads nil and reports it when the theme has no color_scheme_group data', async () => {
     const schema = [{ name: 'theme_info', theme_name: 'Fixture', theme_version: '1.0.0' }]

@@ -1,6 +1,6 @@
 /** @jest-environment ./test/support/jsdom-environment.cjs */
 import type { JSDOM as JSDOMType, VirtualConsole as VirtualConsoleType } from 'jsdom'
-import { renderPage } from '../../../src/shopify'
+import { renderPage } from './bare-block-ids'
 import type { RenderPageOptions } from '../../../src/shopify'
 
 const JSDOM = (globalThis as any).JSDOM as typeof JSDOMType

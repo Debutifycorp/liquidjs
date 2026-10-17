@@ -6,11 +6,12 @@ import { toPromise } from '../../util/async'
 import { LiquidError } from '../../util/error'
 import { isLimitError } from '../../util/inline-error'
 import { getPerformance } from '../../util/performance'
+import { ClosestDrop, ClosestScope, CLOSEST_TYPES, layerClosest, NO_CLOSEST } from '../objects/closest'
 import { createShopifyLiquid, SHOPIFY_DEFAULT_LIMITS } from '../preset'
 import { errorMessage, RenderReport, UnsupportedFeature } from '../report'
 import { sampleStoreData } from '../sample/sample-data'
 import type { ShopifyServices } from '../services'
-import { SettingDefinition, SettingsDrop, SettingsEnv } from '../settings'
+import { SettingDefinition, SettingsDrop, SettingsEnv, SettingSources } from '../settings'
 import { createState, currentFrame, Frame, ShopifyState, STATE, ThemeHooks } from '../state'
 import { buildStore, LiquidObject, setViewCacheSize, StoreObjects } from '../store/build'
 import type { CartState } from '../store/cart'
@@ -24,6 +25,7 @@ import type { BlockData, LocaleTree, SectionData } from '../types'
 import { escapeHtml } from '../util/html'
 import { hasOwn, isRecord, own, PLAIN_ID } from '../util/own'
 import { deepMerge, parseThemeJson, parseWrapper } from './json'
+import { themeBlockId } from './block-id'
 import { contentForHeader, newHeaderMarker, withStoreElements } from './header'
 import { bodiesOf, BUNDLED_FILE, compileAssets, CompiledAssets, FileBodies } from './compiled-assets'
 
@@ -415,6 +417,9 @@ class PageRender implements ThemeHooks {
   private readonly blockObjects = new WeakMap<object, { id: string, data: BlockData }>()
   /** The policy a `policy` page shows, nil when the store has not set it; undefined on any other page. */
   private readonly policy?: LiquidObject | null
+  /** The template's resources under their own names (`product` on a product page; an article page's `article` and `blog`), which dynamic sources read and `closest` starts from. */
+  private readonly templateResources: Record<string, unknown>
+  private readonly templateClosest: ClosestScope
 
   public constructor (private readonly theme: CompiledTheme, private readonly options: RenderPageOptions) {
     const data = options.data ?? sampleStoreData
@@ -450,9 +455,13 @@ class PageRender implements ThemeHooks {
     if (!Array.isArray(schema)) throw new Error('config/settings_schema.json: must be a JSON array')
     const definitions = schema.flatMap(group => isRecord(group) && Array.isArray(group.settings) ? group.settings.filter(isRecord) : []) as SettingDefinition[]
     const settings = new SettingsDrop(definitions, values, env)
-    // Sections and blocks choose their `color_scheme` settings from the schemes the global `color_scheme_group` holds (https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings#color_scheme: "Shopify returns the selected `color_scheme` object from `color_scheme_group`", and nil "If the theme doesn't have `color_scheme_group` data in `settings_data.json`"), so their settings are built over the global settings' group.
-    this.env = { ...env, colorSchemes: SettingsDrop.colorSchemes(settings) }
-    this.globals = { ...page.globals, settings, [STATE]: this.state }
+    // Sections and blocks choose their `color_scheme` settings from the schemes the global `color_scheme_group` holds (https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings#color_scheme: "Shopify returns the selected `color_scheme` object from `color_scheme_group`", and nil "If the theme doesn't have `color_scheme_group` data in `settings_data.json`"), so their settings are built over the global settings' group, and over its palette, which their `color` settings reference (https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings#color_palette, "a set of named colors available across your theme's `color` and `color_background` settings").
+    this.env = { ...env, colorSchemes: SettingsDrop.colorSchemes(settings), palette: SettingsDrop.palette(settings) }
+    // https://shopify.dev/docs/api/liquid/objects/closest: "The currently rendered template resource of the same type"; `buildGlobals` sets the template's resource under its own name, and an article's blog and a collection-aware product URL's collection beside it, and those are what `closest` starts from
+    this.templateResources = Object.fromEntries(CLOSEST_TYPES.filter(type => hasOwn(page.globals, type)).map(type => [type, page.globals[type]]))
+    this.templateClosest = layerClosest(NO_CLOSEST, { resources: this.templateResources, metaobjects: {} })
+    const closest = new ClosestDrop(() => currentFrame(this.state)?.closest ?? this.templateClosest)
+    this.globals = { ...page.globals, settings, closest, [STATE]: this.state }
     this.templateId = this.templateName.replace(/[^\w-]/g, '-')
     this.root = new Context({}, theme.liquid.options, { sync: false, globals: this.globals, renderLimit: options.renderLimit, memoryLimit: options.memoryLimit }, { liquid: theme.liquid, errors: this.errors })
   }
@@ -470,6 +479,15 @@ class PageRender implements ThemeHooks {
     const html = await toPromise(this.renderOneSection(key))
     const { stylesheets, javascripts } = this.state.assets
     return { html, report: this.state.report.toReport(this.errors, now() - this.started), templateName: this.templateName, assets: { stylesheets: [...stylesheets.values()], javascripts: [...javascripts.values()] } }
+  }
+
+  /** The dynamic sources of a section's settings (`block` undefined) or a block's: the template's resources, the section and block objects, the shop and its metaobjects, and `closest` as the place's parent and its `content_for` give it. https://shopify.dev/docs/storefronts/themes/architecture/settings/dynamic-sources */
+  private sources (closest: ClosestScope, section: () => unknown, block?: () => unknown): SettingsEnv {
+    const sources: SettingSources = {
+      closest,
+      objects: () => ({ ...this.templateResources, section: section(), block: block?.(), shop: this.globals.shop, metaobjects: this.globals.metaobjects })
+    }
+    return { ...this.env, sources }
   }
 
   /** A context for one section or block: the page's globals plus `extra`, sharing the page's limits and error list. */
@@ -726,11 +744,14 @@ class PageRender implements ThemeHooks {
     if (data.block_order !== undefined && data.block_order !== null && !Array.isArray(data.block_order)) throw new Error(`${where}: "block_order" must be an array`)
   }
 
-  /** `section.blocks`: the section's non-static blocks in `block_order`, each with settings over its definition's defaults. A `disabled` block is skipped (https://shopify.dev/docs/storefronts/themes/architecture/templates/json-templates lists `disabled` on sections; for blocks it is not pinned). A saved block that is not an object is left out, and `settings` that are not an object read as empty; both are reported (feature `blocks`), as the list has nowhere to print an error. https://shopify.dev/docs/api/liquid/objects/block */
-  private sectionBlocks (data: SectionData, schema: SectionSchema, where: string): LiquidObject[] {
+  /** `section.blocks`: the section's non-static blocks in `block_order`, each with settings over its definition's defaults, and its own `blocks` the same way. A `disabled` block is skipped (https://shopify.dev/docs/storefronts/themes/architecture/templates/json-templates lists `disabled` on sections; for blocks it is not pinned). A saved block that is not an object is left out, and `settings` that are not an object read as empty; both are reported (feature `blocks`), as the list has nowhere to print an error. https://shopify.dev/docs/api/liquid/objects/block. `closest` is what the blocks' parent holds, and `section` the section object, for their dynamic sources. */
+  private sectionBlocks (data: SectionData, schema: SectionSchema, where: string, closest: ClosestScope, section: () => unknown, path: string): LiquidObject[] {
     const blocks: LiquidObject[] = []
-    for (const id of data.block_order ?? Object.keys(data.blocks ?? {})) {
-      const block: unknown = data.blocks ? own(data.blocks, id) : undefined
+    // a nested block's `blocks` and `block_order` are checked where it renders (`renderThemeBlock`), so ones of the wrong type list no children here
+    const saved = isRecord(data.blocks) ? data.blocks : undefined
+    const order = data.block_order === undefined || data.block_order === null ? Object.keys(saved ?? {}) : Array.isArray(data.block_order) ? data.block_order : []
+    for (const id of order) {
+      const block: unknown = saved && typeof id === 'string' ? own(saved, id) : undefined
       if (block === undefined || block === null) continue
       if (!isRecord(block)) {
         if (this.keyAllowed(id, 'block')) this.ignored('blocks', `${where}: block ${id}`, 'an object')
@@ -739,7 +760,14 @@ class PageRender implements ThemeHooks {
       if (block.disabled || block.static || !this.keyAllowed(id, 'block') || !this.blockTypeAllowed(block.type)) continue
       const settings = block.settings === undefined || block.settings === null || isRecord(block.settings) ? block.settings : undefined
       if (settings !== block.settings) this.ignored('blocks', `${where}: block ${id} "settings"`, 'an object')
-      const object: LiquidObject = { id, type: block.type, settings: new SettingsDrop(this.blockDefinitions(block.type as string, schema), settings ?? undefined, this.env), shopify_attributes: '' }
+      // a theme block's id carries its prefix, as `renderThemeBlock` gives it; a block the section's own schema defines keeps its key
+      const local = Array.isArray(schema.blocks) && schema.blocks.some(definition => isRecord(definition) && definition.type === block.type && typeof (definition as { name?: unknown }).name === 'string')
+      const themeBlock = !local && typeof block.type === 'string' && !isAppBlock(block.type) && this.theme.has(`blocks/${block.type}.liquid`)
+      const object: LiquidObject = { id: themeBlock ? themeBlockId(`${path}/${id}`, id) : id, type: block.type, settings: null, blocks: [], shopify_attributes: '' }
+      const drop = new SettingsDrop(this.blockDefinitions(block.type as string, schema), settings ?? undefined, this.sources(closest, section, () => object))
+      object.settings = drop
+      // `blocks` on the entries of `section.blocks` as on the block being rendered: see `renderThemeBlock`
+      object.blocks = this.sectionBlocks(block as unknown as SectionData, {}, `block ${id}`, SettingsDrop.closest(drop) ?? closest, section, `${path}/${id}`)
       this.blockObjects.set(object, { id, data: block as unknown as BlockData })
       blocks.push(object)
     }
@@ -780,16 +808,14 @@ class PageRender implements ThemeHooks {
       schema = this.schema<SectionSchema>(templates, file)
       const saved = placement.useSchemaDefault && schema.default ? { ...presetData(schema.default), ...data } : data
       this.checkContainer(saved, `section ${placement.id}`)
-      const section = {
-        id: placement.id,
-        settings: new SettingsDrop(schema.settings, saved.settings ?? undefined, this.env),
-        blocks: this.sectionBlocks(saved, schema, `section ${placement.id}`),
-        index: placement.index,
-        index0: placement.index === null ? null : placement.index - 1,
-        location: placement.location
-      }
+      // `shopify_attributes` is not on https://shopify.dev/docs/api/liquid/objects/section; themes read it as they read a block's, which "returns no value outside the theme editor" (https://shopify.dev/docs/api/liquid/objects/block)
+      const section: LiquidObject = { id: placement.id, settings: null, blocks: [], index: placement.index, index0: placement.index === null ? null : placement.index - 1, location: placement.location, shopify_attributes: '' }
+      const settings = new SettingsDrop(schema.settings, saved.settings ?? undefined, this.sources(this.templateClosest, () => section))
+      section.settings = settings
+      const closest = SettingsDrop.closest(settings) ?? this.templateClosest
+      section.blocks = this.sectionBlocks(saved, schema, `section ${placement.id}`, closest, () => section, placement.id)
       if (saved.custom_css?.length) this.state.report.unsupported('custom_css', `${type}: custom CSS is not applied`)
-      const frame: Frame = { kind: 'section', section: { id: placement.id, type, index: placement.index, locales: schema.locales }, container: saved, sectionObject: section }
+      const frame: Frame = { kind: 'section', section: { id: placement.id, type, index: placement.index, locales: schema.locales }, container: saved, sectionObject: section, closest }
       this.state.frames.push(frame)
       try {
         html = (yield this.theme.liquid.renderer.renderTemplates(templates, this.child({ section }))) as string
@@ -906,7 +932,7 @@ class PageRender implements ThemeHooks {
    *
    * An app block is rendered by its app, so it is skipped and reported. https://shopify.dev/docs/storefronts/themes/architecture/blocks/app-blocks says `content_for 'blocks'` "handles block rendering, including app blocks".
    */
-  public * renderBlocks (): Generator<unknown, string, unknown> {
+  public * renderBlocks (ctx?: Context, closest?: ClosestScope): Generator<unknown, string, unknown> {
     const frame = currentFrame(this.state)
     if (!frame) {
       this.state.report.unsupported('content_for', "'blocks' outside a section")
@@ -920,7 +946,7 @@ class PageRender implements ThemeHooks {
         this.state.report.unsupported('app_block', `${frame.block ? `${frame.section.type} block ${frame.block.type} ${frame.block.id}` : frame.section.type}: ${typeof data.type === 'string' ? reportName(data.type) : String(data.type)}`)
         continue
       }
-      out += (yield this.renderThemeBlock(id, data, {}, frame)) as string
+      out += (yield this.renderThemeBlock(id, data, {}, frame, closest, frame.suffix)) as string
     }
     return out
   }
@@ -934,15 +960,17 @@ class PageRender implements ThemeHooks {
       this.state.report.unsupported('app_block', `${frame.block ? `${frame.section.type} block ${frame.block.type} ${frame.block.id}` : frame.section.type}: ${reportName(entry.data.type as string)}`)
       return ''
     }
-    return (yield this.renderThemeBlock(entry.id, entry.data, {}, frame)) as string
+    return (yield this.renderThemeBlock(entry.id, entry.data, {}, frame, undefined, frame.suffix)) as string
   }
 
   /**
    * `{% content_for 'block', type: 'slide', id: 'slide-1', color: '#111' %}`: one static block. https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks/static-blocks says the `id` is required and only has to be unique among its siblings, that Shopify never generates it, and that extra parameters are passed to the block as variables. Its saved settings are the entry of the same `id` in the `blocks` of the section or block it is rendered in, which is also where that page's JSON puts a static block (with `"static": true`); a block with no saved entry uses the schema's default settings ("will always get added … using the default settings values").
    *
    * A saved entry of another `type` keeps its settings under the tag's type, and a saved entry marked `disabled` renders nothing, like a dynamic block. shopify.dev pins neither, so both go on the "confirm on a development store" list. Only an entry with `"static": true` is a static block's: a non-static sibling with the same id (shopify.dev says ids are unique among siblings, so this is invalid input) keeps its settings and its blocks to itself, and the collision is reported.
+   *
+   * A static block that the same section or block renders again (in a loop) is numbered: the second time its `block.id` and wrapper id end with `-1`, the third with `-2`, and every block rendered inside a numbered one ends with the same number after its own, as the parity store prints Horizon's blog and home pages (recordings `page-blog` and `page-home` of the Horizon theme: `…__static-blog-post-card-1` holding `…__blog-post-details-1`, and the dynamic blocks of the second product card `product_title_…-1`). shopify.dev does not document it; a block numbered twice (a repeat inside a repeat) ends with both numbers, which no recording shows.
    */
-  public * renderStaticBlock (type: string, id: string, params: Record<string, unknown>): Generator<unknown, string, unknown> {
+  public * renderStaticBlock (type: string, id: string, params: Record<string, unknown>, ctx?: Context, closest?: ClosestScope): Generator<unknown, string, unknown> {
     const frame = currentFrame(this.state)
     if (!frame) {
       this.state.report.unsupported('content_for', "'block' outside a section")
@@ -952,19 +980,26 @@ class PageRender implements ThemeHooks {
     const stored = found?.static ? found : undefined
     if (found && !stored) this.state.report.unsupported('static_block', `${frame.section.type}: block ${id} is not static, so its saved entry is not used by the static block of that id`)
     if (stored?.disabled) return ''
-    return (yield this.renderThemeBlock(id, { ...stored, type, static: true }, params, frame)) as string
+    const renders = frame.staticRenders ??= new Map()
+    const count = renders.get(id) ?? 0
+    renders.set(id, count + 1)
+    return (yield this.renderThemeBlock(id, { ...stored, type, static: true }, params, frame, closest, `${frame.suffix ?? ''}${count ? `-${count}` : ''}`)) as string
   }
 
   /**
    * One theme block, from `blocks/<type>.liquid`, in Shopify's wrapper `<div id="shopify-block-<id>" class="shopify-block [schema class]">`, or bare when its schema says `"tag": null`. https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks/schema#tag and #class give the wrapper, its `id`, and the appended class.
    *
-   * The block renders in a context of its own: the page's globals, the `section` object of the section that holds it, `block` (`id`, `type`, `settings` over the schema's defaults, and an empty `shopify_attributes`) and the static block's extra parameters. https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks says a block can read global objects and the `section` object but "can't see variables from outside the block", and https://shopify.dev/docs/api/liquid/objects/block says `shopify_attributes` returns no value outside the theme editor, which this package never is. The block is pushed on the frame stack, so its own `content_for 'blocks'` and static blocks use its `blocks`.
+   * The block renders in a context of its own: the page's globals, the `section` object of the section that holds it, `block` (`id`, `type`, `settings` over the schema's defaults, and an empty `shopify_attributes`) and the static block's extra parameters. `closest` there is its parent's, with what the `content_for` that renders it passes (`passed`) and then its own resource settings laid over it: https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks/dynamic-sources gives the order as "A product setting within the same block", then "A parent block product setting", "The current section product setting" and "The current template's product", and lists "The closest Liquid context setter" first among them; a resource passed to the block itself comes after its own setting here, which the page does not decide. https://shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks says a block can read global objects and the `section` object but "can't see variables from outside the block", and https://shopify.dev/docs/api/liquid/objects/block says `shopify_attributes` returns no value outside the theme editor, which this package never is. The block is pushed on the frame stack, so its own `content_for 'blocks'` and static blocks use its `blocks`.
    *
    * A block file that does not exist renders nothing and is reported as `missing`. One that does not parse, whose schema has a field of the wrong type, or whose saved JSON is not an object or has a field of the wrong type (`settings` or `blocks` not objects, `block_order` not an array) prints its error inside the default wrapper, as a section does, and one whose render raises an error prints it inline in its content; either error fails the section that holds the block (the report lists it as `failed`) and leaves the block's siblings alone. A parse error is listed in `report.errors` with its line; a schema or saved JSON of the wrong shape has no line and is not (see `fail`). A `renderLimit` or `memoryLimit` hit is not caught: it rejects the page, as in a section. Not pinned by shopify.dev: those cases, the wrapper of a block that does not parse (the default one is used), any `tag` other than a lowercase element name (`div` is used; the schema page allows "any string up to a limit of 50 characters", and what Shopify renders for a longer or invalid one is not stated), and whether `class` applies when `tag` is `null` (it does not here).
    */
-  private * renderThemeBlock (id: string, data: BlockData, params: Record<string, unknown>, frame: Frame): Generator<unknown, string, unknown> {
+  private * renderThemeBlock (key: string, data: BlockData, params: Record<string, unknown>, frame: Frame, passed?: ClosestScope, suffix = ''): Generator<unknown, string, unknown> {
     this.checkDepth()
-    if (!isRecord(data)) return this.wrapBlock(id, {}, escapeHtml(this.fail(new Error(`block ${id} must be an object`))))
+    // `bare` names the block in errors and the report; `id` is what `block.id` and the wrapper print (see `themeBlockId`)
+    const bare = `${key}${suffix}`
+    const path = `${frame.path ?? frame.section.id}/${key}`
+    const id = themeBlockId(path, bare)
+    if (!isRecord(data)) return this.wrapBlock(id, {}, escapeHtml(this.fail(new Error(`block ${bare} must be an object`))))
     const type = typeof data.type === 'string' ? data.type : '(no type)'
     const file = `blocks/${type}.liquid`
     if (typeof data.type !== 'string' || !this.theme.has(file)) {
@@ -973,17 +1008,22 @@ class PageRender implements ThemeHooks {
     }
     let templates: Template[]
     let schema: BlockSchema
-    let block: LiquidObject
+    const block: LiquidObject = { id, type, settings: null, blocks: [], shopify_attributes: '' }
+    let closest: ClosestScope
     try {
       templates = this.theme.templates(file)
       schema = this.schema<BlockSchema>(templates, file)
-      this.checkContainer(data, `block ${id}`)
+      this.checkContainer(data, `block ${bare}`)
+      const base = layerClosest(frame.closest ?? this.templateClosest, passed)
+      const settings = new SettingsDrop(schema.settings, data.settings ?? undefined, this.sources(base, () => frame.sectionObject, () => block))
+      block.settings = settings
+      closest = SettingsDrop.closest(settings) ?? base
       // `blocks` is not on https://shopify.dev/docs/api/liquid/objects/block; Shopify's Horizon theme reads `block.blocks.size` in a theme block (blocks/_carousel-content.liquid) as the children its `content_for 'blocks'` renders, so it lists them as `section.blocks` lists a section's
-      block = { id, type, settings: new SettingsDrop(schema.settings, data.settings ?? undefined, this.env), blocks: this.sectionBlocks(data as SectionData, {}, `block ${id}`), shopify_attributes: '' }
+      block.blocks = this.sectionBlocks(data as SectionData, {}, `block ${bare}`, closest, () => frame.sectionObject, path)
     } catch (err) {
       return this.wrapBlock(id, {}, escapeHtml(this.fail(err)))
     }
-    this.state.frames.push({ kind: 'block', block: { id, type }, section: frame.section, container: data, sectionObject: frame.sectionObject })
+    this.state.frames.push({ kind: 'block', block: { id: bare, type }, section: frame.section, container: data, sectionObject: frame.sectionObject, closest, path, ...(suffix ? { suffix } : {}) })
     let html: string
     try {
       html = (yield this.theme.liquid.renderer.renderTemplates(templates, this.child({ section: frame.sectionObject, block }, { ...params }))) as string

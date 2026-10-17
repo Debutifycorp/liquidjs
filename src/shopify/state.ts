@@ -1,5 +1,6 @@
 import type { Context } from '../context'
 import type { Liquid } from '../liquid'
+import type { ClosestScope } from './objects/closest'
 import { ReportCollector } from './report'
 import { resolveServices, ShopifyServices } from './services'
 import { emptyTranslator, SectionLocales, Translator } from './translations'
@@ -20,14 +21,23 @@ export interface Frame {
   container: { blocks?: Record<string, BlockData>, block_order?: string[] }
   /** The Liquid `section` object of the enclosing section. */
   sectionObject: unknown
+  /** What the global `closest` holds while this section or block renders (https://shopify.dev/docs/api/liquid/objects/closest); the template's resource when unset. */
+  closest?: ClosestScope
+  /** For a block frame, what its id and the ids of the blocks inside it end with when it is a repeat of a static block (`-1`, `-2`); see `renderStaticBlock`. */
+  suffix?: string
+  /** The section's id followed by the keys of the blocks from the section down to this frame's (`template--product__main/card/title`), without repeat numbers: what `themeBlockId` makes the ids of the theme blocks inside from. The section's id when unset. */
+  path?: string
+  /** How many times each static block id has been rendered in this frame, for the repeats' numbers. */
+  staticRenders?: Map<string, number>
 }
 
 /** What the theme runtime offers the `section`, `sections`, `content_for` and `render` tags, https://shopify.dev/docs/api/liquid/tags/section, https://shopify.dev/docs/api/liquid/tags/sections and https://shopify.dev/docs/api/liquid/tags/content_for. */
 export interface ThemeHooks {
   renderStaticSection: (name: string, ctx: Context) => Generator<unknown, string, unknown>
   renderSectionGroup: (name: string, ctx: Context) => Generator<unknown, string, unknown>
-  renderBlocks: (ctx: Context) => Generator<unknown, string, unknown>
-  renderStaticBlock: (type: string, id: string, params: Record<string, unknown>, ctx: Context) => Generator<unknown, string, unknown>
+  /** `closest` holds what the tag's `closest.*` parameters pass to the blocks it renders. */
+  renderBlocks: (ctx: Context, closest?: ClosestScope) => Generator<unknown, string, unknown>
+  renderStaticBlock: (type: string, id: string, params: Record<string, unknown>, ctx: Context, closest?: ClosestScope) => Generator<unknown, string, unknown>
   /** `{% render block %}`: the block's markup, or `undefined` when `value` is not a block of this page. */
   renderBlockObject?: (value: object, ctx: Context) => Generator<unknown, string | undefined, unknown>
   /** The text of the theme's file at `path` (`assets/icon-cart.svg`), its base theme's when the theme lays over one, or `undefined` when neither has it; `inline_asset_content` reads assets through it. */
