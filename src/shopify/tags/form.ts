@@ -86,9 +86,9 @@ const FORM_TYPES: Record<string, FormType> = {
 /** A hidden input; a `verbatim` value is not escaped (see `HiddenInput`). */
 const hidden = (name: string, value: string, verbatim = false) => `<input type="hidden" name="${escapeHtml(name)}" value="${verbatim ? value : escapeHtml(value)}" />`
 
-/** The values a form keeps from a post, https://shopify.dev/docs/api/liquid/objects/form: `email`, `body`, `name`, `phone`, `first_name` and `last_name` (`null` when not posted), and the others the page lists (`author` of `new_comment`, `message` of the gift card in a `product` form, and the address fields of `customer_address`), which are nil when not posted and so are not set then. */
 /** The fields shopify.dev lists for a `customer_address` form (`name`, `email` and `body` belong to other forms): the ones an existing address fills. */
 const ADDRESS_FIELDS = ['first_name', 'last_name', 'phone', 'company', 'address1', 'address2', 'city', 'province', 'country', 'zip']
+/** The values a form keeps from a post, https://shopify.dev/docs/api/liquid/objects/form: `email`, `body`, `name`, `phone`, `first_name` and `last_name` (`null` when not posted), and the others the page lists (`author` of `new_comment`, `message` of the gift card in a `product` form, and the address fields of `customer_address`), which are nil when not posted and so are not set then. */
 const MORE_POSTED_VALUES = ['author', 'message', 'address1', 'address2', 'city', 'company', 'country', 'province', 'zip']
 
 /**
