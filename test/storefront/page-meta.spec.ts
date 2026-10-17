@@ -44,10 +44,19 @@ describe('page_description', () => {
   })
 
   it('is blank for a resource without text, and for the pages that have no description of their own', async () => {
-    // `page-contact` (an empty page), `page-collection-filtered` (`/collections/all`), `page-blog`, `page-cart-empty`, `page-collections`, `page-search` and `page-not-found` print no description meta
-    for (const url of ['/pages/contact', '/collections/accessories', '/collections/all', '/products/white-leather-sneakers', '/blogs/news', '/cart', '/collections', '/search?q=shirt', '/search', '/nowhere']) {
+    // `page-contact` (an empty page), `page-collection-filtered` (`/collections/all`), `page-blog`, `page-cart-empty` and `page-not-found` print no description meta in Horizon 4.3.0 and Dawn 16.0.0, which print it only `if page_description`
+    for (const url of ['/pages/contact', '/collections/accessories', '/collections/all', '/products/white-leather-sneakers', '/blogs/news', '/cart', '/nowhere']) {
       expect([url, await description(url)]).toEqual([url, ''])
     }
+  })
+
+  it('is the shop\'s description on the collection list and the search page', async () => {
+    // Horizon 4.3.0 and Dawn 16.0.0 print `<meta name="description">` only `if page_description`, and the parity store prints the shop's description in it on `/collections` and `/search?q=shirt` (recordings `page-collections` and `page-search` of both themes)
+    for (const url of ['/collections', '/search?q=shirt', '/search']) {
+      expect([url, await description(url)]).toEqual([url, 'Everyday clothing, made well.'])
+    }
+    expect(await description('/fr-ca/collections')).toBe('Des vêtements du quotidien, bien faits.')
+    expect(await description('/search', { ...data, shop: { ...data.shop, description: '' } })).toBe('')
   })
 
   it('is the shop\'s description on the home page, in the language of the page', async () => {

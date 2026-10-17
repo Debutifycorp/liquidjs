@@ -54,11 +54,14 @@ export function templateTitle (pageType: string, search: LiquidObject | undefine
   }
 }
 
+/** The page types whose `page_description` is the shop's description (see `pageDescription`). */
+const SHOP_DESCRIBED = new Set(['index', 'list-collections', 'search', 'password'])
+
 /**
- * The `page_description` of a page: the text of the resource's own description (a product's, a collection's) or body (a page's, an article's, not its excerpt), and the shop's description on the home page and the password page, as `page-home` and `page-home-fr-ca` print it. Nil for every other page: the parity store's pages that have no text of their own (`page-blog`, `page-cart-empty`, `page-collections`, `page-search`, `page-not-found`, an empty page or collection) print no description meta, and the theme that recorded them falls back to the shop's description itself. The password page is not among the recordings; it keeps the shop's description, which it showed before.
+ * The `page_description` of a page: the text of the resource's own description (a product's, a collection's) or body (a page's, an article's, not its excerpt), and the shop's description on the home page, the collection list, the search page and the password page. Horizon 4.3.0 and Dawn 16.0.0 print `<meta name="description">` only `if page_description`, and the parity store prints the shop's description in it on the home page (recordings `page-home` and `page-home-fr-ca`), on `/collections` and on `/search?q=shirt` (recordings `page-collections` and `page-search` of both themes; the private theme falls back to the shop's description itself, so its recordings could not tell). Nil for every other page: `page-blog`, `page-cart-empty`, `page-not-found`, an empty page (`page-contact`) and a collection without a description (`page-collection-filtered`, `/collections/all`) print no description meta in either theme. The password page is not among the recordings; it keeps the shop's description, which it showed before, and so does a search page with no terms, which is not recorded either. https://shopify.dev/docs/api/liquid/objects/page_description says only "The meta description of the current page".
  */
 export function pageDescription (pageType: string, resource: LiquidObject | null | undefined, shopDescription: unknown): string | null {
-  if (pageType === 'index' || pageType === 'password') return typeof shopDescription === 'string' && shopDescription ? shopDescription : null
+  if (SHOP_DESCRIBED.has(pageType)) return typeof shopDescription === 'string' && shopDescription ? shopDescription : null
   if (!resource) return null
   switch (pageType) {
     case 'product':
