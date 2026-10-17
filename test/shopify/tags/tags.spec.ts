@@ -182,6 +182,13 @@ describe('paginate', () => {
     }
     expect(await render('{% paginate collection.products by 2 %}{{ collection.title }}:{% for product in collection.products %}{{ product.title }},{% endfor %}{{ paginate.pages }}{% endpaginate %}', { collection: new Collection() }, { page: 2 })).toBe('All:P3,P4,10')
   })
+  // Dawn 16.0.0's collection list prints its pagination only `if paginate.parts.size > 0`, and the parity store prints none on its one page of collections (recording `page-collections` of Dawn); one page has no previous or next (fixture `probe-collection-suffix-filtered`: `pages` 1, `next` and `previous` null)
+  it('has no parts on a single page, nor previous or next', async () => {
+    expect(await render('{% paginate items by 4 %}{{ paginate.parts.size }}|{{ paginate.pages }}|{{ paginate.previous }}|{{ paginate.next }}|{{ paginate | default_pagination }}{% endpaginate %}', { items: [1, 2] })).toBe('0|1|||')
+    expect(await render('{% paginate items by 4 %}{{ paginate.parts.size }}|{{ paginate.pages }}|{{ paginate.previous.url }}{% endpaginate %}', { items: [1, 2] }, { page: 2 })).toBe('0|1|/?page=1')
+    expect(buildPaginate(0, 4, 1, '/').parts).toEqual([])
+    expect(buildPaginate(5, 4, 1, '/').parts.map(part => part.title)).toEqual(['1', '2'])
+  })
   it('exposes the paginate object', async () => expect(await render('{% paginate items by 2 %}{{ paginate.pages }}/{{ paginate.items }}/{{ paginate.current_offset }}{% endpaginate %}', { items: [1, 2, 3] }, { page: 2 })).toBe('2/3/2'))
   it('leaves the array whole outside the block', async () => expect(await render('{% paginate items by 2 %}{{ items | size }}{% endpaginate %}{{ items | size }}', { items: [1, 2, 3] })).toBe('23'))
 })
