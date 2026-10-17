@@ -75,6 +75,17 @@ describe('tags/for', function () {
       expect(await plain.parseAndRender('{% for i in (1..2) %}{% for j in (1..2) %}[{{ forloop.parentloop.index }}]{% endfor %}{% endfor %}', scope)).toBe('[][][][]')
       expect(await new Liquid({ strictVariables: true }).parseAndRender('{% for i in (1..2) %}{% if forloop.parentloop %}x{% endif %}{% endfor %}', scope).catch((e: Error) => e.message)).toMatch(/undefined variable: forloop\.parentloop/)
     })
+    it('keeps no record of the loops with the option off, so the context is upstream\'s', async function () {
+      const seen: string[] = []
+      const probe = (engine: Liquid) => {
+        engine.registerTag('probe', { render (ctx: any) { seen.push(Object.keys(ctx.registers).join(',')) } })
+        return engine.parseAndRender('{% for i in (1..2) %}{% probe %}{% endfor %}', scope)
+      }
+      await probe(new Liquid())
+      await probe(liquid)
+      expect(seen[0]).not.toContain('for_stack')
+      expect(seen[2]).toContain('for_stack')
+    })
     it('is the forloop of the enclosing loop, at any depth', async function () {
       expect(await liquid.parseAndRender('{% for i in (1..2) %}{% for j in (1..2) %}{{ forloop.parentloop.index }}.{{ forloop.index }} {% endfor %}{% endfor %}', scope)).toBe('1.1 1.2 2.1 2.2 ')
       expect(await liquid.parseAndRender('{% for i in (1..2) %}{% for j in (1..2) %}{% for k in (1..2) %}{{ forloop.parentloop.parentloop.index }}.{{ forloop.parentloop.index0 }}.{{ forloop.index }} {% endfor %}{% endfor %}{% endfor %}', scope)).toBe('1.0.1 1.0.2 1.1.1 1.1.2 2.0.1 2.0.2 2.1.1 2.1.2 ')

@@ -67,12 +67,12 @@ export default class extends Tag {
     }, collection)
 
     ctx.setRegister(continueKey, (hash['offset'] || 0) + collection.length)
-    // the loops being rendered, innermost last, as Ruby Liquid keeps them in `registers[:for_stack]`: an `include` shares the context and sees the outer loop as `parentloop`, a `render` has a context of its own and does not
-    const stack = ctx.getRegister<ForloopDrop[]>(FOR_STACK, [])
-    const forloop = new ForloopDrop(collection.length, this.collection.getText(), this.variable, this.liquid.options.forloopParentloop ? stack[stack.length - 1] ?? null : undefined)
+    // with `forloopParentloop`, the loops being rendered, innermost last, as Ruby Liquid keeps them in `registers[:for_stack]`: an `include` shares the context and sees the outer loop as `parentloop`, a `render` has a context of its own and does not. Without the option nothing is kept, as in upstream LiquidJS
+    const stack = this.liquid.options.forloopParentloop ? ctx.getRegister<ForloopDrop[]>(FOR_STACK, []) : undefined
+    const forloop = new ForloopDrop(collection.length, this.collection.getText(), this.variable, stack ? stack[stack.length - 1] ?? null : undefined)
     const scope = createScope({ forloop })
     ctx.push(scope)
-    stack.push(forloop)
+    stack?.push(forloop)
     try {
       for (const item of collection) {
         scope[this.variable] = item
@@ -82,7 +82,7 @@ export default class extends Tag {
         scope.forloop.next()
       }
     } finally {
-      stack.pop()
+      stack?.pop()
     }
     ctx.continueCalled = ctx.breakCalled = false
     ctx.pop()
