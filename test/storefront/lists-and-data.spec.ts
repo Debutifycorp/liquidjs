@@ -56,8 +56,8 @@ describe('image alt (rows 21; scenarios page-product and page-collections)', () 
     expect(out).toBe('Sweat à capuche')
   })
 
-  it('leaves the alt of images that belong to no product empty', async () => {
-    expect(await render('{{ collections.tops.image.alt }}|{{ collections.tops.featured_image.alt }}')).toBe('|')
+  it('gives a collection\'s own image the collection\'s title as its alt, as Shopify\'s Dawn collection list prints alt="Men"', async () => {
+    expect(await render('{{ collections.tops.image.alt }}|{{ collections.tops.featured_image.alt }}')).toBe('Tops|Tops')
   })
 
   it('keeps the alt of a product in JSON null when it has none, with the title only in Liquid', async () => {
