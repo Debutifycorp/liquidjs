@@ -39,7 +39,8 @@ function renderOptions (ctx: Context, page: PageRequest, form?: FormOutcome) {
     locale: page.locale,
     services: ctx.services,
     cart: ctx.visitor.cart,
-    request: { ...page.request, host: url.host, origin: url.origin, ...(form ? { form } : {}) }
+    // https://shopify.dev/docs/storefronts/themes/architecture/section-groups#contextual-section-groups: a group file `<group>.context.<context>.json` with `"market": "<market handle>"` overrides its parent for that market; the page's market is the context (no B2B customers here, so `b2b` is never set). Which file wins when several match, and what happens when none does, the page does not say: the engine takes the first match and otherwise the group as it is
+    request: { ...page.request, ...(page.request.market ? { context: { market: page.request.market } } : {}), host: url.host, origin: url.origin, ...(form ? { form } : {}) }
   }
 }
 

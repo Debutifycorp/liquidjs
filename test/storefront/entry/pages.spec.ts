@@ -1,6 +1,6 @@
 import { storefrontSampleData as data } from '../../../src/shopify'
 import { loadFixture } from '../fixtures'
-import { harness, line } from './harness'
+import { harness, harnessTheme, line } from './harness'
 
 const wrapper = (id: string, inner: string) => `<div id="shopify-section-${id}" class="shopify-section">${inner}</div>`
 
@@ -16,6 +16,26 @@ describe('pages', () => {
     expect((await send('GET', '/cart?view=probe')).json).toMatchObject({ item_count: 0 })
     await seed([line(43695847538710, 2)])
     expect((await send('GET', '/cart?view=probe')).json).toMatchObject({ item_count: 2 })
+  })
+
+  it('applies the contextual section group file of the request\'s market', async () => {
+    // https://shopify.dev/docs/storefronts/themes/architecture/section-groups#contextual-section-groups: `header-group.context.<context>.json` holds the overrides for a `"market": "<market handle>"` (or `"b2b": true`) over its parent group; the sample store's Canadian market is `ca`, served under `/en-ca`
+    const banner = '[{{ section.settings.text }}]{% schema %}{"name":"Banner","settings":[{"type":"text","id":"text","default":"Welcome"}]}{% endschema %}'
+    const files = {
+      ...harnessTheme().files,
+      'layout/theme.liquid': '<!doctype html><html><head>{{ content_for_header }}</head><body>{% sections "header-group" %}{{ content_for_layout }}</body></html>',
+      'sections/banner.liquid': banner,
+      'sections/header-group.json': '{"type":"header","name":"Header","sections":{"banner":{"type":"banner"}},"order":["banner"]}',
+      'sections/header-group.context.ca.json': '{"parent":"header-group.json","context":{"market":"ca"},"sections":{"banner":{"settings":{"text":"Free shipping for Canada!"}}}}',
+      'sections/header-group.context.nowhere.json': '{"parent":"header-group.json","context":{"market":"nowhere"},"sections":{"banner":{"settings":{"text":"Nowhere"}}}}'
+    }
+    const { send } = harness({ theme: { files } })
+    const home = (await send('GET', '/')).text
+    expect(home).toContain('[Welcome]')
+    expect(home).not.toContain('Nowhere')
+    expect((await send('GET', '/en-ca')).text).toContain('[Free shipping for Canada!]')
+    expect((await send('GET', '/en-ca/products/hoodie')).text).toContain('[Free shipping for Canada!]')
+    expect((await send('GET', '/en-ca?section_id=sections--header-group__banner')).text).toContain('[Free shipping for Canada!]')
   })
 
   it('answers ?section_id= and ?sections= on any page', async () => {
