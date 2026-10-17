@@ -68,7 +68,9 @@ function automaticCollection (store: StoreObjects, handle: 'vendors' | 'types', 
   const found = HandleMap.values(store.products).filter(product => term !== '' && String(product[field]).toLowerCase() === wanted)
   const built = buildCollection({ id: 0, handle, title: term, products: found.map(product => String(product.handle)), sort_order: 'title-ascending' }, store.products, store.storefrontFilters, prefix, store.currency)
   // the term is the visitor's, and the layout prints `page_title` (this title) unescaped inside `<title>`, so the title is HTML-safe with the term escaped, as the search page's title is (`templateTitle`); `escape` leaves it alone and the page cannot be given markup through `?q=`. Shopify's own escaping of this title is not recorded; the term's characters are the only thing the engine escapes.
-  return copyOf(built, { title: new SafeHtmlDrop(escapeHtml(term)), url: withPrefix(prefix, `/collections/${handle}?q=${encodeURIComponent(term)}`) })
+  // https://shopify.dev/docs/api/liquid/objects/collection: `current_vendor` is "the vendor name on a vendor collection page" and `current_type` "the product type on a product type collection page", the `q` of `/collections/vendors?q=` and `/collections/types?q=`; the parity store prints Dawn's `<input type="hidden" name="q" value="{{ collection.current_vendor }}">` with the term as the address gives it (`mock.shop` for the vendor `Mock.shop`, Dawn on `/collections/vendors?q=mock.shop`), escaped here as the title is. The collection has no id, as `collections.all` has none (`buildObjects`).
+  const escaped = new SafeHtmlDrop(escapeHtml(term))
+  return copyOf(built, { id: null, title: escaped, url: withPrefix(prefix, `/collections/${handle}?q=${encodeURIComponent(term)}`), current_vendor: handle === 'vendors' ? escaped : null, current_type: handle === 'types' ? escaped : null })
 }
 
 export const vendorCollection = (store: StoreObjects, term: string, prefix = ''): LiquidObject => automaticCollection(store, 'vendors', term, prefix)

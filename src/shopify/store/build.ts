@@ -466,7 +466,8 @@ export function buildCollection (data: CollectionData, products: HandleMap<Liqui
     return listed
   }
   const collect = (key: string) => unique(items.flatMap(product => product[key] as string | string[]).filter(Boolean)).sort()
-  const own = image(data.image)
+  // the collection's own image reads the collection's title as its alt when it has none of its own, as the parity store prints Dawn's `card_collection.featured_image.alt` (`alt="Men"`, its recording `page-collections`)
+  const own = data.image ? new ImageDrop(data.image, false, null, data.title) : null
   const url = withPrefix(prefix, `/collections/${data.handle}`)
   let computed: LiquidObject[] | undefined
   const collection = printsHandle({
@@ -1006,6 +1007,8 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   // Every shop answers `collections.all` with all its products. https://shopify.dev/docs/api/liquid/objects/collections
   // its default order is by title (fixture `probe-collection-all`)
   const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (source.products ?? []).map(product => product.handle), sort_order: 'title-ascending' }, products, data.filters, prefix, currency)
+  // a collection Shopify makes has no id: the parity store prints Dawn's and Horizon's `data-collection-id="{{ collection.id }}"` empty on `/collections/all` (their recordings `page-collection-filtered`)
+  all.id = null
   // `collections` lists the store's collections alphabetically by title, whatever order the data has them in: https://shopify.dev/docs/api/liquid/objects/collections shows its example sorted so, and the parity store lists /collections that way (scenario `page-collections`: Accessories, Bottoms, Featured, Home page, Men, Shoes, Tops, Unisex, Women)
   const collections = new HandleMap((source.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters, prefix, currency)]), [['all', all]], byTitle)
   const blogs = new HandleMap((source.blogs ?? []).map(blog => [blog.handle, buildBlog(blog, prefix)]))
