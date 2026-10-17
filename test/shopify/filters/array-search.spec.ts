@@ -1,4 +1,5 @@
 import { createShopifyLiquid, ImageDrop, renderLiquid } from '../../../src/shopify'
+import { Drop } from '../../../src/drop'
 
 const render = async (source: string, scope: object = {}) => (await renderLiquid(createShopifyLiquid(), source, scope)).html
 
@@ -22,6 +23,15 @@ describe('shopify/filters find, find_index and has on strings', () => {
   it('with a target value, the item must contain the property and the result of item[property] must equal it', async () => {
     expect(await render("{{ sizes | find_index: '56', '56' }}|{% assign i = sizes | find_index: '56', 'x' %}[{{ i }}]", sizes)).toBe('5|[]')
   })
+  it('reads a number as a place in the string, as Ruby\'s String#[] does, and not as the digits', async () => {
+    const items = { items: ['012', '056', 'abc'] }
+    expect(await render('{% assign i = items | find_index: 56 %}[{{ i }}]|{{ items | has: 56 }}', items)).toBe('[]|false')
+    expect(await render("{{ items | find_index: 1, 'b' }}|{{ items | find: 1, '1' }}|{{ items | find: -1, 'c' }}", items)).toBe('2|012|abc')
+  })
+  it('takes the nil keyword as no target value, so the first truthy property wins', async () => {
+    const items = { items: [{ x: false }, { x: true, n: 2 }, { x: true, n: 3 }] }
+    expect(await render('{{ items | find: "x", nil | json }}|{{ items | find_index: "x", nil }}|{{ items | has: "x", nil }}', items)).toBe('{"x":true,"n":2}|1|true')
+  })
   it('keeps reading hashes and drops by property, with or without a target value', async () => {
     const members = { members: [{ name: 'a', age: 0 }, { name: 'b', age: 3 }, { name: 'c' }] }
     expect(await render("{{ members | find_index: 'name', 'b' }}|{{ members | find: 'name', 'c' | json }}|{{ members | has: 'name', 'z' }}", members)).toBe('1|{"name":"c"}|false')
@@ -35,6 +45,12 @@ describe('shopify/filters concat on a single object', () => {
   const media = new ImageDrop({ src: '//shop.example/cdn/shop/files/cap.jpg?v=1', width: 10, height: 10, id: 7 }, true)
   it('keeps a drop as one item of the list', async () => {
     expect(await render('{% assign list = media | concat: others %}{{ list.size }}:{% for m in list %}{{ m.id }},{% endfor %}', { media, others: [{ id: 8 }, { id: 9 }] })).toBe('3:7,8,9,')
+  })
+  it('appends the items of a drop that iterates', async () => {
+    class Pair extends Drop {
+      * [Symbol.iterator] () { yield { id: 1 }; yield { id: 2 } }
+    }
+    expect(await render('{% assign list = pair | concat: others %}{{ list.size }}:{% for m in list %}{{ m.id }},{% endfor %}', { pair: new Pair(), others: [{ id: 3 }] })).toBe('3:1,2,3,')
   })
   it('keeps a hash as one item of the list', async () => {
     expect(await render('{% assign list = one | concat: others %}{% for m in list %}{{ m.id }},{% endfor %}', { one: { id: 1 }, others: [{ id: 2 }] })).toBe('1,2,')
