@@ -1,3 +1,23 @@
+# [1.2.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v1.1.0...debutify-v1.2.0) (2026-10-17)
+
+
+### Bug Fixes
+
+* **shopify:** font_modify finds a font's own variant by style and weight, FontInfo is read-only, the font table takes the day it was recorded ([9fe5f90](https://github.com/Debutifycorp/liquidjs/commit/9fe5f909653cdde2758da0440b628635b1ea2d1e))
+* **shopify:** one safe way to put a class on an svg, the prolog stepped over, and the library bundle checked for leaks into other bundles ([e2ed176](https://github.com/Debutifycorp/liquidjs/commit/e2ed17611842ddd26efc68595d20800d66f889bc))
+
+
+### Features
+
+* **shopify:** print Shopify's payment icons from activemerchant/payment_icons, recorded with a probe of unknown and unlisted types ([4da4fef](https://github.com/Debutifycorp/liquidjs/commit/4da4fef617f35d75c22b73ff7ca67a292143bc4a))
+* **shopify:** read Shopify's font library as recorded from the parity store, and point font_url at its files ([d02c683](https://github.com/Debutifycorp/liquidjs/commit/d02c6837003df3cf455214657ac7b054f14eb953))
+* **storefront:** take the services as a function of the request, like the theme and the data ([d294898](https://github.com/Debutifycorp/liquidjs/commit/d294898ee9681458ecbbc031b483b755120f115e))
+
+
+### Upstream
+
+Based on [LiquidJS 10.30.0](https://github.com/harttle/liquidjs/releases/tag/v10.30.0).
+
 # [1.1.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v1.0.1...debutify-v1.1.0) (2026-10-16)
 
 
