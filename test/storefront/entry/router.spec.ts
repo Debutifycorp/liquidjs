@@ -94,18 +94,26 @@ describe('routeRequest', () => {
   })
   it('reads a long run of slashes in linear time, whatever follows it', () => {
     routeRequest('GET', 'http://x/cart', data, { basePath: '' })
-    for (const tail of ['x', '', '/']) {
-      for (const [method, url] of [['GET', `http://x/cart${'/'.repeat(64000)}${tail}`], ['POST', `http://x/cart/add.js${'/'.repeat(64000)}${tail}`], ['GET', `http://x/p/tok${'/'.repeat(64000)}${tail}`]]) {
+    // the quickest of three runs, so a pause of the runner's does not count
+    const time = (method: string, url: string, basePath: string) => {
+      let quickest = Infinity
+      for (let run = 0; run < 3; run++) {
         const start = performance.now()
-        const routed = routeRequest(method, url, data, { basePath: '/p/tok' })
-        const elapsed = performance.now() - start
-        expect([url.slice(0, 24), tail, routed.route.kind, elapsed < 50]).toEqual([url.slice(0, 24), tail, expect.any(String), true])
+        routeRequest(method, url, data, { basePath })
+        quickest = Math.min(quickest, performance.now() - start)
+      }
+      return quickest
+    }
+    // eight times the slashes takes about eight times as long when the reading is linear and sixty-four times when it is quadratic; a ratio, not a time, so a slow runner does not fail it
+    for (const tail of ['x', '', '/']) {
+      for (const [method, prefix] of [['GET', 'http://x/cart'], ['POST', 'http://x/cart/add.js'], ['GET', 'http://x/p/tok']]) {
+        const url = (slashes: number) => `${prefix}${'/'.repeat(slashes)}${tail}`
+        expect(routeRequest(method, url(64000), data, { basePath: '/p/tok' }).route.kind).toEqual(expect.any(String))
+        const ratio = time(method, url(128000), '/p/tok') / Math.max(time(method, url(16000), '/p/tok'), 0.05)
+        expect([prefix, tail, ratio < 24]).toEqual([prefix, tail, true])
       }
     }
-    const start = performance.now()
-    const routed = routeRequest('GET', `http://x/cart${'/'.repeat(64000)}x`, data, { basePath: '' })
-    expect(routed.route).toMatchObject({ kind: 'not-found' })
-    expect(performance.now() - start).toBeLessThan(50)
+    expect(routeRequest('GET', `http://x/cart${'/'.repeat(64000)}x`, data, { basePath: '' }).route).toMatchObject({ kind: 'not-found' })
   })
   it('answers the methods an endpoint does not take with a 404, whatever the endpoint', () => {
     expect(kind('GET', '/cart/add.js')).toMatchObject({ kind: 'not-found' })
