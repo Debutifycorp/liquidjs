@@ -30,15 +30,21 @@ const FOLDERS = [
   { folder: 'snippets', kind: 'snippet', marker: 'SNIPPET' }
 ] as const
 
-/** A file of the theme for `compileAssets`: its path and its parsed templates (which throw when it does not parse). */
-export interface AssetSource {
-  path: string
-  templates: () => Template[]
+/** The `{% stylesheet %}` and `{% javascript %}` bodies of one file. */
+export interface FileBodies {
+  stylesheet?: string
+  javascript?: string
 }
 
-/** The first `{% stylesheet %}` and `{% javascript %}` body of a file, in document order, looking inside blocks (`if`, `for`, `case` and the rest) but not into the partials a file renders. A file can hold one of each (shopify.dev: "Each file can only have one"), and the tag records the first one it renders. */
-function bodiesOf (templates: Template[]): { stylesheet?: string, javascript?: string } {
-  const found: { stylesheet?: string, javascript?: string } = {}
+/** A file of the theme for `compileAssets`: its path and its bodies. */
+export interface AssetSource {
+  path: string
+  bodies: FileBodies
+}
+
+/** The first `{% stylesheet %}` and `{% javascript %}` body of a parsed file, in document order, looking inside blocks (`if`, `for`, `case` and the rest) but not into the partials a file renders. A file can hold one of each (shopify.dev: "Each file can only have one"), and the tag records the first one it renders. */
+export function bodiesOf (templates: Template[]): FileBodies {
+  const found: FileBodies = {}
   const walk = (list: Template[]) => {
     for (const template of list) {
       if (template instanceof StylesheetTag) found.stylesheet ??= template.source
@@ -60,20 +66,14 @@ const version = (body: string) => createHash('sha256').update(body).digest('hex'
  *
  * The form is the parity store's, read from the source maps of its files (`compiled_assets/styles.css.map` and `scripts.js.map` of Horizon 4.3.0): `styles.css` opens with `/* SHOPIFY_STYLESHEETS_VERSION: 1.0 *\/`, then the sections, the blocks and the snippets, each group under `/* CSS from section stylesheet tags *\/` (`block`, `snippet`) and in file name order, each body trimmed between `/* START_SECTION:<name> (INDEX:<n>) *\/` and `/* END_SECTION:<name> *\/`, where `<n>` counts the `.liquid` files of the three folders, the sections first, each folder in name order, whether they have a stylesheet or not. The file holds every stylesheet of the theme, on every page: the parity store links one address on all 19 recorded pages of Horizon, and the file of its home page holds the `password` section's styles. The doc's "Shopify subsets this CSS so that each page only loads the styles from files in its render tree" is not what the recordings show (no page names a subset), so the file is not subset here. `scripts.js` runs a section's body only when the page's `<script id="sections-script">` names the section in `data-sections`, as the parity store's file does.
  *
- * Debutify's, not pinned: the file is served as written here, where Shopify serves it minified (with the source map's text as its source); a body that is only white space is left out; the version is a hash of the file's text (Shopify's is a number of its own that the recordings cannot derive); a file that does not parse adds nothing. The `{% javascript %}` of blocks and snippets is not compiled: Shopify's `block-scripts.js` and `snippet-scripts.js` are in no recording, so how a page loads them is not known, and the page inlines those bodies (see `contentForHeader`).
+ * Debutify's, not pinned: the file is served as written here, where Shopify serves it minified (with the source map's text as its source); a body that is only white space is left out; the version is a hash of the file's text (Shopify's is a number of its own that the recordings cannot derive); a file that does not parse adds nothing (see `CompiledTheme.compiledAssets`). The `{% javascript %}` of blocks and snippets is not compiled: Shopify's `block-scripts.js` and `snippet-scripts.js` are in no recording, so how a page loads them is not known, and the page inlines those bodies (see `contentForHeader`).
  */
 export function compileAssets (sources: AssetSource[]): CompiledAssets {
   const groups = new Map<string, Array<{ name: string, index: number, body: string }>>()
   const sections: Array<{ name: string, body: string }> = []
-  sources.forEach(({ path, templates }, index) => {
+  sources.forEach(({ path, bodies }, index) => {
     const match = BUNDLED_FILE.exec(path)
     if (!match) return
-    let bodies: ReturnType<typeof bodiesOf>
-    try {
-      bodies = bodiesOf(templates())
-    } catch {
-      return
-    }
     const css = bodies.stylesheet?.trim()
     if (css) {
       const group = groups.get(match[1]) ?? []

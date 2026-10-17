@@ -143,6 +143,13 @@ describe('the compiled {% stylesheet %} and {% javascript %} files', () => {
     expect(html).toContain("<script>document.addEventListener('DOMContentLoaded', function () {\n(function () {\nbadge()\n})();\n});</script>")
   })
 
+  it('holds the stylesheets of the files a page rendered before the files were first compiled', async () => {
+    // the page's render parses `snippets/price.liquid` for `{% render %}` before `content_for_header` asks for the files; Horizon's served file lacked 43 such snippets until the bodies were read from a parse of their own
+    const theme = styledTheme()
+    await linked(theme)
+    expect(compileTheme(theme).compiledAssets().styles?.body).toContain('/* START_SNIPPET:price (INDEX:5) */\n.price { font-weight: bold; }\n/* END_SNIPPET:price */')
+  })
+
   it('prints no link when the theme has no stylesheet, and no script tag when the page renders no section javascript', async () => {
     const html = await linked(homeTheme({ plain: '<p>plain</p>' }))
     expect(html).not.toContain('compiled_assets')

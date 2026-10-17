@@ -25,7 +25,7 @@ import { escapeHtml } from '../util/html'
 import { hasOwn, isRecord, own, PLAIN_ID } from '../util/own'
 import { deepMerge, parseThemeJson, parseWrapper } from './json'
 import { contentForHeader, newHeaderMarker, withStoreElements } from './header'
-import { BUNDLED_FILE, compileAssets, CompiledAssets } from './compiled-assets'
+import { bodiesOf, BUNDLED_FILE, compileAssets, CompiledAssets, FileBodies } from './compiled-assets'
 
 /** An Online Store 2.0 theme as a map of its files by path (`sections/header.liquid`). The package never reads the file system. */
 export interface ThemeInput {
@@ -231,6 +231,8 @@ export class CompiledTheme {
   private readonly jsonCache = new Map<string, { source: string, value: unknown }>()
   /** The last `compiledAssets()`, with the paths and sources it was made from. */
   private assets?: { paths: string[], sources: Array<string | undefined>, value: CompiledAssets }
+  /** The `{% stylesheet %}` and `{% javascript %}` bodies of this theme's own files, by path, with the source they were read from. */
+  private readonly bodyCache = new Map<string, { source: string, bodies: FileBodies }>()
 
   /** `own` are the files this theme owns; with a `base`, every other file comes from it, parsed once by it. */
   public constructor (public readonly own: Record<string, string>, options: Pick<RenderPageOptions, 'parseLimit' | 'unknownTags'> = {}, public readonly base?: CompiledTheme) {
@@ -259,17 +261,32 @@ export class CompiledTheme {
   }
 
   /**
-   * The theme's compiled `{% stylesheet %}` and `{% javascript %}` files, `styles.css` and `scripts.js`, which a server serves at `RenderPageOptions.compiledAssetsUrl` (see `compileAssets` for what they hold and in what form). Made from every `.liquid` file of `sections/`, `blocks/` and `snippets/`, which are parsed for it, and made again only when one of them changes, so their versions change with their bodies.
+   * The theme's compiled `{% stylesheet %}` and `{% javascript %}` files, `styles.css` and `scripts.js`, which a server serves at `RenderPageOptions.compiledAssetsUrl` (see `compileAssets` for what they hold and in what form). Made from every `.liquid` file of `sections/`, `blocks/` and `snippets/`, each parsed for it once while it is unchanged, and made again only when one of them changes, so their versions change with their bodies.
    */
   public compiledAssets (): CompiledAssets {
     const paths = ['sections/', 'blocks/', 'snippets/'].flatMap(folder => this.paths(folder).filter(path => BUNDLED_FILE.test(path)).sort())
     const sources = paths.map(path => this.source(path))
     const last = this.assets
     if (last && last.paths.length === paths.length && last.paths.every((path, i) => path === paths[i] && last.sources[i] === sources[i])) return last.value
-    // a snippet is parsed under the key `render` reads it by, so the page's render and this share one parse
-    const value = compileAssets(paths.map(path => ({ path, templates: () => path.startsWith('snippets/') ? this.parseKey(`partials:${path.slice('snippets/'.length, -'.liquid'.length)}`) : this.templates(path) })))
+    const value = compileAssets(paths.map(path => ({ path, bodies: this.bodies(path) })))
     this.assets = { paths, sources, value }
     return value
+  }
+
+  /** The `{% stylesheet %}` and `{% javascript %}` bodies of the file at `path`, read from a parse of its own (the render cache may hold a file a render parsed as a promise, which a synchronous read cannot take), kept while the file is unchanged; a file the theme takes from its base is read by the base. A file that does not parse has none. */
+  private bodies (path: string): FileBodies {
+    if (!hasOwn(this.own, path)) return this.base?.bodies(path) ?? {}
+    const source = this.own[path]
+    const cached = this.bodyCache.get(path)
+    if (cached && cached.source === source) return cached.bodies
+    let bodies: FileBodies
+    try {
+      bodies = bodiesOf(this.liquid.parse(source, path))
+    } catch {
+      bodies = {}
+    }
+    this.bodyCache.set(path, { source, bodies })
+    return bodies
   }
 
   /** Paths starting with `prefix`, in key order: the base's, then the overlay's own that the base lacks (the order of `{ ...base.files, ...own }`). */
