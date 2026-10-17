@@ -169,7 +169,7 @@ export function productAjax (product: LiquidObject): Record<string, unknown> {
     // `featured_image` and `images` have no protocol in the parity store's answer, where the `src` of the media and of a variant's image have `https://` (fixture `ajax-product-js`)
     images: (product.images as ImageDrop[]).map(image => imageUrl(image, 'liquid')),
     featured_image: imageUrl(product.featured_image as ImageDrop | null, 'liquid'),
-    options: (product.options_with_values as LiquidObject[]).map(option => ({ name: option.name, position: option.position, values: option.values })),
+    options: (product.options_with_values as LiquidObject[]).map(option => ({ name: option.name, position: option.position, values: (option.values as unknown[]).map(String) })),
     url: product.url,
     media: (product.media as LiquidObject[]).map(media => mediaJson(media, 'ajax')),
     requires_selling_plan: product.requires_selling_plan,

@@ -1,7 +1,10 @@
 import { ImageDrop } from '../objects/image'
 import { HandleMap } from '../objects/handle-map'
+import { buildOptions, keepOptionInfo, optionInfoOf, optionValueId, OptionsByNameDrop, SwatchDrop } from '../objects/product-option'
+import type { OptionValueInfo } from '../objects/product-option'
 import type { ImageData } from '../types'
 import { escapeHtml } from '../util/html'
+import { own } from '../util/own'
 import { buildCartObject, cartStateOf } from './cart'
 import { buildFilters } from './filters'
 import { buildLocalization, currencyOf, enabledCurrencies, marketRoot } from './markets'
@@ -254,7 +257,29 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
 }
 
 /**
- * https://shopify.dev/docs/api/liquid/objects/product. The product's and its variants' URLs sit under `prefix` (the view's base path and locale prefix, as the parity store prints them, fixture `probe-page-fr-ca`). `price` is the lowest variant price and `compare_at_price` the lowest variant compare-at price, as that page documents them; `compare_at_price` is nil when no variant has one, as the parity store prints it (fixtures `probe-product-in-collection` and `probe-product-plans`: `null` for men-t-shirt and slides; shopify.dev does not pin that case), so dividing by it raises "divided by 0" as Ruby does. `first_available_variant` is nil when no variant is available (the page: "The first available variant of the product"; fixture `probe-product-en-eu-leggings`, whose variants are all sold out, records null), while `selected_or_first_available_variant` (no `?variant=` is known here) then falls back to the first variant, as the page says, and so does each option's `selected_value` (the same fixture); `options_with_values` and `has_only_default_variant` follow the same page. `selling_plan_groups` are the data's (`buildSellingPlanGroup`), `requires_selling_plan` the data's flag, and `selected_selling_plan` and `selected_selling_plan_allocation` nil until a request selects a plan (`selectSellingPlan`). `selected_or_first_available_selling_plan_allocation` is, with nothing selected, "the first allocation on the first available variant", or on the first variant when none is available, and nil when the product has no selling plans (https://shopify.dev/docs/api/liquid/objects/product#product-selected_or_first_available_selling_plan_allocation); the parity store prints it for every product with plans, not only one that requires them (fixtures `probe-product-plans` and `probe-product-requires-plan`: 71001 and 71003). Every price field is in the view's currency when `currency` is given, because the variants' are (`buildVariant`) and the product's are the lowest and highest of them; the parity store's product-level `compare_at_price` is the lowest converted variant compare-at price in the markets that show them (fixtures `probe-product-default` and `probe-product-en-ca`: 110.00 USD and 149.00 CAD, with one variant on sale) and nil in one that hides them, with `compare_at_price_min` and `compare_at_price_max` 0 as for any product without one (fixtures `probe-product-en-eu-hoodie` and `ajax-product-js`).
+ * What the product knows of each value of each option, in the order its variants first give them (https://shopify.dev/docs/api/liquid/objects/product_option: `values` are "the possible values for the product option"): the name, the id the data gives (`ProductData.option_values`) or `optionValueId` makes, the swatch (`SwatchDrop`, nil without a colour or image) and, for a value that leads to another product (a combined listing), that product's URL under `prefix`, nil otherwise (https://shopify.dev/docs/api/liquid/objects/product_option_value#product_option_value-product_url).
+ */
+function optionValueInfos (data: ProductData, options: string[], variants: LiquidObject[], prefix: string): OptionValueInfo[][] {
+  const taken = new Set<number>()
+  const given = data.option_values ?? {}
+  const listed = options.map((_, i) => unique(variants.map(variant => (variant.options as string[])[i]).filter(value => value !== undefined)))
+  for (const [i, name] of options.entries()) for (const value of listed[i]) {
+    const id = own(own(given, name), value)?.id
+    if (typeof id === 'number') taken.add(id)
+  }
+  return options.map((name, i) => listed[i].map(value => {
+    const extra = own(own(given, name), value)
+    return {
+      name: value,
+      id: typeof extra?.id === 'number' ? extra.id : optionValueId(data.id, i + 1, value, taken),
+      swatch: SwatchDrop.from(extra?.swatch),
+      product_url: extra?.product_handle ? withPrefix(prefix, `/products/${extra.product_handle}`) : null
+    }
+  }))
+}
+
+/**
+ * https://shopify.dev/docs/api/liquid/objects/product. The product's and its variants' URLs sit under `prefix` (the view's base path and locale prefix, as the parity store prints them, fixture `probe-page-fr-ca`). `price` is the lowest variant price and `compare_at_price` the lowest variant compare-at price, as that page documents them; `compare_at_price` is nil when no variant has one, as the parity store prints it (fixtures `probe-product-in-collection` and `probe-product-plans`: `null` for men-t-shirt and slides; shopify.dev does not pin that case), so dividing by it raises "divided by 0" as Ruby does. `first_available_variant` is nil when no variant is available (the page: "The first available variant of the product"; fixture `probe-product-en-eu-leggings`, whose variants are all sold out, records null), while `selected_or_first_available_variant` (no `?variant=` is known here) then falls back to the first variant, as the page says, and so does each option's `selected_value` (the same fixture); `options_with_values` and `has_only_default_variant` follow the same page, each option's `values` being `product_option_value` objects (`buildOptions`) for the selected-or-first-available variant's values, and `options_by_name` finds an option by its name in any case (`OptionsByNameDrop`). `selling_plan_groups` are the data's (`buildSellingPlanGroup`), `requires_selling_plan` the data's flag, and `selected_selling_plan` and `selected_selling_plan_allocation` nil until a request selects a plan (`selectSellingPlan`). `selected_or_first_available_selling_plan_allocation` is, with nothing selected, "the first allocation on the first available variant", or on the first variant when none is available, and nil when the product has no selling plans (https://shopify.dev/docs/api/liquid/objects/product#product-selected_or_first_available_selling_plan_allocation); the parity store prints it for every product with plans, not only one that requires them (fixtures `probe-product-plans` and `probe-product-requires-plan`: 71001 and 71003). Every price field is in the view's currency when `currency` is given, because the variants' are (`buildVariant`) and the product's are the lowest and highest of them; the parity store's product-level `compare_at_price` is the lowest converted variant compare-at price in the markets that show them (fixtures `probe-product-default` and `probe-product-en-ca`: 110.00 USD and 149.00 CAD, with one variant on sale) and nil in one that hides them, with `compare_at_price_min` and `compare_at_price_max` 0 as for any product without one (fixtures `probe-product-en-eu-hoodie` and `ajax-product-js`).
  */
 export function buildProduct (data: ProductData, prefix = '', currency?: ViewCurrency): LiquidObject {
   const url = withPrefix(prefix, `/products/${data.handle}`)
@@ -278,12 +303,8 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
   const compares = variants.map(variant => variant.compare_at_price as number | null).filter((price): price is number => typeof price === 'number')
   const firstAvailable = variants.find(variant => variant.available) ?? null
   const firstOrAvailable = firstAvailable ?? variants[0] ?? null
-  const optionsWithValues = options.map((name, i) => ({
-    name,
-    position: i + 1,
-    values: unique(variants.map(variant => (variant.options as string[])[i]).filter(value => value !== undefined)),
-    selected_value: firstOrAvailable ? (firstOrAvailable.options as string[])[i] ?? null : null
-  }))
+  const infos = optionValueInfos(data, options, variants, prefix)
+  const optionsWithValues = buildOptions(options, infos, variants, options.map((_, i) => firstOrAvailable ? (firstOrAvailable.options as string[])[i] ?? null : null), firstOrAvailable)
   const product: LiquidObject = {
     id: data.id,
     handle: data.handle,
@@ -309,9 +330,11 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
     featured_media: media[0] ?? null,
     options,
     options_with_values: optionsWithValues,
-    options_by_name: Object.fromEntries(optionsWithValues.map(option => [option.name.toLowerCase(), option])),
+    options_by_name: new OptionsByNameDrop(optionsWithValues),
     has_only_default_variant: variants.length === 1 && options.length === 1 && options[0] === 'Title',
     variants,
+    // https://shopify.dev/docs/api/liquid/objects/product#product-variants_count: "The total number of variants for the product"
+    variants_count: variants.length,
     first_available_variant: firstAvailable,
     selected_variant: null,
     selected_or_first_available_variant: firstOrAvailable,
@@ -331,28 +354,57 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
   for (const variant of variants) hidden(variant, 'product', product)
   // marks a built product for the `json` filter, which prints it with `productLiquidJson`
   hidden(product, PRODUCT_MARKER, true)
+  keepOptionInfo(product, infos)
   // the store's place in the best-selling order, which `sort_by=best-selling` reads and templates cannot print
   hidden(product, 'sales_rank', data.sales_rank)
   return printsHandle(product)
 }
 
 /**
- * The product a request shows: `?variant=<id>` selects that variant (https://shopify.dev/docs/api/liquid/objects/product#product-selected_variant: "The currently selected variant of the product", "On product pages, it is based on the variant ID set in the variant URL parameter", nil when none is), which `selected_or_first_available_variant` then returns "regardless of its availability" (https://shopify.dev/docs/api/liquid/objects/product#product-selected_or_first_available_variant); the variant's `selected` is true (https://shopify.dev/docs/api/liquid/objects/variant#variant-selected) and each option's `selected_value` is the selected variant's (https://shopify.dev/docs/api/liquid/objects/product_option). An id the product does not have selects nothing, as the parity store renders it (fixture `probe-product-unknown-variant`). The built product is shared by every request of a view, so a selection returns a copy (with its hidden properties) and leaves the shared one alone. On the confirm-on-a-development-store list: the copy is not the same object as the store's product, so `{% if product == all_products[product.handle] %}` and `collections.x.products contains product` are false on a product page with `?variant=` and true without it, and shopify.dev and the parity store's recordings do not say what Shopify answers.
+ * The product a request shows: `?variant=<id>` selects that variant (https://shopify.dev/docs/api/liquid/objects/product#product-selected_variant: "The currently selected variant of the product", "On product pages, it is based on the variant ID set in the variant URL parameter", nil when none is), which `selected_or_first_available_variant` then returns "regardless of its availability" (https://shopify.dev/docs/api/liquid/objects/product#product-selected_or_first_available_variant); the variant's `selected` is true (https://shopify.dev/docs/api/liquid/objects/variant#variant-selected) and each option's `selected_value` is the selected variant's (https://shopify.dev/docs/api/liquid/objects/product_option). An id the product does not have selects nothing, as the parity store renders it (fixture `probe-product-unknown-variant`). Without a `?variant=` the product's option value ids in `?option_values=` select (`optionValues`, `pickByOptionValues`). The built product is shared by every request of a view, so a selection returns a copy (with its hidden properties) and leaves the shared one alone. On the confirm-on-a-development-store list: the copy is not the same object as the store's product, so `{% if product == all_products[product.handle] %}` and `collections.x.products contains product` are false on a product page with `?variant=` and true without it, and shopify.dev and the parity store's recordings do not say what Shopify answers.
  */
-export function selectProduct (product: LiquidObject, variantId: number | undefined): LiquidObject {
+export function selectProduct (product: LiquidObject, variantId: number | undefined, optionValues?: number[]): LiquidObject {
   const variants = product.variants as LiquidObject[]
-  const chosen = variantId === undefined ? undefined : variants.find(variant => variant.id === variantId)
-  if (!chosen) return product
+  const byId = variantId === undefined ? undefined : variants.find(variant => variant.id === variantId)
+  const picked = byId ? { variant: byId, values: byId.options as string[] } : optionValues?.length ? pickByOptionValues(product, optionValues) : undefined
+  if (!picked) return product
   const copy = copyObject(product)
-  copy.variants = variants.map(variant => Object.assign(copyObject(variant, 'product'), { selected: variant === chosen }))
+  copy.variants = variants.map(variant => Object.assign(copyObject(variant, 'product'), { selected: variant === picked.variant }))
   for (const variant of copy.variants as LiquidObject[]) hidden(variant, 'product', copy)
   const copyOf = (variant: unknown) => variant ? (copy.variants as LiquidObject[]).find(entry => entry.id === (variant as LiquidObject).id) ?? null : null
-  copy.selected_variant = copyOf(chosen)
+  copy.selected_variant = copyOf(picked.variant)
   copy.selected_or_first_available_variant = copy.selected_variant
   copy.first_available_variant = copyOf(product.first_available_variant)
-  copy.options_with_values = (product.options_with_values as LiquidObject[]).map((option, i) => ({ ...option, selected_value: (chosen.options as string[])[i] ?? null }))
-  copy.options_by_name = Object.fromEntries((copy.options_with_values as LiquidObject[]).map(option => [String(option.name).toLowerCase(), option]))
+  refreshOptions(copy, picked.values)
   return copy
+}
+
+/**
+ * The variant and the option values `?option_values=<id>,<id>` select, https://shopify.dev/docs/storefronts/themes/product-merchandising/variants/support-high-variant-products ("a comma-separated list of option value IDs"): each id names a value of one option, and the variant is the first available one with every named value, or the first one with them, which the request selects "regardless of its availability" as `?variant=` does; an option no id names takes that variant's value. A combination no variant has selects none: the page's Caution says `selected_or_first_available_variant` and `selected_variant` are then nil, and the named values stay selected. Ids the product does not have are ignored, and a request whose ids are all unknown selects nothing. The parity store answers Dawn's section requests so (`option_values` of Clay and Small selects the sold-out Clay / Small, of Ocean alone Ocean / Small, and of two unknown ids the first available variant).
+ */
+function pickByOptionValues (product: LiquidObject, ids: number[]): { variant: LiquidObject | null, values: Array<string | null> } | undefined {
+  const infos = optionInfoOf(product)
+  const named = new Map<number, string>()
+  for (const id of ids) {
+    for (const [i, values] of infos.entries()) {
+      const found = values.find(info => info.id === id)
+      if (found && !named.has(i)) named.set(i, found.name)
+    }
+  }
+  if (!named.size) return undefined
+  const variants = product.variants as LiquidObject[]
+  const matching = variants.filter(variant => [...named].every(([i, name]) => (variant.options as string[])[i] === name))
+  const variant = matching.find(entry => entry.available) ?? matching[0] ?? null
+  const values = infos.map((_, i) => named.get(i) ?? (variant ? (variant.options as string[])[i] ?? null : null))
+  return { variant, values }
+}
+
+/** Rebuilds the options of a product copy (`selectProduct`, `selectSellingPlan`) over its own variants, for the selected `values` (the options' `selected_value` when omitted), so each value's `variant` is one of the copy's. */
+function refreshOptions (copy: LiquidObject, values?: Array<string | null>): void {
+  const options = copy.options_with_values as LiquidObject[]
+  const selected = values ?? options.map(option => option.selected_value as string | null)
+  copy.options_with_values = buildOptions(options.map(option => String(option.name)), optionInfoOf(copy), copy.variants as LiquidObject[], selected, copy.selected_or_first_available_variant as LiquidObject | null)
+  copy.options_by_name = new OptionsByNameDrop(copy.options_with_values as LiquidObject[])
 }
 
 /**
@@ -392,6 +444,7 @@ export function selectSellingPlan (product: LiquidObject, planId: number | undef
   copy.first_available_variant = copyOf(product.first_available_variant)
   copy.selected_selling_plan_allocation = (copy.selected_variant as LiquidObject | null)?.selected_selling_plan_allocation ?? null
   copy.selected_or_first_available_selling_plan_allocation = copy.selected_selling_plan_allocation ?? ((((copy.first_available_variant ?? variants[0]) as LiquidObject | undefined)?.selling_plan_allocations as LiquidObject[] | undefined) ?? [])[0] ?? null
+  refreshOptions(copy)
   return copy
 }
 

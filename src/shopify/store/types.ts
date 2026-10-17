@@ -1,8 +1,74 @@
 import type { ImageData } from '../types'
 import type { CartState } from './cart'
 
-/** Metafields by namespace and key, https://shopify.dev/docs/api/liquid/objects/metafield. Plain values only: shopify.dev's metafield object (type-aware `value`, `list?`) is not built here. */
+/** A metafield with its type, https://shopify.dev/docs/api/liquid/objects/metafield: `type` is one of the types that page lists (`single_line_text_field`, `rating`, `product_reference`, `list.product_reference`…), and `value` is the value as the Admin API stores it (a string, which a JSON type holds as JSON text) or as the value itself (a number, an object, an array). A reference holds the handle of the product, collection or page it points at, a variant reference the variant's id, and a file reference the image (`ImageData`). */
+export interface MetafieldData {
+  type: string
+  value: unknown
+}
+
+/** Metafields by namespace and key, https://shopify.dev/docs/api/liquid/objects/metafield. Each is a `MetafieldData`, or a plain value whose type is read from it: a string is a `single_line_text_field` (`multi_line_text_field` when it holds a line break), a whole number a `number_integer`, another number a `number_decimal`, a boolean a `boolean`, an array of strings a `list.single_line_text_field` and any other object or array a `json` metafield. Every one is built as a metafield object. */
 export type Metafields = Record<string, Record<string, unknown>>
+
+/** A policy of the store, https://shopify.dev/docs/api/liquid/objects/policy, as the store's Policies settings hold it: `type` says which one it is, and gives its handle (`privacy_policy` is at `/policies/privacy-policy`) and its default title (`Privacy policy`). `body` is HTML. */
+export interface PolicyData {
+  type: 'privacy_policy' | 'refund_policy' | 'shipping_policy' | 'terms_of_service' | 'subscription_policy' | 'contact_information' | 'legal_notice'
+  /** Defaults to Shopify's title for the type. */
+  title?: string
+  body: string
+  /** Defaults to a number made from the type. */
+  id?: number | string
+}
+
+/** A swatch, https://shopify.dev/docs/api/liquid/objects/swatch: a colour (a CSS colour string such as `#c43c3c`), an image, or both. */
+export interface SwatchData {
+  color?: string | null
+  image?: ImageData | null
+}
+
+/** One value of a product option, https://shopify.dev/docs/api/liquid/objects/product_option_value: what the variants do not say about it. */
+export interface ProductOptionValueData {
+  /** Defaults to a number made from the product's id, the option and the value, the same for the same data. */
+  id?: number
+  swatch?: SwatchData | null
+  /** In a combined listing, the handle of the product the value leads to (`product_url`). */
+  product_handle?: string | null
+}
+
+/** A volume price of a variant, https://shopify.dev/docs/api/liquid/objects/quantity_price_break: the price of one unit, in the minor unit of the shop's currency, from `minimum_quantity` on. */
+export interface QuantityPriceBreakData {
+  minimum_quantity: number
+  price: number
+}
+
+/** How a variant is measured for its unit price, https://shopify.dev/docs/api/liquid/objects/unit_price_measurement (`500` `ml` sold, priced per `100` `ml`). */
+export interface UnitPriceMeasurementData {
+  measured_type: 'volume' | 'weight' | 'length' | 'area' | 'count'
+  quantity_value: number
+  quantity_unit: string
+  reference_value: number
+  reference_unit: string
+}
+
+/** A store location, https://shopify.dev/docs/api/liquid/objects/location. */
+export interface LocationData {
+  id: number
+  name: string
+  address?: AddressData | null
+  latitude?: number | null
+  longitude?: number | null
+}
+
+/** A variant's stock at a location, https://shopify.dev/docs/api/liquid/objects/store_availability. */
+export interface StoreAvailabilityData {
+  available: boolean
+  /** Defaults to true. */
+  pick_up_enabled?: boolean
+  pick_up_time?: string | null
+  /** Defaults to true. */
+  physical_storefront?: boolean
+  location: LocationData
+}
 
 /** The data behind Shopify's `shop` object, https://shopify.dev/docs/api/liquid/objects/shop. */
 export interface ShopData {
@@ -22,6 +88,8 @@ export interface ShopData {
   /** The storefront asks for a password on every page but `/password`, https://shopify.dev/docs/api/liquid/objects/shop (`shop.password_message`). */
   password_enabled?: boolean
   password_message?: string
+  /** The store's policies, in the order `shop.policies` lists them; none when omitted. */
+  policies?: PolicyData[]
 }
 
 /** The data behind Shopify's `variant` object, https://shopify.dev/docs/api/liquid/objects/variant. Prices are integers in the currency's minor unit. */
@@ -44,6 +112,14 @@ export interface VariantData {
   /** Grams. */
   weight?: number
   requires_shipping?: boolean
+  barcode?: string | null
+  /** Volume prices, the lowest minimum quantity first; none when omitted. */
+  quantity_price_breaks?: QuantityPriceBreakData[]
+  /** For the variant's `unit_price`, which is its price per `reference_value` of the measurement. */
+  unit_price_measurement?: UnitPriceMeasurementData | null
+  /** The locations that stock the variant; none when omitted. */
+  store_availabilities?: StoreAvailabilityData[]
+  metafields?: Metafields
 }
 
 /** An image as product media, https://shopify.dev/docs/api/liquid/objects/media (`media_type` is `image`). */
@@ -67,6 +143,10 @@ export interface VideoMediaData {
   alt?: string
   preview_image: ImageData
   sources: VideoSourceData[]
+  /** Milliseconds. */
+  duration?: number | null
+  /** Defaults to the width over the height of the first source that has both, else of the preview image. */
+  aspect_ratio?: number | null
 }
 
 /** Externally hosted video media, https://shopify.dev/docs/api/liquid/objects/external_video. */
@@ -97,6 +177,8 @@ export interface ProductData {
   media?: MediaData[]
   /** Option names; Shopify's single-variant products have `['Title']`. */
   options?: string[]
+  /** What the variants do not say about an option's values (ids, swatches), by option name and then value. */
+  option_values?: Record<string, Record<string, ProductOptionValueData>>
   variants: VariantData[]
   created_at?: string
   published_at?: string
@@ -149,6 +231,7 @@ export interface ArticleData {
   published_at: string
   image?: ImageData | null
   tags?: string[]
+  metafields?: Metafields
 }
 
 /** The data behind Shopify's `blog` object, https://shopify.dev/docs/api/liquid/objects/blog. */
@@ -157,12 +240,15 @@ export interface BlogData {
   handle: string
   title: string
   articles: ArticleData[]
+  metafields?: Metafields
 }
 
 /** The data behind Shopify's `link` object, https://shopify.dev/docs/api/liquid/objects/link. */
 export interface LinkData {
   title: string
   url: string
+  /** Defaults to the handle of the title in the store's primary language (`handleize`), which a translation of the title does not change. */
+  handle?: string
   links?: LinkData[]
 }
 
@@ -475,6 +561,8 @@ export interface TranslationsData {
     /** By `<blog handle>/<article handle>`. */
     articles?: Record<string, ResourceTranslations>
     menus?: Record<string, string[]>
+    /** By policy type (`privacy_policy`): its title and body (`content`). */
+    policies?: Record<string, Pick<ResourceTranslations, 'title' | 'content'>>
   }
 }
 

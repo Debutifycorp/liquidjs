@@ -54,6 +54,12 @@ function unavailable (value: string | null): 'show' | 'hide' | 'last' | undefine
 
 const int = (value: string | null) => value !== null && /^\d+$/.test(value) ? Number(value) : undefined
 
+/** `?option_values=<id>,<id>`, https://shopify.dev/docs/storefronts/themes/product-merchandising/variants/support-high-variant-products: the option value ids in it, the first ten of them (a product has at most three options), each a number; none when it names none. */
+const optionValueIds = (value: string | null) => {
+  const ids = (value ?? '').split(',').slice(0, 10).map(part => int(part.trim())).filter((id): id is number => id !== undefined)
+  return ids.length ? ids : undefined
+}
+
 /** `?page=` counts from 1: `paginate` clamps anything lower to the first page (https://shopify.dev/docs/api/liquid/tags/paginate). */
 const pageNumber = (value: string | null) => {
   const n = int(value)
@@ -118,6 +124,7 @@ export function requestFromUrl (url: string, data: StoreData, options: { basePat
     view: params.get('view') ?? undefined,
     sortBy: params.get('sort_by') ?? undefined,
     variant: int(params.get('variant')),
+    optionValues: optionValueIds(params.get('option_values')),
     sellingPlan: int(params.get('selling_plan')),
     filters: query.filter(([name]) => name.startsWith('filter.')),
     ...(options.form ? { form: options.form } : postedForm(params))

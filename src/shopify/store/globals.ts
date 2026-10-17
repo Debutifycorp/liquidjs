@@ -56,6 +56,8 @@ export interface RequestInput {
   query?: Array<[string, string]>
   /** `?variant=`: the variant `product.selected_variant` names. https://shopify.dev/docs/api/liquid/objects/product#product-selected_variant */
   variant?: number
+  /** `?option_values=`: option value ids that select a variant when `variant` names none. https://shopify.dev/docs/storefronts/themes/product-merchandising/variants/support-high-variant-products */
+  optionValues?: number[]
   /** `?selling_plan=`. https://shopify.dev/docs/api/liquid/objects/product#product-selected_selling_plan */
   sellingPlan?: number
   /** `?view=`: the alternate template suffix. https://shopify.dev/docs/storefronts/themes/architecture/templates/alternate-templates */
@@ -218,8 +220,8 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     const automatic = template.name === 'collection' ? own(TERM_COLLECTIONS, request.resource ?? '') : undefined
     const found = automatic ? automatic(store, request.searchTerms ?? '', view.prefix) : requestedResource(store, template.name, request.resource)
     if (request.resource && !found) report.missing('resource', `${template.name} ${request.resource}`)
-    // a product page shows the variant `?variant=` names (`selectProduct`) and the selling plan `?selling_plan=` names (`selectSellingPlan`); the built product is shared by every request, so a selection is a copy
-    resources[template.name] = found && template.name === 'product' ? selectSellingPlan(selectProduct(found, request.variant), request.sellingPlan) : found ?? null
+    // a product page shows the variant `?variant=` or `?option_values=` names (`selectProduct`) and the selling plan `?selling_plan=` names (`selectSellingPlan`); the built product is shared by every request, so a selection is a copy
+    resources[template.name] = found && template.name === 'product' ? selectSellingPlan(selectProduct(found, request.variant, request.optionValues), request.sellingPlan) : found ?? null
     // `/collections/<collection>/products/<product>` shows the product with that collection as the `collection` global: https://shopify.dev/docs/api/liquid/objects/collection says `collection.next_product` and `collection.previous_product` "can be used on the product page", which they could not be without it. The product's own URL does not carry the collection (fixture `probe-product-in-collection`: `/products/men-t-shirt`). A collection the store does not have sets none.
     if (template.name === 'product' && request.collection !== undefined) {
       const collection = HandleMap.get(store.collections, request.collection)

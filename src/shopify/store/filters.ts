@@ -1,3 +1,5 @@
+import { swatchOf } from '../objects/product-option'
+import type { SwatchDrop } from '../objects/product-option'
 import { own } from '../util/own'
 import { prepareQuery, withPrepared } from '../util/query'
 import type { LiquidObject } from './build'
@@ -8,7 +10,7 @@ import type { FilterData } from './types'
 /** The labels used when the store data gives none. shopify.dev does not list default filter or value labels, so these are not pinned: the parity store's own are `Brand` and `More filters` for the vendor and tag filters (fixture `probe-collection-all`), which its dataset sets as labels. */
 const LABELS: Record<Exclude<FilterData['attribute'], 'option' | 'metafield'>, string> = { availability: 'Availability', price: 'Price', product_type: 'Product type', vendor: 'Vendor', tag: 'Tags' }
 
-interface Entry { value: string, label: string, count: number }
+interface Entry { value: string, label: string, count: number, swatch?: SwatchDrop | null }
 
 type Variant = LiquidObject
 type Active = ReadonlyArray<readonly [string, string]>
@@ -216,7 +218,7 @@ export function requestQuery (request: Pick<RequestInput, 'query' | 'sortBy' | '
  *
  * `products` are all the products the page can show before its filters (the collection, narrowed by its tags), and `query` is the request's query pairs, filters and the rest (`sort_by`, `q`, `view`), without which every value is inactive. A value counts the products that pass every active filter with the value added and, for an `OR` filter, its own selected values left out, so the counts of a filter's other values show what choosing them would give; an `AND` filter's counts keep its selected values (fixtures `probe-collection-filter-combined` and `probe-collection-filter-types-or`). Values with no product come after the others, each group in the default order (fixtures `probe-collection-filter-tag` and `probe-collection-filter-option`). `url_to_add` and `url_to_remove` are `url` with the query (its pairs ordered by name, `withQuery`) and without `page`, with the value's pair added or taken out, the filter's `url_to_remove` taking out every pair of its parameter (fixture `probe-collection-filter-types-or`: a selected value's `url_to_add` is the current query and the others append theirs). A `url` that has a query of its own keeps it before the pairs. A price filter's `min_value.value` and `max_value.value` are the active bounds in the minor unit of the view currency (fixture `probe-collection-filter-price`: 20 and 40 print 2000 and 4000) and `range_max` is the highest variant price of `products`, whatever the filters (fixture `probe-collection-filter-metafield`: 100000 with only cotton products shown); the shop's price filter is left out in a view currency other than the shop's, where the parity store shows none (fixture `probe-collection-en-eu-price`).
  *
- * Not pinned by shopify.dev and printed so by the parity store: the default labels `Availability`, `Price`, `Product type` and an option's own name (fixture `probe-collection-all`, where the dataset labels only the vendor, tag and metafield filters), availability's value labels (`In stock` for `1`, `Out of stock` for `0`, same fixture) and its listing both values even at count 0 (fixture `probe-search-filtered`), availability counting a product under each stock status one of its variants has (fixture `probe-collection-all`: 26 in stock and 6 out of stock of 29, the hoodie, hoodie-old and high-top-sneakers under both), a value counting each product once, and the lower-cased option name in `filter.v.option.<name>` (fixture `probe-collection-filter-option`: `filter.v.option.color` for `Color`). Still to confirm on a development store: the default labels of the vendor, tag and metafield filters (`Vendor`, `Tags`, the metafield's key), `encodeURIComponent` for values in URLs (no fixture holds a space), and `swatch`, `image` and `display` being nil (the store data has no swatches).
+ * Not pinned by shopify.dev and printed so by the parity store: the default labels `Availability`, `Price`, `Product type` and an option's own name (fixture `probe-collection-all`, where the dataset labels only the vendor, tag and metafield filters), availability's value labels (`In stock` for `1`, `Out of stock` for `0`, same fixture) and its listing both values even at count 0 (fixture `probe-search-filtered`), availability counting a product under each stock status one of its variants has (fixture `probe-collection-all`: 26 in stock and 6 out of stock of 29, the hoodie, hoodie-old and high-top-sneakers under both), a value counting each product once, and the lower-cased option name in `filter.v.option.<name>` (fixture `probe-collection-filter-option`: `filter.v.option.color` for `Color`). Still to confirm on a development store: the default labels of the vendor, tag and metafield filters (`Vendor`, `Tags`, the metafield's key), `encodeURIComponent` for values in URLs (no fixture holds a space), and `image` and `display` being nil, and `swatch` nil unless the filter's presentation is `swatch` and an option value has one (`ProductData.option_values`).
  */
 export function buildFilters (filters: FilterData[] | undefined, products: LiquidObject[], url: string, query: Array<[string, string]> = [], currency?: ViewCurrency): LiquidObject[] {
   const kept = normalizeQuery(query).filter(([name]) => name !== 'page')
@@ -237,7 +239,7 @@ export function buildFilters (filters: FilterData[] | undefined, products: Liqui
       count: entry.count,
       active: selected,
       image: null,
-      swatch: null,
+      swatch: entry.swatch ?? null,
       display: null,
       get url_to_add () {
         add ??= href(selected ? undefined : { add: [param, entry.value] })
@@ -271,6 +273,8 @@ export function buildFilters (filters: FilterData[] | undefined, products: Liqui
     if (option !== null) {
       const wanted = option.toLowerCase()
       entries = optionValues(products, option)
+      // https://shopify.dev/docs/api/liquid/objects/filter_value#filter_value-swatch: a swatch "Requires the filter presentation to be `swatch` and saved color or image content for the swatch. Otherwise, returns `nil`"; the value's swatch is the option value's (`ProductData.option_values`) in the first product that has one
+      if (filter.presentation === 'swatch') for (const entry of entries) entry.swatch = swatchOf(products, option, entry.value)
       counts = tally(products, others, undefined, (variant, product) => {
         const index = (product.options as string[]).findIndex(name => name.toLowerCase() === wanted)
         return index < 0 ? undefined : (variant.options as string[])[index]
