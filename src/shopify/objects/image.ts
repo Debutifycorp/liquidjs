@@ -66,11 +66,10 @@ export class ImageDrop extends Drop {
     this.presentation = { focal_point: new FocalPointDrop(data.focal_point) }
   }
 
-  /** The image itself for product media, nil for images from anywhere else. https://shopify.dev/docs/api/liquid/objects/image#image-preview_image. When `alt` reads the product's title, the preview image is the same image without it: the parity store prints `media.alt` as the title and `media.preview_image | image_url | image_tag` with `alt=""` (scenario `page-product`: the gallery's images). */
+  /** The image itself for product media, nil for images from anywhere else. https://shopify.dev/docs/api/liquid/objects/image#image-preview_image. The preview image has the image's own alt text, not the product's title: the parity store prints `media.alt` as the title and `media.preview_image | image_url | image_tag` with `alt=""` (scenario `page-product`: the gallery's images). Its `id` is nil: Horizon's resource cards pass `featured_media.preview_image` as `data-media-id: featured_image.id`, and the parity store prints no `data-media-id` on those images, where the card's second image, `media[1].id`, has one (private parity recordings of Horizon). */
   public get preview_image (): ImageDrop | null {
     if (!this[AS_MEDIA]) return null
-    if (!this[TITLE] || this.data.alt) return this
-    this[PREVIEW] ??= new ImageDrop(this.data, true, this.position)
+    this[PREVIEW] ??= new ImageDrop({ ...this.data, id: undefined }, true, this.position)
     return this[PREVIEW]
   }
 

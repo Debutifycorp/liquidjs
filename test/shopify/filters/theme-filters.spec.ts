@@ -127,6 +127,11 @@ describe('shopify filters the three themes use', () => {
       expect(first).toBe(`<img src="${url(500)}" alt="Cap" srcset="${url(352)} 352w" width="500" height="500" loading="lazy" sizes="50vw" ref="b" class="x">`)
       expect(second).toBe(`<img src="${url(500)}" alt="Cap" srcset="${url(352)} 352w" width="500" height="500" class="x">`)
     })
+    it('gives a media preview image no id, so a card passing it as data-media-id prints none', async () => {
+      const media = new ImageDrop({ src: '//shop.example/cdn/shop/files/cap.jpg?v=1', width: 1024, height: 1024, id: 7 }, true)
+      const source = '{% assign card = media.preview_image | default: media %}[{{ card.id }}]|{{ media.id }}|{{ card | image_url: width: 500 | image_tag: srcset: nil, data-media-id: card.id }}'
+      expect((await render(source, { media })).html).toBe(`[]|7|<img src="${url(500)}" alt="" width="500" height="500">`)
+    })
     it('writes the focal point as Ruby decimals, as the focal_point object prints', async () => {
       const source = '{{ image | image_url: width: 300 | image_tag }}|{{ image.presentation.focal_point }}'
       expect((await render(source, { image: cap({ x: 50, y: 50 }) })).html).toBe(`<img src="${url(300)}" alt="Cap" srcset="${url(300)} 300w" width="300" height="300" style="object-position:50.0% 50.0%;">|50.0% 50.0%`)

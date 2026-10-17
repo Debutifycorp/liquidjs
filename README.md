@@ -87,6 +87,7 @@ One behaviour differs from upstream without an opt-in: the `slice` filter charge
 - **`default` keeps a drop.** A drop that is not empty comes back as the drop, as Ruby's filter returns its input, where 1.2 handed on its plain value: `image | default: other | image_url` keeps the image's size, so `image_tag` prints `height`.
 - **`image_tag` prints the parity store's order**: `src`, `alt`, `srcset`, `width`, `height`, `loading`, the focal-point `style`, then the named attributes as the template wrote them, `sizes` among them (1.2 printed `sizes` and `style` before `loading`). A `widths` list stops at the URL's width.
 - **A name written twice prints once.** Every filter that writes named arguments as attributes prints a name written twice where it was first written, with its last value; 1.2 printed it twice.
+- **A media preview image has no `id`.** `media.preview_image.id` is nil, as the parity store prints it, where 1.2 gave the media's id.
 - **A focal point prints as Ruby decimals**: `50.0% 50.0%`, where 1.2 printed `50% 50%`, in `focal_point` and in `image_tag`'s `style`; `1.9231% 9.7917%` is unchanged.
 - **The colour filters return a colour object.** `color_darken`, `color_lighten`, `color_saturate`, `color_desaturate`, `color_modify` and `color_mix` return a `ColorDrop` that prints the text 1.2 returned and also answers `.red`, `.green`, `.blue` and the other fields of a colour. A caller that checks `typeof result === 'string'` reads `String(result)` instead. A `ColorDrop`, a `color` setting's included, writes its text through `json` (`"#334fb4"`).
 
@@ -473,6 +474,7 @@ These lines were matched against the parity store's private recordings of Horizo
 - [`powered_by_link`](https://shopify.dev/docs/api/liquid/objects/powered_by_link) prints the page's link, with `Commerce électronique propulsé par Shopify` on the French page.
 - [`image_tag`](https://shopify.dev/docs/api/liquid/filters/image_tag) prints `src`, `alt`, `srcset`, `width`, `height`, `loading`, then the named attributes as written (`sizes` among them); a name written twice prints once, where it was first written, with its last value; a `widths` list stops at the URL's width (`240, 352, 832, 1200` from a 500-pixel URL prints `240w` and `352w`); and the image passed through `default` keeps its `height`.
 - A focal point prints as Ruby decimals, `50.0% 50.0%` (Horizon's resource cards).
+- A media's `preview_image` has a nil `id`: Horizon's resource cards pass it as `data-media-id` and print none, where the card's second image, `media[1].id`, prints the media's id.
 - [`color_darken`](https://shopify.dev/docs/api/liquid/filters/color_darken) and [`color_lighten`](https://shopify.dev/docs/api/liquid/filters/color_lighten) return a colour that answers `.red`, `.green` and `.blue`: Dawn prints `191,191,191` for white darkened by 25.
 
 ### Behaviours still to confirm on Shopify
