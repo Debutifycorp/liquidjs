@@ -1,3 +1,4 @@
+import { LiquidFloat } from '../../util/liquid-float'
 import { ImageDrop } from '../objects/image'
 import { HandleMap } from '../objects/handle-map'
 import { buildMetafields } from '../objects/metafield'
@@ -156,7 +157,10 @@ function buildMedia (media: MediaData, index?: number, title = ''): unknown {
     hidden(drop as unknown as LiquidObject, IMAGE_ROLE, { role: 'media' } satisfies ImageRole)
     return drop
   }
-  return { ...media, alt: media.alt ?? '', preview_image: image(media.preview_image), position }
+  // https://shopify.dev/docs/api/liquid/objects/video and https://shopify.dev/docs/api/liquid/objects/external_video: `aspect_ratio` is "the aspect ratio of the video as a decimal", the data's, else the width over the height of a hosted video's first sized source, else of its preview image; a hosted video's `duration` is in milliseconds, nil when the data has none
+  const sized = media.media_type === 'video' ? media.sources.find(source => source.width && source.height) : undefined
+  const ratio = media.media_type === 'video' && media.aspect_ratio ? media.aspect_ratio : sized ? sized.width! / sized.height! : media.preview_image?.width && media.preview_image.height ? media.preview_image.width / media.preview_image.height : null
+  return { ...media, alt: media.alt ?? '', preview_image: image(media.preview_image), position, aspect_ratio: ratio === null ? null : new LiquidFloat(ratio), ...(media.media_type === 'video' ? { duration: media.duration ?? null } : {}) }
 }
 
 /** Whether two image entries are the same image: matched by `id` when both have one, by `src` otherwise. */
@@ -397,6 +401,14 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
     metafields: buildMetafields(data.metafields, resolve)
   }
   for (const variant of variants) hidden(variant, 'product', product)
+  // https://shopify.dev/docs/api/liquid/objects/image: an image of `product.images` (and so `product.featured_image`) is `attached_to_variant?` when a variant shows it, and lists those `variants`; not enumerable, as the image's other places are, so `json` and `inspect` print the image as before. Dawn hides the other variants' media with `product.images | where: 'attached_to_variant?', true` (the parity store's gallery shows the hoodie's four, its recording `page-product`)
+  for (const [i, drop] of images.entries()) {
+    const stored = (data.images ?? [])[i]
+    const showing = variants.filter(variant => variant.featured_image && sameImage((variant.featured_image as ImageDrop).data, stored))
+    Object.defineProperty(drop, 'attached_to_variant?', { value: showing.length > 0, enumerable: false })
+    Object.defineProperty(drop, 'variants', { value: showing, enumerable: false })
+    Object.defineProperty(drop, 'product_id', { value: data.id, enumerable: false })
+  }
   // marks a built product for the `json` filter, which prints it with `productLiquidJson`
   hidden(product, PRODUCT_MARKER, true)
   keepOptionInfo(product, infos)
