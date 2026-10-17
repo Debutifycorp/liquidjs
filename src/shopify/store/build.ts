@@ -1,5 +1,7 @@
 import { ImageDrop } from '../objects/image'
 import { HandleMap } from '../objects/handle-map'
+import { buildMetafields } from '../objects/metafield'
+import type { MetafieldResolver } from '../objects/metafield'
 import { buildOptions, keepOptionInfo, optionInfoOf, optionValueId, OptionsByNameDrop, SwatchDrop } from '../objects/product-option'
 import type { OptionValueInfo } from '../objects/product-option'
 import type { ImageData } from '../types'
@@ -220,7 +222,7 @@ function buildAllocation ({ group, plan, data }: PlanOffer, price: number, curre
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/variant. `url` carries `?variant=<id>` as that page documents. `inventory_quantity`, `inventory_policy` (`deny` unless the data says `continue`), `inventory_management` (nil unless the data says `shopify`), `weight` (grams, 0 when the data has none) and `requires_shipping` (true unless the data says otherwise) come from the data, as that page lists them and as the parity store prints them (fixtures `probe-product-default` and `ajax-product-js`). `selected` is false here: it is the request that selects a variant (`selectProduct`). `unit_price_measurement` is left empty and `quantity_rule` holds Shopify's defaults; shopify.dev documents the fields but this layer has no data for them. `selling_plan_allocations` is one allocation per plan of every group that offers the variant (`plans`, see `buildSellingPlanGroup`), `requires_selling_plan` the product's, and `selected_selling_plan_allocation` nil until a request selects a plan (`selectSellingPlan`). `featured_image` and `featured_media` are the product's own image, so they carry the `position` of the matching entry in `product.images` and `product.media` (nil when the product does not list that image); shopify.dev does not say so, and it goes on the confirm-on-a-development-store list with the counting base. `price` and `compare_at_price` are in the view's currency when `currency` is given (`convert`: the market's rate, price adjustment and rounding, https://help.shopify.com/en/manual/international/pricing/exchange-rates), the dataset's shop-currency amounts otherwise; a variant without a compare-at price keeps nil. A market that hides compare-at prices (`ViewCurrency.hide_compare_at_prices`, Shopify's "Hide compare-at" setting, https://help.shopify.com/en/manual/compliance/legal/pricing-indication-directive) gives its variants none: nil, as the parity store prints the hoodie's on-sale variant in the Europe market (fixture `probe-product-en-eu-hoodie`). */
-function buildVariant (variant: VariantData, productUrl: string, productImages: ImageData[], productMedia: MediaData[], currency?: ViewCurrency, plans: PlanOffer[] = [], requiresPlan = false, title = ''): LiquidObject {
+function buildVariant (variant: VariantData, productUrl: string, productImages: ImageData[], productMedia: MediaData[], currency?: ViewCurrency, plans: PlanOffer[] = [], requiresPlan = false, title = '', resolve?: MetafieldResolver): LiquidObject {
   const options = [variant.option1, variant.option2, variant.option3].filter((option): option is string => typeof option === 'string')
   const featured = variant.image ? new ImageDrop(variant.image, false, positionIn(productImages, variant.image), title) : null
   const price = currency ? convert(variant.price, currency) : variant.price
@@ -250,7 +252,8 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
     selling_plan_allocations: plans.map(offer => buildAllocation(offer, price, currency)),
     requires_selling_plan: requiresPlan,
     selected_selling_plan_allocation: null,
-    quantity_rule: { min: 1, max: null, increment: 1 }
+    quantity_rule: { min: 1, max: null, increment: 1 },
+    metafields: buildMetafields(variant.metafields, resolve)
   }
   // marks a built variant for the `json` filter, which prints it with `variantLiquidJson`, and its images with the place they have in it
   hidden(built, VARIANT_MARKER, true)
@@ -284,7 +287,7 @@ function optionValueInfos (data: ProductData, options: string[], variants: Liqui
 /**
  * https://shopify.dev/docs/api/liquid/objects/product. The product's and its variants' URLs sit under `prefix` (the view's base path and locale prefix, as the parity store prints them, fixture `probe-page-fr-ca`). `price` is the lowest variant price and `compare_at_price` the lowest variant compare-at price, as that page documents them; `compare_at_price` is nil when no variant has one, as the parity store prints it (fixtures `probe-product-in-collection` and `probe-product-plans`: `null` for men-t-shirt and slides; shopify.dev does not pin that case), so dividing by it raises "divided by 0" as Ruby does. `first_available_variant` is nil when no variant is available (the page: "The first available variant of the product"; fixture `probe-product-en-eu-leggings`, whose variants are all sold out, records null), while `selected_or_first_available_variant` (no `?variant=` is known here) then falls back to the first variant, as the page says, and so does each option's `selected_value` (the same fixture); `options_with_values` and `has_only_default_variant` follow the same page, each option's `values` being `product_option_value` objects (`buildOptions`) for the selected-or-first-available variant's values, and `options_by_name` finds an option by its name in any case (`OptionsByNameDrop`). `selling_plan_groups` are the data's (`buildSellingPlanGroup`), `requires_selling_plan` the data's flag, and `selected_selling_plan` and `selected_selling_plan_allocation` nil until a request selects a plan (`selectSellingPlan`). `selected_or_first_available_selling_plan_allocation` is, with nothing selected, "the first allocation on the first available variant", or on the first variant when none is available, and nil when the product has no selling plans (https://shopify.dev/docs/api/liquid/objects/product#product-selected_or_first_available_selling_plan_allocation); the parity store prints it for every product with plans, not only one that requires them (fixtures `probe-product-plans` and `probe-product-requires-plan`: 71001 and 71003). Every price field is in the view's currency when `currency` is given, because the variants' are (`buildVariant`) and the product's are the lowest and highest of them; the parity store's product-level `compare_at_price` is the lowest converted variant compare-at price in the markets that show them (fixtures `probe-product-default` and `probe-product-en-ca`: 110.00 USD and 149.00 CAD, with one variant on sale) and nil in one that hides them, with `compare_at_price_min` and `compare_at_price_max` 0 as for any product without one (fixtures `probe-product-en-eu-hoodie` and `ajax-product-js`).
  */
-export function buildProduct (data: ProductData, prefix = '', currency?: ViewCurrency): LiquidObject {
+export function buildProduct (data: ProductData, prefix = '', currency?: ViewCurrency, resolve?: MetafieldResolver): LiquidObject {
   const url = withPrefix(prefix, `/products/${data.handle}`)
   // The image `position` counts from 1, which shopify.dev's image page does not state (its example shows 1 for the first image) and the parity store prints (fixture `probe-product-default`: the first variant's image, the hoodie's sixth, prints `position` 6 in `product | json`).
   const images = (data.images ?? []).map((img, i) => {
@@ -299,7 +302,7 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
   const groups = groupData.map(group => buildSellingPlanGroup(group, currency))
   const variants = data.variants.map(variant => {
     const offers = groupData.flatMap((group, g) => offersVariant(group, variant) ? group.selling_plans.map((plan, i) => ({ group: groups[g], plan: (groups[g].selling_plans as LiquidObject[])[i], data: plan })) : [])
-    return buildVariant(variant, url, data.images ?? [], mediaData, currency, offers, !!data.requires_selling_plan, data.title)
+    return buildVariant(variant, url, data.images ?? [], mediaData, currency, offers, !!data.requires_selling_plan, data.title, resolve)
   })
   const options = data.options ?? ['Title']
   const prices = variants.map(variant => variant.price as number)
@@ -352,7 +355,7 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
     template_suffix: data.template_suffix ?? null,
     created_at: data.created_at ?? null,
     published_at: data.published_at ?? null,
-    metafields: data.metafields ?? {}
+    metafields: buildMetafields(data.metafields, resolve)
   }
   for (const variant of variants) hidden(variant, 'product', product)
   // marks a built product for the `json` filter, which prints it with `productLiquidJson`
@@ -454,7 +457,7 @@ export function selectSellingPlan (product: LiquidObject, planId: number | undef
 /**
  * https://shopify.dev/docs/api/liquid/objects/collection, at its URL under `prefix`. Filtering, tags and sorting are not applied here (`collectionView` applies them per request): `products` is the collection's product list as given, `filters` are the store's storefront filters over those products (`buildFilters`, in the view `currency` when given), built when first read and kept, so a store build does not pay for collections no page shows, `default_sort_by` is the collection's `sort_order` (`manual` when it has none, or one that is no sort value) and `sort_options` lists the options the parity store lists, `Most relevant` included (fixture `probe-collection-all`). `tags` are read when asked. A collection of the store's has the tags of all its products, on any page and whatever the request's filters, as the parity store prints them (fixtures `probe-collection-suffix`, `probe-collection-suffix-page-3` and `probe-collection-suffix-filtered`: `featured` prints the same six tags on its first page, which holds no shoe, on its third, which holds one product, and under `filter.p.tag=women`, which shows two), although https://shopify.dev/docs/api/liquid/objects/collection#collection-tags says they do not "include tags for products that have been filtered out of the current view"; the fixture wins. A collection Shopify makes itself (`AUTOMATIC_COLLECTIONS`) has the tags of the products in `products`, so inside a `paginate` block the tags of the page's products, as the parity store prints them (fixtures `probe-collection-all`, `probe-collection-page-2`, `probe-collection-page-past`, where the page after the last has none, the `probe-collection-filter-*` fixtures and `probe-collection-vendors`). A store collection under a tag path or a sort is not recorded and takes the same rule.
  */
-export function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>, filters: FilterData[] | undefined, prefix: string, currency?: ViewCurrency): LiquidObject {
+export function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>, filters: FilterData[] | undefined, prefix: string, currency?: ViewCurrency, resolve?: MetafieldResolver): LiquidObject {
   const items = data.products.map(handle => HandleMap.get(products, handle)).filter((product): product is LiquidObject => !!product)
   // `products` lists the collection in its default order wherever it is read, not only on the collection page: https://shopify.dev/docs/api/liquid/objects/collection#collection-default_sort_by; the parity store lists `collections['all'].products` by title in the header's predictive search suggestions and the empty cart's featured collection (scenarios `page-home` and `page-cart-empty`), where the data's order is Slides, Sweatpants, Men's T-shirt, Hoodie. The store data's order is the manual one (`MANUAL_ORDER`), which the collection page's own sort starts from (`collectionView`).
   // a `sort_order` that is none of the sort values reads as `manual`, the data's own order, and not as the order of the handles that `Array.sort` falls back to for a value it has no comparison for (final review B, M5). https://shopify.dev/docs/api/liquid/objects/collection#collection-default_sort_by lists manual, best-selling, title-ascending, price-ascending, price-descending, created-ascending and created-descending; `title-descending` is the sort option that page's `sort_options` lists besides. Nothing says the data may name another order, so one that does is read as the first value listed.
@@ -511,19 +514,19 @@ export function buildCollection (data: CollectionData, products: HandleMap<Liqui
     ],
     // https://shopify.dev/docs/api/liquid/objects/collection#collection-template_suffix; nil when it uses the base template (fixture `probe-collection-default`)
     template_suffix: data.template_suffix ?? null,
-    metafields: data.metafields ?? {}
+    metafields: buildMetafields(data.metafields, resolve)
   })
   hidden(collection, MANUAL_ORDER, items)
   return collection
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/page, at its URL under `prefix`; `template_suffix` is the data's (https://shopify.dev/docs/api/liquid/objects/page#page-template_suffix), nil for the base template (fixture `probe-page-home`). */
-function buildPage (data: PageData, prefix: string): LiquidObject {
-  return printsHandle({ ...data, url: withPrefix(prefix, `/pages/${data.handle}`), template_suffix: data.template_suffix ?? null, published_at: data.published_at ?? null, metafields: data.metafields ?? {} })
+function buildPage (data: PageData, prefix: string, resolve?: MetafieldResolver): LiquidObject {
+  return printsHandle({ ...data, url: withPrefix(prefix, `/pages/${data.handle}`), template_suffix: data.template_suffix ?? null, published_at: data.published_at ?? null, metafields: buildMetafields(data.metafields, resolve) })
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/article, at its URL under `prefix`. Comments are not modelled: `comments` is empty and `comments_enabled?` false. */
-function buildArticle (data: ArticleData, blogHandle: string, prefix: string): LiquidObject {
+function buildArticle (data: ArticleData, blogHandle: string, prefix: string, resolve?: MetafieldResolver): LiquidObject {
   const author = data.author ?? ''
   const article = printsHandle({
     id: data.id,
@@ -542,7 +545,7 @@ function buildArticle (data: ArticleData, blogHandle: string, prefix: string): L
     comments: [],
     comments_count: 0,
     'comments_enabled?': false,
-    metafields: {}
+    metafields: buildMetafields(data.metafields, resolve)
   })
   hidden(article, ARTICLE_MARKER, true)
   return article
@@ -575,9 +578,9 @@ const DATA_ORDER = 'articles_in_data_order'
 export const articlesInDataOrder = (blog: LiquidObject): LiquidObject[] => (blog[DATA_ORDER] as LiquidObject[] | undefined) ?? blog.articles as LiquidObject[]
 
 /** https://shopify.dev/docs/api/liquid/objects/blog, at its URL under `prefix`. Comments are not modelled: `comments_enabled?` and `moderated?` are false. */
-function buildBlog (data: BlogData, prefix: string): LiquidObject {
+function buildBlog (data: BlogData, prefix: string, resolve?: MetafieldResolver): LiquidObject {
   // a blog lists its articles newest first, https://shopify.dev/docs/api/liquid/objects/blog#blog-articles ("all of the articles in the blog"): the parity store's blog page starts with the latest article (scenario `page-blog`); articles published at the same time keep the data's order, and one with no date comes last
-  const inDataOrder = data.articles.map(article => buildArticle(article, data.handle, prefix))
+  const inDataOrder = data.articles.map(article => buildArticle(article, data.handle, prefix, resolve))
   const articles = newestFirst(inDataOrder)
   const blog = printsHandle({
     id: data.id,
@@ -590,7 +593,7 @@ function buildBlog (data: BlogData, prefix: string): LiquidObject {
     tags: [],
     'comments_enabled?': false,
     'moderated?': false,
-    metafields: {}
+    metafields: buildMetafields(data.metafields, resolve)
   })
   hidden(blog, DATA_ORDER, inDataOrder)
   return blog
@@ -902,7 +905,7 @@ function buildOrder (data: OrderData, products: HandleMap<LiquidObject>, prefix:
 /**
  * https://shopify.dev/docs/api/liquid/objects/customer, built from `data`, whose other fields are kept as given. `name` joins the first and last names; `addresses` are address objects (`buildAddress`) with `addresses_count`, and `default_address` is the one `default_address_id` names, the first address without it, or nil without addresses; `orders` are order objects (`buildOrder`) in the order the data gives them, each with this customer as its `customer`, with `orders_count`, `last_order` (the order created last) and `total_spent` (the sum of the orders' `total_net_amount`). The customer is not B2B, has an account, has no avatar, saved payment methods, store credit or company locations, and accepts marketing and is tax exempt only when the data says so.
  */
-function buildCustomer (data: CustomerData, products: HandleMap<LiquidObject>, prefix: string, currency: ViewCurrency): LiquidObject {
+function buildCustomer (data: CustomerData, products: HandleMap<LiquidObject>, prefix: string, currency: ViewCurrency, resolve?: MetafieldResolver): LiquidObject {
   const { addresses: addressData, orders: orderData, default_address_id: defaultId, ...rest } = data
   const addresses = (addressData ?? []).map(address => buildAddress(address, true, prefix))
   const orders = (orderData ?? []).map(order => buildOrder(order, products, prefix, currency))
@@ -936,7 +939,7 @@ function buildCustomer (data: CustomerData, products: HandleMap<LiquidObject>, p
     current_company: null,
     current_location: null,
     store_credit_account: null,
-    metafields: data.metafields ?? {}
+    metafields: buildMetafields(data.metafields, resolve)
   }
   for (const order of orders) hidden(order, 'customer', customer)
   return customer
@@ -1003,15 +1006,23 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   const { prefix } = view
   const source = translateData(data, view.language)
   const currency = currencyOf(data, view)
-  const products = new HandleMap((source.products ?? []).map(product => [product.handle, buildProduct(product, prefix, currency)]))
+  // a reference metafield points at an object of this view, which is read when the metafield's `value` is (`MetafieldDrop`), after the view is built
+  let ready: StoreObjects | undefined
+  const resolve: MetafieldResolver = (kind, key) => {
+    if (!ready) return null
+    if (kind === 'variant') return HandleMap.values(ready.products).flatMap(product => product.variants as LiquidObject[]).find(variant => String(variant.id) === key) ?? null
+    const map = kind === 'product' ? ready.products : kind === 'collection' ? ready.collections : kind === 'page' ? ready.pages : undefined
+    return map ? HandleMap.get(map, key) ?? null : null
+  }
+  const products = new HandleMap((source.products ?? []).map(product => [product.handle, buildProduct(product, prefix, currency, resolve)]))
   // Every shop answers `collections.all` with all its products. https://shopify.dev/docs/api/liquid/objects/collections
   // its default order is by title (fixture `probe-collection-all`)
   const all = buildCollection({ id: 0, handle: 'all', title: 'Products', products: (source.products ?? []).map(product => product.handle), sort_order: 'title-ascending' }, products, data.filters, prefix, currency)
   // a collection Shopify makes has no id: the parity store prints Dawn's and Horizon's `data-collection-id="{{ collection.id }}"` empty on `/collections/all` (their recordings `page-collection-filtered`)
   all.id = null
   // `collections` lists the store's collections alphabetically by title, whatever order the data has them in: https://shopify.dev/docs/api/liquid/objects/collections shows its example sorted so, and the parity store lists /collections that way (scenario `page-collections`: Accessories, Bottoms, Featured, Home page, Men, Shoes, Tops, Unisex, Women)
-  const collections = new HandleMap((source.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters, prefix, currency)]), [['all', all]], byTitle)
-  const blogs = new HandleMap((source.blogs ?? []).map(blog => [blog.handle, buildBlog(blog, prefix)]))
+  const collections = new HandleMap((source.collections ?? []).map(collection => [collection.handle, buildCollection(collection, products, data.filters, prefix, currency, resolve)]), [['all', all]], byTitle)
+  const blogs = new HandleMap((source.blogs ?? []).map(blog => [blog.handle, buildBlog(blog, prefix, resolve)]))
   const localization = buildLocalization(data, view)
   const shippingCountries = data.country_option_tags ?? [{ name: String((localization.country as LiquidObject | null)?.name ?? '') }]
   // the articles keep the store data's order here, which the search and the predictive search rank their ties by (fixture `probe-search-prefix`: the older article of two equal matches comes first), while a blog lists them newest first
@@ -1055,11 +1066,11 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
       terms_of_service: policyOf('terms_of_service'),
       // "The password page message of the store", https://shopify.dev/docs/api/liquid/objects/shop#shop-password_message
       password_message: source.shop.password_message ?? null,
-      metafields: data.shop.metafields ?? {}
+      metafields: buildMetafields(data.shop.metafields, resolve)
     },
     products,
     collections,
-    pages: new HandleMap((source.pages ?? []).map(page => [page.handle, buildPage(page, prefix)])),
+    pages: new HandleMap((source.pages ?? []).map(page => [page.handle, buildPage(page, prefix, resolve)])),
     blogs,
     articles,
     policies: new HandleMap(policies.map(policy => [policyHandle(policy.type), policy.built])),
@@ -1067,7 +1078,7 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
     videos: Object.fromEntries(Object.entries(data.videos ?? {}).map(([name, video]) => [name, buildMedia(video) as LiquidObject])),
     linklists: source.linklists ?? [],
     cart: {},
-    customer: data.customer ? buildCustomer(data.customer, products, prefix, currency) : null,
+    customer: data.customer ? buildCustomer(data.customer, products, prefix, currency, resolve) : null,
     localization,
     currency,
     country_option_tags: countryOptionTags(shippingCountries),
@@ -1077,5 +1088,6 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   }
   // the cart reads the products, the currency and the prefix of the objects above
   objects.cart = buildCartObject(objects, cartStateOf(data.cart))
+  ready = objects
   return objects
 }
