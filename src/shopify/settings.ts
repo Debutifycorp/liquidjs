@@ -119,7 +119,8 @@ export function settingUrl (value: unknown, prefix = ''): string | null {
   if (value === 'shopify://search' || value === 'shopify://search/') return withPrefix(prefix, '/search')
   if (value === 'shopify://cart') return withPrefix(prefix, '/cart')
   const match = RESOURCE_URL.exec(value)
-  return match ? withPrefix(prefix, `/${match[1]}/${match[2]}`) : value
+  // a root-relative path (Horizon's `empty_cart_button_link` default `/collections/all`) is a page of the store too, so it takes the prefix as well: the parity store prints `/fr-ca/collections/all` and `/en-eu/collections/all` for it (scenarios `page-home-fr-ca` and `page-product-en-eu` of the Horizon recording); an address with a host, or starting `//`, is left as it is
+  return match ? withPrefix(prefix, `/${match[1]}/${match[2]}`) : withPrefix(prefix, value)
 }
 
 function fromFileReference (value: unknown, prefix: string): string | undefined {

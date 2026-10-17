@@ -430,7 +430,7 @@ describe('shopify/settings colour schemes', () => {
     expect(await pick(undefined, undefined)).toBe('scheme-1|#336699')
     expect(await pick(['scheme-2'], 7)).toBe('scheme-1|#336699')
   })
-  // as the parity store renders it (scenario `page-home-fr-ca`: a `url` setting stored as `shopify://collections/all` prints `/fr-ca/collections/all`): a link to a page of the shop takes the view's prefix. A path or an address written out is not a resource link and stays as written (no recording pins it)
+  // as the parity store renders it (scenario `page-home-fr-ca`: a `url` setting stored as `shopify://collections/all` prints `/fr-ca/collections/all`): a link to a page of the shop takes the view's prefix. A root-relative path takes it too (Horizon's `empty_cart_button_link` default `/collections/all` prints `/fr-ca/collections/all` in the recording; a stored path is taken to behave like the default, which no recording pins), and an address written out stays as written (no recording pins it)
   it('puts the view prefix before the page a url setting names', async () => {
     const definitions = [{ type: 'url', id: 'link' }]
     const link = (stored: string, prefix?: string) => render('{{ s.link }}', { s: new SettingsDrop(definitions, { link: stored }, env({ prefix })) })
@@ -439,7 +439,7 @@ describe('shopify/settings colour schemes', () => {
     expect(await link('shopify://products/hoodie', '/fr-ca')).toBe('/fr-ca/products/hoodie')
     expect(await link('shopify://collections/all', '')).toBe('/collections/all')
     expect(await link('shopify://collections/all')).toBe('/collections/all')
-    expect(await link('/pages/about', '/fr-ca')).toBe('/pages/about')
+    expect(await link('/pages/about', '/fr-ca')).toBe('/fr-ca/pages/about')
     expect(await link('https://example.com/a', '/fr-ca')).toBe('https://example.com/a')
     expect(await link('shopify://metaobjects/team/ada', '/fr-ca')).toBe('shopify://metaobjects/team/ada')
   })

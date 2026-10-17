@@ -57,6 +57,11 @@ export class ProductOptionValueDrop extends Drop {
     this.variant = variant
   }
 
+  /** The length of the name in characters, as Ruby's `String#size` gives it: Horizon's picker compares `product_option_value.size` with the longest value so far and prints `--variant-ch: 3.9em` for a six-letter value (the parity store's recordings of Horizon's product pages). */
+  public get size () {
+    return [...this.name].length
+  }
+
   public valueOf () {
     return this.name
   }

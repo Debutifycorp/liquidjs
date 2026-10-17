@@ -284,6 +284,17 @@ describe('views and the URL prefix', () => {
     const plain = requestFromUrl('/', data)
     expect((await renderPage({ theme: { files }, templateName: 'index', data, request: plain.request, locale: plain.locale })).html).toContain('/collections/all|')
   })
+  // as the parity store renders Horizon (scenarios `page-home-fr-ca` and `page-product-en-eu`): the `empty_cart_button_link` url setting's default `/collections/all` prints as `/fr-ca/collections/all` and `/en-eu/collections/all`
+  it('puts the view prefix before a url setting that holds a root-relative path, and leaves other values alone', async () => {
+    const link = (value: string) => ({ ...headerTheme('{{ settings.link }}|{{ content_for_layout }}').files, 'config/settings_schema.json': '[{"name":"x","settings":[{"type":"url","id":"link"}]}]', 'config/settings_data.json': JSON.stringify({ current: { link: value } }) })
+    const page = requestFromUrl('/p/tok/fr-ca', data, { basePath: '/p/tok' })
+    const html = async (value: string) => (await renderPage({ theme: { files: link(value) }, templateName: 'index', data, request: page.request, locale: page.locale })).html
+    expect(await html('/collections/all')).toContain('/p/tok/fr-ca/collections/all|')
+    expect(await html('https://example.com/collections/all')).toContain('https://example.com/collections/all|')
+    expect(await html('//cdn.example.com/x')).toContain('//cdn.example.com/x|')
+    const plain = requestFromUrl('/', data)
+    expect((await renderPage({ theme: { files: link('/collections/all') }, templateName: 'index', data, request: plain.request, locale: plain.locale })).html).toContain('/collections/all|')
+  })
   it('sets Shopify.routes.root and defines Shopify.analytics in content_for_header', async () => {
     const theme = headerTheme('<head>{{ content_for_header }}</head>{{ content_for_layout }}')
     const page = requestFromUrl('/p/tok/fr-ca', data, { basePath: '/p/tok' })

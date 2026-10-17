@@ -28,6 +28,11 @@ const PICKER = '{% for option in p.options_with_values %}{{ option.name }}:{% fo
 const idsOf = async (product: object) => (await render('{% for option in p.options_with_values %}{% for value in option.values %}{{ value.id }},{% endfor %}{% endfor %}', { p: product })).split(',').filter(Boolean).map(Number)
 
 describe('product_option_value', () => {
+  // Horizon's variant picker reads `product_option_value.size > longest_value` and prints `--variant-ch: {{ longest_value | times: 0.65 }}em`; the parity store prints 3.9em and 4.55em there (recordings of Horizon's product pages), so `size` is the length of the name
+  it('gives an option value the length of its name as size', async () => {
+    const source = '{% assign longest = 0 %}{% for option in p.options_with_values %}{% for value in option.values %}{% if value.size > longest %}{% assign longest = value.size %}{% endif %}{% endfor %}{% endfor %}{{ p.options_with_values[0].values[0].size }}|{{ longest }}|{{ longest | times: 0.65 }}'
+    expect(await render(source, { p: buildProduct(tee) })).toBe('3|4|2.6')
+  })
   it('gives each option value its name, id, availability, selection and variant', async () => {
     const product = buildProduct(tee)
     expect(await render(PICKER, { p: product })).toBe('Color:Red*=1 Clay(x)=3 Blue=5 |Size:S*=1 M=2 |1')
