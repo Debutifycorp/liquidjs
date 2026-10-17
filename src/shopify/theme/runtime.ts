@@ -57,7 +57,7 @@ export interface RenderPageOptions {
   /** LiquidJS's allocation units for the whole page (default: the preset's `memoryLimit`). */
   memoryLimit?: number
   /**
-   * The address the theme's compiled `{% stylesheet %}` and `{% javascript %}` files are served under, ending in `/` (`/compiled_assets/`, `/p/<token>/compiled_assets/`). With it, `content_for_header` links them as Shopify does: `<link rel="stylesheet" media="screen" href="<url>styles.css?v=<version>">`, and `<script id="sections-script" data-sections="<sections>" defer="defer" src="<url>scripts.js?v=<version>"></script>` when the page rendered a section with a `{% javascript %}`; the server serves `CompiledTheme.compiledAssets()` there (the `/storefront` entry does). Without it, for a page rendered with no server behind it, the bodies the page rendered are inlined in `content_for_header`, which needs no second request.
+   * The address the theme's compiled `{% stylesheet %}` and `{% javascript %}` files are served under, ending in `/` (`/compiled_assets/`, `/p/<token>/compiled_assets/`). With it, `content_for_header` links them as Shopify does: `<link rel="stylesheet" media="screen" href="<url>styles.css?v=<version>">`, and `<script id="sections-script" data-sections="<sections>" defer="defer" src="<url>scripts.js?v=<version>"></script>` when the page rendered a section with a `{% javascript %}`; the server serves `CompiledTheme.compiledAssets()` there (the `/storefront` entry does). Without it (or with `''`), for a page rendered with no server behind it, the bodies the page rendered are inlined in `content_for_header`, which needs no second request.
    */
   compiledAssetsUrl?: string
   /** Characters per parsed file (default: the preset's `parseLimit`, 10,000,000). Part of the compiled theme: renders of one `theme` object with different values compile it once per value. */
@@ -484,8 +484,9 @@ class PageRender implements ThemeHooks {
       return `${escapeHtml(this.fail(err))}${content}`
     }
     const html = (yield this.theme.liquid.renderer.renderTemplates(templates, this.child({ content_for_layout: content, content_for_header: this.headerMarker }))) as string
+    // an empty address would make the links relative to the page; it is read as none
     const url = this.options.compiledAssetsUrl
-    return html.split(this.headerMarker).join(contentForHeader(this.state, this.globals, url === undefined ? undefined : { url, assets: this.theme.compiledAssets() }))
+    return html.split(this.headerMarker).join(contentForHeader(this.state, this.globals, url ? { url, assets: this.theme.compiledAssets() } : undefined))
   }
 
   /**

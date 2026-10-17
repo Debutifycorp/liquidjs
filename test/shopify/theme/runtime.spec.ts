@@ -35,7 +35,7 @@ describe('shopify/theme/runtime', () => {
     const head = html.slice(html.indexOf('<title>'), html.indexOf('</head>'))
     expect(head).toContain('<script>var Shopify = Shopify || {};Shopify.shop = "sample-store.example";Shopify.locale = "en";Shopify.currency = {"active":"USD","rate":"1.0"};Shopify.country = "US";Shopify.designMode = false;')
     expect(head).toContain('<style data-shopify="stylesheet-tags">.hero { color: red; }\nheader { display: flex; }</style>')
-    expect(head).toContain("<script>document.addEventListener('DOMContentLoaded', function () {\n(function () {\nconsole.log('hero')<\\/script>\n})();\n});</script>")
+    expect(head).toContain("<script>document.addEventListener('DOMContentLoaded', function () {\n(function () {\ntry {\nconsole.log('hero')<\\/script>\n} catch (e) { console.error(e); }\n})();\n});</script>")
     expect(head).toContain('@font-face {\n  font-family: Assistant;')
   })
   it('chooses the contextual section group file for the request', async () => {

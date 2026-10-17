@@ -140,7 +140,7 @@ describe('the compiled {% stylesheet %} and {% javascript %} files', () => {
     expect(html).not.toContain('.hero { color: red; }')
     expect(html).not.toContain('console.log("hero")')
     // a block's and a snippet's javascript have files of their own on Shopify (`block-scripts.js`, `snippet-scripts.js`) that no recording shows, so they stay inline
-    expect(html).toContain("<script>document.addEventListener('DOMContentLoaded', function () {\n(function () {\nbadge()\n})();\n});</script>")
+    expect(html).toContain("<script>document.addEventListener('DOMContentLoaded', function () {\n(function () {\ntry {\nbadge()\n} catch (e) { console.error(e); }\n})();\n});</script>")
   })
 
   it('holds the stylesheets of the files a page rendered before the files were first compiled', async () => {
@@ -148,6 +148,30 @@ describe('the compiled {% stylesheet %} and {% javascript %} files', () => {
     const theme = styledTheme()
     await linked(theme)
     expect(compileTheme(theme).compiledAssets().styles?.body).toContain('/* START_SNIPPET:price (INDEX:5) */\n.price { font-weight: bold; }\n/* END_SNIPPET:price */')
+  })
+
+  // shopify.dev: each body is "wrapped in a self-executing anonymous function" so "runtime exceptions won't affect other sections", and the parity store's compiled `scripts.js` wraps each in `try { … } catch(e) { console.error(e); }`; an inlined body is isolated the same way
+  it('runs every inlined javascript body even when one throws', async () => {
+    const page = requestFromUrl('/', data)
+    const theme = homeTheme({ a: '{% render "a" %}{% render "b" %}' }, { 'snippets/a.liquid': '{% javascript %}throw new Error("boom"){% endjavascript %}', 'snippets/b.liquid': '{% javascript %}window.ran = true{% endjavascript %}' })
+    const { html } = await renderPage({ theme, templateName: page.templateName, data, request: page.request })
+    const script = /<script>(document\.addEventListener\('DOMContentLoaded'[\s\S]*?)<\/script>/.exec(html)![1]
+    const win: Record<string, unknown> = {}
+    const logged: unknown[] = []
+    let listener: () => void = () => {}
+    // eslint-disable-next-line no-new-func
+    new Function('document', 'window', 'console', script)({ addEventListener: (_: string, fn: () => void) => { listener = fn } }, win, { error: (e: unknown) => logged.push(e) })
+    listener()
+    expect(win.ran).toBe(true)
+    expect(logged).toHaveLength(1)
+  })
+
+  it('treats an empty compiledAssetsUrl as none, and inlines', async () => {
+    const page = requestFromUrl('/', data)
+    const { html } = await renderPage({ theme: styledTheme(), templateName: page.templateName, data, request: page.request, compiledAssetsUrl: '' })
+    expect(html).not.toContain('compiled_assets')
+    expect(html).not.toContain('href="styles.css')
+    expect(html).toContain('<style data-shopify="stylesheet-tags">')
   })
 
   it('prints no link when the theme has no stylesheet, and no script tag when the page renders no section javascript', async () => {
