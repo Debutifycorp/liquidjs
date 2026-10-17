@@ -266,11 +266,13 @@ export class FormTag extends Tag {
     open += '>' + hidden('form_type', formType) + hidden('utf8', '✓')
     const before = spec.before?.(state.request) ?? []
     if ('return_to' in attributes) {
-      // an explicit `return_to` replaces the form type's own (`currency`, `localization`); Shopify's output for both is not pinned by shopify.dev
-      const returnTo: HiddenInput = { name: 'return_to', value: stringify(plainValue(attributes.return_to)) }
+      // an explicit `return_to` replaces the form type's own (`currency`, `localization`), and one that is nil or empty takes it away and prints no input: Horizon 4.3.0's localization form passes `return_to: back` with no `back` variable, and the parity store prints no `return_to` input there (its recordings of Horizon, every page), where it prints the page's address for a localization form given none (Dawn's, `value="/"` on the home page). https://shopify.dev/docs/api/liquid/tags/form says only that `return_to` sets "a URL to redirect to". An empty string is read as nil, which no recording holds.
+      const value = stringify(plainValue(attributes.return_to))
       const existing = before.findIndex(input => input.name === 'return_to')
-      if (existing === -1) before.push(returnTo)
-      else before[existing] = returnTo
+      if (value === '') {
+        if (existing !== -1) before.splice(existing, 1)
+      } else if (existing === -1) before.push({ name: 'return_to', value })
+      else before[existing] = { name: 'return_to', value }
     }
     for (const { name, value, verbatim } of before) open += hidden(name, value, verbatim)
     emitter.write(open)

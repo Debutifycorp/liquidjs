@@ -123,6 +123,14 @@ describe('form', () => {
     expect(html.match(/name="return_to"/g)).toHaveLength(1)
     expect(html).toContain('<input type="hidden" name="return_to" value="/elsewhere" />')
   })
+  // Horizon 4.3.0's localization form passes `return_to: back` with no `back` variable; the parity store prints no `return_to` input there, neither the page's address nor an empty one (recordings of Horizon, every page)
+  it('prints no return_to input when the tag is given a nil or empty return_to', async () => {
+    const localization = await render("{% form 'localization', id: 'LocalizationForm', return_to: back %}{% endform %}", {}, { path: '/products/tee' })
+    expect(localization).toBe('<form method="post" action="/localization" id="LocalizationForm" accept-charset="UTF-8" class="shopify-localization-form" enctype="multipart/form-data"><input type="hidden" name="form_type" value="localization" /><input type="hidden" name="utf8" value="✓" /><input type="hidden" name="_method" value="put" /></form>')
+    expect(await render("{% form 'currency', return_to: '' %}{% endform %}", {}, { path: '/products/tee' })).not.toContain('return_to')
+    expect(await render("{% form 'customer_login', return_to: nothing %}{% endform %}")).not.toContain('return_to')
+    expect(await render("{% form 'contact', return_to: nothing %}{% endform %}")).not.toContain('return_to')
+  })
   it('fails inline on an unknown form type', async () => expect(await render("{% form 'nope' %}{% endform %}")).toBe('Liquid error (line 1): Unknown form type: nope'))
 })
 
