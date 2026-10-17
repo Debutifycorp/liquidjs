@@ -97,8 +97,11 @@ function suffixOf (store: StoreObjects, name: string, resource: string | undefin
   return requestedResource(store, name, resource)?.template_suffix as string | null | undefined
 }
 
+/** The rules of the stylesheet Shopify links first in a policy page's `content_for_header` (`policyContent`). */
+const POLICY_CSS = '.shopify-policy__container{max-width:560px;max-width:65ch;margin:0 auto;padding-left:20px;padding-right:20px}.shopify-policy__title{text-align:center}.shopify-policy__remote-policy-heading-wrapper{text-align:center;h1{margin-bottom:20px}}.shopify-policy__remote-policy-body{margin-bottom:20px}'
+
 /**
- * The page Shopify renders for a store policy (`/policies/<handle>`) in the theme's layout, which the theme has no template for: the policy's title and body in the markup the parity store prints (its recording of `/policies/privacy-policy` under our theme and Dawn: `shopify-policy__container`, `__title` with an `h1`, `__body` with an `rte` holding the body), with the title escaped. Nothing for a policy the store has not set, whose address the storefront answers with the 404 page. Shopify also links a stylesheet of its own for the page (`policy-<hash>.css`), which is not added here.
+ * The page Shopify renders for a store policy (`/policies/<handle>`) in the theme's layout, which the theme has no template for: the policy's title and body in the markup the parity store prints (its recording of `/policies/privacy-policy` under our theme and Dawn: `shopify-policy__container`, `__title` with an `h1`, `__body` with an `rte` holding the body), with the title escaped. Nothing for a policy the store has not set, whose address the storefront answers with the 404 page. Shopify also links a stylesheet of its own for the page, first in `content_for_header` (`<link rel="stylesheet" media="all" integrity="sha256-…" crossorigin="anonymous" href="//<shop>/cdn/shopifycloud/storefront/assets/storefront/policy-0e156355.css">`, read from the parity store's `/policies/privacy-policy` under our theme and Dawn); its 294 bytes are `POLICY_CSS`, which the page puts in the header as a `<style>`, so that Dawn, whose own CSS has no `.shopify-policy__*` rule, styles the page, with no address that changes whenever Shopify rebuilds its file.
  */
 function policyContent (policy: LiquidObject | null): string {
   if (!policy) return ''
@@ -615,7 +618,10 @@ class PageRender implements ThemeHooks {
    */
   private * renderTemplate (): Generator<unknown, { content: string, layout: string | null }, unknown> {
     const name = this.templateName
-    if (this.policy !== undefined) return { content: policyContent(this.policy), layout: 'theme' }
+    if (this.policy !== undefined) {
+      if (this.policy) this.state.assets.stylesheets.set('shopify-policy.css', POLICY_CSS)
+      return { content: policyContent(this.policy), layout: 'theme' }
+    }
     const template = this.requireTemplate()
     if (template) {
       let out = ''
