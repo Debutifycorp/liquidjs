@@ -1,15 +1,32 @@
 #!/usr/bin/env node
 // Writes src/shopify-library/font-library.ts: Shopify's font library as the parity store prints it, from the fixtures of the font probes (probe-fonts-library and probe-fonts-retired-1 to -4, recorded by `pnpm parity:record --only probe-fonts` and cut by `pnpm parity:fixtures` in the Debutify repository) and shopify.dev's font page as bin/shopify-font-probes.mjs read it (test/storefront/font-page.json). The output is committed; run this again after recording the probes again.
 //
-//   node bin/shopify-font-library.mjs
+//   node bin/shopify-font-library.mjs --recorded YYYY-MM-DD
+//
+// `--recorded` is the day the probes were recorded, which the fixtures do not carry; it goes into the generated header, so give the day of the recording. `--out <file>` writes the table somewhere else (the tests regenerate it that way and compare).
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-// the day the fixtures were recorded: change it with the fixtures
-const RECORDED = '2026-10-17'
+const USAGE = 'usage: node bin/shopify-font-library.mjs --recorded YYYY-MM-DD [--out <file>]'
+
+/** The value after `--<name>`: it must be given once, with a value. */
+function option (name) {
+  const at = process.argv.flatMap((arg, index) => arg === `--${name}` ? [index] : [])
+  if (at.length > 1) throw new Error(`--${name} is given twice (${USAGE})`)
+  if (!at.length) return undefined
+  const value = process.argv[at[0] + 1]
+  if (!value || value.startsWith('--')) throw new Error(`--${name} needs a value (${USAGE})`)
+  return value
+}
+
+const extra = process.argv.slice(2).filter(arg => arg.startsWith('--') && !['--recorded', '--out'].includes(arg))
+if (extra.length) throw new Error(`unknown option ${extra.join(', ')} (${USAGE})`)
+// the day the fixtures were recorded: the fixtures carry no date, so whoever records them again says which day it was
+const RECORDED = option('recorded')
+if (!RECORDED || !/^\d{4}-\d{2}-\d{2}$/.test(RECORDED) || Number.isNaN(Date.parse(`${RECORDED}T00:00:00Z`)) || new Date(`${RECORDED}T00:00:00Z`).toISOString().slice(0, 10) !== RECORDED) throw new Error(`--recorded YYYY-MM-DD is required, the day the probes were recorded (${USAGE})`)
 const FIXTURES = fileURLToPath(new URL('../test/storefront/fixtures/', import.meta.url))
 const PAGE = fileURLToPath(new URL('../test/storefront/font-page.json', import.meta.url))
-const OUT = fileURLToPath(new URL('../src/shopify-library/font-library.ts', import.meta.url))
+const OUT = option('out') ?? fileURLToPath(new URL('../src/shopify-library/font-library.ts', import.meta.url))
 const FOLDER = '/fonts/'
 const CODES = { normal: 'n', italic: 'i', oblique: 'o' }
 

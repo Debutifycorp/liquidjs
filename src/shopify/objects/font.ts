@@ -2,11 +2,6 @@ import { Drop } from '../../drop'
 import { LiquidFloat } from '../../util/liquid-float'
 import type { FontInfo } from '../types'
 
-/** `assistant` from `assistant_n4`: the family part of a Shopify font handle. */
-export function fontSlug (handle: string): string {
-  return handle.replace(/_[nio][1-9]$/, '')
-}
-
 /** Shopify quotes a family name holding anything but letters, digits and hyphens. https://shopify.dev/docs/api/liquid/objects/font (family) */
 export function cssFamily (family: string): string {
   return /^[A-Za-z0-9-]+$/.test(family) ? family : `"${family.replace(/"/g, '\\"')}"`
@@ -44,12 +39,10 @@ export class FontDrop extends Drop {
     return this.variantDrops
   }
 
-  /** The variant with this style and weight, if the family has it. */
+  /** The variant with this style and weight, if the family has it: found among the family's fonts by their style and weight, not by rebuilding a handle (`mono` and `serif` have none of the `<family>_<style><weight>` shape). */
   public variant (style: string, weight: number): FontDrop | undefined {
-    const code = style === 'italic' ? 'i' : style === 'oblique' ? 'o' : 'n'
-    const handle = `${fontSlug(this.info.handle)}_${code}${Math.round(weight / 100)}`
-    if (handle === this.info.handle) return this
-    return this.variants.find(font => font.info.handle === handle)
+    if (style === this.info.style && weight === this.info.weight) return this
+    return this.variants.find(font => font.info.style === style && font.info.weight === weight)
   }
 
   public valueOf () {

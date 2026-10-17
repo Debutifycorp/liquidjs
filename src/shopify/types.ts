@@ -35,10 +35,10 @@ export interface FontInfo {
   fallback_families: string
   baseline_ratio: number
   system: boolean
-  /** Handles of every variant of the family, this one included. */
-  variants: string[]
+  /** Handles of every variant of the family, this one included. The default `fontInfo` gives the family's fonts one frozen array. */
+  variants: readonly string[]
   /** The font's files on Shopify's font CDN, relative to https://fonts.shopifycdn.com/ (`assistant/assistant_n4.9120912a469cad1cc292572851508ca49d12e768.woff2`). Absent for a system font and for a font outside Shopify's library. */
-  files?: { woff2: string, woff: string }
+  files?: Readonly<{ woff2: string, woff: string }>
 }
 
 /** A locale file (`locales/en.default.json`) or a section schema's `locales` entry for one language, https://shopify.dev/docs/storefronts/themes/architecture/locales/storefront-locale-files and https://shopify.dev/docs/storefronts/themes/architecture/sections/section-schema. */

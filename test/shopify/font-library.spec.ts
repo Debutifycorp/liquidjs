@@ -1,6 +1,8 @@
-import { readFileSync } from 'fs'
+import { execFileSync, spawnSync } from 'child_process'
+import { mkdtempSync, readFileSync, rmSync } from 'fs'
+import { tmpdir } from 'os'
 import { join } from 'path'
-import { createShopifyLiquid, defaultServices, isShopifyFontFile, renderLiquid, shopifyFontInfo } from '../../src/shopify'
+import { createShopifyLiquid, defaultServices, FontDrop, isShopifyFontFile, renderLiquid, shopifyFontInfo } from '../../src/shopify'
 import { loadFixture } from '../storefront/fixtures'
 
 const ASSISTANT = { woff2: 'assistant/assistant_n4.9120912a469cad1cc292572851508ca49d12e768.woff2', woff: 'assistant/assistant_n4.6e9875ce64e0fefcd3f4446b7ec9036b3ddd2985.woff' }
@@ -52,11 +54,33 @@ describe("Shopify's font library", () => {
     const liquid = createShopifyLiquid({ services: { fontInfo: handle => ({ handle, family: 'Mine', style: 'normal', weight: 400, fallback_families: 'serif', baseline_ratio: 0, system: false, variants: [handle] }) } })
     expect((await renderLiquid(liquid, "{{ 'mine_n4' | font_url }}|{{ 'mine_n4' | font_url: 'woff' }}")).html).toBe('/fonts/mine_n4.woff2|/fonts/mine_n4.woff')
   })
-  it('hands out frozen fonts, one object per handle', () => {
+  it('hands out frozen fonts, one object per handle, and types them read-only', () => {
     const font = shopifyFontInfo('assistant_n4')!
     expect(Object.isFrozen(font)).toBe(true)
     expect(Object.isFrozen(font.files)).toBe(true)
+    expect(Object.isFrozen(font.variants)).toBe(true)
     expect(shopifyFontInfo('assistant_n4')).toBe(font)
+    // the types say what the objects are: a write is a compile error, and at run time a TypeError
+    // @ts-expect-error variants is read-only
+    expect(() => font.variants.push('assistant_n9')).toThrow(TypeError)
+    // @ts-expect-error files is read-only
+    expect(() => { font.files!.woff2 = 'x' }).toThrow(TypeError)
+    // the family's variants are one array, shared by its fonts
+    expect(shopifyFontInfo('assistant_n7')!.variants).toBe(font.variants)
+  })
+  it('font_modify gives a font its own weight and style back, mono and serif included', async () => {
+    const source = "{%- assign a = 'mono' | font_modify: 'weight', 'normal' -%}{%- assign b = 'serif' | font_modify: 'style', 'normal' -%}{%- assign c = 'arial_n4' | font_modify: 'weight', 'normal' -%}{%- assign d = 'harmonia_sans_n4' | font_modify: 'weight', 'bold' -%}{{ a.family }}|{{ b.family }}|{{ c.family }}|{{ d.family }} {{ d.weight }}"
+    expect((await renderLiquid(createShopifyLiquid(), source)).html).toBe('"SF Mono"|"New York"|Arial|Poppins 700')
+  })
+  it('finds every font of every family among its family\'s variants by style and weight', () => {
+    for (const { handles } of page.library) {
+      for (const handle of handles) {
+        const info = shopifyFontInfo(handle)!
+        const drop = new FontDrop(info, shopifyFontInfo)
+        expect([handle, drop.variant(info.style, info.weight)?.info.handle]).toEqual([handle, handle])
+        for (const variant of drop.variants) expect([handle, variant.info.handle, drop.variant(variant.info.style, variant.info.weight)?.info.handle]).toEqual([handle, variant.info.handle, variant.info.handle])
+      }
+    }
   })
 
   // the fixtures are what Shopify printed; the table must give back every font of them
@@ -86,5 +110,37 @@ describe("Shopify's font library", () => {
       else same(shopifyFontInfo(handle)!, font)
     }
     expect(handles.filter(item => item.font === null).map(item => item.handle)).toEqual(NO_FONT)
+  })
+})
+
+describe('the font library generator', () => {
+  const script = join(__dirname, '../../bin/shopify-font-library.mjs')
+  const table = join(__dirname, '../../src/shopify-library/font-library.ts')
+  const run = (...args: string[]) => spawnSync(process.execPath, [script, ...args], { encoding: 'utf8' })
+
+  it('regenerates the committed table byte for byte from the fixtures and the date they were recorded', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'font-library-'))
+    try {
+      const out = join(dir, 'font-library.ts')
+      execFileSync(process.execPath, [script, '--recorded', '2026-10-17', '--out', out])
+      expect(readFileSync(out, 'utf8')).toBe(readFileSync(table, 'utf8'))
+      expect(readFileSync(table, 'utf8')).toContain('recorded 2026-10-17)')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+  it('writes the date it is given into the header, and refuses a missing or unreadable one', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'font-library-'))
+    try {
+      const out = join(dir, 'font-library.ts')
+      execFileSync(process.execPath, [script, '--recorded', '2027-03-04', '--out', out])
+      expect(readFileSync(out, 'utf8').split('\n')[0]).toContain('recorded 2027-03-04)')
+      for (const args of [[], ['--recorded'], ['--recorded', 'yesterday'], ['--recorded', '2026-02-30'], ['--recorded', '2026-10-17', '--recorded', '2026-10-18']]) {
+        const result = run(...args, '--out', join(dir, 'never.ts'))
+        expect([args, result.status, result.stderr]).toEqual([args, 1, expect.stringContaining('--recorded YYYY-MM-DD')])
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 })

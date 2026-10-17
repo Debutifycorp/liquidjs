@@ -18,7 +18,7 @@ function library (): { fonts: Map<string, FontInfo>, files: Set<string> } {
     for (const [family, fallback, system, members] of FONT_LIBRARY) {
       const variants = Object.freeze(members.map(font => font[0]))
       for (const [handle, weight, style, baselineRatio, woff2, woff] of members) {
-        fonts.set(handle, Object.freeze({ handle, family, style, weight, fallback_families: fallback, baseline_ratio: baselineRatio, system, variants: variants as string[], ...(woff2 ? { files: Object.freeze({ woff2, woff }) } : {}) }))
+        fonts.set(handle, Object.freeze({ handle, family, style, weight, fallback_families: fallback, baseline_ratio: baselineRatio, system, variants, ...(woff2 ? { files: Object.freeze({ woff2, woff }) } : {}) }))
         if (woff2) files.add(woff2).add(woff)
       }
     }
