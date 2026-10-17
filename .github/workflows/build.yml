@@ -10,6 +10,8 @@ on:
         type: string
 env:
   BUNDLES: ${{ inputs.bundles }}
+  # rollup holds the Shopify library entry (payment icons and font table, about 4.6 MB of TypeScript) once per bundle config; the macOS runner's default heap of about 2 GiB ran out, Ubuntu's larger default did not
+  NODE_OPTIONS: --max-old-space-size=4096
 jobs:
   build:
     name: Build
