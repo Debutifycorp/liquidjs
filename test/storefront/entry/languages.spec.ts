@@ -6,9 +6,8 @@ const form = (fields: Record<string, string>) => new URLSearchParams({ form_type
 
 /** A theme that ships English, German, Brazilian Portuguese, Arabic and Japanese, the way a Shopify theme does: `locales/<language>.json` and one `.default.json`. */
 function localeTheme () {
-  const { 'templates/index.json': _json, ...rest } = harnessTheme().files
-  const files = {
-    ...rest,
+  const files: Record<string, string> = {
+    ...harnessTheme().files,
     'layout/theme.liquid': '<!doctype html><html lang="{{ request.locale.iso_code }}" dir="{{ request.locale.direction }}"><head>{{ content_for_header }}</head><body>{{ content_for_layout }}</body></html>',
     'templates/index.liquid': [
       '<h1>{{ "hello" | t }}</h1>',
