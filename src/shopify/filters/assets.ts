@@ -44,10 +44,7 @@ function paymentTypeSvgTag (this: FilterImpl, type: unknown, ...args: unknown[])
   const { positional, named } = splitArgs(args)
   const className = named.class ?? positional[0]
   const svg = shopifyState(this.context).services.paymentTypeSvg(stringify(type))
-  if (!className) return svg
-  const attributes = attribute('class', className)
-  // a function replacer, so a `$&` in the class is not read as a replacement pattern; markup without an `<svg>` element keeps the class on its first tag
-  return /<svg\b/.test(svg) ? svg.replace(/<svg\b/, match => match + attributes) : insertAttributes(svg, attributes)
+  return className ? insertAttributes(svg, attribute('class', className)) : svg
 }
 
 /** The container Shopify fills with accelerated checkout buttons, `<div data-shopify="payment-button" class="shopify-payment-button">` as https://shopify.dev/docs/api/liquid/filters/payment_button prints it. The page's inside is a `<shopify-accelerated-checkout>` element carrying the shop's access token, shop id and variant data, which this package cannot know; the disabled unbranded "Buy it now" button here is Debutify's stand-in, not Shopify's markup. */

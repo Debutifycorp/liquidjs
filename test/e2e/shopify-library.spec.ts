@@ -14,6 +14,13 @@ describe('the built shopify-library entry', () => {
     expect(esm.match(/from '@debutify\/liquidjs\/shopify-library'/g)).toHaveLength(1)
     for (const source of [cjs, esm]) expect(source).not.toContain('aria-labelledby="pi-visa"')
   })
+  it('is held by no other bundle: the root, browser and storefront ones carry no icon and do not import it', () => {
+    for (const file of ['liquid.node.js', 'liquid.node.mjs', 'liquid.browser.mjs', 'liquid.browser.umd.js', 'liquid.browser.min.js', 'storefront.node.js', 'storefront.node.mjs']) {
+      const source = read(`dist/${file}`)
+      expect([file, source.includes('aria-labelledby="pi-visa"')]).toEqual([file, false])
+      expect([file, source.includes('shopify-library')]).toEqual([file, false])
+    }
+  })
   it("prints Shopify's icon from dist", async () => {
     const { createShopifyLiquid, renderLiquid } = require('../../dist/shopify.node.js')
     const { html } = await renderLiquid(createShopifyLiquid(), "{{ 'visa' | payment_type_svg_tag }}")

@@ -57,10 +57,16 @@ describe('shopify/filters/assets', () => {
     it('puts the class on the <svg> even after an XML prolog, and reads a $ in it literally', async () => {
       expect(await render("{{ 'paidy' | payment_type_svg_tag: class: 'icon' }}")).toMatch(/^<\?xml version="1\.0"\?><svg class="icon" xmlns=/)
       expect(await render("{{ 'visa' | payment_type_svg_tag: class: 'a$&b' }}")).toMatch(/^<svg class="a\$&amp;b" xmlns=/)
+      expect(await render("{{ 'paidy' | payment_type_svg_tag: class: 'a$&b' }}")).toMatch(/^<\?xml version="1\.0"\?><svg class="a\$&amp;b" xmlns=/)
     })
     it('is the default service', () => {
       expect(defaultServices.paymentTypeSvg).toBe(shopifyPaymentIcon)
     })
+  })
+  // https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag
+  it('placeholder_svg_tag reads a $ in its class literally', async () => {
+    expect(await render("{{ 'product-1' | placeholder_svg_tag: 'a$&b' }}")).toMatch(/^<svg class="a\$&amp;b" xmlns=/)
+    expect(await render("{{ 'product-1' | placeholder_svg_tag: class: 'a$&b' }}")).toMatch(/^<svg class="a\$&amp;b" xmlns=/)
   })
   // https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag
   it('placeholder_svg_tag draws line art for every name the page lists, in the markup the page shows', async () => {

@@ -73,6 +73,8 @@ describe('the Shopify layer foundations', () => {
     it('inserts attributes after the first element name', () => {
       expect(insertAttributes('<svg viewBox="0 0 1 1"><path/></svg>', ' class="x"')).toBe('<svg class="x" viewBox="0 0 1 1"><path/></svg>')
       expect(insertAttributes('<svg/>', '')).toBe('<svg/>')
+      expect(insertAttributes('<svg/>', ' class="a$&b"')).toBe('<svg class="a$&b"/>')
+      expect(insertAttributes('<?xml version="1.0"?><svg viewBox="0 0 1 1"/>', ' class="x"')).toBe('<?xml version="1.0"?><svg class="x" viewBox="0 0 1 1"/>')
     })
   })
 

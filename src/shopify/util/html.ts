@@ -44,8 +44,8 @@ export function namedAttributes (report: ReportCollector, filter: UnsupportedFea
   return html
 }
 
-/** Inserts attributes right after the element name of the first tag in `markup` (`<svg` becomes `<svg class="x"`), as Shopify's SVG filters do, https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag (the `class` argument lands on the `<svg>` element; where among its attributes is not pinned). */
+/** Inserts attributes right after the element name of the first tag in `markup` (`<svg` becomes `<svg class="x"`), as Shopify's SVG filters do, https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag (the `class` argument lands on the `<svg>` element; where among its attributes is not pinned). An XML prolog before the tag is stepped over, as Shopify's `payment_type_svg_tag` does for the files that start with one (`<?xml version="1.0"?><svg class="icon" xmlns=`, scenario `probe-payment-icons`). The attributes go in through a function, so a `$&` in a class is written as it is and not read as a replacement pattern. */
 export function insertAttributes (markup: string, attributes: string): string {
   if (!attributes) return markup
-  return markup.replace(/^(\s*<[a-zA-Z][\w-]*)/, `$1${attributes}`)
+  return markup.replace(/^(\s*(?:<\?[\s\S]*?\?>\s*)?<[a-zA-Z][\w-]*)/, (_, tag: string) => tag + attributes)
 }
