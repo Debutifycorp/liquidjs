@@ -186,6 +186,8 @@ export interface PageGlobals {
   linklists: HandleMap<LiquidObject>
   /** The resolved request: path, origin and page, for the Shopify state, with the `hreflang` links of its page (`content_for_header`). */
   request: { path: string, origin: string, page: number, prefix: string, alternates: Array<{ hreflang: string, path: string }>, query?: Array<[string, string]> }
+  /** The policy a `policy` page shows (`/policies/<handle>`), which Shopify renders itself; nil on any other page and for a policy the store has not set. */
+  policy?: LiquidObject | null
 }
 
 /** The words of `powered_by_link` by language: English is https://shopify.dev/docs/api/liquid/objects/powered_by_link's example and French what the parity store prints on its `fr-ca` home page (private parity recording `page-home-fr-ca` of Horizon). Shopify's words in other languages are not recorded, so they print in English here. */
@@ -207,8 +209,10 @@ function poweredByLink (language: string | undefined): string {
  */
 export function buildGlobals (input: GlobalsInput): PageGlobals {
   const { store, request, report } = input
-  const template = new TemplateDrop(input.templateName)
-  const pageType = template.directory ? `${template.directory}/${template.name}` : template.name
+  // a policy page (`/policies/<handle>`) is Shopify's own page, rendered without a template of the theme: its `request.page_type` is `policy` and its template's name is empty, as the parity store prints Dawn's `data-template="{{ template.name }}"` there (its recording of `/policies/privacy-policy`)
+  const isPolicy = input.templateName === 'policy'
+  const template = new TemplateDrop(isPolicy ? '' : input.templateName)
+  const pageType = isPolicy ? 'policy' : template.directory ? `${template.directory}/${template.name}` : template.name
   // the view is resolved against the data, so a request that names a market or a language needs the data the store was built from, not the sample store's
   if (!input.data && (request.market !== undefined || request.language !== undefined)) throw new Error('buildGlobals: pass the `data` the store was built from when the request names a market or a language')
   const data = input.data ?? sampleStoreData
@@ -231,7 +235,9 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     // the article's blog is the one that lists it (the article objects are the same in `store.articles` and in its blog's `articles`); its URL is no help, as a base path or locale prefix adds segments before the blog's
     if (template.name === 'article' && found) resources.blog = HandleMap.values(store.blogs).find(blog => (blog.articles as LiquidObject[]).includes(found)) ?? null
   }
-  const resource = kind ? resources[template.name] : null
+  const policy = isPolicy ? HandleMap.get(store.policies, request.resource ?? '') ?? null : undefined
+  if (isPolicy && !policy) report.missing('resource', `policy ${request.resource ?? ''}`)
+  const resource = kind ? resources[template.name] : policy ?? null
   const host = request.host ?? String(store.shop.domain)
   const origin = request.origin ?? `https://${host}`
   const path = request.path ?? defaultPath(pageType, template, resource, view.prefix, store.gift_card)
@@ -294,7 +300,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     ...(pageType === 'customers/order' ? { order: orderFor(store.customer, request.resource, report) } : {}),
     ...resources
   }
-  return { globals, linklists, request: { path, origin, page, prefix: view.prefix, query: request.query, alternates: pageType === '404' ? [] : alternates(data, view, path, request.searchTerms, pageType) } }
+  return { globals, linklists, policy, request: { path, origin, page, prefix: view.prefix, query: request.query, alternates: pageType === '404' ? [] : alternates(data, view, path, request.searchTerms, pageType) } }
 }
 
 /** The built variant with `id`, or nil when the store has none. */

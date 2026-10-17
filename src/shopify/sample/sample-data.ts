@@ -13,12 +13,26 @@ function deepFreeze<T> (value: T): T {
 }
 
 /**
- * The public sample store for tests, demos and previews without data: Shopify's mock.shop `demostore` catalogue (`mock-shop.ts`: 29 apparel products, 8 collections, 2 pages, a blog with 3 articles, the main and footer menus, and the customer account menu every store has) in a shop of Debutify's own (`sample-store.example` is a reserved domain), with one line in the cart, one issued gift card (`sampleGiftCard`) and no customer. Product images are on Shopify's CDN; `hero.jpg` is a relative placeholder that the caller's `imageUrl` service maps to a real file. Its fields follow https://shopify.dev/docs/api/liquid/objects.
+ * The public sample store for tests, demos and previews without data: Shopify's mock.shop `demostore` catalogue (`mock-shop.ts`: 29 apparel products, 8 collections, 2 pages, a blog with 3 articles, the main and footer menus, and the customer account menu every store has) in a shop of Debutify's own with four short policies (`sample-store.example` is a reserved domain), with one line in the cart, one issued gift card (`sampleGiftCard`) and no customer. Product images are on Shopify's CDN; `hero.jpg` is a relative placeholder that the caller's `imageUrl` service maps to a real file. Its fields follow https://shopify.dev/docs/api/liquid/objects.
  *
  * It is frozen all the way down, because every render without `data` reads this one object: to change it, copy it (`structuredClone(sampleStoreData)`) and pass the copy as `data`.
  */
 export const sampleStoreData: StoreData = deepFreeze<StoreData>({
-  shop: { name: 'Sample Store', domain: 'sample-store.example', email: 'hello@sample-store.example', description: 'A sample store.', currency: 'USD', locale: 'en', enabled_payment_types: ['visa', 'master', 'american_express', 'paypal'] },
+  shop: {
+    name: 'Sample Store',
+    domain: 'sample-store.example',
+    email: 'hello@sample-store.example',
+    description: 'A sample store.',
+    currency: 'USD',
+    locale: 'en',
+    enabled_payment_types: ['visa', 'master', 'american_express', 'paypal'],
+    policies: [
+      { type: 'privacy_policy', body: '<p>Sample Store keeps only what it needs to take and deliver your orders, and never sells it. Write to hello@sample-store.example to see or delete what it holds about you.</p>' },
+      { type: 'refund_policy', body: '<p>Send anything back within 30 days of delivery, unworn and with its tags, for a full refund.</p>' },
+      { type: 'shipping_policy', body: '<p>Orders ship within two business days. Shipping is free over $100.</p>' },
+      { type: 'terms_of_service', body: '<p>By buying from Sample Store you agree to these terms. Prices may change without notice.</p>' }
+    ]
+  },
   ...structuredClone(mockShopCatalog),
   linklists: [...structuredClone(mockShopCatalog.linklists), structuredClone(customerAccountMainMenu)],
   gift_card: structuredClone(sampleGiftCard),

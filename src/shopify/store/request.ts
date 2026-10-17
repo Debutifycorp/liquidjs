@@ -160,6 +160,8 @@ export function requestFromUrl (url: string, data: StoreData, options: { basePat
       search: { types: types ? types.split(',').map(t => t.trim()).filter(Boolean) : undefined, prefix: params.get('options[prefix]') === 'none' ? 'none' : params.get('options[prefix]') === 'last' ? 'last' : undefined, unavailable: unavailable(params.get('options[unavailable_products]')) }
     })
   }
+  // a store policy, `/policies/<handle>`, the relative URL https://shopify.dev/docs/api/liquid/objects/policy gives a policy (the parity store serves `/policies/privacy-policy`); Shopify renders the page itself, with no template of the theme (`renderPage` with `policy`)
+  if (kind === 'policies' && a && !b) return page('policy', { resource: a })
   if (kind === 'cart' && !a) return page('cart')
   if (kind === 'password' && !a) return page('password')
   return page('404')

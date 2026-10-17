@@ -13,10 +13,11 @@ export type Metafields = Record<string, Record<string, unknown>>
 /** A policy of the store, https://shopify.dev/docs/api/liquid/objects/policy, as the store's Policies settings hold it: `type` says which one it is, and gives its handle (`privacy_policy` is at `/policies/privacy-policy`) and its default title (`Privacy policy`). `body` is HTML. */
 export interface PolicyData {
   type: 'privacy_policy' | 'refund_policy' | 'shipping_policy' | 'terms_of_service' | 'subscription_policy' | 'contact_information' | 'legal_notice'
-  /** Defaults to Shopify's title for the type. */
+  /** Defaults to Shopify's title for the type (`Privacy policy`). */
   title?: string
+  /** HTML. A policy with an empty body is not set. */
   body: string
-  /** Defaults to a number made from the type. */
+  /** Nil when omitted. */
   id?: number | string
 }
 

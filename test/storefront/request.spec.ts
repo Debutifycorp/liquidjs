@@ -26,7 +26,7 @@ describe('requestFromUrl', () => {
       ['/gift_cards/56174706753', '404', undefined],
       ['/gift_cards', '404', undefined],
       ['/gift_cards/1/2/3', '404', undefined],
-      ['/policies/refund-policy', '404', undefined],
+      ['/policies/refund-policy', 'policy', 'refund-policy'],
       ['/nope', '404', undefined]
     ]
     for (const [url, templateName, resource] of cases) {

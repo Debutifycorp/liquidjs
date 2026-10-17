@@ -39,6 +39,8 @@ export function resourceExists (data: StoreData, page: PageRequest): boolean {
     case 'article': return (data.blogs ?? []).some(b => b.articles.some(a => `${b.handle}/${a.handle}` === resource))
     // https://shopify.dev/docs/storefronts/themes/architecture/templates/gift-card-liquid and https://shopify.dev/docs/api/liquid/objects/gift_card say nothing of a card that does not exist, so the theme's 404 template answers it, as it does an unknown product or page (not pinned). A disabled or expired card is shown: the themes mark it with `gift_card.enabled` and `gift_card.expired`
     case 'gift_card': return resource === giftCardResource(data)
+    // a policy is at `/policies/<type with hyphens>` (`privacy_policy` at `/policies/privacy-policy`), and one with no body is not set: the parity store answers 404 for the policies it has none of
+    case 'policy': return (data.shop.policies ?? []).some(p => p.body && p.type.replace(/_/g, '-') === resource)
     default: return true
   }
 }

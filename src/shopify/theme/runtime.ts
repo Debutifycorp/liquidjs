@@ -95,6 +95,14 @@ function suffixOf (store: StoreObjects, name: string, resource: string | undefin
   return requestedResource(store, name, resource)?.template_suffix as string | null | undefined
 }
 
+/**
+ * The page Shopify renders for a store policy (`/policies/<handle>`) in the theme's layout, which the theme has no template for: the policy's title and body in the markup the parity store prints (its recording of `/policies/privacy-policy` under our theme and Dawn: `shopify-policy__container`, `__title` with an `h1`, `__body` with an `rte` holding the body), with the title escaped. Nothing for a policy the store has not set, whose address the storefront answers with the 404 page. Shopify also links a stylesheet of its own for the page (`policy-<hash>.css`), which is not added here.
+ */
+function policyContent (policy: LiquidObject | null): string {
+  if (!policy) return ''
+  return `<div class="shopify-policy__container">\n  <div class="shopify-policy__title">\n    <h1>${escapeHtml(String(policy.title))}</h1>\n  </div>\n\n  <div class="shopify-policy__body">\n    <div class="rte">\n        ${String(policy.body)}\n    </div>\n  </div>\n</div>\n`
+}
+
 /** The template a page renders: `templates/<name>.<suffix>` for the request's `view`, else for the resource's `template_suffix`, when the theme has it (JSON or Liquid); `name` otherwise. https://shopify.dev/docs/storefronts/themes/architecture/templates/alternate-templates. The page names the two ways to apply an alternate template (assign it to a resource in the admin, or `?view=<suffix>`) but not which wins when both apply, nor what a `view` that names no template does, so the order (view first, then the suffix, then the base template) is Debutify's, on the confirm-on-a-development-store list; no fixture holds both. `view` applies to every base template (cart, search, 404, `customers/*` and the rest, not only product, collection and page), as the page lists no supported types. A `view` or suffix holding `/` names no template (a suffix is a plain part of a file name, and a `/` would read as a directory in `template.name`), so it falls back to the base template. A name that already has a suffix (`page.contact`) is rendered as given. */
 function chooseTemplate (theme: CompiledTheme, name: string, view: string | undefined, suffix: string | null | undefined): string {
   for (const candidate of [view, suffix]) {
@@ -405,6 +413,8 @@ class PageRender implements ThemeHooks {
   private readonly headerMarker = newHeaderMarker()
   /** The saved JSON behind each block object of `section.blocks` and `block.blocks`, for `{% render block %}`. */
   private readonly blockObjects = new WeakMap<object, { id: string, data: BlockData }>()
+  /** The policy a `policy` page shows, nil when the store has not set it; undefined on any other page. */
+  private readonly policy?: LiquidObject | null
 
   public constructor (private readonly theme: CompiledTheme, private readonly options: RenderPageOptions) {
     const data = options.data ?? sampleStoreData
@@ -426,6 +436,7 @@ class PageRender implements ThemeHooks {
     this.state.currency = { iso_code: store.currency.iso_code, rate: store.currency.rate }
     const page = buildGlobals({ store, data, templateName: this.templateName, request: options.request ?? {}, locale, report: this.state.report, cart: options.cart })
     this.state.request = page.request
+    this.policy = page.policy
     this.state.form = options.request?.form
     const env: SettingsEnv = { store, linklists: page.linklists, services: this.state.services, translator, report: this.state.report, trust: this.trust, prefix: page.request.prefix }
     const settingsData = theme.json('config/settings_data.json') ?? {}
@@ -586,6 +597,7 @@ class PageRender implements ThemeHooks {
    */
   private * renderTemplate (): Generator<unknown, { content: string, layout: string | null }, unknown> {
     const name = this.templateName
+    if (this.policy !== undefined) return { content: policyContent(this.policy), layout: 'theme' }
     const template = this.requireTemplate()
     if (template) {
       let out = ''

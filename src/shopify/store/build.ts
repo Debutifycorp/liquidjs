@@ -15,7 +15,7 @@ import { byTitle, SORT_VALUES, sortProducts } from './sort'
 import { translateData } from './translate'
 import { resolveView, viewKey, withoutPrefix, withPrefix } from './view'
 import type { StoreView } from './view'
-import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, ProductData, SellingPlanData, SellingPlanGroupData, StoreData, TransactionData, VariantData } from './types'
+import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, PolicyData, ProductData, SellingPlanData, SellingPlanGroupData, StoreData, TransactionData, VariantData } from './types'
 
 /**
  * Turns `StoreData` into the objects Liquid reads, computing what Shopify derives (URLs, price ranges, the first available variant, option values) so templates find every field they expect. Built objects are plain objects, readable under `ownPropertyOnly`; images become `ImageDrop`s and handle-keyed collections `HandleMap`s. Field lists follow https://shopify.dev/docs/api/liquid/objects, object by object as each builder cites.
@@ -34,6 +34,8 @@ export interface StoreObjects {
   blogs: HandleMap<LiquidObject>
   /** Articles by `<blog handle>/<article handle>`, the key https://shopify.dev/docs/api/liquid/objects/articles shows (`articles['blog/article']`). */
   articles: HandleMap<LiquidObject>
+  /** The policies that are set, by handle (`privacy-policy`), which `/policies/<handle>` shows (`buildPolicy`). */
+  policies: HandleMap<LiquidObject>
   images: HandleMap<ImageDrop>
   videos: Record<string, LiquidObject>
   linklists: LinkListData[]
@@ -545,6 +547,17 @@ function buildArticle (data: ArticleData, blogHandle: string, prefix: string): L
   return article
 }
 
+/** The title Shopify gives each policy, as its checkout's policy list and the parity store's privacy policy page name them (`Privacy policy`, recording of `/policies/privacy-policy`); the titles of the others are Shopify's admin names, not recorded. */
+const POLICY_TITLES: Record<PolicyData['type'], string> = { privacy_policy: 'Privacy policy', refund_policy: 'Refund policy', shipping_policy: 'Shipping policy', terms_of_service: 'Terms of service', subscription_policy: 'Cancellation policy', contact_information: 'Contact information', legal_notice: 'Legal notice' }
+
+/** The handle of a policy type, which its address ends with: `privacy_policy` is at `/policies/privacy-policy`, as the parity store's footer links it (its recordings of Dawn and Horizon). */
+export const policyHandle = (type: string): string => type.replace(/_/g, '-')
+
+/** https://shopify.dev/docs/api/liquid/objects/policy: `id`, `title`, `body` (HTML) and `url`, "the relative URL of the policy", under `prefix` (the parity store links `/fr-ca/policies/privacy-policy` on its French pages). */
+function buildPolicy (data: PolicyData, prefix: string): LiquidObject {
+  return { id: data.id ?? null, title: data.title || POLICY_TITLES[data.type] || data.type, body: data.body, url: withPrefix(prefix, `/policies/${policyHandle(data.type)}`) }
+}
+
 /** `articles` newest first, by the time their `published_at` holds (whatever its UTC offset); a tie keeps the order it came in, and an article whose `published_at` is no date sorts after every dated one. */
 function newestFirst (articles: LiquidObject[]): LiquidObject[] {
   const time = (article: LiquidObject) => {
@@ -1000,6 +1013,9 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   const shippingCountries = data.country_option_tags ?? [{ name: String((localization.country as LiquidObject | null)?.name ?? '') }]
   // the articles keep the store data's order here, which the search and the predictive search rank their ties by (fixture `probe-search-prefix`: the older article of two equal matches comes first), while a blog lists them newest first
   const articles = new HandleMap(HandleMap.values(blogs).flatMap(blog => articlesInDataOrder(blog).map(article => [`${blog.handle}/${article.handle}`, article] as [string, LiquidObject])))
+  // a policy with no body is not set (Shopify answers its address with 404, as the parity store does for the four it has none of)
+  const policies = (source.shop.policies ?? []).filter(policy => policy.body).map(policy => ({ type: policy.type, built: buildPolicy(policy, prefix) }))
+  const policyOf = (type: PolicyData['type']) => policies.find(policy => policy.type === type)?.built ?? null
   const objects: StoreObjects = {
     data,
     prefix,
@@ -1027,7 +1043,15 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
       collections_count: source.collections?.length ?? 0,
       types: unique((source.products ?? []).map(product => product.type ?? '').filter(Boolean)).sort(),
       vendors: unique((source.products ?? []).map(product => product.vendor ?? '').filter(Boolean)).sort(),
-      policies: [],
+      // https://shopify.dev/docs/api/liquid/objects/shop: `policies` are "the policies for the store", each also under its own name, nil when it is not set; the parity store's footer lists its one policy (Dawn's `for policy in shop.policies`, recordings `page-home` of Dawn and Horizon)
+      policies: policies.map(policy => policy.built),
+      privacy_policy: policyOf('privacy_policy'),
+      refund_policy: policyOf('refund_policy'),
+      shipping_policy: policyOf('shipping_policy'),
+      subscription_policy: policyOf('subscription_policy'),
+      terms_of_service: policyOf('terms_of_service'),
+      // "The password page message of the store", https://shopify.dev/docs/api/liquid/objects/shop#shop-password_message
+      password_message: source.shop.password_message ?? null,
       metafields: data.shop.metafields ?? {}
     },
     products,
@@ -1035,6 +1059,7 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
     pages: new HandleMap((source.pages ?? []).map(page => [page.handle, buildPage(page, prefix)])),
     blogs,
     articles,
+    policies: new HandleMap(policies.map(policy => [policyHandle(policy.type), policy.built])),
     images: new HandleMap(Object.entries(data.images ?? {}).map(([name, img]) => [name, new ImageDrop(img)])),
     videos: Object.fromEntries(Object.entries(data.videos ?? {}).map(([name, video]) => [name, buildMedia(video) as LiquidObject])),
     linklists: source.linklists ?? [],

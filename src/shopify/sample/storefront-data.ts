@@ -88,9 +88,21 @@ const pages: PageData[] = [
   { id: 50004, handle: 'track-order', title: 'Track your order', content: '<p>Where is it?</p>', template_suffix: 'track-order' }
 ]
 
-/** The dataset the parity store is seeded from (item 22, `tools/shopify-parity/` in the Debutify repository): Shopify's mock.shop `demostore` catalogue (`mock-shop.ts`) with what the parity scenarios need on top, in a USD shop of its own: product types, weights, material metafields, compare-at prices, best-seller ranks, selling plans, template suffixes, three pages, the Home page collection, one issued gift card (`sampleGiftCard`, served at its `url`; the parity store holds none), the six card types the store accepts, storefront filters, discounts, shipping zones, three markets, and French as a second language with its translations. Prices are USD cents. */
+/** The dataset the parity store is seeded from (item 22, `tools/shopify-parity/` in the Debutify repository): Shopify's mock.shop `demostore` catalogue (`mock-shop.ts`) with what the parity scenarios need on top, in a USD shop of its own: product types, weights, material metafields, compare-at prices, best-seller ranks, selling plans, template suffixes, three pages, the Home page collection, one issued gift card (`sampleGiftCard`, served at its `url`; the parity store holds none), the six card types the store accepts, a privacy policy, storefront filters, discounts, shipping zones, three markets, and French as a second language with its translations. Prices are USD cents. */
 export const storefrontSampleData: StoreData = freeze({
-  shop: { name: 'Debutify Parity', domain: 'debutify-sample.myshopify.com', email: 'store@example.com', description: 'Everyday clothing, made well.', currency: 'USD', locale: 'en', money_format: '${{amount}}', money_with_currency_format: '${{amount}} USD', enabled_payment_types: ['visa', 'master', 'american_express', 'paypal', 'diners_club', 'discover'] }, // eslint-disable-line no-template-curly-in-string
+  shop: {
+    name: 'Debutify Parity',
+    domain: 'debutify-sample.myshopify.com',
+    email: 'store@example.com',
+    description: 'Everyday clothing, made well.',
+    currency: 'USD',
+    locale: 'en',
+    money_format: '${{amount}}', // eslint-disable-line no-template-curly-in-string
+    money_with_currency_format: '${{amount}} USD', // eslint-disable-line no-template-curly-in-string
+    enabled_payment_types: ['visa', 'master', 'american_express', 'paypal', 'diners_club', 'discover'],
+    // the parity store has the privacy policy Shopify writes for a new store and no other (its footers list that one, `/policies/privacy-policy`, and the other policies answer 404); this one is a short stand-in for Shopify's text
+    policies: [{ type: 'privacy_policy', body: '<p>Debutify Parity collects only what it needs to take and deliver your orders: your name, your email and shipping addresses, and what you buy. We never sell it. To see, correct or delete what we hold about you, write to store@example.com.</p>' }]
+  },
   products: catalog.products,
   collections: catalog.collections,
   pages,
@@ -134,7 +146,9 @@ export const storefrontSampleData: StoreData = freeze({
       products: { hoodie: { title: 'Sweat à capuche', description: '<p>Un sweat à capuche doux pour tous les jours.</p>' }, 'men-t-shirt': { title: 'T-shirt pour homme' } },
       collections: { tops: { title: 'Hauts', description: '<p>À porter en haut.</p>' } },
       pages: { about: { title: 'À propos', content: '<p>Nous fabriquons des vêtements du quotidien.</p>' } },
-      menus: { 'main-menu': ['Hommes', 'Femmes', 'Unisexe', 'Collections', 'Actualités'] }
+      menus: { 'main-menu': ['Hommes', 'Femmes', 'Unisexe', 'Collections', 'Actualités'] },
+      // the parity store prints its privacy policy in French on its French pages (`Politique de confidentialité`)
+      policies: { privacy_policy: { title: 'Politique de confidentialité', content: '<p>Debutify Parity ne collecte que ce dont elle a besoin pour prendre et livrer vos commandes : votre nom, vos adresses e-mail et de livraison, et vos achats. Nous ne les vendons jamais. Pour consulter, corriger ou supprimer vos données, écrivez à store@example.com.</p>' } }
     }
   },
   country_option_tags: [{ name: 'United States' }, { name: 'Canada' }, { name: 'France' }, { name: 'Germany' }]
