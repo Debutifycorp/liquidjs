@@ -1,5 +1,5 @@
 /**
- * Debutify's own line drawings for `placeholder_svg_tag`, one for each placeholder name https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag lists. They are not Shopify's artwork: only the markup follows the page's example, an `<svg>` with `xmlns` and the `0 0 525.5 525.5` viewBox holding `<path>` elements with no fill and no background, so the drawing takes the theme's CSS `fill` and sits on the theme's own placeholder background.
+ * Debutify's own line drawings for `placeholder_svg_tag`, one for each placeholder name https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag lists. They are not Shopify's artwork (stand-ins by design): the outer `<svg>` element is Shopify's, with the attributes and viewBox it prints for the same name (see `Frame`), holding one `<path>` drawn to fit that viewBox. A frame without `fill="none"` leaves the path unfilled, so the drawing takes the theme's CSS `fill` and sits on the theme's own placeholder background; a frame with it gives the path `fill="currentColor"`.
  *
  * Each drawing is a list of strokes in a 525.5 square, each stroke a letter and its numbers: `l x y x y …` a line through the points, `p x y x y …` a closed outline, `r x y w h [radius]` a rectangle, `c x y r` a circle, `e x y rx ry` an ellipse, `a x y r from to` an arc in degrees (0 points right, 90 down) and `d x y r` a dot. Every stroke becomes a filled outline of one line width in a single `<path>`: shapes run clockwise and the holes of rings counter-clockwise, so with the default nonzero fill rule overlapping strokes join and paint once.
  */
@@ -103,14 +103,58 @@ function stroke (command: string): string {
   }
 }
 
+/**
+ * The outer `<svg>` Shopify prints for a placeholder name, as the parity store recorded it (the home and collections pages of Horizon 4.3.0 and Dawn 16.0.0, the home and product pages of the private theme): the attributes, their order and the viewBox. The class a theme passes goes in right after `<svg`, as Shopify prints it. Three frames are pinned by a recording, each for the names that were recorded:
+ * `square`, `<svg xmlns viewBox="0 0 525.5 525.5">`: `image`, `product-1` to `product-4` and `collection-1` to `collection-3`.
+ * `wide`, `<svg xmlns viewBox="0 0 1052 400">`: `lifestyle-2`.
+ * `hero`, `<svg preserveAspectRatio="xMaxYMid slice" viewBox="0 0 1300 730" fill="none" xmlns>`: `hero-apparel-1`.
+ * `tile`, `<svg preserveAspectRatio="xMidYMid slice" width="448" height="448" viewBox="0 0 448 448" fill="none" xmlns>`: `collection-apparel-4`.
+ * Not pinned, so given the frame of their family: `product-5`, `product-6` and `collection-4` to `collection-6` the square, `lifestyle-1` the wide one, `hero-apparel-2` and `hero-apparel-3` the hero one, and every other `*-apparel-*` name the tile (no recording reaches them).
+ */
+interface Frame {
+  /** The attributes before `viewBox`, as printed. */
+  before: string
+  /** The attributes after `viewBox`, as printed. */
+  after: string
+  width: number
+  height: number
+  /** Whether the `<svg>` has `fill="none"`, so the `<path>` carries its own fill. */
+  fillNone: boolean
+}
+
+const XMLNS = 'xmlns="http://www.w3.org/2000/svg"'
+const SQUARE: Frame = { before: `${XMLNS} `, after: '', width: 525.5, height: 525.5, fillNone: false }
+const WIDE: Frame = { before: `${XMLNS} `, after: '', width: 1052, height: 400, fillNone: false }
+const HERO: Frame = { before: 'preserveAspectRatio="xMaxYMid slice" ', after: ` fill="none" ${XMLNS}`, width: 1300, height: 730, fillNone: true }
+const TILE: Frame = { before: 'preserveAspectRatio="xMidYMid slice" width="448" height="448" ', after: ` fill="none" ${XMLNS}`, width: 448, height: 448, fillNone: true }
+
+function frameOf (name: string): Frame {
+  if (name === 'lifestyle-1' || name === 'lifestyle-2') return WIDE
+  if (name.startsWith('hero-apparel-')) return HERO
+  if (/-apparel-\d+$/.test(name)) return TILE
+  return SQUARE
+}
+
+/** The drawings are made in a 525.5 square: scaled to the frame's shorter side and centred in it, so they fit the viewBox. A frame of the same size needs no transform. */
+function transformOf (frame: Frame): string {
+  const scale = Math.min(frame.width, frame.height) / 525.5
+  if (scale === 1) return ''
+  const x = Math.round((frame.width - 525.5 * scale) / 2 * 10) / 10
+  const y = Math.round((frame.height - 525.5 * scale) / 2 * 10) / 10
+  const move = x || y ? `translate(${n(x)}${y ? ` ${n(y)}` : ''}) ` : ''
+  return ` transform="${move}scale(${Math.round(scale * 1000) / 1000})"`
+}
+
 const built = new Map<string, string>()
 
 /** The `<svg>` of a placeholder name, the `image` drawing for a name the page does not list (what Shopify prints then is not pinned). Each drawing is built once and kept. */
 export function placeholderArt (name: string): string {
   const key = Object.prototype.hasOwnProperty.call(DRAWINGS, name) ? name : 'image'
+  const frame = frameOf(key)
   let svg = built.get(key)
   if (!svg) {
-    svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 525.5 525.5"><path d="${DRAWINGS[key].split(';').map(stroke).join('')}"/></svg>`
+    const fill = frame.fillNone ? ' fill="currentColor"' : ''
+    svg = `<svg ${frame.before}viewBox="0 0 ${n(frame.width)} ${n(frame.height)}"${frame.after}><path${fill}${transformOf(frame)} d="${DRAWINGS[key].split(';').map(stroke).join('')}"/></svg>`
     built.set(key, svg)
   }
   return svg
