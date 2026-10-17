@@ -1,5 +1,5 @@
 import { HandleMap } from '../objects/handle-map'
-import type { ImageDrop } from '../objects/image'
+import { variantMedia } from '../objects/image'
 import { articlesInDataOrder, copyObject, printsHandle, remember, type LiquidObject, type StoreObjects } from './build'
 import { sortProducts } from './collection-view'
 import { buildFilters, filterMatcher, requestQuery } from './filters'
@@ -91,8 +91,8 @@ export function buildSearch (store: StoreObjects, terms: string | undefined, req
   const shown = ({ item, kind }: { item: LiquidObject, kind: Kind }) => {
     const variant = linked && kind === 'product' ? matcher.firstVariant(item) : undefined
     // the matching variant's media is the bare image, as on the collection page (`collectionView`; scenario `page-collection-filtered` records it there, search is not recorded with variant filters: the same mechanism is assumed)
-    const media = variant?.featured_media as ImageDrop | null | undefined
-    return printsHandle(copyWith(item, { ...(variant ? { url: variant.url, featured_media: media?.preview_image ?? item.featured_media } : {}), object_type: kind }))
+    const media = variant?.featured_media
+    return printsHandle(copyWith(item, { ...(variant ? { url: variant.url, featured_media: variantMedia(media) ?? item.featured_media } : {}), object_type: kind }))
   }
   const asProduct = (product: LiquidObject) => ({ item: product, kind: 'product' as Kind })
   const pages = find(HandleMap.values(store.pages), 'page').map(page => ({ item: page, kind: 'page' as Kind }))

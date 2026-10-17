@@ -1,5 +1,5 @@
 import { HandleMap } from '../objects/handle-map'
-import type { ImageDrop } from '../objects/image'
+import { variantMedia } from '../objects/image'
 import { SafeHtmlDrop } from '../objects/safe-html'
 import { escapeHtml } from '../util/html'
 import { AUTOMATIC_COLLECTIONS, buildCollection, copyObject, lazy, manualProductsOf } from './build'
@@ -38,8 +38,8 @@ export function collectionView (collection: LiquidObject, request: RequestInput,
   const link = (product: Product) => {
     const variant = matcher.firstVariant(product)
     // the matching variant's media is shown as the bare image: its `alt` is empty where the product's reads the title (scenario `page-collection-filtered`: `<img alt="">` for the card of a product shown through its variant)
-    const media = variant?.featured_media as ImageDrop | null | undefined
-    return variant ? copyOf(product, { url: variant.url, featured_media: media?.preview_image ?? product.featured_media }) : product
+    const media = variant?.featured_media
+    return variant ? copyOf(product, { url: variant.url, featured_media: variantMedia(media) ?? product.featured_media }) : product
   }
   const linked = active.some(([name]) => name.startsWith('filter.v.'))
   const view = copyOf(collection, { products_count: sorted.length, sort_by: named ?? '' })

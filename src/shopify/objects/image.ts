@@ -73,6 +73,11 @@ export class ImageDrop extends Drop {
     return this[PREVIEW]
   }
 
+  /** The same media with its own alt text and not the product's title, its `id` kept: what a variant filter shows as a product's `featured_media` (`collectionView`, `buildSearch`). Not `preview_image`, whose `id` is nil, since `product.featured_media` is a media object with an id (https://shopify.dev/docs/api/liquid/objects/media) and Horizon's card gallery prints `slide_id: media.id` for it. */
+  public bare (): ImageDrop {
+    return this[AS_MEDIA] && this[TITLE] && !this.data.alt ? new ImageDrop(this.data, true, this.position) : this
+  }
+
   public valueOf () {
     return this.src
   }
@@ -120,4 +125,10 @@ export class ImageUrlDrop extends Drop {
   public toJSON () {
     return this.url
   }
+}
+
+/** The media a variant filter shows as a product's `featured_media`, from the matching variant's own: an image as its bare self with its id (`ImageDrop.bare`), another media as its preview image, and nil without one. */
+export function variantMedia (media: unknown): unknown {
+  if (media instanceof ImageDrop) return media.preview_image ? media.bare() : null
+  return (media as { preview_image?: unknown } | null | undefined)?.preview_image ?? null
 }
