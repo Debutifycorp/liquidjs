@@ -51,7 +51,9 @@ export function buildPaginate (items: number, pageSize: number, currentPage: num
   const url = (page: number) => withQuery(path, [...kept, ['page', String(page)] as const])
   const parts: PaginatePart[] = []
   let gap = false
-  for (let page = 1; pages > 1 && page <= pages; page++) {
+  // a single page has no parts
+  const last = pages > 1 ? pages : 0
+  for (let page = 1; page <= last; page++) {
     if (page === currentPage) {
       parts.push({ title: page, url: null, is_link: false })
       gap = false
