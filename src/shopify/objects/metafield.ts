@@ -2,7 +2,9 @@ import { Drop } from '../../drop'
 import { LiquidFloat } from '../../util/liquid-float'
 import type { ImageData } from '../types'
 import type { Metafields } from '../store/types'
+import { attribute, escapeHtml } from '../util/html'
 import { hasOwn, isRecord } from '../util/own'
+import { isSafeUrl } from '../util/sanitize'
 import { ColorDrop } from './color'
 import { ImageDrop } from './image'
 
@@ -44,6 +46,121 @@ function parsed (value: unknown): unknown {
 
 const decimal = (value: unknown) => new LiquidFloat(Number(value))
 
+/** A number a metafield stores, nil when the text is not one (`Number('abc')` is `NaN`, which Shopify cannot store in a number field). */
+function finite (value: unknown): number | null {
+  const n = typeof value === 'number' ? value : typeof value === 'string' && value.trim() !== '' ? Number(value) : NaN
+  return Number.isFinite(n) ? n : null
+}
+
+/**
+ * The rating object a `rating` metafield gives, https://shopify.dev/docs/api/liquid/objects/rating: `rating`, `scale_min` and `scale_max`, each a number. Printed on its own it is its `rating`, which Dawn and our theme print as `{{ product.metafields.reviews.rating.value }} / {{ product.metafields.reviews.rating.value.scale_max }}`; shopify.dev does not say what the object prints and no recording holds a rating, so the print is not pinned.
+ */
+export class RatingDrop extends Drop {
+  public readonly rating: LiquidFloat
+  public readonly scale_min: LiquidFloat
+  public readonly scale_max: LiquidFloat
+
+  public constructor (rating: number, scaleMin: number, scaleMax: number) {
+    super()
+    this.rating = new LiquidFloat(rating)
+    this.scale_min = new LiquidFloat(scaleMin)
+    this.scale_max = new LiquidFloat(scaleMax)
+  }
+
+  public valueOf () {
+    return this.rating
+  }
+
+  public toString () {
+    return this.rating.toString()
+  }
+
+  public toJSON () {
+    return { rating: this.rating.toString(), scale_min: this.scale_min.toString(), scale_max: this.scale_max.toString() }
+  }
+}
+
+/**
+ * The measurement object a `weight`, `volume` or `dimension` metafield gives, https://shopify.dev/docs/api/liquid/objects/measurement: `type`, `unit` and `value`. Printed on its own it is its value and unit (`500.0 mL`); shopify.dev does not say what the object prints and no recording holds one, so the print is not pinned.
+ */
+export class MeasurementDrop extends Drop {
+  public readonly type: string
+  public readonly value: LiquidFloat
+  public readonly unit: string
+
+  public constructor (type: string, value: number, unit: string) {
+    super()
+    this.type = type
+    this.value = new LiquidFloat(value)
+    this.unit = unit
+  }
+
+  public valueOf () {
+    return this.toString()
+  }
+
+  public toString () {
+    return this.unit ? `${this.value.toString()} ${this.unit}` : this.value.toString()
+  }
+
+  public toJSON () {
+    return { type: this.type, unit: this.unit, value: this.value.toString() }
+  }
+}
+
+/** The HTML of one node of a rich text field: `root`, `paragraph`, `heading` (its `level`), `list` (`listType` `ordered` or `unordered`), `list-item`, `link` (`url`, `title`, `target`) and `text` (`value`, `bold`, `italic`), the nodes https://shopify.dev/docs/apps/build/custom-data/metafields/list-of-data-types lists for `rich_text_field`. Text is escaped and a link whose URL is not safe loses its `href`. */
+function richTextHtml (node: unknown): string {
+  if (!isRecord(node)) return ''
+  const inner = Array.isArray(node.children) ? node.children.map(richTextHtml).join('') : ''
+  switch (node.type) {
+    case 'root': return inner
+    case 'paragraph': return `<p>${inner}</p>`
+    case 'heading': {
+      const level = Math.min(6, Math.max(1, Math.trunc(Number(node.level)) || 1))
+      return `<h${level}>${inner}</h${level}>`
+    }
+    case 'list': return node.listType === 'ordered' ? `<ol>${inner}</ol>` : `<ul>${inner}</ul>`
+    case 'list-item': return `<li>${inner}</li>`
+    case 'link': {
+      const url = typeof node.url === 'string' && isSafeUrl(node.url) ? node.url : null
+      return `<a${attribute('href', url)}${attribute('title', typeof node.title === 'string' ? node.title : null)}${attribute('target', typeof node.target === 'string' ? node.target : null)}>${inner}</a>`
+    }
+    case 'text': {
+      let text = escapeHtml(typeof node.value === 'string' ? node.value : '')
+      if (node.italic === true) text = `<em>${text}</em>`
+      if (node.bold === true) text = `<strong>${text}</strong>`
+      return text
+    }
+    default: return inner
+  }
+}
+
+/**
+ * The value of a `rich_text_field` metafield: its JSON tree (`type` and `children`, readable as before), which prints as the HTML of the tree (`<p>`, `<h1>` to `<h6>`, `<ul>`, `<ol>`, `<li>`, `<a>`, `<strong>`, `<em>`). The metafield page calls the value "A field that supports headings, lists, links, bold, and italics" and does not say what it prints; HTML is the form `metafield_tag` gives the field, so the print is not pinned.
+ */
+export class RichTextDrop extends Drop {
+  public readonly type: unknown
+  public readonly children: unknown
+
+  public constructor (private readonly tree: Record<string, unknown>) {
+    super()
+    this.type = tree.type
+    this.children = tree.children
+  }
+
+  public valueOf () {
+    return this.toString()
+  }
+
+  public toString () {
+    return richTextHtml(this.tree)
+  }
+
+  public toJSON () {
+    return this.tree
+  }
+}
+
 /** The money object a `money` metafield gives, https://shopify.dev/docs/api/liquid/objects/money: its `currency`, and the amount in the minor unit when the money filters read it. */
 class MoneyDrop extends Drop {
   public readonly currency: { iso_code: string }
@@ -64,15 +181,28 @@ class MoneyDrop extends Drop {
 function typedValue (type: string, value: unknown, resolve: MetafieldResolver | undefined): unknown {
   if (value === null || value === undefined) return null
   if (TEXT_TYPES.has(type)) return String(value)
-  if (type === 'number_integer') return Math.trunc(Number(value))
-  if (type === 'number_decimal') return decimal(value)
+  if (type === 'number_integer') {
+    const n = finite(value)
+    return n === null ? null : Math.trunc(n)
+  }
+  if (type === 'number_decimal') {
+    const n = finite(value)
+    return n === null ? null : decimal(n)
+  }
   if (type === 'boolean') return value === true || value === 'true'
   if (type === 'color') return ColorDrop.from(String(value)) ?? null
   if (hasOwn(REFERENCES, type)) return resolve?.(REFERENCES[type], String(value)) ?? null
   if (type === 'file_reference') return isRecord(value) && typeof value.src === 'string' ? new ImageDrop(value as unknown as ImageData) : null
   const data = parsed(value)
-  if (type === 'weight' || type === 'volume' || type === 'dimension') return isRecord(data) ? { type, value: decimal(data.value), unit: String(data.unit ?? '') } : null
-  if (type === 'rating') return isRecord(data) ? { rating: decimal(data.value ?? data.rating), scale_min: decimal(data.scale_min), scale_max: decimal(data.scale_max) } : null
+  if (type === 'weight' || type === 'volume' || type === 'dimension') {
+    const amount = isRecord(data) ? finite(data.value) : null
+    return isRecord(data) && amount !== null ? new MeasurementDrop(type, amount, String(data.unit ?? '')) : null
+  }
+  if (type === 'rating') {
+    const rating = isRecord(data) ? finite(data.value ?? data.rating) : null
+    return isRecord(data) && rating !== null ? new RatingDrop(rating, finite(data.scale_min) ?? 0, finite(data.scale_max) ?? 0) : null
+  }
+  if (type === 'rich_text_field') return isRecord(data) ? new RichTextDrop(data) : null
   if (type === 'money') return isRecord(data) ? new MoneyDrop(Number(data.amount), String(data.currency_code ?? data.currency ?? '')) : null
   return data
 }
@@ -91,7 +221,7 @@ function listValue (item: string, stored: unknown, resolve: MetafieldResolver | 
 }
 
 /**
- * Shopify's `metafield` object, https://shopify.dev/docs/api/liquid/objects/metafield: its `type`, `list?` and `value`, typed as the page's table says (a string for the text types, a number, a boolean, a `color` object, a measurement `{ type, value, unit }`, a rating `{ rating, scale_min, scale_max }`, a money object, the product, collection, page or variant a reference points at, an image for a file reference, a JSON object for `json` and `rich_text_field`, and an array for a list, whose reference lists also have `count`). Printed on its own it is the metafield as stored: the text, the number or the boolean, a reference's `gid://shopify/…` address, and the JSON text of anything else; shopify.dev does not say what the object prints, and no recording shows one. What the data stored, the resolver and the typed value are kept under symbols, which Liquid cannot name and `json` does not print.
+ * Shopify's `metafield` object, https://shopify.dev/docs/api/liquid/objects/metafield: its `type`, `list?` and `value`, typed as the page's table says (a string for the text types, a number, a boolean, a `color` object, a `measurement` object (`MeasurementDrop`), a `rating` object (`RatingDrop`), a money object, the product, collection, page or variant a reference points at, an image for a file reference, a JSON object for `json`, a rich text tree that prints as HTML for `rich_text_field` (`RichTextDrop`), and an array for a list, whose reference lists also have `count`). Printed on its own it is the metafield as stored: the text, the number or the boolean, a reference's `gid://shopify/…` address, and the JSON text of anything else; shopify.dev does not say what the object prints, and no recording shows one. What the data stored, the resolver and the typed value are kept under symbols, which Liquid cannot name and `json` does not print.
  */
 export class MetafieldDrop extends Drop {
   public readonly type: string
@@ -145,7 +275,7 @@ export class MetafieldDrop extends Drop {
   }
 }
 
-/** The `metafields` of a resource, https://shopify.dev/docs/api/liquid/objects/metafield: each namespace an object of its keys, each key a `MetafieldDrop`. A key whose value is nil is left out, as a metafield with no value does not exist. Only the data's own namespaces and keys are read. */
+/** The `metafields` of a resource, https://shopify.dev/docs/api/liquid/objects/metafield: each namespace an object of its keys, each key a `MetafieldDrop`. A key whose value is nil or empty text (or a typed entry whose `value` is) is left out, as a metafield with no value does not exist: Shopify does not store an empty value. Only the data's own namespaces and keys are read. */
 export function buildMetafields (data: Metafields | undefined, resolve?: MetafieldResolver): Record<string, Record<string, MetafieldDrop>> {
   const out: Record<string, Record<string, MetafieldDrop>> = {}
   if (!isRecord(data)) return out
@@ -155,7 +285,8 @@ export function buildMetafields (data: Metafields | undefined, resolve?: Metafie
     const built: Record<string, MetafieldDrop> = {}
     for (const key of Object.keys(keys)) {
       const value = keys[key]
-      if (value === null || value === undefined) continue
+      if (value === null || value === undefined || value === '') continue
+      if (isTyped(value) && (value.value === null || value.value === undefined || value.value === '')) continue
       built[key] = MetafieldDrop.from(value, resolve)
     }
     out[namespace] = built

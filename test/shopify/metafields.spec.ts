@@ -49,6 +49,39 @@ describe('metafield objects', () => {
     expect(await render('{{ m.rating.value.rating }}/{{ m.rating.value.scale_max }}|{{ m.colour.value.rgb }}|{{ m.colour }}|{{ m.bag.value.title }}|{{ m.bag }}|{% for p in m.similar.value %}{{ p.title }}{% endfor %}|{{ m.similar.value.count }}|{{ m.specs.value.fit }}|{{ m.specs.value.sizes | join: "," }}|{{ m.specs | json }}', { m }))
       .toBe('4.5/5.0|51 102 153|#336699|Bag|gid://shopify/Product/2|Bag|1|slim|1,2|{"fit":"slim","sizes":[1,2]}')
   })
+  it('prints a rating as its rating, a measurement as its value and unit, and rich text as its HTML', async () => {
+    const typed = (type: string, value: string) => ({ type, value })
+    const product = {
+      id: 3,
+      handle: 'lamp',
+      title: 'Lamp',
+      metafields: {
+        reviews: { rating: typed('rating', '{"value":"4.5","scale_min":"1.0","scale_max":"5.0"}') },
+        custom: {
+          weight: typed('weight', '{"value":"1.5","unit":"KILOGRAMS"}'),
+          volume: typed('volume', '{"value":500,"unit":"mL"}'),
+          dimension: typed('dimension', '{"value":"30.0","unit":"cm"}'),
+          story: typed('rich_text_field', JSON.stringify({ type: 'root', children: [{ type: 'heading', level: 2, children: [{ type: 'text', value: 'Made <well>' }] }, { type: 'paragraph', children: [{ type: 'text', value: 'Warm ' }, { type: 'text', value: 'light', bold: true, italic: true }, { type: 'text', value: ', see ' }, { type: 'link', url: '/pages/about', title: 'About', children: [{ type: 'text', value: 'us' }] }, { type: 'link', url: 'javascript:alert(1)', children: [{ type: 'text', value: 'x' }] }] }, { type: 'list', listType: 'ordered', children: [{ type: 'list-item', children: [{ type: 'text', value: 'one' }] }] }, { type: 'list', listType: 'unordered', children: [{ type: 'list-item', children: [{ type: 'text', value: 'two' }] }] }] }))
+        }
+      },
+      variants: [{ id: 31, title: 'Default Title', price: 1000, available: true, option1: 'Default Title' }]
+    }
+    const store = buildStore({ shop: data.shop, products: [product] })
+    const p = store.products.liquidMethodMissing('lamp')
+    // the rating block of our theme prints `{{ rating.value }} / {{ rating.value.scale_max }}`
+    expect(await render('{{ p.metafields.reviews.rating.value }} / {{ p.metafields.reviews.rating.value.scale_max }}|{{ p.metafields.reviews.rating.value.rating | round }}|{% if p.metafields.reviews.rating.value > 4 %}high{% endif %}|{{ p.metafields.reviews.rating.value | json }}', { p }))
+      .toBe('4.5 / 5.0|5|high|{"rating":"4.5","scale_min":"1.0","scale_max":"5.0"}')
+    expect(await render('{{ m.weight.value }}|{{ m.weight.value.value | plus: 1 }}|{{ m.weight.value.unit }}|{{ m.weight.value.type }}|{{ m.volume.value }}|{{ m.dimension.value }}|{{ m.volume.value | json }}', { m: (p as { metafields: { custom: object } }).metafields.custom }))
+      .toBe('1.5 KILOGRAMS|2.5|KILOGRAMS|weight|500.0 mL|30.0 cm|{"type":"volume","unit":"mL","value":"500.0"}')
+    expect(await render('{{ m.story.value }}|{{ m.story.value.type }}|{{ m.story.value.children.size }}', { m: (p as { metafields: { custom: object } }).metafields.custom }))
+      .toBe('<h2>Made &lt;well&gt;</h2><p>Warm <strong><em>light</em></strong>, see <a href="/pages/about" title="About">us</a><a>x</a></p><ol><li>one</li></ol><ul><li>two</li></ul>|root|4')
+  })
+  it('gives nil for a number that is not one, and leaves out an empty metafield', async () => {
+    const store = buildStore({ shop: data.shop, products: [{ id: 4, handle: 'cup', title: 'Cup', metafields: { custom: { count: { type: 'number_integer', value: 'abc' }, ratio: { type: 'number_decimal', value: '' }, blank: '', typedBlank: { type: 'single_line_text_field', value: '' }, kept: 'x' } }, variants: [{ id: 41, title: 'Default Title', price: 1, available: true, option1: 'Default Title' }] }] })
+    const p = store.products.liquidMethodMissing('cup')
+    expect(await render('[{{ m.count.value }}|{{ m.count.value | json }}|{{ m.ratio.value | json }}|{% if m.blank %}blank{% endif %}{% if m.typedBlank %}typed{% endif %}|{{ m.kept }}]', { m: (p as { metafields: { custom: object } }).metafields.custom }))
+      .toBe('[|null|null||x]')
+  })
   it('builds metafields on the shop, collections, pages and variants, and keeps the storefront filters working', async () => {
     const store = buildStore(data)
     expect(await render('{{ shop.metafields.custom.tagline.value }}|{{ collections.tops.metafields.custom.banner.type }}|{{ pages.about.metafields.custom.intro.value }}|{{ all_products.tee.variants.first.metafields.custom.code.value }}|{{ all_products.tee.metafields.custom.nope.value }}', { shop: store.shop, collections: store.collections, pages: store.pages, all_products: store.products }))
