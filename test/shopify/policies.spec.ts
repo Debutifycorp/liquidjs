@@ -49,12 +49,14 @@ describe('shop policies', () => {
     const { html } = await renderPage({ theme, data, templateName: page.templateName, request: page.request })
     expect(html).toBe('<title>Privacy policy</title><main data-template="" data-page="policy"><div class="shopify-policy__container">\n  <div class="shopify-policy__title">\n    <h1>Privacy policy</h1>\n  </div>\n\n  <div class="shopify-policy__body">\n    <div class="rte">\n        <p>Private.</p>\n    </div>\n  </div>\n</div>\n</main>https://s.example/policies/privacy-policy')
   })
-  it('adds the rules of the stylesheet Shopify links for a policy page to its header, and to no other page', async () => {
+  it("adds Debutify's own rules for the layout of a policy page to its header, and to no other page", async () => {
     const theme = { files: { 'layout/theme.liquid': '<head>{{ content_for_header }}</head>{{ content_for_layout }}' } }
     const policy = requestFromUrl('/policies/privacy-policy', data)
     const { html } = await renderPage({ theme, data, templateName: policy.templateName, request: policy.request })
-    expect(html).toContain('.shopify-policy__container{max-width:560px;max-width:65ch;margin:0 auto;padding-left:20px;padding-right:20px}.shopify-policy__title{text-align:center}')
-    expect(html).toContain('.shopify-policy__remote-policy-body{margin-bottom:20px}')
+    expect(html).toContain('<style data-shopify="stylesheet-tags">.shopify-policy__container{margin:0 auto;max-width:65ch;padding:0 20px}.shopify-policy__title{text-align:center}</style>')
+    // the rules are Debutify's own, not Shopify's: nothing of Shopify's stylesheet (its 560px fallback, its remote-policy rules) is in the page
+    expect(html).not.toContain('560px')
+    expect(html).not.toContain('remote-policy')
     const unset = requestFromUrl('/policies/terms-of-service', data)
     expect((await renderPage({ theme, data, templateName: unset.templateName, request: unset.request })).html).not.toContain('shopify-policy')
     const home = requestFromUrl('/', data)
