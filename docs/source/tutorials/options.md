@@ -161,6 +161,17 @@ engine.parseAndRender('{{ 10 | divided_by: 4 }} {{ 2.0 }} {{ 0.1 | plus: 0.2 }}'
 
 Decimal values that reach API callers (`evalValue`, `evalValueSync`, values written by `assign`) are `LiquidFloat` objects: read `.value`, or use `Number(x)`, for the number.
 
+## forloopParentloop
+
+**forloopParentloop** is added by the `@debutify/liquidjs` fork and does not exist in upstream LiquidJS. It gives `forloop` a [parentloop](https://shopify.dev/docs/api/liquid/objects/forloop#forloop-parentloop), the `forloop` of the `for` loop it is nested in, as Ruby Liquid does. It is nil in the outermost loop and in a partial rendered with `render`, which has a context of its own; a loop in an `include`d partial sees the loop around the `include`. With `false`, `forloop.parentloop` is undefined, as in upstream LiquidJS, so under `strictVariables` reading it is an undefined-variable error. It defaults to `false`; the Shopify preset (`createShopifyLiquid`) sets it to `true`.
+
+```javascript
+const { Liquid } = require('@debutify/liquidjs')
+const source = '{% for i in (1..2) %}{% for j in (1..2) %}{{ forloop.parentloop.index }}.{{ forloop.index }} {% endfor %}{% endfor %}'
+new Liquid().parseAndRender(source).then(console.log)                              // .1 .2 .1 .2
+new Liquid({ forloopParentloop: true }).parseAndRender(source).then(console.log)   // 1.1 1.2 2.1 2.2
+```
+
 ## rawTags
 
 **rawTags** is added by the `@debutify/liquidjs` fork and does not exist in upstream LiquidJS. It lists the tags whose body is read as raw text up to `end<name>` and never parsed, so Liquid syntax inside them is kept as text. It defaults to `['raw']`. Register a `RawBodyTag` subclass for each name you add, and list `comment` to make `comment` nest as it does in Shopify Liquid. The list replaces the default instead of adding to it, so it must include `raw` to keep `{% raw %}` raw: with `rawTags: ['comment']`, the body of `{% raw %}` is parsed as Liquid and `{% raw %}{{ x {% endraw %}` is a tokenization error.
