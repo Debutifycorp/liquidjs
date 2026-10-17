@@ -52,4 +52,13 @@ describe('storefrontSampleData', () => {
       expect(() => JSON.parse(html)).not.toThrow()
     }
   })
+  it('renders the font probes, JSON templates of one section each, with today\'s engine', async () => {
+    const templates = readdirSync(join(PROBE_DIR, 'templates')).filter(f => f.endsWith('.json')).map(f => f.replace(/\.json$/, ''))
+    expect(templates.sort()).toEqual(['page.probe-fonts-library', 'page.probe-fonts-retired-1', 'page.probe-fonts-retired-2', 'page.probe-fonts-retired-3', 'page.probe-fonts-retired-4'])
+    for (const t of templates) {
+      const html = await renderProbeHtml(t)
+      const fonts = JSON.parse(/^\s*<div[^>]*class="shopify-section[^"]*"[^>]*>([\s\S]*)<\/div>\s*$/.exec(html)![1]).fonts
+      expect(fonts.length).toBeGreaterThan(0)
+    }
+  })
 })

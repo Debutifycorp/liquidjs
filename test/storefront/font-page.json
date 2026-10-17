@@ -1,0 +1,5880 @@
+{
+  "read": "2026-10-17",
+  "source": "https://shopify.dev/docs/storefronts/themes/architecture/settings/fonts.md",
+  "library": [
+    {
+      "family": "Mono",
+      "handles": [
+        "mono"
+      ]
+    },
+    {
+      "family": "Sans-serif",
+      "handles": [
+        "sans_serif_n4",
+        "sans_serif_i4",
+        "sans_serif_n7",
+        "sans_serif_i7"
+      ]
+    },
+    {
+      "family": "Serif",
+      "handles": [
+        "serif"
+      ]
+    },
+    {
+      "family": "Abel",
+      "handles": [
+        "abel_n4"
+      ]
+    },
+    {
+      "family": "Abril Fatface",
+      "handles": [
+        "abril_fatface_n4"
+      ]
+    },
+    {
+      "family": "Acme",
+      "handles": [
+        "acme_n4"
+      ]
+    },
+    {
+      "family": "Alegreya",
+      "handles": [
+        "alegreya_n4",
+        "alegreya_i4",
+        "alegreya_n5",
+        "alegreya_i5",
+        "alegreya_n6",
+        "alegreya_i6",
+        "alegreya_n7",
+        "alegreya_i7",
+        "alegreya_n8",
+        "alegreya_i8",
+        "alegreya_n9",
+        "alegreya_i9"
+      ]
+    },
+    {
+      "family": "Alegreya Sans",
+      "handles": [
+        "alegreya_sans_n1",
+        "alegreya_sans_i1",
+        "alegreya_sans_n3",
+        "alegreya_sans_i3",
+        "alegreya_sans_n4",
+        "alegreya_sans_i4",
+        "alegreya_sans_n5",
+        "alegreya_sans_i5",
+        "alegreya_sans_n7",
+        "alegreya_sans_i7",
+        "alegreya_sans_n8",
+        "alegreya_sans_i8",
+        "alegreya_sans_n9",
+        "alegreya_sans_i9"
+      ]
+    },
+    {
+      "family": "Aleo",
+      "handles": [
+        "aleo_n1",
+        "aleo_i1",
+        "aleo_n2",
+        "aleo_i2",
+        "aleo_n3",
+        "aleo_i3",
+        "aleo_n4",
+        "aleo_i4",
+        "aleo_n5",
+        "aleo_i5",
+        "aleo_n6",
+        "aleo_i6",
+        "aleo_n7",
+        "aleo_i7",
+        "aleo_n8",
+        "aleo_i8",
+        "aleo_n9",
+        "aleo_i9"
+      ]
+    },
+    {
+      "family": "Almarai",
+      "handles": [
+        "almarai_n3",
+        "almarai_n4",
+        "almarai_n7",
+        "almarai_n8"
+      ]
+    },
+    {
+      "family": "Amiri",
+      "handles": [
+        "amiri_n4",
+        "amiri_i4",
+        "amiri_n7",
+        "amiri_i7"
+      ]
+    },
+    {
+      "family": "Andada Pro",
+      "handles": [
+        "andada_pro_n4",
+        "andada_pro_i4",
+        "andada_pro_n5",
+        "andada_pro_i5",
+        "andada_pro_n6",
+        "andada_pro_i6",
+        "andada_pro_n7",
+        "andada_pro_i7",
+        "andada_pro_n8",
+        "andada_pro_i8"
+      ]
+    },
+    {
+      "family": "Anek Tamil",
+      "handles": [
+        "anek_tamil_n1",
+        "anek_tamil_n2",
+        "anek_tamil_n3",
+        "anek_tamil_n4",
+        "anek_tamil_n5",
+        "anek_tamil_n6",
+        "anek_tamil_n7",
+        "anek_tamil_n8"
+      ]
+    },
+    {
+      "family": "Anonymous Pro",
+      "handles": [
+        "anonymous_pro_n4",
+        "anonymous_pro_i4",
+        "anonymous_pro_n7",
+        "anonymous_pro_i7"
+      ]
+    },
+    {
+      "family": "Anton",
+      "handles": [
+        "anton_n4"
+      ]
+    },
+    {
+      "family": "Anybody",
+      "handles": [
+        "anybody_n1",
+        "anybody_i1",
+        "anybody_n2",
+        "anybody_i2",
+        "anybody_n3",
+        "anybody_i3",
+        "anybody_n4",
+        "anybody_i4",
+        "anybody_n5",
+        "anybody_i5",
+        "anybody_n6",
+        "anybody_i6",
+        "anybody_n7",
+        "anybody_i7",
+        "anybody_n8",
+        "anybody_i8",
+        "anybody_n9",
+        "anybody_i9"
+      ]
+    },
+    {
+      "family": "Arapey",
+      "handles": [
+        "arapey_n4",
+        "arapey_i4"
+      ]
+    },
+    {
+      "family": "Archivo",
+      "handles": [
+        "archivo_n1",
+        "archivo_i1",
+        "archivo_n2",
+        "archivo_i2",
+        "archivo_n3",
+        "archivo_i3",
+        "archivo_n4",
+        "archivo_i4",
+        "archivo_n5",
+        "archivo_i5",
+        "archivo_n6",
+        "archivo_i6",
+        "archivo_n7",
+        "archivo_i7",
+        "archivo_n8",
+        "archivo_i8",
+        "archivo_n9",
+        "archivo_i9"
+      ]
+    },
+    {
+      "family": "Archivo Black",
+      "handles": [
+        "archivo_black_n4"
+      ]
+    },
+    {
+      "family": "Archivo Narrow",
+      "handles": [
+        "archivo_narrow_n4",
+        "archivo_narrow_i4",
+        "archivo_narrow_n5",
+        "archivo_narrow_i5",
+        "archivo_narrow_n6",
+        "archivo_narrow_i6",
+        "archivo_narrow_n7",
+        "archivo_narrow_i7"
+      ]
+    },
+    {
+      "family": "Arial",
+      "handles": [
+        "arial_n4",
+        "arial_i4",
+        "arial_n7",
+        "arial_i7"
+      ]
+    },
+    {
+      "family": "Arimo",
+      "handles": [
+        "arimo_n4",
+        "arimo_i4",
+        "arimo_n5",
+        "arimo_i5",
+        "arimo_n6",
+        "arimo_i6",
+        "arimo_n7",
+        "arimo_i7"
+      ]
+    },
+    {
+      "family": "Arsenal",
+      "handles": [
+        "arsenal_n4",
+        "arsenal_i4",
+        "arsenal_n7",
+        "arsenal_i7"
+      ]
+    },
+    {
+      "family": "Arvo",
+      "handles": [
+        "arvo_n4",
+        "arvo_i4",
+        "arvo_n7",
+        "arvo_i7"
+      ]
+    },
+    {
+      "family": "Asap",
+      "handles": [
+        "asap_n1",
+        "asap_i1",
+        "asap_n2",
+        "asap_i2",
+        "asap_n3",
+        "asap_i3",
+        "asap_n4",
+        "asap_i4",
+        "asap_n5",
+        "asap_i5",
+        "asap_n6",
+        "asap_i6",
+        "asap_n7",
+        "asap_i7",
+        "asap_n8",
+        "asap_i8",
+        "asap_n9",
+        "asap_i9"
+      ]
+    },
+    {
+      "family": "Assistant",
+      "handles": [
+        "assistant_n2",
+        "assistant_n3",
+        "assistant_n4",
+        "assistant_n5",
+        "assistant_n6",
+        "assistant_n7",
+        "assistant_n8"
+      ]
+    },
+    {
+      "family": "Asul",
+      "handles": [
+        "asul_n4",
+        "asul_n7"
+      ]
+    },
+    {
+      "family": "Azeret Mono",
+      "handles": [
+        "azeret_mono_n1",
+        "azeret_mono_i1",
+        "azeret_mono_n2",
+        "azeret_mono_i2",
+        "azeret_mono_n3",
+        "azeret_mono_i3",
+        "azeret_mono_n4",
+        "azeret_mono_i4",
+        "azeret_mono_n5",
+        "azeret_mono_i5",
+        "azeret_mono_n6",
+        "azeret_mono_i6",
+        "azeret_mono_n7",
+        "azeret_mono_i7",
+        "azeret_mono_n8",
+        "azeret_mono_i8",
+        "azeret_mono_n9",
+        "azeret_mono_i9"
+      ]
+    },
+    {
+      "family": "Bagel Fat One",
+      "handles": [
+        "bagel_fat_one_n4"
+      ]
+    },
+    {
+      "family": "Barlow",
+      "handles": [
+        "barlow_n1",
+        "barlow_i1",
+        "barlow_n2",
+        "barlow_i2",
+        "barlow_n3",
+        "barlow_i3",
+        "barlow_n4",
+        "barlow_i4",
+        "barlow_n5",
+        "barlow_i5",
+        "barlow_n6",
+        "barlow_i6",
+        "barlow_n7",
+        "barlow_i7",
+        "barlow_n8",
+        "barlow_i8",
+        "barlow_n9",
+        "barlow_i9"
+      ]
+    },
+    {
+      "family": "Barlow Condensed",
+      "handles": [
+        "barlow_condensed_n1",
+        "barlow_condensed_i1",
+        "barlow_condensed_n2",
+        "barlow_condensed_i2",
+        "barlow_condensed_n3",
+        "barlow_condensed_i3",
+        "barlow_condensed_n4",
+        "barlow_condensed_i4",
+        "barlow_condensed_n5",
+        "barlow_condensed_i5",
+        "barlow_condensed_n6",
+        "barlow_condensed_i6",
+        "barlow_condensed_n7",
+        "barlow_condensed_i7",
+        "barlow_condensed_n8",
+        "barlow_condensed_i8",
+        "barlow_condensed_n9",
+        "barlow_condensed_i9"
+      ]
+    },
+    {
+      "family": "Barlow Semi Condensed",
+      "handles": [
+        "barlow_semi_condensed_n1",
+        "barlow_semi_condensed_i1",
+        "barlow_semi_condensed_n2",
+        "barlow_semi_condensed_i2",
+        "barlow_semi_condensed_n3",
+        "barlow_semi_condensed_i3",
+        "barlow_semi_condensed_n4",
+        "barlow_semi_condensed_i4",
+        "barlow_semi_condensed_n5",
+        "barlow_semi_condensed_i5",
+        "barlow_semi_condensed_n6",
+        "barlow_semi_condensed_i6",
+        "barlow_semi_condensed_n7",
+        "barlow_semi_condensed_i7",
+        "barlow_semi_condensed_n8",
+        "barlow_semi_condensed_i8",
+        "barlow_semi_condensed_n9",
+        "barlow_semi_condensed_i9"
+      ]
+    },
+    {
+      "family": "Baskervville",
+      "handles": [
+        "baskervville_n4",
+        "baskervville_i4",
+        "baskervville_n5",
+        "baskervville_i5",
+        "baskervville_n6",
+        "baskervville_i6",
+        "baskervville_n7",
+        "baskervville_i7"
+      ]
+    },
+    {
+      "family": "Bayon",
+      "handles": [
+        "bayon_n4"
+      ]
+    },
+    {
+      "family": "Bebas Neue",
+      "handles": [
+        "bebas_neue_n4"
+      ]
+    },
+    {
+      "family": "Besley",
+      "handles": [
+        "besley_n4",
+        "besley_i4",
+        "besley_n5",
+        "besley_i5",
+        "besley_n6",
+        "besley_i6",
+        "besley_n7",
+        "besley_i7",
+        "besley_n8",
+        "besley_i8",
+        "besley_n9",
+        "besley_i9"
+      ]
+    },
+    {
+      "family": "Bevan",
+      "handles": [
+        "bevan_n4",
+        "bevan_i4"
+      ]
+    },
+    {
+      "family": "Big Shoulders",
+      "handles": [
+        "big_shoulders_n1",
+        "big_shoulders_n2",
+        "big_shoulders_n3",
+        "big_shoulders_n4",
+        "big_shoulders_n5",
+        "big_shoulders_n6",
+        "big_shoulders_n7",
+        "big_shoulders_n8",
+        "big_shoulders_n9"
+      ]
+    },
+    {
+      "family": "Bitter",
+      "handles": [
+        "bitter_n1",
+        "bitter_i1",
+        "bitter_n2",
+        "bitter_i2",
+        "bitter_n3",
+        "bitter_i3",
+        "bitter_n4",
+        "bitter_i4",
+        "bitter_n5",
+        "bitter_i5",
+        "bitter_n6",
+        "bitter_i6",
+        "bitter_n7",
+        "bitter_i7",
+        "bitter_n8",
+        "bitter_i8",
+        "bitter_n9",
+        "bitter_i9"
+      ]
+    },
+    {
+      "family": "Bodoni Moda",
+      "handles": [
+        "bodoni_moda_n4",
+        "bodoni_moda_i4",
+        "bodoni_moda_n5",
+        "bodoni_moda_i5",
+        "bodoni_moda_n6",
+        "bodoni_moda_i6",
+        "bodoni_moda_n7",
+        "bodoni_moda_i7",
+        "bodoni_moda_n8",
+        "bodoni_moda_i8",
+        "bodoni_moda_n9",
+        "bodoni_moda_i9"
+      ]
+    },
+    {
+      "family": "Bricolage Grotesque",
+      "handles": [
+        "bricolage_grotesque_n2",
+        "bricolage_grotesque_n3",
+        "bricolage_grotesque_n4",
+        "bricolage_grotesque_n5",
+        "bricolage_grotesque_n6",
+        "bricolage_grotesque_n7",
+        "bricolage_grotesque_n8"
+      ]
+    },
+    {
+      "family": "Buenard",
+      "handles": [
+        "buenard_n4",
+        "buenard_n5",
+        "buenard_n6",
+        "buenard_n7"
+      ]
+    },
+    {
+      "family": "Bungee",
+      "handles": [
+        "bungee_n4"
+      ]
+    },
+    {
+      "family": "Cabin",
+      "handles": [
+        "cabin_n4",
+        "cabin_i4",
+        "cabin_n5",
+        "cabin_i5",
+        "cabin_n6",
+        "cabin_i6",
+        "cabin_n7",
+        "cabin_i7"
+      ]
+    },
+    {
+      "family": "Caprasimo",
+      "handles": [
+        "caprasimo_n4"
+      ]
+    },
+    {
+      "family": "Cardo",
+      "handles": [
+        "cardo_n4",
+        "cardo_i4",
+        "cardo_n7"
+      ]
+    },
+    {
+      "family": "Carlito",
+      "handles": [
+        "carlito_n4",
+        "carlito_i4",
+        "carlito_n7",
+        "carlito_i7"
+      ]
+    },
+    {
+      "family": "Catamaran",
+      "handles": [
+        "catamaran_n1",
+        "catamaran_n2",
+        "catamaran_n3",
+        "catamaran_n4",
+        "catamaran_n5",
+        "catamaran_n6",
+        "catamaran_n7",
+        "catamaran_n8",
+        "catamaran_n9"
+      ]
+    },
+    {
+      "family": "Caveat",
+      "handles": [
+        "caveat_n4",
+        "caveat_n5",
+        "caveat_n6",
+        "caveat_n7"
+      ]
+    },
+    {
+      "family": "Cedarville Cursive",
+      "handles": [
+        "cedarville_cursive_n4"
+      ]
+    },
+    {
+      "family": "Chakra Petch",
+      "handles": [
+        "chakra_petch_n3",
+        "chakra_petch_i3",
+        "chakra_petch_n4",
+        "chakra_petch_i4",
+        "chakra_petch_n5",
+        "chakra_petch_i5",
+        "chakra_petch_n6",
+        "chakra_petch_i6",
+        "chakra_petch_n7",
+        "chakra_petch_i7"
+      ]
+    },
+    {
+      "family": "Chivo",
+      "handles": [
+        "chivo_n1",
+        "chivo_i1",
+        "chivo_n2",
+        "chivo_i2",
+        "chivo_n3",
+        "chivo_i3",
+        "chivo_n4",
+        "chivo_i4",
+        "chivo_n5",
+        "chivo_i5",
+        "chivo_n6",
+        "chivo_i6",
+        "chivo_n7",
+        "chivo_i7",
+        "chivo_n8",
+        "chivo_i8",
+        "chivo_n9",
+        "chivo_i9"
+      ]
+    },
+    {
+      "family": "Climate Crisis",
+      "handles": [
+        "climate_crisis_n4"
+      ]
+    },
+    {
+      "family": "Comfortaa",
+      "handles": [
+        "comfortaa_n3",
+        "comfortaa_n4",
+        "comfortaa_n5",
+        "comfortaa_n6",
+        "comfortaa_n7"
+      ]
+    },
+    {
+      "family": "Cormorant",
+      "handles": [
+        "cormorant_n3",
+        "cormorant_i3",
+        "cormorant_n4",
+        "cormorant_i4",
+        "cormorant_n5",
+        "cormorant_i5",
+        "cormorant_n6",
+        "cormorant_i6",
+        "cormorant_n7",
+        "cormorant_i7"
+      ]
+    },
+    {
+      "family": "Courier New",
+      "handles": [
+        "courier_new_n4",
+        "courier_new_i4",
+        "courier_new_n7",
+        "courier_new_i7"
+      ]
+    },
+    {
+      "family": "Covered By Your Grace",
+      "handles": [
+        "covered_by_your_grace_n4"
+      ]
+    },
+    {
+      "family": "Crimson Pro",
+      "handles": [
+        "crimson_pro_n2",
+        "crimson_pro_i2",
+        "crimson_pro_n3",
+        "crimson_pro_i3",
+        "crimson_pro_n4",
+        "crimson_pro_i4",
+        "crimson_pro_n5",
+        "crimson_pro_i5",
+        "crimson_pro_n6",
+        "crimson_pro_i6",
+        "crimson_pro_n7",
+        "crimson_pro_i7",
+        "crimson_pro_n8",
+        "crimson_pro_i8",
+        "crimson_pro_n9",
+        "crimson_pro_i9"
+      ]
+    },
+    {
+      "family": "Crimson Text",
+      "handles": [
+        "crimson_text_n4",
+        "crimson_text_i4",
+        "crimson_text_n6",
+        "crimson_text_i6",
+        "crimson_text_n7",
+        "crimson_text_i7"
+      ]
+    },
+    {
+      "family": "DM Sans",
+      "handles": [
+        "dm_sans_n1",
+        "dm_sans_i1",
+        "dm_sans_n2",
+        "dm_sans_i2",
+        "dm_sans_n3",
+        "dm_sans_i3",
+        "dm_sans_n4",
+        "dm_sans_i4",
+        "dm_sans_n5",
+        "dm_sans_i5",
+        "dm_sans_n6",
+        "dm_sans_i6",
+        "dm_sans_n7",
+        "dm_sans_i7",
+        "dm_sans_n8",
+        "dm_sans_i8",
+        "dm_sans_n9",
+        "dm_sans_i9"
+      ]
+    },
+    {
+      "family": "DM Serif Display",
+      "handles": [
+        "dm_serif_display_n4",
+        "dm_serif_display_i4"
+      ]
+    },
+    {
+      "family": "DM Serif Text",
+      "handles": [
+        "dm_serif_text_n4",
+        "dm_serif_text_i4"
+      ]
+    },
+    {
+      "family": "Domine",
+      "handles": [
+        "domine_n4",
+        "domine_n5",
+        "domine_n6",
+        "domine_n7"
+      ]
+    },
+    {
+      "family": "Dosis",
+      "handles": [
+        "dosis_n2",
+        "dosis_n3",
+        "dosis_n4",
+        "dosis_n5",
+        "dosis_n6",
+        "dosis_n7",
+        "dosis_n8"
+      ]
+    },
+    {
+      "family": "EB Garamond",
+      "handles": [
+        "ebgaramond_n4",
+        "ebgaramond_i4",
+        "ebgaramond_n5",
+        "ebgaramond_i5",
+        "ebgaramond_n6",
+        "ebgaramond_i6",
+        "ebgaramond_n7",
+        "ebgaramond_i7",
+        "ebgaramond_n8",
+        "ebgaramond_i8"
+      ]
+    },
+    {
+      "family": "Eczar",
+      "handles": [
+        "eczar_n4",
+        "eczar_n5",
+        "eczar_n6",
+        "eczar_n7",
+        "eczar_n8"
+      ]
+    },
+    {
+      "family": "Epilogue",
+      "handles": [
+        "epilogue_n1",
+        "epilogue_i1",
+        "epilogue_n2",
+        "epilogue_i2",
+        "epilogue_n3",
+        "epilogue_i3",
+        "epilogue_n4",
+        "epilogue_i4",
+        "epilogue_n5",
+        "epilogue_i5",
+        "epilogue_n6",
+        "epilogue_i6",
+        "epilogue_n7",
+        "epilogue_i7",
+        "epilogue_n8",
+        "epilogue_i8",
+        "epilogue_n9",
+        "epilogue_i9"
+      ]
+    },
+    {
+      "family": "Faculty Glyphic",
+      "handles": [
+        "faculty_glyphic_n4"
+      ]
+    },
+    {
+      "family": "Fahkwang",
+      "handles": [
+        "fahkwang_n2",
+        "fahkwang_i2",
+        "fahkwang_n3",
+        "fahkwang_i3",
+        "fahkwang_n4",
+        "fahkwang_i4",
+        "fahkwang_n5",
+        "fahkwang_i5",
+        "fahkwang_n6",
+        "fahkwang_i6",
+        "fahkwang_n7",
+        "fahkwang_i7"
+      ]
+    },
+    {
+      "family": "Figtree",
+      "handles": [
+        "figtree_n3",
+        "figtree_i3",
+        "figtree_n4",
+        "figtree_i4",
+        "figtree_n5",
+        "figtree_i5",
+        "figtree_n6",
+        "figtree_i6",
+        "figtree_n7",
+        "figtree_i7",
+        "figtree_n8",
+        "figtree_i8",
+        "figtree_n9",
+        "figtree_i9"
+      ]
+    },
+    {
+      "family": "Fira Sans",
+      "handles": [
+        "fira_sans_n1",
+        "fira_sans_i1",
+        "fira_sans_n2",
+        "fira_sans_i2",
+        "fira_sans_n3",
+        "fira_sans_i3",
+        "fira_sans_n4",
+        "fira_sans_i4",
+        "fira_sans_n5",
+        "fira_sans_i5",
+        "fira_sans_n6",
+        "fira_sans_i6",
+        "fira_sans_n7",
+        "fira_sans_i7",
+        "fira_sans_n8",
+        "fira_sans_i8",
+        "fira_sans_n9",
+        "fira_sans_i9"
+      ]
+    },
+    {
+      "family": "Fjalla One",
+      "handles": [
+        "fjalla_one_n4"
+      ]
+    },
+    {
+      "family": "Francois One",
+      "handles": [
+        "francois_one_n4"
+      ]
+    },
+    {
+      "family": "Frank Ruhl Libre",
+      "handles": [
+        "frank_ruhl_libre_n3",
+        "frank_ruhl_libre_n4",
+        "frank_ruhl_libre_n5",
+        "frank_ruhl_libre_n6",
+        "frank_ruhl_libre_n7",
+        "frank_ruhl_libre_n8",
+        "frank_ruhl_libre_n9"
+      ]
+    },
+    {
+      "family": "Fraunces",
+      "handles": [
+        "fraunces_n1",
+        "fraunces_i1",
+        "fraunces_n2",
+        "fraunces_i2",
+        "fraunces_n3",
+        "fraunces_i3",
+        "fraunces_n4",
+        "fraunces_i4",
+        "fraunces_n5",
+        "fraunces_i5",
+        "fraunces_n6",
+        "fraunces_i6",
+        "fraunces_n7",
+        "fraunces_i7",
+        "fraunces_n8",
+        "fraunces_i8",
+        "fraunces_n9",
+        "fraunces_i9"
+      ]
+    },
+    {
+      "family": "Fredoka",
+      "handles": [
+        "fredoka_n3",
+        "fredoka_n4",
+        "fredoka_n5",
+        "fredoka_n6",
+        "fredoka_n7"
+      ]
+    },
+    {
+      "family": "Funnel Display",
+      "handles": [
+        "funnel_display_n3",
+        "funnel_display_n4",
+        "funnel_display_n5",
+        "funnel_display_n6",
+        "funnel_display_n7",
+        "funnel_display_n8"
+      ]
+    },
+    {
+      "family": "Funnel Sans",
+      "handles": [
+        "funnel_sans_n3",
+        "funnel_sans_i3",
+        "funnel_sans_n4",
+        "funnel_sans_i4",
+        "funnel_sans_n5",
+        "funnel_sans_i5",
+        "funnel_sans_n6",
+        "funnel_sans_i6",
+        "funnel_sans_n7",
+        "funnel_sans_i7",
+        "funnel_sans_n8",
+        "funnel_sans_i8"
+      ]
+    },
+    {
+      "family": "Fustat",
+      "handles": [
+        "fustat_n2",
+        "fustat_n3",
+        "fustat_n4",
+        "fustat_n5",
+        "fustat_n6",
+        "fustat_n7",
+        "fustat_n8"
+      ]
+    },
+    {
+      "family": "Garamond",
+      "handles": [
+        "garamond_n4",
+        "garamond_i4",
+        "garamond_n7",
+        "garamond_i7"
+      ]
+    },
+    {
+      "family": "Geist",
+      "handles": [
+        "geist_n1",
+        "geist_n2",
+        "geist_n3",
+        "geist_n4",
+        "geist_n5",
+        "geist_n6",
+        "geist_n7",
+        "geist_n8",
+        "geist_n9"
+      ]
+    },
+    {
+      "family": "Geist Mono",
+      "handles": [
+        "geist_mono_n1",
+        "geist_mono_n2",
+        "geist_mono_n3",
+        "geist_mono_n4",
+        "geist_mono_n5",
+        "geist_mono_n6",
+        "geist_mono_n7",
+        "geist_mono_n8",
+        "geist_mono_n9"
+      ]
+    },
+    {
+      "family": "Gelasio",
+      "handles": [
+        "gelasio_n4",
+        "gelasio_i4",
+        "gelasio_n5",
+        "gelasio_i5",
+        "gelasio_n6",
+        "gelasio_i6",
+        "gelasio_n7",
+        "gelasio_i7"
+      ]
+    },
+    {
+      "family": "Germania One",
+      "handles": [
+        "germania_one_n4"
+      ]
+    },
+    {
+      "family": "Gilda Display",
+      "handles": [
+        "gilda_display_n4"
+      ]
+    },
+    {
+      "family": "Gloock",
+      "handles": [
+        "gloock_n4"
+      ]
+    },
+    {
+      "family": "Gluten",
+      "handles": [
+        "gluten_n1",
+        "gluten_n2",
+        "gluten_n3",
+        "gluten_n4",
+        "gluten_n5",
+        "gluten_n6",
+        "gluten_n7",
+        "gluten_n8",
+        "gluten_n9"
+      ]
+    },
+    {
+      "family": "Gowun Batang",
+      "handles": [
+        "gowun_batang_n4",
+        "gowun_batang_n7"
+      ]
+    },
+    {
+      "family": "Grandstander",
+      "handles": [
+        "grandstander_n1",
+        "grandstander_i1",
+        "grandstander_n2",
+        "grandstander_i2",
+        "grandstander_n3",
+        "grandstander_i3",
+        "grandstander_n4",
+        "grandstander_i4",
+        "grandstander_n5",
+        "grandstander_i5",
+        "grandstander_n6",
+        "grandstander_i6",
+        "grandstander_n7",
+        "grandstander_i7",
+        "grandstander_n8",
+        "grandstander_i8",
+        "grandstander_n9",
+        "grandstander_i9"
+      ]
+    },
+    {
+      "family": "Halant",
+      "handles": [
+        "halant_n3",
+        "halant_n4",
+        "halant_n5",
+        "halant_n6",
+        "halant_n7"
+      ]
+    },
+    {
+      "family": "Handlee",
+      "handles": [
+        "handlee_n4"
+      ]
+    },
+    {
+      "family": "Hepta Slab",
+      "handles": [
+        "hepta_slab_n1",
+        "hepta_slab_n2",
+        "hepta_slab_n3",
+        "hepta_slab_n4",
+        "hepta_slab_n5",
+        "hepta_slab_n6",
+        "hepta_slab_n7",
+        "hepta_slab_n8",
+        "hepta_slab_n9"
+      ]
+    },
+    {
+      "family": "Host Grotesk",
+      "handles": [
+        "host_grotesk_n3",
+        "host_grotesk_i3",
+        "host_grotesk_n4",
+        "host_grotesk_i4",
+        "host_grotesk_n5",
+        "host_grotesk_i5",
+        "host_grotesk_n6",
+        "host_grotesk_i6",
+        "host_grotesk_n7",
+        "host_grotesk_i7",
+        "host_grotesk_n8",
+        "host_grotesk_i8"
+      ]
+    },
+    {
+      "family": "Hubot Sans",
+      "handles": [
+        "hubot_sans_n2",
+        "hubot_sans_i2",
+        "hubot_sans_n3",
+        "hubot_sans_i3",
+        "hubot_sans_n4",
+        "hubot_sans_i4",
+        "hubot_sans_n5",
+        "hubot_sans_i5",
+        "hubot_sans_n6",
+        "hubot_sans_i6",
+        "hubot_sans_n7",
+        "hubot_sans_i7",
+        "hubot_sans_n8",
+        "hubot_sans_i8",
+        "hubot_sans_n9",
+        "hubot_sans_i9"
+      ]
+    },
+    {
+      "family": "IBM Plex Mono",
+      "handles": [
+        "ibm_plex_mono_n1",
+        "ibm_plex_mono_i1",
+        "ibm_plex_mono_n2",
+        "ibm_plex_mono_i2",
+        "ibm_plex_mono_n3",
+        "ibm_plex_mono_i3",
+        "ibm_plex_mono_n4",
+        "ibm_plex_mono_i4",
+        "ibm_plex_mono_n5",
+        "ibm_plex_mono_i5",
+        "ibm_plex_mono_n6",
+        "ibm_plex_mono_i6",
+        "ibm_plex_mono_n7",
+        "ibm_plex_mono_i7"
+      ]
+    },
+    {
+      "family": "IBM Plex Sans",
+      "handles": [
+        "ibm_plex_sans_n1",
+        "ibm_plex_sans_i1",
+        "ibm_plex_sans_n2",
+        "ibm_plex_sans_i2",
+        "ibm_plex_sans_n3",
+        "ibm_plex_sans_i3",
+        "ibm_plex_sans_n4",
+        "ibm_plex_sans_i4",
+        "ibm_plex_sans_n5",
+        "ibm_plex_sans_i5",
+        "ibm_plex_sans_n6",
+        "ibm_plex_sans_i6",
+        "ibm_plex_sans_n7",
+        "ibm_plex_sans_i7"
+      ]
+    },
+    {
+      "family": "IBM Plex Sans Condensed",
+      "handles": [
+        "ibm_plex_sans_condensed_n1",
+        "ibm_plex_sans_condensed_i1",
+        "ibm_plex_sans_condensed_n2",
+        "ibm_plex_sans_condensed_i2",
+        "ibm_plex_sans_condensed_n3",
+        "ibm_plex_sans_condensed_i3",
+        "ibm_plex_sans_condensed_n4",
+        "ibm_plex_sans_condensed_i4",
+        "ibm_plex_sans_condensed_n5",
+        "ibm_plex_sans_condensed_i5",
+        "ibm_plex_sans_condensed_n6",
+        "ibm_plex_sans_condensed_i6",
+        "ibm_plex_sans_condensed_n7",
+        "ibm_plex_sans_condensed_i7"
+      ]
+    },
+    {
+      "family": "IBM Plex Serif",
+      "handles": [
+        "ibm_plex_serif_n1",
+        "ibm_plex_serif_i1",
+        "ibm_plex_serif_n2",
+        "ibm_plex_serif_i2",
+        "ibm_plex_serif_n3",
+        "ibm_plex_serif_i3",
+        "ibm_plex_serif_n4",
+        "ibm_plex_serif_i4",
+        "ibm_plex_serif_n5",
+        "ibm_plex_serif_i5",
+        "ibm_plex_serif_n6",
+        "ibm_plex_serif_i6",
+        "ibm_plex_serif_n7",
+        "ibm_plex_serif_i7"
+      ]
+    },
+    {
+      "family": "Imbue",
+      "handles": [
+        "imbue_n1",
+        "imbue_n2",
+        "imbue_n3",
+        "imbue_n4",
+        "imbue_n5",
+        "imbue_n6",
+        "imbue_n7",
+        "imbue_n8",
+        "imbue_n9"
+      ]
+    },
+    {
+      "family": "Inconsolata",
+      "handles": [
+        "inconsolata_n2",
+        "inconsolata_n3",
+        "inconsolata_n4",
+        "inconsolata_n5",
+        "inconsolata_n6",
+        "inconsolata_n7",
+        "inconsolata_n8",
+        "inconsolata_n9"
+      ]
+    },
+    {
+      "family": "Inknut Antiqua",
+      "handles": [
+        "inknut_antiqua_n3",
+        "inknut_antiqua_n4",
+        "inknut_antiqua_n5",
+        "inknut_antiqua_n6",
+        "inknut_antiqua_n7",
+        "inknut_antiqua_n8",
+        "inknut_antiqua_n9"
+      ]
+    },
+    {
+      "family": "Instrument Sans",
+      "handles": [
+        "instrument_sans_n4",
+        "instrument_sans_i4",
+        "instrument_sans_n5",
+        "instrument_sans_i5",
+        "instrument_sans_n6",
+        "instrument_sans_i6",
+        "instrument_sans_n7",
+        "instrument_sans_i7"
+      ]
+    },
+    {
+      "family": "Instrument Serif",
+      "handles": [
+        "instrument_serif_n4",
+        "instrument_serif_i4"
+      ]
+    },
+    {
+      "family": "Inter",
+      "handles": [
+        "inter_n1",
+        "inter_i1",
+        "inter_n2",
+        "inter_i2",
+        "inter_n3",
+        "inter_i3",
+        "inter_n4",
+        "inter_i4",
+        "inter_n5",
+        "inter_i5",
+        "inter_n6",
+        "inter_i6",
+        "inter_n7",
+        "inter_i7",
+        "inter_n8",
+        "inter_i8",
+        "inter_n9",
+        "inter_i9"
+      ]
+    },
+    {
+      "family": "Josefin Sans",
+      "handles": [
+        "josefin_sans_n1",
+        "josefin_sans_i1",
+        "josefin_sans_n2",
+        "josefin_sans_i2",
+        "josefin_sans_n3",
+        "josefin_sans_i3",
+        "josefin_sans_n4",
+        "josefin_sans_i4",
+        "josefin_sans_n5",
+        "josefin_sans_i5",
+        "josefin_sans_n6",
+        "josefin_sans_i6",
+        "josefin_sans_n7",
+        "josefin_sans_i7"
+      ]
+    },
+    {
+      "family": "Josefin Slab",
+      "handles": [
+        "josefin_slab_n1",
+        "josefin_slab_i1",
+        "josefin_slab_n2",
+        "josefin_slab_i2",
+        "josefin_slab_n3",
+        "josefin_slab_i3",
+        "josefin_slab_n4",
+        "josefin_slab_i4",
+        "josefin_slab_n5",
+        "josefin_slab_i5",
+        "josefin_slab_n6",
+        "josefin_slab_i6",
+        "josefin_slab_n7",
+        "josefin_slab_i7"
+      ]
+    },
+    {
+      "family": "Jost",
+      "handles": [
+        "jost_n1",
+        "jost_i1",
+        "jost_n2",
+        "jost_i2",
+        "jost_n3",
+        "jost_i3",
+        "jost_n4",
+        "jost_i4",
+        "jost_n5",
+        "jost_i5",
+        "jost_n6",
+        "jost_i6",
+        "jost_n7",
+        "jost_i7",
+        "jost_n8",
+        "jost_i8",
+        "jost_n9",
+        "jost_i9"
+      ]
+    },
+    {
+      "family": "Kalam",
+      "handles": [
+        "kalam_n3",
+        "kalam_n4",
+        "kalam_n7"
+      ]
+    },
+    {
+      "family": "Karla",
+      "handles": [
+        "karla_n2",
+        "karla_i2",
+        "karla_n3",
+        "karla_i3",
+        "karla_n4",
+        "karla_i4",
+        "karla_n5",
+        "karla_i5",
+        "karla_n6",
+        "karla_i6",
+        "karla_n7",
+        "karla_i7",
+        "karla_n8",
+        "karla_i8"
+      ]
+    },
+    {
+      "family": "Kaushan Script",
+      "handles": [
+        "kaushan_script_n4"
+      ]
+    },
+    {
+      "family": "Klee One",
+      "handles": [
+        "klee_one_n4",
+        "klee_one_n6"
+      ]
+    },
+    {
+      "family": "Kreon",
+      "handles": [
+        "kreon_n3",
+        "kreon_n4",
+        "kreon_n5",
+        "kreon_n6",
+        "kreon_n7"
+      ]
+    },
+    {
+      "family": "Krona One",
+      "handles": [
+        "krona_one_n4"
+      ]
+    },
+    {
+      "family": "Krub",
+      "handles": [
+        "krub_n2",
+        "krub_i2",
+        "krub_n3",
+        "krub_i3",
+        "krub_n4",
+        "krub_i4",
+        "krub_n5",
+        "krub_i5",
+        "krub_n6",
+        "krub_i6",
+        "krub_n7",
+        "krub_i7"
+      ]
+    },
+    {
+      "family": "Lato",
+      "handles": [
+        "lato_n1",
+        "lato_i1",
+        "lato_n2",
+        "lato_i2",
+        "lato_n3",
+        "lato_i3",
+        "lato_n4",
+        "lato_i4",
+        "lato_n5",
+        "lato_i5",
+        "lato_n6",
+        "lato_i6",
+        "lato_n7",
+        "lato_i7",
+        "lato_n8",
+        "lato_i8",
+        "lato_n9",
+        "lato_i9"
+      ]
+    },
+    {
+      "family": "Lexend Zetta",
+      "handles": [
+        "lexend_zetta_n1",
+        "lexend_zetta_n2",
+        "lexend_zetta_n3",
+        "lexend_zetta_n4",
+        "lexend_zetta_n5",
+        "lexend_zetta_n6",
+        "lexend_zetta_n7",
+        "lexend_zetta_n8",
+        "lexend_zetta_n9"
+      ]
+    },
+    {
+      "family": "Libre Baskerville",
+      "handles": [
+        "libre_baskerville_n4",
+        "libre_baskerville_i4",
+        "libre_baskerville_n7"
+      ]
+    },
+    {
+      "family": "Libre Bodoni",
+      "handles": [
+        "libre_bodoni_n4",
+        "libre_bodoni_i4",
+        "libre_bodoni_n5",
+        "libre_bodoni_i5",
+        "libre_bodoni_n6",
+        "libre_bodoni_i6",
+        "libre_bodoni_n7",
+        "libre_bodoni_i7"
+      ]
+    },
+    {
+      "family": "Libre Caslon Text",
+      "handles": [
+        "libre_caslon_text_n4",
+        "libre_caslon_text_i4",
+        "libre_caslon_text_n5",
+        "libre_caslon_text_i5",
+        "libre_caslon_text_n6",
+        "libre_caslon_text_i6",
+        "libre_caslon_text_n7",
+        "libre_caslon_text_i7"
+      ]
+    },
+    {
+      "family": "Libre Franklin",
+      "handles": [
+        "libre_franklin_n1",
+        "libre_franklin_i1",
+        "libre_franklin_n2",
+        "libre_franklin_i2",
+        "libre_franklin_n3",
+        "libre_franklin_i3",
+        "libre_franklin_n4",
+        "libre_franklin_i4",
+        "libre_franklin_n5",
+        "libre_franklin_i5",
+        "libre_franklin_n6",
+        "libre_franklin_i6",
+        "libre_franklin_n7",
+        "libre_franklin_i7",
+        "libre_franklin_n8",
+        "libre_franklin_i8",
+        "libre_franklin_n9",
+        "libre_franklin_i9"
+      ]
+    },
+    {
+      "family": "Liter",
+      "handles": [
+        "liter_n4"
+      ]
+    },
+    {
+      "family": "Lobster Two",
+      "handles": [
+        "lobster_two_n4",
+        "lobster_two_i4",
+        "lobster_two_n7",
+        "lobster_two_i7"
+      ]
+    },
+    {
+      "family": "Lora",
+      "handles": [
+        "lora_n4",
+        "lora_i4",
+        "lora_n5",
+        "lora_i5",
+        "lora_n6",
+        "lora_i6",
+        "lora_n7",
+        "lora_i7"
+      ]
+    },
+    {
+      "family": "Lucida Grande",
+      "handles": [
+        "lucida_grande_n4",
+        "lucida_grande_i4",
+        "lucida_grande_n7",
+        "lucida_grande_i7"
+      ]
+    },
+    {
+      "family": "Manrope",
+      "handles": [
+        "manrope_n2",
+        "manrope_n3",
+        "manrope_n4",
+        "manrope_n5",
+        "manrope_n6",
+        "manrope_n7",
+        "manrope_n8"
+      ]
+    },
+    {
+      "family": "Manuale",
+      "handles": [
+        "manuale_n3",
+        "manuale_i3",
+        "manuale_n4",
+        "manuale_i4",
+        "manuale_n5",
+        "manuale_i5",
+        "manuale_n6",
+        "manuale_i6",
+        "manuale_n7",
+        "manuale_i7",
+        "manuale_n8",
+        "manuale_i8"
+      ]
+    },
+    {
+      "family": "Marcellus",
+      "handles": [
+        "marcellus_n4"
+      ]
+    },
+    {
+      "family": "Martel",
+      "handles": [
+        "martel_n2",
+        "martel_n3",
+        "martel_n4",
+        "martel_n6",
+        "martel_n7",
+        "martel_n8",
+        "martel_n9"
+      ]
+    },
+    {
+      "family": "Maven Pro",
+      "handles": [
+        "maven_pro_n4",
+        "maven_pro_n5",
+        "maven_pro_n6",
+        "maven_pro_n7",
+        "maven_pro_n8",
+        "maven_pro_n9"
+      ]
+    },
+    {
+      "family": "Merriweather",
+      "handles": [
+        "merriweather_n3",
+        "merriweather_i3",
+        "merriweather_n4",
+        "merriweather_i4",
+        "merriweather_n5",
+        "merriweather_i5",
+        "merriweather_n6",
+        "merriweather_i6",
+        "merriweather_n7",
+        "merriweather_i7",
+        "merriweather_n8",
+        "merriweather_i8",
+        "merriweather_n9",
+        "merriweather_i9"
+      ]
+    },
+    {
+      "family": "Merriweather Sans",
+      "handles": [
+        "merriweather_sans_n3",
+        "merriweather_sans_i3",
+        "merriweather_sans_n4",
+        "merriweather_sans_i4",
+        "merriweather_sans_n5",
+        "merriweather_sans_i5",
+        "merriweather_sans_n6",
+        "merriweather_sans_i6",
+        "merriweather_sans_n7",
+        "merriweather_sans_i7",
+        "merriweather_sans_n8",
+        "merriweather_sans_i8"
+      ]
+    },
+    {
+      "family": "Michroma",
+      "handles": [
+        "michroma_n4"
+      ]
+    },
+    {
+      "family": "Modak",
+      "handles": [
+        "modak_n4"
+      ]
+    },
+    {
+      "family": "Mona Sans",
+      "handles": [
+        "mona_sans_n2",
+        "mona_sans_i2",
+        "mona_sans_n3",
+        "mona_sans_i3",
+        "mona_sans_n4",
+        "mona_sans_i4",
+        "mona_sans_n5",
+        "mona_sans_i5",
+        "mona_sans_n6",
+        "mona_sans_i6",
+        "mona_sans_n7",
+        "mona_sans_i7",
+        "mona_sans_n8",
+        "mona_sans_i8",
+        "mona_sans_n9",
+        "mona_sans_i9"
+      ]
+    },
+    {
+      "family": "Monaco",
+      "handles": [
+        "monaco_n4",
+        "monaco_i4",
+        "monaco_n7",
+        "monaco_i7"
+      ]
+    },
+    {
+      "family": "Montagu Slab",
+      "handles": [
+        "montagu_slab_n1",
+        "montagu_slab_n2",
+        "montagu_slab_n3",
+        "montagu_slab_n4",
+        "montagu_slab_n5",
+        "montagu_slab_n6",
+        "montagu_slab_n7"
+      ]
+    },
+    {
+      "family": "Montserrat",
+      "handles": [
+        "montserrat_n1",
+        "montserrat_i1",
+        "montserrat_n2",
+        "montserrat_i2",
+        "montserrat_n3",
+        "montserrat_i3",
+        "montserrat_n4",
+        "montserrat_i4",
+        "montserrat_n5",
+        "montserrat_i5",
+        "montserrat_n6",
+        "montserrat_i6",
+        "montserrat_n7",
+        "montserrat_i7",
+        "montserrat_n8",
+        "montserrat_i8",
+        "montserrat_n9",
+        "montserrat_i9"
+      ]
+    },
+    {
+      "family": "Muli",
+      "handles": [
+        "muli_n2",
+        "muli_i2",
+        "muli_n3",
+        "muli_i3",
+        "muli_n4",
+        "muli_i4",
+        "muli_n5",
+        "muli_i5",
+        "muli_n6",
+        "muli_i6",
+        "muli_n7",
+        "muli_i7",
+        "muli_n8",
+        "muli_i8",
+        "muli_n9",
+        "muli_i9"
+      ]
+    },
+    {
+      "family": "Nanum Myeongjo",
+      "handles": [
+        "nanum_myeongjo_n4",
+        "nanum_myeongjo_n7",
+        "nanum_myeongjo_n8"
+      ]
+    },
+    {
+      "family": "Nanum Pen Script",
+      "handles": [
+        "nanum_pen_script_n4"
+      ]
+    },
+    {
+      "family": "Neuton",
+      "handles": [
+        "neuton_n2",
+        "neuton_n3",
+        "neuton_n4",
+        "neuton_i4",
+        "neuton_n7",
+        "neuton_n8"
+      ]
+    },
+    {
+      "family": "Newsreader",
+      "handles": [
+        "newsreader_n2",
+        "newsreader_i2",
+        "newsreader_n3",
+        "newsreader_i3",
+        "newsreader_n4",
+        "newsreader_i4",
+        "newsreader_n5",
+        "newsreader_i5",
+        "newsreader_n6",
+        "newsreader_i6",
+        "newsreader_n7",
+        "newsreader_i7",
+        "newsreader_n8",
+        "newsreader_i8"
+      ]
+    },
+    {
+      "family": "Nobile",
+      "handles": [
+        "nobile_n4",
+        "nobile_i4",
+        "nobile_n5",
+        "nobile_i5",
+        "nobile_n7",
+        "nobile_i7"
+      ]
+    },
+    {
+      "family": "Nothing You Could Do",
+      "handles": [
+        "nothing_you_could_do_n4"
+      ]
+    },
+    {
+      "family": "Noto Sans",
+      "handles": [
+        "noto_sans_n1",
+        "noto_sans_i1",
+        "noto_sans_n2",
+        "noto_sans_i2",
+        "noto_sans_n3",
+        "noto_sans_i3",
+        "noto_sans_n4",
+        "noto_sans_i4",
+        "noto_sans_n5",
+        "noto_sans_i5",
+        "noto_sans_n6",
+        "noto_sans_i6",
+        "noto_sans_n7",
+        "noto_sans_i7",
+        "noto_sans_n8",
+        "noto_sans_i8",
+        "noto_sans_n9",
+        "noto_sans_i9"
+      ]
+    },
+    {
+      "family": "Noto Sans Display",
+      "handles": [
+        "noto_sans_display_n1",
+        "noto_sans_display_i1",
+        "noto_sans_display_n2",
+        "noto_sans_display_i2",
+        "noto_sans_display_n3",
+        "noto_sans_display_i3",
+        "noto_sans_display_n4",
+        "noto_sans_display_i4",
+        "noto_sans_display_n5",
+        "noto_sans_display_i5",
+        "noto_sans_display_n6",
+        "noto_sans_display_i6",
+        "noto_sans_display_n7",
+        "noto_sans_display_i7",
+        "noto_sans_display_n8",
+        "noto_sans_display_i8",
+        "noto_sans_display_n9",
+        "noto_sans_display_i9"
+      ]
+    },
+    {
+      "family": "Noto Serif",
+      "handles": [
+        "noto_serif_n1",
+        "noto_serif_i1",
+        "noto_serif_n2",
+        "noto_serif_i2",
+        "noto_serif_n3",
+        "noto_serif_i3",
+        "noto_serif_n4",
+        "noto_serif_i4",
+        "noto_serif_n5",
+        "noto_serif_i5",
+        "noto_serif_n6",
+        "noto_serif_i6",
+        "noto_serif_n7",
+        "noto_serif_i7",
+        "noto_serif_n8",
+        "noto_serif_i8",
+        "noto_serif_n9",
+        "noto_serif_i9"
+      ]
+    },
+    {
+      "family": "Nunito",
+      "handles": [
+        "nunito_n2",
+        "nunito_i2",
+        "nunito_n3",
+        "nunito_i3",
+        "nunito_n4",
+        "nunito_i4",
+        "nunito_n5",
+        "nunito_i5",
+        "nunito_n6",
+        "nunito_i6",
+        "nunito_n7",
+        "nunito_i7",
+        "nunito_n8",
+        "nunito_i8",
+        "nunito_n9",
+        "nunito_i9"
+      ]
+    },
+    {
+      "family": "Nunito Sans",
+      "handles": [
+        "nunito_sans_n2",
+        "nunito_sans_i2",
+        "nunito_sans_n3",
+        "nunito_sans_i3",
+        "nunito_sans_n4",
+        "nunito_sans_i4",
+        "nunito_sans_n5",
+        "nunito_sans_i5",
+        "nunito_sans_n6",
+        "nunito_sans_i6",
+        "nunito_sans_n7",
+        "nunito_sans_i7",
+        "nunito_sans_n8",
+        "nunito_sans_i8",
+        "nunito_sans_n9",
+        "nunito_sans_i9"
+      ]
+    },
+    {
+      "family": "Old Standard TT",
+      "handles": [
+        "old_standard_tt_n4",
+        "old_standard_tt_i4",
+        "old_standard_tt_n7"
+      ]
+    },
+    {
+      "family": "Open Sans",
+      "handles": [
+        "open_sans_n3",
+        "open_sans_i3",
+        "open_sans_n4",
+        "open_sans_i4",
+        "open_sans_n5",
+        "open_sans_i5",
+        "open_sans_n6",
+        "open_sans_i6",
+        "open_sans_n7",
+        "open_sans_i7",
+        "open_sans_n8",
+        "open_sans_i8"
+      ]
+    },
+    {
+      "family": "Open Sans Condensed",
+      "handles": [
+        "open_sans_condensed_n3",
+        "open_sans_condensed_i3",
+        "open_sans_condensed_n4",
+        "open_sans_condensed_i4",
+        "open_sans_condensed_n5",
+        "open_sans_condensed_i5",
+        "open_sans_condensed_n6",
+        "open_sans_condensed_i6",
+        "open_sans_condensed_n7",
+        "open_sans_condensed_i7",
+        "open_sans_condensed_n8",
+        "open_sans_condensed_i8"
+      ]
+    },
+    {
+      "family": "Oranienbaum",
+      "handles": [
+        "oranienbaum_n4"
+      ]
+    },
+    {
+      "family": "Oswald",
+      "handles": [
+        "oswald_n2",
+        "oswald_n3",
+        "oswald_n4",
+        "oswald_n5",
+        "oswald_n6",
+        "oswald_n7"
+      ]
+    },
+    {
+      "family": "Outfit",
+      "handles": [
+        "outfit_n1",
+        "outfit_n2",
+        "outfit_n3",
+        "outfit_n4",
+        "outfit_n5",
+        "outfit_n6",
+        "outfit_n7",
+        "outfit_n8",
+        "outfit_n9"
+      ]
+    },
+    {
+      "family": "Ovo",
+      "handles": [
+        "ovo_n4"
+      ]
+    },
+    {
+      "family": "PT Sans",
+      "handles": [
+        "pt_sans_n4",
+        "pt_sans_i4",
+        "pt_sans_n7",
+        "pt_sans_i7"
+      ]
+    },
+    {
+      "family": "PT Serif",
+      "handles": [
+        "pt_serif_n4",
+        "pt_serif_i4",
+        "pt_serif_n7",
+        "pt_serif_i7"
+      ]
+    },
+    {
+      "family": "Pacifico",
+      "handles": [
+        "pacifico_n4"
+      ]
+    },
+    {
+      "family": "Palatino",
+      "handles": [
+        "palatino_n4",
+        "palatino_i4",
+        "palatino_n7",
+        "palatino_i7"
+      ]
+    },
+    {
+      "family": "Passion One",
+      "handles": [
+        "passion_one_n4",
+        "passion_one_n7",
+        "passion_one_n9"
+      ]
+    },
+    {
+      "family": "Petrona",
+      "handles": [
+        "petrona_n1",
+        "petrona_i1",
+        "petrona_n2",
+        "petrona_i2",
+        "petrona_n3",
+        "petrona_i3",
+        "petrona_n4",
+        "petrona_i4",
+        "petrona_n5",
+        "petrona_i5",
+        "petrona_n6",
+        "petrona_i6",
+        "petrona_n7",
+        "petrona_i7",
+        "petrona_n8",
+        "petrona_i8",
+        "petrona_n9",
+        "petrona_i9"
+      ]
+    },
+    {
+      "family": "Pinyon Script",
+      "handles": [
+        "pinyon_script_n4"
+      ]
+    },
+    {
+      "family": "Plaster",
+      "handles": [
+        "plaster_n4"
+      ]
+    },
+    {
+      "family": "Platypi",
+      "handles": [
+        "platypi_n3",
+        "platypi_i3",
+        "platypi_n4",
+        "platypi_i4",
+        "platypi_n5",
+        "platypi_i5",
+        "platypi_n6",
+        "platypi_i6",
+        "platypi_n7",
+        "platypi_i7",
+        "platypi_n8",
+        "platypi_i8"
+      ]
+    },
+    {
+      "family": "Playball",
+      "handles": [
+        "playball_n4"
+      ]
+    },
+    {
+      "family": "Playfair",
+      "handles": [
+        "playfair_n3",
+        "playfair_i3",
+        "playfair_n4",
+        "playfair_i4",
+        "playfair_n5",
+        "playfair_i5",
+        "playfair_n6",
+        "playfair_i6",
+        "playfair_n7",
+        "playfair_i7",
+        "playfair_n8",
+        "playfair_i8",
+        "playfair_n9",
+        "playfair_i9"
+      ]
+    },
+    {
+      "family": "Playfair Display",
+      "handles": [
+        "playfair_display_n4",
+        "playfair_display_i4",
+        "playfair_display_n5",
+        "playfair_display_i5",
+        "playfair_display_n6",
+        "playfair_display_i6",
+        "playfair_display_n7",
+        "playfair_display_i7",
+        "playfair_display_n8",
+        "playfair_display_i8",
+        "playfair_display_n9",
+        "playfair_display_i9"
+      ]
+    },
+    {
+      "family": "Playpen Sans",
+      "handles": [
+        "playpen_sans_n1",
+        "playpen_sans_n2",
+        "playpen_sans_n3",
+        "playpen_sans_n4",
+        "playpen_sans_n5",
+        "playpen_sans_n6",
+        "playpen_sans_n7",
+        "playpen_sans_n8"
+      ]
+    },
+    {
+      "family": "Playwrite CA",
+      "handles": [
+        "playwrite_ca_n1",
+        "playwrite_ca_n2",
+        "playwrite_ca_n3",
+        "playwrite_ca_n4"
+      ]
+    },
+    {
+      "family": "Plus Jakarta Sans",
+      "handles": [
+        "plus_jakarta_sans_n2",
+        "plus_jakarta_sans_i2",
+        "plus_jakarta_sans_n3",
+        "plus_jakarta_sans_i3",
+        "plus_jakarta_sans_n4",
+        "plus_jakarta_sans_i4",
+        "plus_jakarta_sans_n5",
+        "plus_jakarta_sans_i5",
+        "plus_jakarta_sans_n6",
+        "plus_jakarta_sans_i6",
+        "plus_jakarta_sans_n7",
+        "plus_jakarta_sans_i7",
+        "plus_jakarta_sans_n8",
+        "plus_jakarta_sans_i8"
+      ]
+    },
+    {
+      "family": "Poetsen One",
+      "handles": [
+        "poetsen_one_n4"
+      ]
+    },
+    {
+      "family": "Poppins",
+      "handles": [
+        "poppins_n1",
+        "poppins_i1",
+        "poppins_n2",
+        "poppins_i2",
+        "poppins_n3",
+        "poppins_i3",
+        "poppins_n4",
+        "poppins_i4",
+        "poppins_n5",
+        "poppins_i5",
+        "poppins_n6",
+        "poppins_i6",
+        "poppins_n7",
+        "poppins_i7",
+        "poppins_n8",
+        "poppins_i8",
+        "poppins_n9",
+        "poppins_i9"
+      ]
+    },
+    {
+      "family": "Prompt",
+      "handles": [
+        "prompt_n1",
+        "prompt_i1",
+        "prompt_n2",
+        "prompt_i2",
+        "prompt_n3",
+        "prompt_i3",
+        "prompt_n4",
+        "prompt_i4",
+        "prompt_n5",
+        "prompt_i5",
+        "prompt_n6",
+        "prompt_i6",
+        "prompt_n7",
+        "prompt_i7",
+        "prompt_n8",
+        "prompt_i8",
+        "prompt_n9",
+        "prompt_i9"
+      ]
+    },
+    {
+      "family": "Protest Riot",
+      "handles": [
+        "protest_riot_n4"
+      ]
+    },
+    {
+      "family": "Proza Libre",
+      "handles": [
+        "proza_libre_n4",
+        "proza_libre_i4",
+        "proza_libre_n5",
+        "proza_libre_i5",
+        "proza_libre_n6",
+        "proza_libre_i6",
+        "proza_libre_n7",
+        "proza_libre_i7",
+        "proza_libre_n8",
+        "proza_libre_i8"
+      ]
+    },
+    {
+      "family": "Quantico",
+      "handles": [
+        "quantico_n4",
+        "quantico_i4",
+        "quantico_n7",
+        "quantico_i7"
+      ]
+    },
+    {
+      "family": "Quattrocento Sans",
+      "handles": [
+        "quattrocento_sans_n4",
+        "quattrocento_sans_i4",
+        "quattrocento_sans_n7",
+        "quattrocento_sans_i7"
+      ]
+    },
+    {
+      "family": "Questrial",
+      "handles": [
+        "questrial_n4"
+      ]
+    },
+    {
+      "family": "Quicksand",
+      "handles": [
+        "quicksand_n3",
+        "quicksand_n4",
+        "quicksand_n5",
+        "quicksand_n6",
+        "quicksand_n7"
+      ]
+    },
+    {
+      "family": "Radio Canada Big",
+      "handles": [
+        "radio_canada_big_n4",
+        "radio_canada_big_i4",
+        "radio_canada_big_n5",
+        "radio_canada_big_i5",
+        "radio_canada_big_n6",
+        "radio_canada_big_i6",
+        "radio_canada_big_n7",
+        "radio_canada_big_i7"
+      ]
+    },
+    {
+      "family": "Rajdhani",
+      "handles": [
+        "rajdhani_n3",
+        "rajdhani_n4",
+        "rajdhani_n5",
+        "rajdhani_n6",
+        "rajdhani_n7"
+      ]
+    },
+    {
+      "family": "Raleway",
+      "handles": [
+        "raleway_n1",
+        "raleway_i1",
+        "raleway_n2",
+        "raleway_i2",
+        "raleway_n3",
+        "raleway_i3",
+        "raleway_n4",
+        "raleway_i4",
+        "raleway_n5",
+        "raleway_i5",
+        "raleway_n6",
+        "raleway_i6",
+        "raleway_n7",
+        "raleway_i7",
+        "raleway_n8",
+        "raleway_i8",
+        "raleway_n9",
+        "raleway_i9"
+      ]
+    },
+    {
+      "family": "Rancho",
+      "handles": [
+        "rancho_n4"
+      ]
+    },
+    {
+      "family": "Rasa",
+      "handles": [
+        "rasa_n3",
+        "rasa_i3",
+        "rasa_n4",
+        "rasa_i4",
+        "rasa_n5",
+        "rasa_i5",
+        "rasa_n6",
+        "rasa_i6",
+        "rasa_n7",
+        "rasa_i7"
+      ]
+    },
+    {
+      "family": "Recursive",
+      "handles": [
+        "recursive_n3",
+        "recursive_n4",
+        "recursive_n5",
+        "recursive_n6",
+        "recursive_n7",
+        "recursive_n8",
+        "recursive_n9"
+      ]
+    },
+    {
+      "family": "Red Hat Display",
+      "handles": [
+        "red_hat_display_n3",
+        "red_hat_display_i3",
+        "red_hat_display_n4",
+        "red_hat_display_i4",
+        "red_hat_display_n5",
+        "red_hat_display_i5",
+        "red_hat_display_n6",
+        "red_hat_display_i6",
+        "red_hat_display_n7",
+        "red_hat_display_i7",
+        "red_hat_display_n8",
+        "red_hat_display_i8",
+        "red_hat_display_n9",
+        "red_hat_display_i9"
+      ]
+    },
+    {
+      "family": "Red Hat Text",
+      "handles": [
+        "red_hat_text_n3",
+        "red_hat_text_i3",
+        "red_hat_text_n4",
+        "red_hat_text_i4",
+        "red_hat_text_n5",
+        "red_hat_text_i5",
+        "red_hat_text_n6",
+        "red_hat_text_i6",
+        "red_hat_text_n7",
+        "red_hat_text_i7"
+      ]
+    },
+    {
+      "family": "Red Rose",
+      "handles": [
+        "red_rose_n3",
+        "red_rose_n4",
+        "red_rose_n5",
+        "red_rose_n6",
+        "red_rose_n7"
+      ]
+    },
+    {
+      "family": "Rethink Sans",
+      "handles": [
+        "rethink_sans_n4",
+        "rethink_sans_i4",
+        "rethink_sans_n5",
+        "rethink_sans_i5",
+        "rethink_sans_n6",
+        "rethink_sans_i6",
+        "rethink_sans_n7",
+        "rethink_sans_i7",
+        "rethink_sans_n8",
+        "rethink_sans_i8"
+      ]
+    },
+    {
+      "family": "Roboto",
+      "handles": [
+        "roboto_n1",
+        "roboto_i1",
+        "roboto_n2",
+        "roboto_i2",
+        "roboto_n3",
+        "roboto_i3",
+        "roboto_n4",
+        "roboto_i4",
+        "roboto_n5",
+        "roboto_i5",
+        "roboto_n6",
+        "roboto_i6",
+        "roboto_n7",
+        "roboto_i7",
+        "roboto_n8",
+        "roboto_i8",
+        "roboto_n9",
+        "roboto_i9"
+      ]
+    },
+    {
+      "family": "Roboto Condensed",
+      "handles": [
+        "roboto_condensed_n1",
+        "roboto_condensed_i1",
+        "roboto_condensed_n2",
+        "roboto_condensed_i2",
+        "roboto_condensed_n3",
+        "roboto_condensed_i3",
+        "roboto_condensed_n4",
+        "roboto_condensed_i4",
+        "roboto_condensed_n5",
+        "roboto_condensed_i5",
+        "roboto_condensed_n6",
+        "roboto_condensed_i6",
+        "roboto_condensed_n7",
+        "roboto_condensed_i7",
+        "roboto_condensed_n8",
+        "roboto_condensed_i8",
+        "roboto_condensed_n9",
+        "roboto_condensed_i9"
+      ]
+    },
+    {
+      "family": "Roboto Mono",
+      "handles": [
+        "roboto_mono_n1",
+        "roboto_mono_i1",
+        "roboto_mono_n2",
+        "roboto_mono_i2",
+        "roboto_mono_n3",
+        "roboto_mono_i3",
+        "roboto_mono_n4",
+        "roboto_mono_i4",
+        "roboto_mono_n5",
+        "roboto_mono_i5",
+        "roboto_mono_n6",
+        "roboto_mono_i6",
+        "roboto_mono_n7",
+        "roboto_mono_i7"
+      ]
+    },
+    {
+      "family": "Roboto Serif",
+      "handles": [
+        "roboto_serif_n1",
+        "roboto_serif_i1",
+        "roboto_serif_n2",
+        "roboto_serif_i2",
+        "roboto_serif_n3",
+        "roboto_serif_i3",
+        "roboto_serif_n4",
+        "roboto_serif_i4",
+        "roboto_serif_n5",
+        "roboto_serif_i5",
+        "roboto_serif_n6",
+        "roboto_serif_i6",
+        "roboto_serif_n7",
+        "roboto_serif_i7",
+        "roboto_serif_n8",
+        "roboto_serif_i8",
+        "roboto_serif_n9",
+        "roboto_serif_i9"
+      ]
+    },
+    {
+      "family": "Roboto Slab",
+      "handles": [
+        "roboto_slab_n1",
+        "roboto_slab_n2",
+        "roboto_slab_n3",
+        "roboto_slab_n4",
+        "roboto_slab_n5",
+        "roboto_slab_n6",
+        "roboto_slab_n7",
+        "roboto_slab_n8",
+        "roboto_slab_n9"
+      ]
+    },
+    {
+      "family": "Rock Salt",
+      "handles": [
+        "rock_salt_n4"
+      ]
+    },
+    {
+      "family": "Rokkitt",
+      "handles": [
+        "rokkitt_n1",
+        "rokkitt_i1",
+        "rokkitt_n2",
+        "rokkitt_i2",
+        "rokkitt_n3",
+        "rokkitt_i3",
+        "rokkitt_n4",
+        "rokkitt_i4",
+        "rokkitt_n5",
+        "rokkitt_i5",
+        "rokkitt_n6",
+        "rokkitt_i6",
+        "rokkitt_n7",
+        "rokkitt_i7",
+        "rokkitt_n8",
+        "rokkitt_i8",
+        "rokkitt_n9",
+        "rokkitt_i9"
+      ]
+    },
+    {
+      "family": "Rubik",
+      "handles": [
+        "rubik_n3",
+        "rubik_i3",
+        "rubik_n4",
+        "rubik_i4",
+        "rubik_n5",
+        "rubik_i5",
+        "rubik_n6",
+        "rubik_i6",
+        "rubik_n7",
+        "rubik_i7",
+        "rubik_n8",
+        "rubik_i8",
+        "rubik_n9",
+        "rubik_i9"
+      ]
+    },
+    {
+      "family": "Saira",
+      "handles": [
+        "saira_n1",
+        "saira_i1",
+        "saira_n2",
+        "saira_i2",
+        "saira_n3",
+        "saira_i3",
+        "saira_n4",
+        "saira_i4",
+        "saira_n5",
+        "saira_i5",
+        "saira_n6",
+        "saira_i6",
+        "saira_n7",
+        "saira_i7",
+        "saira_n8",
+        "saira_i8",
+        "saira_n9",
+        "saira_i9"
+      ]
+    },
+    {
+      "family": "Saira Condensed",
+      "handles": [
+        "saira_condensed_n1",
+        "saira_condensed_n2",
+        "saira_condensed_n3",
+        "saira_condensed_n4",
+        "saira_condensed_n5",
+        "saira_condensed_n6",
+        "saira_condensed_n7",
+        "saira_condensed_n8",
+        "saira_condensed_n9"
+      ]
+    },
+    {
+      "family": "Saira Extra Condensed",
+      "handles": [
+        "saira_extra_condensed_n1",
+        "saira_extra_condensed_n2",
+        "saira_extra_condensed_n3",
+        "saira_extra_condensed_n4",
+        "saira_extra_condensed_n5",
+        "saira_extra_condensed_n6",
+        "saira_extra_condensed_n7",
+        "saira_extra_condensed_n8",
+        "saira_extra_condensed_n9"
+      ]
+    },
+    {
+      "family": "Saira Semi Condensed",
+      "handles": [
+        "saira_semi_condensed_n1",
+        "saira_semi_condensed_n2",
+        "saira_semi_condensed_n3",
+        "saira_semi_condensed_n4",
+        "saira_semi_condensed_n5",
+        "saira_semi_condensed_n6",
+        "saira_semi_condensed_n7",
+        "saira_semi_condensed_n8",
+        "saira_semi_condensed_n9"
+      ]
+    },
+    {
+      "family": "Sarabun",
+      "handles": [
+        "sarabun_n1",
+        "sarabun_i1",
+        "sarabun_n2",
+        "sarabun_i2",
+        "sarabun_n3",
+        "sarabun_i3",
+        "sarabun_n4",
+        "sarabun_i4",
+        "sarabun_n5",
+        "sarabun_i5",
+        "sarabun_n6",
+        "sarabun_i6",
+        "sarabun_n7",
+        "sarabun_i7",
+        "sarabun_n8",
+        "sarabun_i8"
+      ]
+    },
+    {
+      "family": "Schibsted Grotesk",
+      "handles": [
+        "schibsted_grotesk_n4",
+        "schibsted_grotesk_i4",
+        "schibsted_grotesk_n5",
+        "schibsted_grotesk_i5",
+        "schibsted_grotesk_n6",
+        "schibsted_grotesk_i6",
+        "schibsted_grotesk_n7",
+        "schibsted_grotesk_i7",
+        "schibsted_grotesk_n8",
+        "schibsted_grotesk_i8",
+        "schibsted_grotesk_n9",
+        "schibsted_grotesk_i9"
+      ]
+    },
+    {
+      "family": "Sedgwick Ave",
+      "handles": [
+        "sedgwick_ave_n4"
+      ]
+    },
+    {
+      "family": "Shadows Into Light",
+      "handles": [
+        "shadows_into_light_n4"
+      ]
+    },
+    {
+      "family": "Shadows Into Light Two",
+      "handles": [
+        "shadows_into_light_two_n4"
+      ]
+    },
+    {
+      "family": "Shantell Sans",
+      "handles": [
+        "shantell_sans_n3",
+        "shantell_sans_i3",
+        "shantell_sans_n4",
+        "shantell_sans_i4",
+        "shantell_sans_n5",
+        "shantell_sans_i5",
+        "shantell_sans_n6",
+        "shantell_sans_i6",
+        "shantell_sans_n7",
+        "shantell_sans_i7",
+        "shantell_sans_n8",
+        "shantell_sans_i8"
+      ]
+    },
+    {
+      "family": "Shippori Antique",
+      "handles": [
+        "shippori_antique_n4"
+      ]
+    },
+    {
+      "family": "Smooch",
+      "handles": [
+        "smooch_n4"
+      ]
+    },
+    {
+      "family": "Sofia Sans",
+      "handles": [
+        "sofia_sans_n1",
+        "sofia_sans_i1",
+        "sofia_sans_n2",
+        "sofia_sans_i2",
+        "sofia_sans_n3",
+        "sofia_sans_i3",
+        "sofia_sans_n4",
+        "sofia_sans_i4",
+        "sofia_sans_n5",
+        "sofia_sans_i5",
+        "sofia_sans_n6",
+        "sofia_sans_i6",
+        "sofia_sans_n7",
+        "sofia_sans_i7",
+        "sofia_sans_n8",
+        "sofia_sans_i8",
+        "sofia_sans_n9",
+        "sofia_sans_i9"
+      ]
+    },
+    {
+      "family": "Sofia Sans Condensed",
+      "handles": [
+        "sofia_sans_condensed_n1",
+        "sofia_sans_condensed_i1",
+        "sofia_sans_condensed_n2",
+        "sofia_sans_condensed_i2",
+        "sofia_sans_condensed_n3",
+        "sofia_sans_condensed_i3",
+        "sofia_sans_condensed_n4",
+        "sofia_sans_condensed_i4",
+        "sofia_sans_condensed_n5",
+        "sofia_sans_condensed_i5",
+        "sofia_sans_condensed_n6",
+        "sofia_sans_condensed_i6",
+        "sofia_sans_condensed_n7",
+        "sofia_sans_condensed_i7",
+        "sofia_sans_condensed_n8",
+        "sofia_sans_condensed_i8",
+        "sofia_sans_condensed_n9",
+        "sofia_sans_condensed_i9"
+      ]
+    },
+    {
+      "family": "Sofia Sans Extra Condensed",
+      "handles": [
+        "sofia_sans_extra_condensed_n1",
+        "sofia_sans_extra_condensed_i1",
+        "sofia_sans_extra_condensed_n2",
+        "sofia_sans_extra_condensed_i2",
+        "sofia_sans_extra_condensed_n3",
+        "sofia_sans_extra_condensed_i3",
+        "sofia_sans_extra_condensed_n4",
+        "sofia_sans_extra_condensed_i4",
+        "sofia_sans_extra_condensed_n5",
+        "sofia_sans_extra_condensed_i5",
+        "sofia_sans_extra_condensed_n6",
+        "sofia_sans_extra_condensed_i6",
+        "sofia_sans_extra_condensed_n7",
+        "sofia_sans_extra_condensed_i7",
+        "sofia_sans_extra_condensed_n8",
+        "sofia_sans_extra_condensed_i8",
+        "sofia_sans_extra_condensed_n9",
+        "sofia_sans_extra_condensed_i9"
+      ]
+    },
+    {
+      "family": "Sofia Sans Semi Condensed",
+      "handles": [
+        "sofia_sans_semi_condensed_n1",
+        "sofia_sans_semi_condensed_i1",
+        "sofia_sans_semi_condensed_n2",
+        "sofia_sans_semi_condensed_i2",
+        "sofia_sans_semi_condensed_n3",
+        "sofia_sans_semi_condensed_i3",
+        "sofia_sans_semi_condensed_n4",
+        "sofia_sans_semi_condensed_i4",
+        "sofia_sans_semi_condensed_n5",
+        "sofia_sans_semi_condensed_i5",
+        "sofia_sans_semi_condensed_n6",
+        "sofia_sans_semi_condensed_i6",
+        "sofia_sans_semi_condensed_n7",
+        "sofia_sans_semi_condensed_i7",
+        "sofia_sans_semi_condensed_n8",
+        "sofia_sans_semi_condensed_i8",
+        "sofia_sans_semi_condensed_n9",
+        "sofia_sans_semi_condensed_i9"
+      ]
+    },
+    {
+      "family": "Sono",
+      "handles": [
+        "sono_n2",
+        "sono_n3",
+        "sono_n4",
+        "sono_n5",
+        "sono_n6",
+        "sono_n7",
+        "sono_n8"
+      ]
+    },
+    {
+      "family": "Sour Gummy",
+      "handles": [
+        "sour_gummy_n1",
+        "sour_gummy_i1",
+        "sour_gummy_n2",
+        "sour_gummy_i2",
+        "sour_gummy_n3",
+        "sour_gummy_i3",
+        "sour_gummy_n4",
+        "sour_gummy_i4",
+        "sour_gummy_n5",
+        "sour_gummy_i5",
+        "sour_gummy_n6",
+        "sour_gummy_i6",
+        "sour_gummy_n7",
+        "sour_gummy_i7",
+        "sour_gummy_n8",
+        "sour_gummy_i8",
+        "sour_gummy_n9",
+        "sour_gummy_i9"
+      ]
+    },
+    {
+      "family": "Source Code Pro",
+      "handles": [
+        "source_code_pro_n2",
+        "source_code_pro_i2",
+        "source_code_pro_n3",
+        "source_code_pro_i3",
+        "source_code_pro_n4",
+        "source_code_pro_i4",
+        "source_code_pro_n5",
+        "source_code_pro_i5",
+        "source_code_pro_n6",
+        "source_code_pro_i6",
+        "source_code_pro_n7",
+        "source_code_pro_i7",
+        "source_code_pro_n8",
+        "source_code_pro_i8",
+        "source_code_pro_n9",
+        "source_code_pro_i9"
+      ]
+    },
+    {
+      "family": "Source Sans Pro",
+      "handles": [
+        "source_sans_pro_n2",
+        "source_sans_pro_i2",
+        "source_sans_pro_n3",
+        "source_sans_pro_i3",
+        "source_sans_pro_n4",
+        "source_sans_pro_i4",
+        "source_sans_pro_n5",
+        "source_sans_pro_i5",
+        "source_sans_pro_n6",
+        "source_sans_pro_i6",
+        "source_sans_pro_n7",
+        "source_sans_pro_i7",
+        "source_sans_pro_n8",
+        "source_sans_pro_i8",
+        "source_sans_pro_n9",
+        "source_sans_pro_i9"
+      ]
+    },
+    {
+      "family": "Source Serif 4",
+      "handles": [
+        "source_serif_4_n2",
+        "source_serif_4_i2",
+        "source_serif_4_n3",
+        "source_serif_4_i3",
+        "source_serif_4_n4",
+        "source_serif_4_i4",
+        "source_serif_4_n5",
+        "source_serif_4_i5",
+        "source_serif_4_n6",
+        "source_serif_4_i6",
+        "source_serif_4_n7",
+        "source_serif_4_i7",
+        "source_serif_4_n8",
+        "source_serif_4_i8",
+        "source_serif_4_n9",
+        "source_serif_4_i9"
+      ]
+    },
+    {
+      "family": "Space Grotesk",
+      "handles": [
+        "space_grotesk_n3",
+        "space_grotesk_n4",
+        "space_grotesk_n5",
+        "space_grotesk_n6",
+        "space_grotesk_n7"
+      ]
+    },
+    {
+      "family": "Space Mono",
+      "handles": [
+        "space_mono_n4",
+        "space_mono_i4",
+        "space_mono_n7",
+        "space_mono_i7"
+      ]
+    },
+    {
+      "family": "Syne",
+      "handles": [
+        "syne_n4",
+        "syne_n5",
+        "syne_n6",
+        "syne_n7",
+        "syne_n8"
+      ]
+    },
+    {
+      "family": "System UI",
+      "handles": [
+        "system_ui_n4",
+        "system_ui_i4",
+        "system_ui_n7",
+        "system_ui_i7"
+      ]
+    },
+    {
+      "family": "Taviraj",
+      "handles": [
+        "taviraj_n1",
+        "taviraj_i1",
+        "taviraj_n2",
+        "taviraj_i2",
+        "taviraj_n3",
+        "taviraj_i3",
+        "taviraj_n4",
+        "taviraj_i4",
+        "taviraj_n5",
+        "taviraj_i5",
+        "taviraj_n6",
+        "taviraj_i6",
+        "taviraj_n7",
+        "taviraj_i7",
+        "taviraj_n8",
+        "taviraj_i8",
+        "taviraj_n9",
+        "taviraj_i9"
+      ]
+    },
+    {
+      "family": "Tenor Sans",
+      "handles": [
+        "tenor_sans_n4"
+      ]
+    },
+    {
+      "family": "Tilt Warp",
+      "handles": [
+        "tilt_warp_n4"
+      ]
+    },
+    {
+      "family": "Times New Roman",
+      "handles": [
+        "times_new_roman_n4",
+        "times_new_roman_i4",
+        "times_new_roman_n7",
+        "times_new_roman_i7"
+      ]
+    },
+    {
+      "family": "Titan One",
+      "handles": [
+        "titan_one_n4"
+      ]
+    },
+    {
+      "family": "Titillium Web",
+      "handles": [
+        "titillium_web_n2",
+        "titillium_web_i2",
+        "titillium_web_n3",
+        "titillium_web_i3",
+        "titillium_web_n4",
+        "titillium_web_i4",
+        "titillium_web_n6",
+        "titillium_web_i6",
+        "titillium_web_n7",
+        "titillium_web_i7",
+        "titillium_web_n9"
+      ]
+    },
+    {
+      "family": "Tomorrow",
+      "handles": [
+        "tomorrow_n1",
+        "tomorrow_i1",
+        "tomorrow_n2",
+        "tomorrow_i2",
+        "tomorrow_n3",
+        "tomorrow_i3",
+        "tomorrow_n4",
+        "tomorrow_i4",
+        "tomorrow_n5",
+        "tomorrow_i5",
+        "tomorrow_n6",
+        "tomorrow_i6",
+        "tomorrow_n7",
+        "tomorrow_i7",
+        "tomorrow_n8",
+        "tomorrow_i8",
+        "tomorrow_n9",
+        "tomorrow_i9"
+      ]
+    },
+    {
+      "family": "Trebuchet MS",
+      "handles": [
+        "trebuchet_ms_n4",
+        "trebuchet_ms_i4",
+        "trebuchet_ms_n7",
+        "trebuchet_ms_i7"
+      ]
+    },
+    {
+      "family": "Trirong",
+      "handles": [
+        "trirong_n1",
+        "trirong_i1",
+        "trirong_n2",
+        "trirong_i2",
+        "trirong_n3",
+        "trirong_i3",
+        "trirong_n4",
+        "trirong_i4",
+        "trirong_n5",
+        "trirong_i5",
+        "trirong_n6",
+        "trirong_i6",
+        "trirong_n7",
+        "trirong_i7",
+        "trirong_n8",
+        "trirong_i8",
+        "trirong_n9",
+        "trirong_i9"
+      ]
+    },
+    {
+      "family": "Trispace",
+      "handles": [
+        "trispace_n1",
+        "trispace_n2",
+        "trispace_n3",
+        "trispace_n4",
+        "trispace_n5",
+        "trispace_n6",
+        "trispace_n7",
+        "trispace_n8"
+      ]
+    },
+    {
+      "family": "Ubuntu",
+      "handles": [
+        "ubuntu_n3",
+        "ubuntu_i3",
+        "ubuntu_n4",
+        "ubuntu_i4",
+        "ubuntu_n5",
+        "ubuntu_i5",
+        "ubuntu_n7",
+        "ubuntu_i7"
+      ]
+    },
+    {
+      "family": "Unbounded",
+      "handles": [
+        "unbounded_n2",
+        "unbounded_n3",
+        "unbounded_n4",
+        "unbounded_n5",
+        "unbounded_n6",
+        "unbounded_n7",
+        "unbounded_n8",
+        "unbounded_n9"
+      ]
+    },
+    {
+      "family": "Unica One",
+      "handles": [
+        "unica_one_n4"
+      ]
+    },
+    {
+      "family": "UnifrakturCook",
+      "handles": [
+        "unifraktur_cook_n7"
+      ]
+    },
+    {
+      "family": "UnifrakturMaguntia",
+      "handles": [
+        "unifraktur_maguntia_n4"
+      ]
+    },
+    {
+      "family": "Urbanist",
+      "handles": [
+        "urbanist_n1",
+        "urbanist_i1",
+        "urbanist_n2",
+        "urbanist_i2",
+        "urbanist_n3",
+        "urbanist_i3",
+        "urbanist_n4",
+        "urbanist_i4",
+        "urbanist_n5",
+        "urbanist_i5",
+        "urbanist_n6",
+        "urbanist_i6",
+        "urbanist_n7",
+        "urbanist_i7",
+        "urbanist_n8",
+        "urbanist_i8",
+        "urbanist_n9",
+        "urbanist_i9"
+      ]
+    },
+    {
+      "family": "Vina Sans",
+      "handles": [
+        "vina_sans_n4"
+      ]
+    },
+    {
+      "family": "Work Sans",
+      "handles": [
+        "work_sans_n1",
+        "work_sans_i1",
+        "work_sans_n2",
+        "work_sans_i2",
+        "work_sans_n3",
+        "work_sans_i3",
+        "work_sans_n4",
+        "work_sans_i4",
+        "work_sans_n5",
+        "work_sans_i5",
+        "work_sans_n6",
+        "work_sans_i6",
+        "work_sans_n7",
+        "work_sans_i7",
+        "work_sans_n8",
+        "work_sans_i8",
+        "work_sans_n9",
+        "work_sans_i9"
+      ]
+    },
+    {
+      "family": "Young Serif",
+      "handles": [
+        "young_serif_n4"
+      ]
+    },
+    {
+      "family": "Yrsa",
+      "handles": [
+        "yrsa_n3",
+        "yrsa_i3",
+        "yrsa_n4",
+        "yrsa_i4",
+        "yrsa_n5",
+        "yrsa_i5",
+        "yrsa_n6",
+        "yrsa_i6",
+        "yrsa_n7",
+        "yrsa_i7"
+      ]
+    },
+    {
+      "family": "Zilla Slab",
+      "handles": [
+        "zilla_slab_n3",
+        "zilla_slab_i3",
+        "zilla_slab_n4",
+        "zilla_slab_i4",
+        "zilla_slab_n5",
+        "zilla_slab_i5",
+        "zilla_slab_n6",
+        "zilla_slab_i6",
+        "zilla_slab_n7",
+        "zilla_slab_i7"
+      ]
+    },
+    {
+      "family": "日本語 BIZ UDP明朝",
+      "handles": [
+        "biz_udpmincho_n4",
+        "biz_udpmincho_n7"
+      ]
+    },
+    {
+      "family": "日本語 Dela ゴシック One",
+      "handles": [
+        "dela_gothic_one_n4"
+      ]
+    },
+    {
+      "family": "日本語 Hina 明朝",
+      "handles": [
+        "hina_mincho_n4"
+      ]
+    },
+    {
+      "family": "日本語 Kaisei Decol",
+      "handles": [
+        "kaisei_decol_n4",
+        "kaisei_decol_n5",
+        "kaisei_decol_n7"
+      ]
+    },
+    {
+      "family": "日本語 Kaisei Opti",
+      "handles": [
+        "kaisei_opti_n4",
+        "kaisei_opti_n5",
+        "kaisei_opti_n7"
+      ]
+    },
+    {
+      "family": "日本語 Kaisei Tokumin",
+      "handles": [
+        "kaisei_tokumin_n4",
+        "kaisei_tokumin_n5",
+        "kaisei_tokumin_n7",
+        "kaisei_tokumin_n8"
+      ]
+    },
+    {
+      "family": "日本語 M PLUS 1",
+      "handles": [
+        "m_plus_1_n1",
+        "m_plus_1_n2",
+        "m_plus_1_n3",
+        "m_plus_1_n4",
+        "m_plus_1_n5",
+        "m_plus_1_n6",
+        "m_plus_1_n7",
+        "m_plus_1_n8",
+        "m_plus_1_n9"
+      ]
+    },
+    {
+      "family": "日本語 M PLUS Rounded 1c",
+      "handles": [
+        "m_plus_rounded_1c_n1",
+        "m_plus_rounded_1c_n3",
+        "m_plus_rounded_1c_n4",
+        "m_plus_rounded_1c_n5",
+        "m_plus_rounded_1c_n7",
+        "m_plus_rounded_1c_n8",
+        "m_plus_rounded_1c_n9"
+      ]
+    },
+    {
+      "family": "日本語 Mochiy Pop P One",
+      "handles": [
+        "mochiy_pop_p_one_n4"
+      ]
+    },
+    {
+      "family": "日本語 Murecho",
+      "handles": [
+        "murecho_n1",
+        "murecho_n2",
+        "murecho_n3",
+        "murecho_n4",
+        "murecho_n5",
+        "murecho_n6",
+        "murecho_n7",
+        "murecho_n8",
+        "murecho_n9"
+      ]
+    },
+    {
+      "family": "日本語 Noto Sans Japanese",
+      "handles": [
+        "noto_sans_japanese_n1",
+        "noto_sans_japanese_n2",
+        "noto_sans_japanese_n3",
+        "noto_sans_japanese_n4",
+        "noto_sans_japanese_n5",
+        "noto_sans_japanese_n6",
+        "noto_sans_japanese_n7",
+        "noto_sans_japanese_n8",
+        "noto_sans_japanese_n9"
+      ]
+    },
+    {
+      "family": "日本語 Noto Serif Japanese",
+      "handles": [
+        "noto_serif_japanese_n2",
+        "noto_serif_japanese_n3",
+        "noto_serif_japanese_n4",
+        "noto_serif_japanese_n5",
+        "noto_serif_japanese_n6",
+        "noto_serif_japanese_n7",
+        "noto_serif_japanese_n8",
+        "noto_serif_japanese_n9"
+      ]
+    },
+    {
+      "family": "日本語 Shippori 明朝",
+      "handles": [
+        "shippori_mincho_n4",
+        "shippori_mincho_n5",
+        "shippori_mincho_n6",
+        "shippori_mincho_n7",
+        "shippori_mincho_n8"
+      ]
+    },
+    {
+      "family": "日本語 Zen Kaku ゴシック New",
+      "handles": [
+        "zen_kaku_gothic_new_n3",
+        "zen_kaku_gothic_new_n4",
+        "zen_kaku_gothic_new_n5",
+        "zen_kaku_gothic_new_n7",
+        "zen_kaku_gothic_new_n9"
+      ]
+    },
+    {
+      "family": "日本語 Zen Kurenaido",
+      "handles": [
+        "zen_kurenaido_n4"
+      ]
+    },
+    {
+      "family": "日本語 Zen Maru ゴシック",
+      "handles": [
+        "zen_maru_gothic_n3",
+        "zen_maru_gothic_n4",
+        "zen_maru_gothic_n5",
+        "zen_maru_gothic_n7",
+        "zen_maru_gothic_n9"
+      ]
+    },
+    {
+      "family": "日本語 Zen Old 明朝",
+      "handles": [
+        "zen_old_mincho_n4",
+        "zen_old_mincho_n5",
+        "zen_old_mincho_n6",
+        "zen_old_mincho_n7",
+        "zen_old_mincho_n9"
+      ]
+    }
+  ],
+  "retired": [
+    {
+      "family": "Agmena",
+      "handles": [
+        "agmena_n3",
+        "agmena_i3",
+        "agmena_n4",
+        "agmena_i4",
+        "agmena_n6",
+        "agmena_i6",
+        "agmena_n7",
+        "agmena_i7"
+      ],
+      "replacement": "Alegreya"
+    },
+    {
+      "family": "Akko",
+      "handles": [
+        "akko_n2",
+        "akko_i2",
+        "akko_n3",
+        "akko_i3",
+        "akko_n4",
+        "akko_i4",
+        "akko_n5",
+        "akko_i5",
+        "akko_n7",
+        "akko_i7",
+        "akko_n9",
+        "akko_i9"
+      ],
+      "replacement": "Titillium Web"
+    },
+    {
+      "family": "Alfie",
+      "handles": [
+        "alfie_n4"
+      ],
+      "replacement": "Handlee"
+    },
+    {
+      "family": "Americana",
+      "handles": [
+        "americana_n4",
+        "americana_i4",
+        "americana_n7",
+        "americana_n8"
+      ],
+      "replacement": "Trirong"
+    },
+    {
+      "family": "Antique Olive",
+      "handles": [
+        "antique_olive_n3",
+        "antique_olive_n4",
+        "antique_olive_i4",
+        "antique_olive_n7",
+        "antique_olive_n9"
+      ],
+      "replacement": "Anek Tamil"
+    },
+    {
+      "family": "Armata",
+      "handles": [
+        "armata_n4"
+      ],
+      "replacement": "Titillium Web"
+    },
+    {
+      "family": "Avenir Next",
+      "handles": [
+        "avenir_next_n1",
+        "avenir_next_i1",
+        "avenir_next_n2",
+        "avenir_next_i2",
+        "avenir_next_n3",
+        "avenir_next_i3",
+        "avenir_next_n4",
+        "avenir_next_i4",
+        "avenir_next_n5",
+        "avenir_next_i5",
+        "avenir_next_n6",
+        "avenir_next_i6",
+        "avenir_next_n7",
+        "avenir_next_i7",
+        "avenir_next_n8",
+        "avenir_next_i8"
+      ],
+      "replacement": "Figtree"
+    },
+    {
+      "family": "Avenir Next Rounded",
+      "handles": [
+        "avenir_next_rounded_n4",
+        "avenir_next_rounded_i4",
+        "avenir_next_rounded_n5",
+        "avenir_next_rounded_i5",
+        "avenir_next_rounded_n6",
+        "avenir_next_rounded_i6",
+        "avenir_next_rounded_n7",
+        "avenir_next_rounded_i7"
+      ],
+      "replacement": "Nunito"
+    },
+    {
+      "family": "Azbuka",
+      "handles": [
+        "azbuka_n2",
+        "azbuka_n3",
+        "azbuka_i3",
+        "azbuka_n4",
+        "azbuka_i4",
+        "azbuka_n5",
+        "azbuka_i5",
+        "azbuka_n6",
+        "azbuka_i6",
+        "azbuka_n7",
+        "azbuka_i7",
+        "azbuka_n8",
+        "azbuka_n9"
+      ],
+      "replacement": "Roboto"
+    },
+    {
+      "family": "Basic Commercial",
+      "handles": [
+        "basic_commercial_n3",
+        "basic_commercial_i3",
+        "basic_commercial_n4",
+        "basic_commercial_i4",
+        "basic_commercial_n7",
+        "basic_commercial_i7",
+        "basic_commercial_n8",
+        "basic_commercial_i8"
+      ],
+      "replacement": "Arimo"
+    },
+    {
+      "family": "Basic Commercial Soft Rounded",
+      "handles": [
+        "basic_commercial_soft_rounded_n4",
+        "basic_commercial_soft_rounded_n7",
+        "basic_commercial_soft_rounded_n9"
+      ],
+      "replacement": "Nunito"
+    },
+    {
+      "family": "Baskerville No 2",
+      "handles": [
+        "baskerville_no_2_n4",
+        "baskerville_no_2_i4",
+        "baskerville_no_2_n7",
+        "baskerville_no_2_i7"
+      ],
+      "replacement": "Libre Baskerville"
+    },
+    {
+      "family": "Bauer Bodoni",
+      "handles": [
+        "bauer_bodoni_n4",
+        "bauer_bodoni_i4",
+        "bauer_bodoni_n7",
+        "bauer_bodoni_i7",
+        "bauer_bodoni_n9",
+        "bauer_bodoni_i9"
+      ],
+      "replacement": "Bodoni Moda"
+    },
+    {
+      "family": "Beefcakes",
+      "handles": [
+        "beefcakes_n4",
+        "beefcakes_i4"
+      ],
+      "replacement": "Titan One"
+    },
+    {
+      "family": "Bembo Book",
+      "handles": [
+        "bembo_book_n4",
+        "bembo_book_i4",
+        "bembo_book_n7",
+        "bembo_book_i7"
+      ],
+      "replacement": "EB Garamond"
+    },
+    {
+      "family": "Bernhard Modern",
+      "handles": [
+        "bernhard_modern_n4",
+        "bernhard_modern_i4",
+        "bernhard_modern_n7",
+        "bernhard_modern_i7"
+      ],
+      "replacement": "Fraunces"
+    },
+    {
+      "family": "Bio Rhyme",
+      "handles": [
+        "bio_rhyme_n2",
+        "bio_rhyme_n3",
+        "bio_rhyme_n4",
+        "bio_rhyme_n5",
+        "bio_rhyme_n6",
+        "bio_rhyme_n7",
+        "bio_rhyme_n8"
+      ],
+      "replacement": "Hepta Slab"
+    },
+    {
+      "family": "Bodoni Poster",
+      "handles": [
+        "bodoni_poster_n9",
+        "bodoni_poster_i9"
+      ],
+      "replacement": "Bodoni Moda"
+    },
+    {
+      "family": "Burlingame",
+      "handles": [
+        "burlingame_n1",
+        "burlingame_i1",
+        "burlingame_n2",
+        "burlingame_i2",
+        "burlingame_n3",
+        "burlingame_i3",
+        "burlingame_n4",
+        "burlingame_i4",
+        "burlingame_n5",
+        "burlingame_i5",
+        "burlingame_n6",
+        "burlingame_i6",
+        "burlingame_n7",
+        "burlingame_i7",
+        "burlingame_n8",
+        "burlingame_i8",
+        "burlingame_n9",
+        "burlingame_i9"
+      ],
+      "replacement": "Saira"
+    },
+    {
+      "family": "Cachet",
+      "handles": [
+        "cachet_n1",
+        "cachet_i1",
+        "cachet_n2",
+        "cachet_i2",
+        "cachet_n3",
+        "cachet_i3",
+        "cachet_n4",
+        "cachet_i4",
+        "cachet_n5",
+        "cachet_i5",
+        "cachet_n6",
+        "cachet_i6",
+        "cachet_n7",
+        "cachet_i7",
+        "cachet_n8",
+        "cachet_i8"
+      ],
+      "replacement": "Titillium Web"
+    },
+    {
+      "family": "Cardamon",
+      "handles": [
+        "cardamon_n4",
+        "cardamon_i4",
+        "cardamon_n5",
+        "cardamon_i5",
+        "cardamon_n6",
+        "cardamon_i6",
+        "cardamon_n7",
+        "cardamon_i7"
+      ],
+      "replacement": "Buenard"
+    },
+    {
+      "family": "Carter Sans",
+      "handles": [
+        "carter_sans_n4",
+        "carter_sans_i4",
+        "carter_sans_n5",
+        "carter_sans_i5",
+        "carter_sans_n6",
+        "carter_sans_i6",
+        "carter_sans_n7",
+        "carter_sans_i7"
+      ],
+      "replacement": "Alegreya Sans"
+    },
+    {
+      "family": "Caslon Bold",
+      "handles": [
+        "caslon_bold_n4",
+        "caslon_bold_i4"
+      ],
+      "replacement": "Fraunces"
+    },
+    {
+      "family": "Caslon Old Face",
+      "handles": [
+        "caslon_old_face_n4",
+        "caslon_old_face_i4",
+        "caslon_old_face_n7"
+      ],
+      "replacement": "日本語 Shippori 明朝"
+    },
+    {
+      "family": "Centaur",
+      "handles": [
+        "centaur_n4",
+        "centaur_i4",
+        "centaur_n7",
+        "centaur_i7"
+      ],
+      "replacement": "Cardo"
+    },
+    {
+      "family": "Century Gothic",
+      "handles": [
+        "century_gothic_n4",
+        "century_gothic_i4",
+        "century_gothic_n7",
+        "century_gothic_i7"
+      ],
+      "replacement": "Poppins"
+    },
+    {
+      "family": "Chong Modern",
+      "handles": [
+        "chong_modern_n3",
+        "chong_modern_i3",
+        "chong_modern_n4",
+        "chong_modern_i4",
+        "chong_modern_n7",
+        "chong_modern_i7"
+      ],
+      "replacement": "Arsenal"
+    },
+    {
+      "family": "Claire News",
+      "handles": [
+        "claire_news_n3",
+        "claire_news_n7"
+      ],
+      "replacement": "Libre Baskerville"
+    },
+    {
+      "family": "Cooper BT",
+      "handles": [
+        "cooper_bt_n2",
+        "cooper_bt_i2",
+        "cooper_bt_n5",
+        "cooper_bt_i5",
+        "cooper_bt_n7",
+        "cooper_bt_i7",
+        "cooper_bt_n9",
+        "cooper_bt_i9"
+      ],
+      "replacement": "Petrona"
+    },
+    {
+      "family": "DIN Neuzeit Grotesk",
+      "handles": [
+        "din_neuzeit_grotesk_n3",
+        "din_neuzeit_grotesk_n7"
+      ],
+      "replacement": "Jost"
+    },
+    {
+      "family": "DIN Next",
+      "handles": [
+        "din_next_n2",
+        "din_next_i2",
+        "din_next_n3",
+        "din_next_i3",
+        "din_next_n4",
+        "din_next_i4",
+        "din_next_n5",
+        "din_next_i5",
+        "din_next_n7",
+        "din_next_i7",
+        "din_next_n8",
+        "din_next_i8",
+        "din_next_n9",
+        "din_next_i9"
+      ],
+      "replacement": "Barlow"
+    },
+    {
+      "family": "DIN Next Slab",
+      "handles": [
+        "din_next_slab_n2",
+        "din_next_slab_i2",
+        "din_next_slab_n3",
+        "din_next_slab_i3",
+        "din_next_slab_n4",
+        "din_next_slab_i4",
+        "din_next_slab_n5",
+        "din_next_slab_i5",
+        "din_next_slab_n7",
+        "din_next_slab_i7",
+        "din_next_slab_n8",
+        "din_next_slab_i8",
+        "din_next_slab_n9",
+        "din_next_slab_i9"
+      ],
+      "replacement": "Zilla Slab"
+    },
+    {
+      "family": "Daytona",
+      "handles": [
+        "daytona_n2",
+        "daytona_i2",
+        "daytona_n3",
+        "daytona_i3",
+        "daytona_n4",
+        "daytona_i4",
+        "daytona_n6",
+        "daytona_i6",
+        "daytona_n7",
+        "daytona_i7"
+      ],
+      "replacement": "Titillium Web"
+    },
+    {
+      "family": "Electra",
+      "handles": [
+        "electra_n4",
+        "electra_i4",
+        "electra_n7",
+        "electra_i7"
+      ],
+      "replacement": "Manuale"
+    },
+    {
+      "family": "Eurostile Next",
+      "handles": [
+        "eurostile_next_n2",
+        "eurostile_next_i2",
+        "eurostile_next_n3",
+        "eurostile_next_i3",
+        "eurostile_next_n4",
+        "eurostile_next_i4",
+        "eurostile_next_n6",
+        "eurostile_next_i6",
+        "eurostile_next_n7",
+        "eurostile_next_i7"
+      ],
+      "replacement": "Saira"
+    },
+    {
+      "family": "FF Meta",
+      "handles": [
+        "ff_meta_n1",
+        "ff_meta_i1",
+        "ff_meta_n2",
+        "ff_meta_i2",
+        "ff_meta_n3",
+        "ff_meta_i3",
+        "ff_meta_n4",
+        "ff_meta_i4",
+        "ff_meta_n5",
+        "ff_meta_i5",
+        "ff_meta_n6",
+        "ff_meta_i6",
+        "ff_meta_n7",
+        "ff_meta_i7",
+        "ff_meta_n9",
+        "ff_meta_i9"
+      ],
+      "replacement": "Fira Sans"
+    },
+    {
+      "family": "FF Meta Serif",
+      "handles": [
+        "ff_meta_serif_n3",
+        "ff_meta_serif_i3",
+        "ff_meta_serif_n4",
+        "ff_meta_serif_i4",
+        "ff_meta_serif_n5",
+        "ff_meta_serif_i5",
+        "ff_meta_serif_n7",
+        "ff_meta_serif_i7",
+        "ff_meta_serif_n8",
+        "ff_meta_serif_i8",
+        "ff_meta_serif_n9",
+        "ff_meta_serif_i9"
+      ],
+      "replacement": "Yrsa"
+    },
+    {
+      "family": "FF Tisa",
+      "handles": [
+        "ff_tisa_n2",
+        "ff_tisa_i2",
+        "ff_tisa_n3",
+        "ff_tisa_i3",
+        "ff_tisa_n4",
+        "ff_tisa_i4",
+        "ff_tisa_n5",
+        "ff_tisa_i5",
+        "ff_tisa_n7",
+        "ff_tisa_i7",
+        "ff_tisa_n8",
+        "ff_tisa_i8",
+        "ff_tisa_n9",
+        "ff_tisa_i9"
+      ],
+      "replacement": "Merriweather"
+    },
+    {
+      "family": "FF Tisa Sans",
+      "handles": [
+        "ff_tisa_sans_n2",
+        "ff_tisa_sans_i2",
+        "ff_tisa_sans_n3",
+        "ff_tisa_sans_i3",
+        "ff_tisa_sans_n4",
+        "ff_tisa_sans_i4",
+        "ff_tisa_sans_n5",
+        "ff_tisa_sans_i5",
+        "ff_tisa_sans_n7",
+        "ff_tisa_sans_i7",
+        "ff_tisa_sans_n8",
+        "ff_tisa_sans_i8",
+        "ff_tisa_sans_n9",
+        "ff_tisa_sans_i9"
+      ],
+      "replacement": "Cabin"
+    },
+    {
+      "family": "FF Unit",
+      "handles": [
+        "ff_unit_n2",
+        "ff_unit_i2",
+        "ff_unit_n3",
+        "ff_unit_i3",
+        "ff_unit_n4",
+        "ff_unit_i4",
+        "ff_unit_n5",
+        "ff_unit_i5",
+        "ff_unit_n7",
+        "ff_unit_i7",
+        "ff_unit_n8",
+        "ff_unit_i8",
+        "ff_unit_n9",
+        "ff_unit_i9"
+      ],
+      "replacement": "Fira Sans"
+    },
+    {
+      "family": "FF Unit Rounded",
+      "handles": [
+        "ff_unit_rounded_n3",
+        "ff_unit_rounded_i3",
+        "ff_unit_rounded_n4",
+        "ff_unit_rounded_i4",
+        "ff_unit_rounded_n5",
+        "ff_unit_rounded_i5",
+        "ff_unit_rounded_n7",
+        "ff_unit_rounded_i7",
+        "ff_unit_rounded_n8",
+        "ff_unit_rounded_i8",
+        "ff_unit_rounded_n9",
+        "ff_unit_rounded_i9"
+      ],
+      "replacement": "Fira Sans"
+    },
+    {
+      "family": "FF Unit Slab",
+      "handles": [
+        "ff_unit_slab_n2",
+        "ff_unit_slab_i2",
+        "ff_unit_slab_n3",
+        "ff_unit_slab_i3",
+        "ff_unit_slab_n4",
+        "ff_unit_slab_i4",
+        "ff_unit_slab_n5",
+        "ff_unit_slab_i5",
+        "ff_unit_slab_n7",
+        "ff_unit_slab_i7",
+        "ff_unit_slab_n8",
+        "ff_unit_slab_i8",
+        "ff_unit_slab_n9",
+        "ff_unit_slab_i9"
+      ],
+      "replacement": "Roboto Slab"
+    },
+    {
+      "family": "FS Kim",
+      "handles": [
+        "fs_kim_n4",
+        "fs_kim_i4",
+        "fs_kim_n5",
+        "fs_kim_i5",
+        "fs_kim_n7",
+        "fs_kim_i7",
+        "fs_kim_n8",
+        "fs_kim_i8",
+        "fs_kim_n9",
+        "fs_kim_i9"
+      ],
+      "replacement": "Inknut Antiqua"
+    },
+    {
+      "family": "FS Koopman",
+      "handles": [
+        "fs_koopman_n1",
+        "fs_koopman_i1",
+        "fs_koopman_n3",
+        "fs_koopman_i3",
+        "fs_koopman_n4",
+        "fs_koopman_i4",
+        "fs_koopman_n5",
+        "fs_koopman_i5",
+        "fs_koopman_n7",
+        "fs_koopman_i7",
+        "fs_koopman_n8",
+        "fs_koopman_i8",
+        "fs_koopman_n9",
+        "fs_koopman_i9"
+      ],
+      "replacement": "Instrument Sans"
+    },
+    {
+      "family": "FS Siena",
+      "handles": [
+        "fs_siena_n1",
+        "fs_siena_i1",
+        "fs_siena_n2",
+        "fs_siena_i2",
+        "fs_siena_n3",
+        "fs_siena_i3",
+        "fs_siena_n4",
+        "fs_siena_i4",
+        "fs_siena_n5",
+        "fs_siena_i5",
+        "fs_siena_n6",
+        "fs_siena_i6",
+        "fs_siena_n7",
+        "fs_siena_i7"
+      ],
+      "replacement": "Noto Sans"
+    },
+    {
+      "family": "Fette Gotisch",
+      "handles": [
+        "fette_gotisch_n4"
+      ],
+      "replacement": "UnifrakturMaguntia"
+    },
+    {
+      "family": "Friz Quadrata",
+      "handles": [
+        "friz_quadrata_n4",
+        "friz_quadrata_i4",
+        "friz_quadrata_n7",
+        "friz_quadrata_i7"
+      ],
+      "replacement": "Platypi"
+    },
+    {
+      "family": "Frutiger Serif",
+      "handles": [
+        "frutiger_serif_n3",
+        "frutiger_serif_i3",
+        "frutiger_serif_n4",
+        "frutiger_serif_i4",
+        "frutiger_serif_n5",
+        "frutiger_serif_i5",
+        "frutiger_serif_n7",
+        "frutiger_serif_i7",
+        "frutiger_serif_n8",
+        "frutiger_serif_i8"
+      ],
+      "replacement": "Halant"
+    },
+    {
+      "family": "Futura",
+      "handles": [
+        "futura_n3",
+        "futura_o3",
+        "futura_n4",
+        "futura_o4",
+        "futura_n5",
+        "futura_o5",
+        "futura_n6",
+        "futura_o6",
+        "futura_n7",
+        "futura_o7",
+        "futura_n8",
+        "futura_o8",
+        "futura_n9"
+      ],
+      "replacement": "Jost"
+    },
+    {
+      "family": "Futura Black",
+      "handles": [
+        "futura_black_n4"
+      ],
+      "replacement": "Plaster"
+    },
+    {
+      "family": "Geometric 415",
+      "handles": [
+        "geometric_415_n4",
+        "geometric_415_i4",
+        "geometric_415_n6",
+        "geometric_415_i6",
+        "geometric_415_n7",
+        "geometric_415_i7"
+      ],
+      "replacement": "Jost"
+    },
+    {
+      "family": "Georgia Pro",
+      "handles": [
+        "georgia_pro_n3",
+        "georgia_pro_i3",
+        "georgia_pro_n4",
+        "georgia_pro_i4",
+        "georgia_pro_n6",
+        "georgia_pro_i6",
+        "georgia_pro_n7",
+        "georgia_pro_i7",
+        "georgia_pro_n9",
+        "georgia_pro_i9"
+      ],
+      "replacement": "Merriweather"
+    },
+    {
+      "family": "Gill Sans Nova",
+      "handles": [
+        "gill_sans_nova_n1",
+        "gill_sans_nova_i1",
+        "gill_sans_nova_n2",
+        "gill_sans_nova_i2",
+        "gill_sans_nova_n3",
+        "gill_sans_nova_i3",
+        "gill_sans_nova_n4",
+        "gill_sans_nova_i4",
+        "gill_sans_nova_n5",
+        "gill_sans_nova_i5",
+        "gill_sans_nova_n6",
+        "gill_sans_nova_i6",
+        "gill_sans_nova_n7",
+        "gill_sans_nova_i7",
+        "gill_sans_nova_n8",
+        "gill_sans_nova_n9"
+      ],
+      "replacement": "Cabin"
+    },
+    {
+      "family": "Glegoo",
+      "handles": [
+        "glegoo_n4",
+        "glegoo_n7"
+      ],
+      "replacement": "Roboto Slab"
+    },
+    {
+      "family": "Goudy Old Style",
+      "handles": [
+        "goudy_old_style_n4",
+        "goudy_old_style_i4",
+        "goudy_old_style_n7",
+        "goudy_old_style_i7",
+        "goudy_old_style_n8"
+      ],
+      "replacement": "Alegreya"
+    },
+    {
+      "family": "Harmonia Sans",
+      "handles": [
+        "harmonia_sans_n3",
+        "harmonia_sans_i3",
+        "harmonia_sans_n4",
+        "harmonia_sans_i4",
+        "harmonia_sans_n6",
+        "harmonia_sans_i6",
+        "harmonia_sans_n7",
+        "harmonia_sans_i7",
+        "harmonia_sans_n9",
+        "harmonia_sans_i9"
+      ],
+      "replacement": "Poppins"
+    },
+    {
+      "family": "Helvetica",
+      "handles": [
+        "helvetica_n3",
+        "helvetica_o3",
+        "helvetica_n4",
+        "helvetica_o4",
+        "helvetica_n7",
+        "helvetica_o7",
+        "helvetica_n9",
+        "helvetica_o9"
+      ],
+      "replacement": "Sans-serif"
+    },
+    {
+      "family": "Hope Sans",
+      "handles": [
+        "hope_sans_n1",
+        "hope_sans_i1",
+        "hope_sans_n2",
+        "hope_sans_i2",
+        "hope_sans_n3",
+        "hope_sans_i3",
+        "hope_sans_n4",
+        "hope_sans_i4",
+        "hope_sans_n6",
+        "hope_sans_i6",
+        "hope_sans_n7",
+        "hope_sans_i7"
+      ],
+      "replacement": "Chivo"
+    },
+    {
+      "family": "Humanist 521",
+      "handles": [
+        "humanist_521_n2",
+        "humanist_521_i2",
+        "humanist_521_n4",
+        "humanist_521_i4",
+        "humanist_521_n7",
+        "humanist_521_i7",
+        "humanist_521_n8",
+        "humanist_521_n9"
+      ],
+      "replacement": "Cabin"
+    },
+    {
+      "family": "ITC Avant Garde Gothic",
+      "handles": [
+        "itc_avant_garde_gothic_n2",
+        "itc_avant_garde_gothic_o2",
+        "itc_avant_garde_gothic_n4",
+        "itc_avant_garde_gothic_o4",
+        "itc_avant_garde_gothic_n5",
+        "itc_avant_garde_gothic_o5",
+        "itc_avant_garde_gothic_n6",
+        "itc_avant_garde_gothic_o6",
+        "itc_avant_garde_gothic_n7",
+        "itc_avant_garde_gothic_o7"
+      ],
+      "replacement": "Poppins"
+    },
+    {
+      "family": "ITC Benguiat",
+      "handles": [
+        "itc_benguiat_n4",
+        "itc_benguiat_i4",
+        "itc_benguiat_n5",
+        "itc_benguiat_i5",
+        "itc_benguiat_n7",
+        "itc_benguiat_i7"
+      ],
+      "replacement": "Taviraj"
+    },
+    {
+      "family": "ITC Berkeley Old Style",
+      "handles": [
+        "itc_berkeley_old_style_n4",
+        "itc_berkeley_old_style_i4",
+        "itc_berkeley_old_style_n5",
+        "itc_berkeley_old_style_i5",
+        "itc_berkeley_old_style_n7",
+        "itc_berkeley_old_style_i7",
+        "itc_berkeley_old_style_n9",
+        "itc_berkeley_old_style_i9"
+      ],
+      "replacement": "Halant"
+    },
+    {
+      "family": "ITC Bodoni Seventytwo",
+      "handles": [
+        "itc_bodoni_seventytwo_n4",
+        "itc_bodoni_seventytwo_i4",
+        "itc_bodoni_seventytwo_n7",
+        "itc_bodoni_seventytwo_i7"
+      ],
+      "replacement": "Playfair Display"
+    },
+    {
+      "family": "ITC Bodoni Twelve",
+      "handles": [
+        "itc_bodoni_twelve_n4",
+        "itc_bodoni_twelve_i4",
+        "itc_bodoni_twelve_n7",
+        "itc_bodoni_twelve_i7"
+      ],
+      "replacement": "Libre Bodoni"
+    },
+    {
+      "family": "ITC Caslon No 224",
+      "handles": [
+        "itc_caslon_no_224_n4",
+        "itc_caslon_no_224_i4",
+        "itc_caslon_no_224_n5",
+        "itc_caslon_no_224_i5",
+        "itc_caslon_no_224_n7",
+        "itc_caslon_no_224_i7",
+        "itc_caslon_no_224_n9",
+        "itc_caslon_no_224_i9"
+      ],
+      "replacement": "Fraunces"
+    },
+    {
+      "family": "ITC Charter",
+      "handles": [
+        "itc_charter_n4",
+        "itc_charter_i4",
+        "itc_charter_n7",
+        "itc_charter_i7",
+        "itc_charter_n9",
+        "itc_charter_i9"
+      ],
+      "replacement": "Rasa"
+    },
+    {
+      "family": "ITC Cheltenham",
+      "handles": [
+        "itc_cheltenham_n3",
+        "itc_cheltenham_i3",
+        "itc_cheltenham_n4",
+        "itc_cheltenham_i4",
+        "itc_cheltenham_n7",
+        "itc_cheltenham_i7",
+        "itc_cheltenham_n9",
+        "itc_cheltenham_i9"
+      ],
+      "replacement": "Fraunces"
+    },
+    {
+      "family": "ITC Clearface",
+      "handles": [
+        "itc_clearface_n4",
+        "itc_clearface_i4",
+        "itc_clearface_n7",
+        "itc_clearface_i7",
+        "itc_clearface_n8",
+        "itc_clearface_i8",
+        "itc_clearface_n9",
+        "itc_clearface_i9"
+      ],
+      "replacement": "Halant"
+    },
+    {
+      "family": "ITC Conduit",
+      "handles": [
+        "itc_conduit_n2",
+        "itc_conduit_i2",
+        "itc_conduit_n3",
+        "itc_conduit_i3",
+        "itc_conduit_n4",
+        "itc_conduit_i4",
+        "itc_conduit_n5",
+        "itc_conduit_i5",
+        "itc_conduit_n7",
+        "itc_conduit_i7",
+        "itc_conduit_n8",
+        "itc_conduit_i8",
+        "itc_conduit_n9",
+        "itc_conduit_i9"
+      ],
+      "replacement": "Barlow"
+    },
+    {
+      "family": "ITC Esprit",
+      "handles": [
+        "itc_esprit_n4",
+        "itc_esprit_i4",
+        "itc_esprit_n5",
+        "itc_esprit_i5",
+        "itc_esprit_n7",
+        "itc_esprit_i7",
+        "itc_esprit_n9",
+        "itc_esprit_i9"
+      ],
+      "replacement": "Source Serif 4"
+    },
+    {
+      "family": "ITC Founders Caslon",
+      "handles": [
+        "itc_founders_caslon_n4",
+        "itc_founders_caslon_i4"
+      ],
+      "replacement": "EB Garamond"
+    },
+    {
+      "family": "ITC Franklin Gothic",
+      "handles": [
+        "itc_franklin_gothic_n4",
+        "itc_franklin_gothic_i4",
+        "itc_franklin_gothic_n5",
+        "itc_franklin_gothic_i5",
+        "itc_franklin_gothic_n7",
+        "itc_franklin_gothic_i7",
+        "itc_franklin_gothic_n9",
+        "itc_franklin_gothic_i9"
+      ],
+      "replacement": "Libre Franklin"
+    },
+    {
+      "family": "ITC Galliard",
+      "handles": [
+        "itc_galliard_n4",
+        "itc_galliard_i4",
+        "itc_galliard_n7",
+        "itc_galliard_i7",
+        "itc_galliard_n8",
+        "itc_galliard_i8",
+        "itc_galliard_n9",
+        "itc_galliard_i9"
+      ],
+      "replacement": "EB Garamond"
+    },
+    {
+      "family": "ITC Gamma",
+      "handles": [
+        "itc_gamma_n4",
+        "itc_gamma_i4",
+        "itc_gamma_n5",
+        "itc_gamma_i5",
+        "itc_gamma_n7",
+        "itc_gamma_i7",
+        "itc_gamma_n8",
+        "itc_gamma_i8"
+      ],
+      "replacement": "Source Serif 4"
+    },
+    {
+      "family": "ITC Goudy Sans",
+      "handles": [
+        "itc_goudy_sans_n4",
+        "itc_goudy_sans_i4",
+        "itc_goudy_sans_n5",
+        "itc_goudy_sans_i5",
+        "itc_goudy_sans_n7",
+        "itc_goudy_sans_i7",
+        "itc_goudy_sans_n9",
+        "itc_goudy_sans_i9"
+      ],
+      "replacement": "Proza Libre"
+    },
+    {
+      "family": "ITC Johnston",
+      "handles": [
+        "itc_johnston_n3",
+        "itc_johnston_i3",
+        "itc_johnston_n5",
+        "itc_johnston_i5",
+        "itc_johnston_n7",
+        "itc_johnston_i7"
+      ],
+      "replacement": "Cabin"
+    },
+    {
+      "family": "ITC Mendoza Roman",
+      "handles": [
+        "itc_mendoza_roman_n4",
+        "itc_mendoza_roman_i4",
+        "itc_mendoza_roman_n5",
+        "itc_mendoza_roman_i5",
+        "itc_mendoza_roman_n7",
+        "itc_mendoza_roman_i7"
+      ],
+      "replacement": "Alegreya"
+    },
+    {
+      "family": "ITC Modern No 216",
+      "handles": [
+        "itc_modern_no_216_n3",
+        "itc_modern_no_216_i3",
+        "itc_modern_no_216_n5",
+        "itc_modern_no_216_i5",
+        "itc_modern_no_216_n7",
+        "itc_modern_no_216_i7",
+        "itc_modern_no_216_n8",
+        "itc_modern_no_216_i8"
+      ],
+      "replacement": "Bodoni Moda"
+    },
+    {
+      "family": "ITC New Baskerville",
+      "handles": [
+        "itc_new_baskerville_n4",
+        "itc_new_baskerville_i4",
+        "itc_new_baskerville_n6",
+        "itc_new_baskerville_i6",
+        "itc_new_baskerville_n7",
+        "itc_new_baskerville_i7",
+        "itc_new_baskerville_n9",
+        "itc_new_baskerville_i9"
+      ],
+      "replacement": "Libre Baskerville"
+    },
+    {
+      "family": "ITC New Esprit",
+      "handles": [
+        "itc_new_esprit_n4",
+        "itc_new_esprit_i4",
+        "itc_new_esprit_n5",
+        "itc_new_esprit_i5",
+        "itc_new_esprit_n7",
+        "itc_new_esprit_i7",
+        "itc_new_esprit_n8",
+        "itc_new_esprit_i8"
+      ],
+      "replacement": "Source Serif 4"
+    },
+    {
+      "family": "ITC New Veljovic",
+      "handles": [
+        "itc_new_veljovic_n3",
+        "itc_new_veljovic_i3",
+        "itc_new_veljovic_n4",
+        "itc_new_veljovic_i4",
+        "itc_new_veljovic_n5",
+        "itc_new_veljovic_i5",
+        "itc_new_veljovic_n7",
+        "itc_new_veljovic_i7",
+        "itc_new_veljovic_n9",
+        "itc_new_veljovic_i9"
+      ],
+      "replacement": "Newsreader"
+    },
+    {
+      "family": "ITC Novarese",
+      "handles": [
+        "itc_novarese_n4",
+        "itc_novarese_i4",
+        "itc_novarese_n5",
+        "itc_novarese_i5",
+        "itc_novarese_n7",
+        "itc_novarese_i7",
+        "itc_novarese_n9"
+      ],
+      "replacement": "Fraunces"
+    },
+    {
+      "family": "ITC Officina Sans",
+      "handles": [
+        "itc_officina_sans_n4",
+        "itc_officina_sans_i4",
+        "itc_officina_sans_n5",
+        "itc_officina_sans_i5",
+        "itc_officina_sans_n7",
+        "itc_officina_sans_i7",
+        "itc_officina_sans_n8",
+        "itc_officina_sans_i8",
+        "itc_officina_sans_n9",
+        "itc_officina_sans_i9"
+      ],
+      "replacement": "Fira Sans"
+    },
+    {
+      "family": "ITC Officina Serif",
+      "handles": [
+        "itc_officina_serif_n4",
+        "itc_officina_serif_i4",
+        "itc_officina_serif_n5",
+        "itc_officina_serif_i5",
+        "itc_officina_serif_n7",
+        "itc_officina_serif_i7",
+        "itc_officina_serif_n8",
+        "itc_officina_serif_i8",
+        "itc_officina_serif_n9",
+        "itc_officina_serif_i9"
+      ],
+      "replacement": "Roboto Slab"
+    },
+    {
+      "family": "ITC Stepp",
+      "handles": [
+        "itc_stepp_n3",
+        "itc_stepp_i3",
+        "itc_stepp_n4",
+        "itc_stepp_i5",
+        "itc_stepp_n7",
+        "itc_stepp_i7",
+        "itc_stepp_n9",
+        "itc_stepp_i9"
+      ],
+      "replacement": "Playfair Display"
+    },
+    {
+      "family": "ITC Stone Humanist",
+      "handles": [
+        "itc_stone_humanist_n5",
+        "itc_stone_humanist_i5",
+        "itc_stone_humanist_n6",
+        "itc_stone_humanist_i6",
+        "itc_stone_humanist_n7",
+        "itc_stone_humanist_i7"
+      ],
+      "replacement": "Proza Libre"
+    },
+    {
+      "family": "ITC Stone Informal",
+      "handles": [
+        "itc_stone_informal_n4",
+        "itc_stone_informal_i4",
+        "itc_stone_informal_n6",
+        "itc_stone_informal_i6",
+        "itc_stone_informal_n7",
+        "itc_stone_informal_i7"
+      ],
+      "replacement": "Petrona"
+    },
+    {
+      "family": "ITC Stone Sans II",
+      "handles": [
+        "itc_stone_sans_ii_n3",
+        "itc_stone_sans_ii_i3",
+        "itc_stone_sans_ii_n4",
+        "itc_stone_sans_ii_i4",
+        "itc_stone_sans_ii_n5",
+        "itc_stone_sans_ii_i5",
+        "itc_stone_sans_ii_n6",
+        "itc_stone_sans_ii_i6",
+        "itc_stone_sans_ii_n7",
+        "itc_stone_sans_ii_i7",
+        "itc_stone_sans_ii_n8",
+        "itc_stone_sans_ii_i8"
+      ],
+      "replacement": "Noto Sans Display"
+    },
+    {
+      "family": "ITC Stone Serif",
+      "handles": [
+        "itc_stone_serif_n4",
+        "itc_stone_serif_i4",
+        "itc_stone_serif_n6",
+        "itc_stone_serif_i6",
+        "itc_stone_serif_n7",
+        "itc_stone_serif_i7"
+      ],
+      "replacement": "Source Serif 4"
+    },
+    {
+      "family": "ITC Tapioca",
+      "handles": [
+        "itc_tapioca_n5"
+      ],
+      "replacement": "Nanum Pen Script"
+    },
+    {
+      "family": "Joanna Nova",
+      "handles": [
+        "joanna_nova_n1",
+        "joanna_nova_i1",
+        "joanna_nova_n2",
+        "joanna_nova_i2",
+        "joanna_nova_n3",
+        "joanna_nova_i3",
+        "joanna_nova_n4",
+        "joanna_nova_i4",
+        "joanna_nova_n5",
+        "joanna_nova_i5",
+        "joanna_nova_n6",
+        "joanna_nova_i6",
+        "joanna_nova_n7",
+        "joanna_nova_i7",
+        "joanna_nova_n8",
+        "joanna_nova_i8",
+        "joanna_nova_n9",
+        "joanna_nova_i9"
+      ],
+      "replacement": "Rasa"
+    },
+    {
+      "family": "Joanna Sans Nova",
+      "handles": [
+        "joanna_sans_nova_n1",
+        "joanna_sans_nova_i1",
+        "joanna_sans_nova_n2",
+        "joanna_sans_nova_i2",
+        "joanna_sans_nova_n3",
+        "joanna_sans_nova_i3",
+        "joanna_sans_nova_n4",
+        "joanna_sans_nova_i4",
+        "joanna_sans_nova_n5",
+        "joanna_sans_nova_i5",
+        "joanna_sans_nova_n7",
+        "joanna_sans_nova_i7",
+        "joanna_sans_nova_n8",
+        "joanna_sans_nova_i8",
+        "joanna_sans_nova_n9",
+        "joanna_sans_nova_i9"
+      ],
+      "replacement": "Cabin"
+    },
+    {
+      "family": "Kairos",
+      "handles": [
+        "kairos_n1",
+        "kairos_i1",
+        "kairos_n2",
+        "kairos_i2",
+        "kairos_n3",
+        "kairos_i3",
+        "kairos_n4",
+        "kairos_i4",
+        "kairos_n5",
+        "kairos_i5",
+        "kairos_n7",
+        "kairos_i7",
+        "kairos_n8",
+        "kairos_i8",
+        "kairos_n9",
+        "kairos_i9"
+      ],
+      "replacement": "Chakra Petch"
+    },
+    {
+      "family": "Laurentian",
+      "handles": [
+        "laurentian_n4",
+        "laurentian_i4",
+        "laurentian_n6",
+        "laurentian_i6",
+        "laurentian_n7"
+      ],
+      "replacement": "EB Garamond"
+    },
+    {
+      "family": "Libelle",
+      "handles": [
+        "libelle_n4"
+      ],
+      "replacement": "Pinyon Script"
+    },
+    {
+      "family": "Linotype Didot",
+      "handles": [
+        "linotype_didot_n4",
+        "linotype_didot_i4",
+        "linotype_didot_n7",
+        "linotype_didot_i7"
+      ],
+      "replacement": "Bodoni Moda"
+    },
+    {
+      "family": "Linotype Gianotten",
+      "handles": [
+        "linotype_gianotten_n3",
+        "linotype_gianotten_i3",
+        "linotype_gianotten_n4",
+        "linotype_gianotten_i4",
+        "linotype_gianotten_n5",
+        "linotype_gianotten_i5",
+        "linotype_gianotten_n7",
+        "linotype_gianotten_i7",
+        "linotype_gianotten_n8",
+        "linotype_gianotten_i8",
+        "linotype_gianotten_n9"
+      ],
+      "replacement": "Bodoni Moda"
+    },
+    {
+      "family": "Linotype Really",
+      "handles": [
+        "linotype_really_n5",
+        "linotype_really_i5",
+        "linotype_really_n6",
+        "linotype_really_i6"
+      ],
+      "replacement": "Source Serif 4"
+    },
+    {
+      "family": "Linotype Syntax Serif",
+      "handles": [
+        "linotype_syntax_serif_n3",
+        "linotype_syntax_serif_i3",
+        "linotype_syntax_serif_n4",
+        "linotype_syntax_serif_i4",
+        "linotype_syntax_serif_n5",
+        "linotype_syntax_serif_i5",
+        "linotype_syntax_serif_n7",
+        "linotype_syntax_serif_i7",
+        "linotype_syntax_serif_n8",
+        "linotype_syntax_serif_i8",
+        "linotype_syntax_serif_n9",
+        "linotype_syntax_serif_i9"
+      ],
+      "replacement": "Crimson Text"
+    },
+    {
+      "family": "Lobster",
+      "handles": [
+        "lobster_n4"
+      ],
+      "replacement": "Lobster Two"
+    },
+    {
+      "family": "Lucia",
+      "handles": [
+        "lucia_n4"
+      ],
+      "replacement": "Pinyon Script"
+    },
+    {
+      "family": "Luthersche Fraktur",
+      "handles": [
+        "luthersche_fraktur_n4"
+      ],
+      "replacement": "UnifrakturMaguntia"
+    },
+    {
+      "family": "Madera",
+      "handles": [
+        "madera_n1",
+        "madera_i1",
+        "madera_n2",
+        "madera_i2",
+        "madera_n3",
+        "madera_i3",
+        "madera_n4",
+        "madera_i4",
+        "madera_n5",
+        "madera_i5",
+        "madera_n6",
+        "madera_i6",
+        "madera_n7",
+        "madera_i7",
+        "madera_n8",
+        "madera_i8"
+      ],
+      "replacement": "Jost"
+    },
+    {
+      "family": "Malabar",
+      "handles": [
+        "malabar_n4",
+        "malabar_i4",
+        "malabar_n7",
+        "malabar_i7",
+        "malabar_n9",
+        "malabar_i9"
+      ],
+      "replacement": "Source Serif 4"
+    },
+    {
+      "family": "Mariposa Sans",
+      "handles": [
+        "mariposa_sans_n4",
+        "mariposa_sans_i4",
+        "mariposa_sans_n5",
+        "mariposa_sans_n7",
+        "mariposa_sans_n9"
+      ],
+      "replacement": "Asul"
+    },
+    {
+      "family": "Megrim",
+      "handles": [
+        "megrim_n4"
+      ],
+      "replacement": "Jost"
+    },
+    {
+      "family": "Melior",
+      "handles": [
+        "melior_n4",
+        "melior_i4",
+        "melior_n7",
+        "melior_i7"
+      ],
+      "replacement": "Martel"
+    },
+    {
+      "family": "Memphis",
+      "handles": [
+        "memphis_n3",
+        "memphis_i3",
+        "memphis_n5",
+        "memphis_i5",
+        "memphis_n7",
+        "memphis_i7",
+        "memphis_n8"
+      ],
+      "replacement": "Hepta Slab"
+    },
+    {
+      "family": "Memphis Soft Rounded",
+      "handles": [
+        "memphis_soft_rounded_n5",
+        "memphis_soft_rounded_n7",
+        "memphis_soft_rounded_n8"
+      ],
+      "replacement": "Hepta Slab"
+    },
+    {
+      "family": "Mentor Sans",
+      "handles": [
+        "mentor_sans_n3",
+        "mentor_sans_i3",
+        "mentor_sans_n4",
+        "mentor_sans_i4",
+        "mentor_sans_n7",
+        "mentor_sans_i7",
+        "mentor_sans_n9",
+        "mentor_sans_i9"
+      ],
+      "replacement": "Proza Libre"
+    },
+    {
+      "family": "Metro Nova",
+      "handles": [
+        "metro_nova_n2",
+        "metro_nova_i2",
+        "metro_nova_n3",
+        "metro_nova_i3",
+        "metro_nova_n4",
+        "metro_nova_i4",
+        "metro_nova_n5",
+        "metro_nova_i5",
+        "metro_nova_n7",
+        "metro_nova_i7",
+        "metro_nova_n8",
+        "metro_nova_i8",
+        "metro_nova_n9",
+        "metro_nova_i9"
+      ],
+      "replacement": "Open Sans"
+    },
+    {
+      "family": "Modern No 20",
+      "handles": [
+        "modern_no_20_n4",
+        "modern_no_20_i4"
+      ],
+      "replacement": "Bodoni Moda"
+    },
+    {
+      "family": "Monotype Baskerville",
+      "handles": [
+        "monotype_baskerville_n4",
+        "monotype_baskerville_i4",
+        "monotype_baskerville_n6",
+        "monotype_baskerville_i6",
+        "monotype_baskerville_n7",
+        "monotype_baskerville_i7"
+      ],
+      "replacement": "日本語 Shippori 明朝"
+    },
+    {
+      "family": "Monotype Bodoni",
+      "handles": [
+        "monotype_bodoni_n4",
+        "monotype_bodoni_i4",
+        "monotype_bodoni_n5",
+        "monotype_bodoni_i5",
+        "monotype_bodoni_n7",
+        "monotype_bodoni_i7",
+        "monotype_bodoni_n8",
+        "monotype_bodoni_i8",
+        "monotype_bodoni_n9",
+        "monotype_bodoni_i9"
+      ],
+      "replacement": "Bodoni Moda"
+    },
+    {
+      "family": "Monotype Century Old Style",
+      "handles": [
+        "monotype_century_old_style_n5",
+        "monotype_century_old_style_i5",
+        "monotype_century_old_style_n7",
+        "monotype_century_old_style_i7"
+      ],
+      "replacement": "日本語 Shippori 明朝"
+    },
+    {
+      "family": "Monotype Goudy",
+      "handles": [
+        "monotype_goudy_n4",
+        "monotype_goudy_i4",
+        "monotype_goudy_n7",
+        "monotype_goudy_i7",
+        "monotype_goudy_n8"
+      ],
+      "replacement": "Fraunces"
+    },
+    {
+      "family": "Monotype Goudy Modern",
+      "handles": [
+        "monotype_goudy_modern_n4",
+        "monotype_goudy_modern_i4",
+        "monotype_goudy_modern_n7",
+        "monotype_goudy_modern_i7"
+      ],
+      "replacement": "Fraunces"
+    },
+    {
+      "family": "Monotype Italian Old Style",
+      "handles": [
+        "monotype_italian_old_style_n4",
+        "monotype_italian_old_style_i4",
+        "monotype_italian_old_style_n7",
+        "monotype_italian_old_style_i7"
+      ],
+      "replacement": "Crimson Text"
+    },
+    {
+      "family": "Monotype New Clarendon",
+      "handles": [
+        "monotype_new_clarendon_n5",
+        "monotype_new_clarendon_n7"
+      ],
+      "replacement": "Besley"
+    },
+    {
+      "family": "Monotype News Gothic",
+      "handles": [
+        "monotype_news_gothic_n4",
+        "monotype_news_gothic_i4",
+        "monotype_news_gothic_n7",
+        "monotype_news_gothic_i7"
+      ],
+      "replacement": "Libre Franklin"
+    },
+    {
+      "family": "Monotype Sabon",
+      "handles": [
+        "monotype_sabon_n4",
+        "monotype_sabon_i4",
+        "monotype_sabon_n6",
+        "monotype_sabon_i6"
+      ],
+      "replacement": "EB Garamond"
+    },
+    {
+      "family": "Mouse Memoirs",
+      "handles": [
+        "mouse_memoirs_n4"
+      ],
+      "replacement": "Grandstander"
+    },
+    {
+      "family": "Mundo Sans",
+      "handles": [
+        "mundo_sans_n2",
+        "mundo_sans_i2",
+        "mundo_sans_n3",
+        "mundo_sans_i3",
+        "mundo_sans_n4",
+        "mundo_sans_i4",
+        "mundo_sans_n5",
+        "mundo_sans_i5",
+        "mundo_sans_n7",
+        "mundo_sans_i7",
+        "mundo_sans_n8",
+        "mundo_sans_i8",
+        "mundo_sans_n9",
+        "mundo_sans_i9"
+      ],
+      "replacement": "Lato"
+    },
+    {
+      "family": "Neo Sans",
+      "handles": [
+        "neo_sans_n3",
+        "neo_sans_i3",
+        "neo_sans_n4",
+        "neo_sans_i4",
+        "neo_sans_n5",
+        "neo_sans_i5",
+        "neo_sans_n7",
+        "neo_sans_i7",
+        "neo_sans_n8",
+        "neo_sans_i8",
+        "neo_sans_n9",
+        "neo_sans_i9"
+      ],
+      "replacement": "Titillium Web"
+    },
+    {
+      "family": "Neue Aachen",
+      "handles": [
+        "neue_aachen_n1",
+        "neue_aachen_i1",
+        "neue_aachen_n2",
+        "neue_aachen_i2",
+        "neue_aachen_n3",
+        "neue_aachen_i3",
+        "neue_aachen_n4",
+        "neue_aachen_i4",
+        "neue_aachen_n5",
+        "neue_aachen_i5",
+        "neue_aachen_n6",
+        "neue_aachen_i6",
+        "neue_aachen_n7",
+        "neue_aachen_i7",
+        "neue_aachen_n8",
+        "neue_aachen_i8",
+        "neue_aachen_n9",
+        "neue_aachen_i9"
+      ],
+      "replacement": "Roboto Slab"
+    },
+    {
+      "family": "Neue Frutiger 1450",
+      "handles": [
+        "neue_frutiger_1450_n3",
+        "neue_frutiger_1450_i3",
+        "neue_frutiger_1450_n4",
+        "neue_frutiger_1450_i4",
+        "neue_frutiger_1450_n6",
+        "neue_frutiger_1450_i6",
+        "neue_frutiger_1450_n7",
+        "neue_frutiger_1450_i7"
+      ],
+      "replacement": "Open Sans"
+    },
+    {
+      "family": "Neue Haas Unica",
+      "handles": [
+        "neue_haas_unica_n1",
+        "neue_haas_unica_i1",
+        "neue_haas_unica_n2",
+        "neue_haas_unica_i2",
+        "neue_haas_unica_n3",
+        "neue_haas_unica_i3",
+        "neue_haas_unica_n4",
+        "neue_haas_unica_i4",
+        "neue_haas_unica_n5",
+        "neue_haas_unica_i5",
+        "neue_haas_unica_n6",
+        "neue_haas_unica_i6",
+        "neue_haas_unica_n7",
+        "neue_haas_unica_i7",
+        "neue_haas_unica_n8",
+        "neue_haas_unica_i8",
+        "neue_haas_unica_n9",
+        "neue_haas_unica_i9"
+      ],
+      "replacement": "Instrument Sans"
+    },
+    {
+      "family": "Neue Plak",
+      "handles": [
+        "neue_plak_n2",
+        "neue_plak_i2",
+        "neue_plak_n3",
+        "neue_plak_i3",
+        "neue_plak_n4",
+        "neue_plak_i4",
+        "neue_plak_n6",
+        "neue_plak_i6",
+        "neue_plak_n7",
+        "neue_plak_i7",
+        "neue_plak_n9",
+        "neue_plak_i9"
+      ],
+      "replacement": "Instrument Sans"
+    },
+    {
+      "family": "Neue Swift",
+      "handles": [
+        "neue_swift_n3",
+        "neue_swift_i3",
+        "neue_swift_n4",
+        "neue_swift_i4",
+        "neue_swift_n5",
+        "neue_swift_i5",
+        "neue_swift_n6",
+        "neue_swift_i6",
+        "neue_swift_n7",
+        "neue_swift_i7"
+      ],
+      "replacement": "Manuale"
+    },
+    {
+      "family": "Neuzeit Office",
+      "handles": [
+        "neuzeit_office_n4",
+        "neuzeit_office_i4",
+        "neuzeit_office_n7",
+        "neuzeit_office_i7"
+      ],
+      "replacement": "Instrument Sans"
+    },
+    {
+      "family": "Neuzeit Office Soft Rounded",
+      "handles": [
+        "neuzeit_office_soft_rounded_n4",
+        "neuzeit_office_soft_rounded_n7"
+      ],
+      "replacement": "Nunito"
+    },
+    {
+      "family": "Neuzeit S",
+      "handles": [
+        "neuzeit_s_n4",
+        "neuzeit_s_n9"
+      ],
+      "replacement": "Instrument Sans"
+    },
+    {
+      "family": "New Century Schoolbook",
+      "handles": [
+        "new_century_schoolbook_n4",
+        "new_century_schoolbook_i4",
+        "new_century_schoolbook_n7",
+        "new_century_schoolbook_i7"
+      ],
+      "replacement": "Besley"
+    },
+    {
+      "family": "News 702",
+      "handles": [
+        "news_702_n4",
+        "news_702_i4",
+        "news_702_n7",
+        "news_702_i7"
+      ],
+      "replacement": "Source Serif 4"
+    },
+    {
+      "family": "News 705",
+      "handles": [
+        "news_705_n4",
+        "news_705_i4",
+        "news_705_n7",
+        "news_705_i7"
+      ],
+      "replacement": "Source Serif 4"
+    },
+    {
+      "family": "News Cycle",
+      "handles": [
+        "news_cycle_n4",
+        "news_cycle_n7"
+      ],
+      "replacement": "Roboto Condensed"
+    },
+    {
+      "family": "News Gothic No 2",
+      "handles": [
+        "news_gothic_no_2_n2",
+        "news_gothic_no_2_i2",
+        "news_gothic_no_2_n3",
+        "news_gothic_no_2_i3",
+        "news_gothic_no_2_n4",
+        "news_gothic_no_2_i4",
+        "news_gothic_no_2_n5",
+        "news_gothic_no_2_i5",
+        "news_gothic_no_2_n7",
+        "news_gothic_no_2_i7",
+        "news_gothic_no_2_n8",
+        "news_gothic_no_2_i8"
+      ],
+      "replacement": "Roboto Condensed"
+    },
+    {
+      "family": "News Plantin",
+      "handles": [
+        "news_plantin_n4",
+        "news_plantin_i4",
+        "news_plantin_n7",
+        "news_plantin_i7"
+      ],
+      "replacement": "Crimson Text"
+    },
+    {
+      "family": "Noticia Text",
+      "handles": [
+        "noticia_text_n4",
+        "noticia_text_i4",
+        "noticia_text_n7",
+        "noticia_text_i7"
+      ],
+      "replacement": "Noto Serif"
+    },
+    {
+      "family": "Optima nova",
+      "handles": [
+        "optima_nova_n3",
+        "optima_nova_i3",
+        "optima_nova_n4",
+        "optima_nova_i4",
+        "optima_nova_n5",
+        "optima_nova_i5",
+        "optima_nova_n6",
+        "optima_nova_i6",
+        "optima_nova_n7",
+        "optima_nova_i7",
+        "optima_nova_n8",
+        "optima_nova_i8",
+        "optima_nova_n9",
+        "optima_nova_i9"
+      ],
+      "replacement": "Proza Libre"
+    },
+    {
+      "family": "Oxygen",
+      "handles": [
+        "oxygen_n3",
+        "oxygen_n4",
+        "oxygen_n7"
+      ],
+      "replacement": "Open Sans"
+    },
+    {
+      "family": "PMN Caecilia",
+      "handles": [
+        "pmn_caecilia_n3",
+        "pmn_caecilia_i3",
+        "pmn_caecilia_n4",
+        "pmn_caecilia_i4",
+        "pmn_caecilia_n7",
+        "pmn_caecilia_i7",
+        "pmn_caecilia_n9",
+        "pmn_caecilia_i9"
+      ],
+      "replacement": "Aleo"
+    },
+    {
+      "family": "PT Mono",
+      "handles": [
+        "pt_mono_n4"
+      ],
+      "replacement": "Anonymous Pro"
+    },
+    {
+      "family": "PT Sans Narrow",
+      "handles": [
+        "pt_sans_narrow_n4",
+        "pt_sans_narrow_n7"
+      ],
+      "replacement": "Open Sans Condensed"
+    },
+    {
+      "family": "Parma",
+      "handles": [
+        "parma_n4",
+        "parma_i4",
+        "parma_n7"
+      ],
+      "replacement": "Libre Bodoni"
+    },
+    {
+      "family": "Perpetua",
+      "handles": [
+        "perpetua_n4",
+        "perpetua_i4",
+        "perpetua_n7",
+        "perpetua_i7"
+      ],
+      "replacement": "Crimson Text"
+    },
+    {
+      "family": "Plantin",
+      "handles": [
+        "plantin_n3",
+        "plantin_i3",
+        "plantin_n4",
+        "plantin_i4",
+        "plantin_n6",
+        "plantin_i6",
+        "plantin_n7",
+        "plantin_i7"
+      ],
+      "replacement": "Crimson Pro"
+    },
+    {
+      "family": "Prata",
+      "handles": [
+        "prata_n4"
+      ],
+      "replacement": "Playfair"
+    },
+    {
+      "family": "Quattrocento",
+      "handles": [
+        "quattrocento_n4",
+        "quattrocento_n7"
+      ],
+      "replacement": "Platypi"
+    },
+    {
+      "family": "Quire Sans",
+      "handles": [
+        "quire_sans_n1",
+        "quire_sans_i1",
+        "quire_sans_n2",
+        "quire_sans_i2",
+        "quire_sans_n3",
+        "quire_sans_i3",
+        "quire_sans_n4",
+        "quire_sans_i4",
+        "quire_sans_n5",
+        "quire_sans_i5",
+        "quire_sans_n6",
+        "quire_sans_i6",
+        "quire_sans_n7",
+        "quire_sans_i7",
+        "quire_sans_n8",
+        "quire_sans_i8",
+        "quire_sans_n9",
+        "quire_sans_i9"
+      ],
+      "replacement": "Fira Sans"
+    },
+    {
+      "family": "Really No 2",
+      "handles": [
+        "really_no_2_n3",
+        "really_no_2_i3",
+        "really_no_2_n4",
+        "really_no_2_i4",
+        "really_no_2_n5",
+        "really_no_2_i5",
+        "really_no_2_n6",
+        "really_no_2_i6",
+        "really_no_2_n7",
+        "really_no_2_i7",
+        "really_no_2_n8",
+        "really_no_2_i8",
+        "really_no_2_n9",
+        "really_no_2_i9"
+      ],
+      "replacement": "Source Serif 4"
+    },
+    {
+      "family": "Righteous",
+      "handles": [
+        "righteous_n4"
+      ],
+      "replacement": "Muli"
+    },
+    {
+      "family": "Rockwell",
+      "handles": [
+        "rockwell_n4",
+        "rockwell_i4",
+        "rockwell_n7",
+        "rockwell_i7",
+        "rockwell_n8"
+      ],
+      "replacement": "Zilla Slab"
+    },
+    {
+      "family": "Sabon Next",
+      "handles": [
+        "sabon_next_n4",
+        "sabon_next_i4",
+        "sabon_next_n6",
+        "sabon_next_i6",
+        "sabon_next_n7",
+        "sabon_next_i7",
+        "sabon_next_n8",
+        "sabon_next_i8",
+        "sabon_next_n9",
+        "sabon_next_i9"
+      ],
+      "replacement": "EB Garamond"
+    },
+    {
+      "family": "Sackers Square Gothic",
+      "handles": [
+        "sackers_square_gothic_n4"
+      ],
+      "replacement": "Lexend Zetta"
+    },
+    {
+      "family": "Sagrantino",
+      "handles": [
+        "sagrantino_n4"
+      ],
+      "replacement": "Kaushan Script"
+    },
+    {
+      "family": "Scene",
+      "handles": [
+        "scene_n3",
+        "scene_i3",
+        "scene_n4",
+        "scene_i4",
+        "scene_n5",
+        "scene_i5",
+        "scene_n7",
+        "scene_i7",
+        "scene_n8",
+        "scene_i8",
+        "scene_n9",
+        "scene_i9"
+      ],
+      "replacement": "Roboto"
+    },
+    {
+      "family": "Scherzo",
+      "handles": [
+        "scherzo_n4",
+        "scherzo_i4",
+        "scherzo_n6",
+        "scherzo_i6",
+        "scherzo_n7",
+        "scherzo_i7"
+      ],
+      "replacement": "Yrsa"
+    },
+    {
+      "family": "Slabo 13px",
+      "handles": [
+        "slabo_13px_n4"
+      ],
+      "replacement": "Roboto Slab"
+    },
+    {
+      "family": "Slate",
+      "handles": [
+        "slate_n2",
+        "slate_i2",
+        "slate_n3",
+        "slate_i3",
+        "slate_n4",
+        "slate_i4",
+        "slate_n5",
+        "slate_i5",
+        "slate_n7",
+        "slate_i7",
+        "slate_n9",
+        "slate_i9"
+      ],
+      "replacement": "Source Sans Pro"
+    },
+    {
+      "family": "Soho",
+      "handles": [
+        "soho_n1",
+        "soho_i1",
+        "soho_n2",
+        "soho_i2",
+        "soho_n3",
+        "soho_i3",
+        "soho_n4",
+        "soho_i4",
+        "soho_n5",
+        "soho_i5",
+        "soho_n6",
+        "soho_i6",
+        "soho_n7",
+        "soho_i7",
+        "soho_n8",
+        "soho_i8",
+        "soho_n9",
+        "soho_i9"
+      ],
+      "replacement": "Roboto Slab"
+    },
+    {
+      "family": "Soho Gothic",
+      "handles": [
+        "soho_gothic_n2",
+        "soho_gothic_i2",
+        "soho_gothic_n3",
+        "soho_gothic_i3",
+        "soho_gothic_n4",
+        "soho_gothic_i4",
+        "soho_gothic_n5",
+        "soho_gothic_i5",
+        "soho_gothic_n7",
+        "soho_gothic_i7",
+        "soho_gothic_n8",
+        "soho_gothic_i8",
+        "soho_gothic_n9",
+        "soho_gothic_i9"
+      ],
+      "replacement": "Titillium Web"
+    },
+    {
+      "family": "Stempel Schneidler",
+      "handles": [
+        "stempel_schneidler_n3",
+        "stempel_schneidler_i3",
+        "stempel_schneidler_n4",
+        "stempel_schneidler_i4",
+        "stempel_schneidler_n5",
+        "stempel_schneidler_i5",
+        "stempel_schneidler_n7",
+        "stempel_schneidler_i7",
+        "stempel_schneidler_n8",
+        "stempel_schneidler_i8"
+      ],
+      "replacement": "Platypi"
+    },
+    {
+      "family": "Swiss 721",
+      "handles": [
+        "swiss_721_n1",
+        "swiss_721_i1",
+        "swiss_721_n2",
+        "swiss_721_i2",
+        "swiss_721_n4",
+        "swiss_721_i4",
+        "swiss_721_n5",
+        "swiss_721_i5",
+        "swiss_721_n7",
+        "swiss_721_i7",
+        "swiss_721_n8",
+        "swiss_721_i8",
+        "swiss_721_n9",
+        "swiss_721_i9"
+      ],
+      "replacement": "Instrument Sans"
+    },
+    {
+      "family": "Swiss 721 Rounded",
+      "handles": [
+        "swiss_721_rounded_n7",
+        "swiss_721_rounded_n9"
+      ],
+      "replacement": "Nunito"
+    },
+    {
+      "family": "Tiemann",
+      "handles": [
+        "tiemann_n3",
+        "tiemann_n4"
+      ],
+      "replacement": "Bodoni Moda"
+    },
+    {
+      "family": "Tinos",
+      "handles": [
+        "tinos_n4",
+        "tinos_i4",
+        "tinos_n7",
+        "tinos_i7"
+      ],
+      "replacement": "PT Serif"
+    },
+    {
+      "family": "Trade Gothic",
+      "handles": [
+        "trade_gothic_n3",
+        "trade_gothic_o3",
+        "trade_gothic_n4",
+        "trade_gothic_o4",
+        "trade_gothic_n7",
+        "trade_gothic_o7"
+      ],
+      "replacement": "Libre Franklin"
+    },
+    {
+      "family": "Trade Gothic Next",
+      "handles": [
+        "trade_gothic_next_n3",
+        "trade_gothic_next_i3",
+        "trade_gothic_next_n4",
+        "trade_gothic_next_i4",
+        "trade_gothic_next_n7",
+        "trade_gothic_next_i7",
+        "trade_gothic_next_n8",
+        "trade_gothic_next_i8"
+      ],
+      "replacement": "Libre Franklin"
+    },
+    {
+      "family": "Twentieth Century",
+      "handles": [
+        "twentieth_century_n3",
+        "twentieth_century_i3",
+        "twentieth_century_n4",
+        "twentieth_century_n5",
+        "twentieth_century_i5",
+        "twentieth_century_n6",
+        "twentieth_century_n7",
+        "twentieth_century_i7",
+        "twentieth_century_n8",
+        "twentieth_century_i8",
+        "twentieth_century_n9",
+        "twentieth_century_i9"
+      ],
+      "replacement": "Outfit"
+    },
+    {
+      "family": "Univers Next",
+      "handles": [
+        "univers_next_n1",
+        "univers_next_i1",
+        "univers_next_n2",
+        "univers_next_i2",
+        "univers_next_n3",
+        "univers_next_i3",
+        "univers_next_n4",
+        "univers_next_i4",
+        "univers_next_n5",
+        "univers_next_i5",
+        "univers_next_n6",
+        "univers_next_i6",
+        "univers_next_n7",
+        "univers_next_i7",
+        "univers_next_n8",
+        "univers_next_i8",
+        "univers_next_n9",
+        "univers_next_i9"
+      ],
+      "replacement": "Instrument Sans"
+    },
+    {
+      "family": "Univers Next Typewriter",
+      "handles": [
+        "univers_next_typewriter_n4",
+        "univers_next_typewriter_i4",
+        "univers_next_typewriter_n7",
+        "univers_next_typewriter_i7"
+      ],
+      "replacement": "Source Code Pro"
+    },
+    {
+      "family": "Unna",
+      "handles": [
+        "unna_n4",
+        "unna_i4",
+        "unna_n7",
+        "unna_i7"
+      ],
+      "replacement": "Gelasio"
+    },
+    {
+      "family": "Vala",
+      "handles": [
+        "vala_n4"
+      ],
+      "replacement": "Lobster Two"
+    },
+    {
+      "family": "Varela",
+      "handles": [
+        "varela_n4"
+      ],
+      "replacement": "Nunito Sans"
+    },
+    {
+      "family": "Varela Round",
+      "handles": [
+        "varela_round_n4"
+      ],
+      "replacement": "Nunito"
+    },
+    {
+      "family": "Verdana Pro",
+      "handles": [
+        "verdana_pro_n3",
+        "verdana_pro_i3",
+        "verdana_pro_n4",
+        "verdana_pro_i4",
+        "verdana_pro_n6",
+        "verdana_pro_i6",
+        "verdana_pro_n7",
+        "verdana_pro_i7",
+        "verdana_pro_n9",
+        "verdana_pro_i9"
+      ],
+      "replacement": "Open Sans"
+    },
+    {
+      "family": "Vidaloka",
+      "handles": [
+        "vidaloka_n4"
+      ],
+      "replacement": "Playfair Display"
+    },
+    {
+      "family": "Volkhov",
+      "handles": [
+        "volkhov_n4",
+        "volkhov_i4",
+        "volkhov_n7",
+        "volkhov_i7"
+      ],
+      "replacement": "Rasa"
+    },
+    {
+      "family": "Vollkorn",
+      "handles": [
+        "vollkorn_n4",
+        "vollkorn_i4",
+        "vollkorn_n5",
+        "vollkorn_i5",
+        "vollkorn_n6",
+        "vollkorn_i6",
+        "vollkorn_n7",
+        "vollkorn_i7",
+        "vollkorn_n8",
+        "vollkorn_i8",
+        "vollkorn_n9",
+        "vollkorn_i9"
+      ],
+      "replacement": "Andada Pro"
+    },
+    {
+      "family": "Waza",
+      "handles": [
+        "waza_n4"
+      ],
+      "replacement": "Pinyon Script"
+    },
+    {
+      "family": "Wola",
+      "handles": [
+        "wola_n4"
+      ],
+      "replacement": "Kalam"
+    },
+    {
+      "family": "Ysobel",
+      "handles": [
+        "ysobel_n3",
+        "ysobel_i3",
+        "ysobel_n4",
+        "ysobel_i4",
+        "ysobel_n6",
+        "ysobel_i6",
+        "ysobel_n7",
+        "ysobel_i7"
+      ],
+      "replacement": "Source Serif 4"
+    },
+    {
+      "family": "Zurich",
+      "handles": [
+        "zurich_n3",
+        "zurich_i3",
+        "zurich_n4",
+        "zurich_i4",
+        "zurich_n7",
+        "zurich_i7",
+        "zurich_n8",
+        "zurich_i8",
+        "zurich_n9"
+      ],
+      "replacement": "Instrument Sans"
+    },
+    {
+      "family": "Zurich Extended",
+      "handles": [
+        "zurich_extended_n4",
+        "zurich_extended_n7",
+        "zurich_extended_n8",
+        "zurich_extended_n9"
+      ],
+      "replacement": "Epilogue"
+    },
+    {
+      "family": "Sans-serif",
+      "handles": [
+        "sans-serif"
+      ],
+      "replacement": "System UI"
+    }
+  ]
+}

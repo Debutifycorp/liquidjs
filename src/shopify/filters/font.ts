@@ -17,13 +17,14 @@ function fontOf (state: ShopifyState, name: UnsupportedFeature, input: unknown):
   return info ? new FontDrop(info, state.services.fontInfo) : undefined
 }
 
-/** The font file's URL, `woff2` unless `'woff'` is asked for. https://shopify.dev/docs/api/liquid/filters/font_url. Any other format is reported and gets the `woff2` URL; the page does not pin that error case. */
+/** The font file's URL, `woff2` unless `'woff'` is asked for. https://shopify.dev/docs/api/liquid/filters/font_url. A system font has no file, and the parity store prints the empty string for it in both formats (fixtures `probe-fonts-library`: `mono`, `sans_serif_n4`, `serif`, `system_ui_n4`), so the `fontUrl` service is not asked for one. Any other format is reported and gets the `woff2` URL; the page does not pin that error case. */
 function fontUrl (this: FilterImpl, input: unknown, format: unknown) {
   const state = shopifyState(this.context)
   const font = fontOf(state, 'font_url', input)
   if (!font) return ''
   const wanted = format === undefined || format === null ? '' : stringify(format)
   if (wanted && wanted !== 'woff' && wanted !== 'woff2') state.report.unsupported('font_url', `unknown format: ${wanted}`)
+  if (font.info.system) return ''
   return state.services.fontUrl(font.info, wanted === 'woff' ? 'woff' : 'woff2')
 }
 

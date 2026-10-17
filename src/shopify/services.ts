@@ -1,6 +1,6 @@
 import type { FontInfo, ImageData, ImageUrlParams } from './types'
 import { placeholderArt } from './placeholder-art'
-import { shopifyPaymentIcon } from './library'
+import { shopifyFontInfo, shopifyPaymentIcon } from './library'
 import { withoutProtocol } from './objects/image'
 
 /**
@@ -13,11 +13,11 @@ export interface ShopifyServices {
   shopifyAssetUrl: (path: string) => string
   /** `image_url`, `image_tag`, `img_url`: the URL of `image` with the CDN parameters `params`, https://shopify.dev/docs/api/liquid/filters/image_url, https://shopify.dev/docs/api/liquid/filters/image_tag and https://shopify.dev/docs/api/liquid/filters/img_url. The default service answers without a protocol (`//host/files/a.jpg?width=450`), as the parity store does, so a theme's `prepend: "https:"` makes a valid address; a service that wraps it sees that form. `params.width` and `params.height` are the size the template asked for, up to 5760, and can be larger than the image (the parity store keeps such a request in the address): a service that resizes decides whether to serve or refuse an upscale. */
   imageUrl: (image: ImageData, params: ImageUrlParams) => string
-  /** `font_url` and the default `font_face`: the URL of a font file, https://shopify.dev/docs/api/liquid/filters/font_url and https://shopify.dev/docs/api/liquid/filters/font_face. */
+  /** `font_url` and the default `font_face`: the URL of a font file, https://shopify.dev/docs/api/liquid/filters/font_url and https://shopify.dev/docs/api/liquid/filters/font_face. The default is `/fonts/<directory>/<file>`, the font's `files` on https://fonts.shopifycdn.com/ (`/fonts/<handle>.<format>` for a font without them), so a host serves those files at `/fonts/`. A system font has no file: `font_url` prints nothing for it, as the parity store does, and does not ask this service. */
   fontUrl: (font: FontInfo, format: 'woff2' | 'woff') => string
   /** `font_face`: the whole `@font-face` rule, https://shopify.dev/docs/api/liquid/filters/font_face. When absent, the filter builds Shopify's rule from `fontUrl`. */
   fontFace?: (font: FontInfo, options: { fontDisplay?: string }) => string
-  /** The Shopify font library: a `font_picker` value (`assistant_n4`) to its font, or undefined, https://shopify.dev/docs/storefronts/themes/architecture/settings/fonts. Which fonts exist and how their handles are spelled is not pinned by shopify.dev. */
+  /** The Shopify font library: a `font_picker` value (`assistant_n4`) to its font, or undefined, https://shopify.dev/docs/storefronts/themes/architecture/settings/fonts. The default is `shopifyFontInfo`: Shopify's library as the parity store prints it (family, weight, style, fallback families, baseline ratio, variants and files of each handle shopify.dev lists), a retired handle giving the font Shopify renders in its place, and any other handle unknown. */
   fontInfo: (handle: string) => FontInfo | undefined
   /** `placeholder_svg_tag`: the `<svg>` markup for a placeholder name (`product-1`), https://shopify.dev/docs/api/liquid/filters/placeholder_svg_tag (the page lists the names; the artwork is Shopify's, so the default draws Debutify's own line art in the page's markup, `placeholderArt`, and a caller may supply other art). */
   placeholderSvg: (name: string) => string
@@ -29,7 +29,7 @@ export interface ShopifyServices {
 
 const FONT_HANDLE = /^([a-z0-9_]+?)_([nio])([1-9])$/
 
-/** Reads a Shopify font handle (`<family>_<style><weight / 100>`, e.g. `assistant_n4`). shopify.dev lists handles but does not define their grammar (https://shopify.dev/docs/storefronts/themes/architecture/settings/fonts), so this reading and the guessed variants (regular, italic, bold and bold italic) are Debutify's and not pinned; callers with the real font library replace `fontInfo`. */
+/** Reads a Shopify font handle (`<family>_<style><weight / 100>`, e.g. `assistant_n4`). shopify.dev lists handles but does not define their grammar (https://shopify.dev/docs/storefronts/themes/architecture/settings/fonts), so this reading and the guessed variants (regular, italic, bold and bold italic) are Debutify's and not pinned. It is no longer the default `fontInfo` (Shopify's library is, `shopifyFontInfo`); a host with a font outside the library can wrap it. */
 export function parseFontHandle (handle: string): FontInfo | undefined {
   const match = FONT_HANDLE.exec(handle)
   if (!match) return undefined
@@ -75,13 +75,13 @@ export function cdnStyleImageUrl (image: ImageData, params: ImageUrlParams): str
   return keys.length ? `${base}?${keys.map(key => `${key}=${query.get(key)}`).join('&')}` : base
 }
 
-/** Deterministic defaults. Relative URLs, Debutify's own placeholder line art, Shopify-shaped image URLs and the system clock are stand-ins (Debutify's, not Shopify's output); the payment icons are Shopify's own (`shopifyPaymentIcon`, the files of activemerchant/payment_icons that `payment_type_svg_tag` prints). Callers replace them through the `services` option, one service at a time; the object itself is frozen, as every engine and render reads it. */
+/** Deterministic defaults. Relative URLs, Debutify's own placeholder line art, Shopify-shaped image URLs and the system clock are stand-ins (Debutify's, not Shopify's output); the payment icons and the font library are Shopify's own (`shopifyPaymentIcon`, the files of activemerchant/payment_icons that `payment_type_svg_tag` prints; `shopifyFontInfo`, the library as the parity store prints it). Callers replace them through the `services` option, one service at a time; the object itself is frozen, as every engine and render reads it. */
 export const defaultServices: Readonly<ShopifyServices> = Object.freeze<ShopifyServices>({
   assetUrl: path => `/assets/${path}`,
   shopifyAssetUrl: path => `/shopify-assets/${path}`,
   imageUrl: cdnStyleImageUrl,
-  fontUrl: (font, format) => `/fonts/${font.handle}.${format}`,
-  fontInfo: parseFontHandle,
+  fontUrl: (font, format) => font.files ? `/fonts/${font.files[format]}` : `/fonts/${font.handle}.${format}`,
+  fontInfo: shopifyFontInfo,
   placeholderSvg: placeholderArt,
   paymentTypeSvg: shopifyPaymentIcon,
   currentTime: () => new Date()

@@ -96,5 +96,7 @@ export async function probeMatches (name: string, pick: (body: any) => unknown =
   // a page renders its base template (`product`) and the runtime picks the alternate one from the address's `?view=` or the resource's `template_suffix`
   const templateName = section ? 'index' : page.templateName
   const html = await renderProbeHtml(section ?? templateName, { request: page.request, data, section: !!section, templateName, locale: page.locale })
-  return { actual: pick(maskVolatile(JSON.parse(html))), expected }
+  // a probe page made of one JSON-template section (`"layout": false`) answers its JSON inside the section's wrapper, which the cut takes off the recording as well
+  const json = /^\s*<div[^>]*class="shopify-section[^"]*"[^>]*>([\s\S]*)<\/div>\s*$/.exec(html)?.[1] ?? html
+  return { actual: pick(maskVolatile(JSON.parse(json))), expected }
 }

@@ -10,7 +10,7 @@ export type { CompiledTheme, ThemeInput, RenderPageOptions, RenderPageResult, Re
 export { parseWrapper } from './theme/json'
 export type { RenderReport, CountEntry, ErrorEntry, MissingEntry, MissingKind, SectionEntry, UnsupportedEntry, UnsupportedFeature } from './report'
 export { defaultServices } from './services'
-export { shopifyPaymentIcon } from './library'
+export { isShopifyFontFile, shopifyFontInfo, shopifyPaymentIcon } from './library'
 export type { ShopifyServices } from './services'
 export type { BlockData, FontInfo, ImageData, ImageUrlParams, LocaleTree, SectionData } from './types'
 export { Translator } from './translations'

@@ -1,0 +1,1861 @@
+{
+  "scenario": "probe-fonts-retired-4",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/pages/about?view=probe-fonts-retired-4",
+      "status": 200,
+      "location": null,
+      "body": {
+        "fonts": [
+          {
+            "handle": "soho_gothic_n8",
+            "font": {
+              "family": "\"Titillium Web\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1275,
+              "woff2": "/fonts/titillium_web/titilliumweb_n7.d17ed1f3a767ca2dd9fcaa8710c651c747c3860e.woff2",
+              "woff": "/fonts/titillium_web/titilliumweb_n7.56a12bf435e8401765588d4fbf86b152db29e2a2.woff"
+            }
+          },
+          {
+            "handle": "soho_gothic_i8",
+            "font": {
+              "family": "\"Titillium Web\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.1275,
+              "woff2": "/fonts/titillium_web/titilliumweb_i7.3e8c9f7c6bca0b0064b77d34a6d297e354571235.woff2",
+              "woff": "/fonts/titillium_web/titilliumweb_i7.163ab44a3549d32affe27b1c25448b75221b890d.woff"
+            }
+          },
+          {
+            "handle": "soho_gothic_n9",
+            "font": {
+              "family": "\"Titillium Web\"",
+              "fallback_families": "sans-serif",
+              "weight": "900",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1275,
+              "woff2": "/fonts/titillium_web/titilliumweb_n9.088cc51515f8c5a9077a87d32358aacf2dd2cf35.woff2",
+              "woff": "/fonts/titillium_web/titilliumweb_n9.5cf880ff9467689e9cc6684f98de2139451c0188.woff"
+            }
+          },
+          {
+            "handle": "soho_gothic_i9",
+            "font": {
+              "family": "\"Titillium Web\"",
+              "fallback_families": "sans-serif",
+              "weight": "900",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1275,
+              "woff2": "/fonts/titillium_web/titilliumweb_n9.088cc51515f8c5a9077a87d32358aacf2dd2cf35.woff2",
+              "woff": "/fonts/titillium_web/titilliumweb_n9.5cf880ff9467689e9cc6684f98de2139451c0188.woff"
+            }
+          },
+          {
+            "handle": "stempel_schneidler_n3",
+            "font": {
+              "family": "Platypi",
+              "fallback_families": "serif",
+              "weight": "300",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.063,
+              "woff2": "/fonts/platypi/platypi_n3.ca2828fbaa4e8cdd776c210f4bde9eebc87cbc7d.woff2",
+              "woff": "/fonts/platypi/platypi_n3.e0a33bb0825d6f004d3a36a491393238de4feafa.woff"
+            }
+          },
+          {
+            "handle": "stempel_schneidler_i3",
+            "font": {
+              "family": "Platypi",
+              "fallback_families": "serif",
+              "weight": "300",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.063,
+              "woff2": "/fonts/platypi/platypi_i3.69f3f79901aecf050a7ef489ca4a80c95acc9f6d.woff2",
+              "woff": "/fonts/platypi/platypi_i3.dad477b731819d78fa6a885bd453f7bac4bdcc07.woff"
+            }
+          },
+          {
+            "handle": "stempel_schneidler_n4",
+            "font": {
+              "family": "Platypi",
+              "fallback_families": "serif",
+              "weight": "300",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.063,
+              "woff2": "/fonts/platypi/platypi_n3.ca2828fbaa4e8cdd776c210f4bde9eebc87cbc7d.woff2",
+              "woff": "/fonts/platypi/platypi_n3.e0a33bb0825d6f004d3a36a491393238de4feafa.woff"
+            }
+          },
+          {
+            "handle": "stempel_schneidler_i4",
+            "font": {
+              "family": "Platypi",
+              "fallback_families": "serif",
+              "weight": "300",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.063,
+              "woff2": "/fonts/platypi/platypi_i3.69f3f79901aecf050a7ef489ca4a80c95acc9f6d.woff2",
+              "woff": "/fonts/platypi/platypi_i3.dad477b731819d78fa6a885bd453f7bac4bdcc07.woff"
+            }
+          },
+          {
+            "handle": "stempel_schneidler_n5",
+            "font": {
+              "family": "Platypi",
+              "fallback_families": "serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.063,
+              "woff2": "/fonts/platypi/platypi_n4.62b1c33c9b8c4a87704d4fe197104d07eb49e00d.woff2",
+              "woff": "/fonts/platypi/platypi_n4.c6967b9dc18e53adaded00c3a60f6c2d4d4cbe0c.woff"
+            }
+          },
+          {
+            "handle": "stempel_schneidler_i5",
+            "font": {
+              "family": "Platypi",
+              "fallback_families": "serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.063,
+              "woff2": "/fonts/platypi/platypi_i4.05fb4be29957479f45a747a938458472d665117e.woff2",
+              "woff": "/fonts/platypi/platypi_i4.3a4bf82aa6fce32078ac213982d278250ac05cb1.woff"
+            }
+          },
+          {
+            "handle": "stempel_schneidler_n7",
+            "font": {
+              "family": "Platypi",
+              "fallback_families": "serif",
+              "weight": "500",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.063,
+              "woff2": "/fonts/platypi/platypi_n5.eceb4a4de281a6ef42e6897768a01dc7adcffdb3.woff2",
+              "woff": "/fonts/platypi/platypi_n5.4c88ab31789f4cb5f3b3d72d22ca9d0ab2570110.woff"
+            }
+          },
+          {
+            "handle": "stempel_schneidler_i7",
+            "font": {
+              "family": "Platypi",
+              "fallback_families": "serif",
+              "weight": "500",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.063,
+              "woff2": "/fonts/platypi/platypi_i5.130fa00a1b2042b732328d5671eb578df27a79f2.woff2",
+              "woff": "/fonts/platypi/platypi_i5.79975760586904c336bc827a76f73fd9600e0e3a.woff"
+            }
+          },
+          {
+            "handle": "stempel_schneidler_n8",
+            "font": {
+              "family": "Platypi",
+              "fallback_families": "serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.063,
+              "woff2": "/fonts/platypi/platypi_n7.629a982aad2167195ff929b418098a9fe495c9b1.woff2",
+              "woff": "/fonts/platypi/platypi_n7.b93e95010b54a46f5d822e15f45f7dca1673f2db.woff"
+            }
+          },
+          {
+            "handle": "stempel_schneidler_i8",
+            "font": {
+              "family": "Platypi",
+              "fallback_families": "serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.063,
+              "woff2": "/fonts/platypi/platypi_i7.3bafe98edee5ab2b7b766042b9cdd2667e234de6.woff2",
+              "woff": "/fonts/platypi/platypi_i7.68e627d81d3a17ba2d769c265cd330f6f408aeba.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_n1",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n4.db86542ae5e1596dbdb28c279ae6c2086c4c5bfa.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n4.510f1b081e58d08c30978f465518799851ef6d8b.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_i1",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i4.028d3c3cd8d085648c808ceb20cd2fd1eb3560e5.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i4.7e90d82df8dee29a99237cd19cc529d2206706a2.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_n2",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n4.db86542ae5e1596dbdb28c279ae6c2086c4c5bfa.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n4.510f1b081e58d08c30978f465518799851ef6d8b.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_i2",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i4.028d3c3cd8d085648c808ceb20cd2fd1eb3560e5.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i4.7e90d82df8dee29a99237cd19cc529d2206706a2.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_n4",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n4.db86542ae5e1596dbdb28c279ae6c2086c4c5bfa.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n4.510f1b081e58d08c30978f465518799851ef6d8b.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_i4",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i4.028d3c3cd8d085648c808ceb20cd2fd1eb3560e5.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i4.7e90d82df8dee29a99237cd19cc529d2206706a2.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_n5",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "500",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n5.1ce463e1cc056566f977610764d93d4704464858.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n5.9079eb7bba230c9d8d8d3a7d101aa9d9f40b6d14.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_i5",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "500",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i5.d2033775d4997e4dcd0d47ebdd5234b5c14e3f53.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i5.8e3cfa86b65acf809ce72bc4f9b58f185ef6b8c7.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_n7",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n7.e4ad9032e203f9a0977786c356573ced65a7419a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n7.b9e40f166fb7639074ba34738101a9d2990bb41a.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_i7",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i7.d6063bb5d8f9cbf96eace9e8801697c54f363c6a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i7.ce33afe63f8198a3ac4261b826b560103542cd36.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_n8",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n7.e4ad9032e203f9a0977786c356573ced65a7419a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n7.b9e40f166fb7639074ba34738101a9d2990bb41a.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_i8",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i7.d6063bb5d8f9cbf96eace9e8801697c54f363c6a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i7.ce33afe63f8198a3ac4261b826b560103542cd36.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_n9",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n7.e4ad9032e203f9a0977786c356573ced65a7419a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n7.b9e40f166fb7639074ba34738101a9d2990bb41a.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_i9",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i7.d6063bb5d8f9cbf96eace9e8801697c54f363c6a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i7.ce33afe63f8198a3ac4261b826b560103542cd36.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_rounded_n7",
+            "font": {
+              "family": "Nunito",
+              "fallback_families": "sans-serif",
+              "weight": "800",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.171,
+              "woff2": "/fonts/nunito/nunito_n8.a4faa34563722dcb4bd960ae538c49eb540a565f.woff2",
+              "woff": "/fonts/nunito/nunito_n8.7b9b4d7a0ef879eb46735a0aecb391013c7f7aeb.woff"
+            }
+          },
+          {
+            "handle": "swiss_721_rounded_n9",
+            "font": {
+              "family": "Nunito",
+              "fallback_families": "sans-serif",
+              "weight": "900",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.171,
+              "woff2": "/fonts/nunito/nunito_n9.29703ebe5c8d8fa1bc7f2dcb872bdf16cf7ff465.woff2",
+              "woff": "/fonts/nunito/nunito_n9.37c60d6be0d57e3635735f5fdd179e5283d59f56.woff"
+            }
+          },
+          {
+            "handle": "tiemann_n3",
+            "font": {
+              "family": "\"Bodoni Moda\"",
+              "fallback_families": "serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1375,
+              "woff2": "/fonts/bodoni_moda/bodonimoda_n4.025af1859727a91866b3c708393a6dc972156491.woff2",
+              "woff": "/fonts/bodoni_moda/bodonimoda_n4.aebb4417dfed0dc5ec4a330249c3862add089916.woff"
+            }
+          },
+          {
+            "handle": "tiemann_n4",
+            "font": {
+              "family": "\"Bodoni Moda\"",
+              "fallback_families": "serif",
+              "weight": "500",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1375,
+              "woff2": "/fonts/bodoni_moda/bodonimoda_n5.36d0da1db617c453fb46e8089790ab6dc72c2356.woff2",
+              "woff": "/fonts/bodoni_moda/bodonimoda_n5.40f612bab009769f87511096f185d9228ad3baa3.woff"
+            }
+          },
+          {
+            "handle": "tinos_n4",
+            "font": {
+              "family": "\"PT Serif\"",
+              "fallback_families": "serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1235,
+              "woff2": "/fonts/pt_serif/ptserif_n4.5dc26655329dc6264a046fc444eea109ea514d3d.woff2",
+              "woff": "/fonts/pt_serif/ptserif_n4.1549d2c00b7c71aa534c98bf662cdf9b8ae01b92.woff"
+            }
+          },
+          {
+            "handle": "tinos_i4",
+            "font": {
+              "family": "\"PT Serif\"",
+              "fallback_families": "serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.1235,
+              "woff2": "/fonts/pt_serif/ptserif_i4.1afa02f8df7ccae6643176d4e6d154b743bbe421.woff2",
+              "woff": "/fonts/pt_serif/ptserif_i4.7f2e0dc06d42deb66485d571450c1756b37093e3.woff"
+            }
+          },
+          {
+            "handle": "tinos_n7",
+            "font": {
+              "family": "\"PT Serif\"",
+              "fallback_families": "serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1235,
+              "woff2": "/fonts/pt_serif/ptserif_n7.05b01f581be1e3c8aaf548f8c90656344869b497.woff2",
+              "woff": "/fonts/pt_serif/ptserif_n7.f17e4873a71012cbec67e4ce660216ff0a1a81c8.woff"
+            }
+          },
+          {
+            "handle": "tinos_i7",
+            "font": {
+              "family": "\"PT Serif\"",
+              "fallback_families": "serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.1235,
+              "woff2": "/fonts/pt_serif/ptserif_i7.4ff1f7baaf6f5304a2181c5d610af6ed12b35185.woff2",
+              "woff": "/fonts/pt_serif/ptserif_i7.2848bc6aae0dac68eb07fe4fc086069a0c77264c.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_n3",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "300",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_n3.8cafdf02f3a4e5567b74224f139d214e665e34e1.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_n3.cdf6db8de35eb51473c109b271bf04f2b0561d68.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_o3",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "300",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_i3.27165bbc51c81ac815a3253a3cb85fa882967f30.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_i3.9c035b1243bfce781830852fea08b140fdc7e703.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_n4",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_n4.a9b0508e1ffb743a0fd6d0614768959c54a27d86.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_n4.948f6f27caf8552b1a9560176e3f14eeb2c6f202.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_o4",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_i4.5cee60cade760b32c7b489f9d561e97341909d7c.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_i4.2f9ee939c2cc82522dfb62e1a084861f9beeb411.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_n7",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_n6.c976b0b721ea92417572301ef17640150832a2b9.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_n6.bb41783c980fb0a0dad0f0403cbcc7159efe6030.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_o7",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_i6.7ae53255ab44c18176e5c1c169a009f635aeb949.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_i6.c8eb9c307a8e927dcb30218e64b5b81edbc09ee3.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_next_n3",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "300",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_n3.8cafdf02f3a4e5567b74224f139d214e665e34e1.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_n3.cdf6db8de35eb51473c109b271bf04f2b0561d68.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_next_i3",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "300",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_i3.27165bbc51c81ac815a3253a3cb85fa882967f30.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_i3.9c035b1243bfce781830852fea08b140fdc7e703.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_next_n4",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_n4.a9b0508e1ffb743a0fd6d0614768959c54a27d86.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_n4.948f6f27caf8552b1a9560176e3f14eeb2c6f202.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_next_i4",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_i4.5cee60cade760b32c7b489f9d561e97341909d7c.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_i4.2f9ee939c2cc82522dfb62e1a084861f9beeb411.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_next_n7",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_n6.c976b0b721ea92417572301ef17640150832a2b9.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_n6.bb41783c980fb0a0dad0f0403cbcc7159efe6030.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_next_i7",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_i6.7ae53255ab44c18176e5c1c169a009f635aeb949.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_i6.c8eb9c307a8e927dcb30218e64b5b81edbc09ee3.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_next_n8",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_n7.6739620624550b8695d0cc23f92ffd46eb51c7a3.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_n7.7cebc205621b23b061b803310af0ad39921ae57d.woff"
+            }
+          },
+          {
+            "handle": "trade_gothic_next_i8",
+            "font": {
+              "family": "\"Libre Franklin\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/libre_franklin/librefranklin_i7.5cd0952dea701f27d5d0eb294c01347335232ef2.woff2",
+              "woff": "/fonts/libre_franklin/librefranklin_i7.41af936a1cd17668e4e060c6e0ad838ccf133ddd.woff"
+            }
+          },
+          {
+            "handle": "twentieth_century_n3",
+            "font": {
+              "family": "Outfit",
+              "fallback_families": "sans-serif",
+              "weight": "200",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.13,
+              "woff2": "/fonts/outfit/outfit_n2.789f288d061952dc1dbc9afdf50d9a7c26ec8c64.woff2",
+              "woff": "/fonts/outfit/outfit_n2.9754a496b280dc3d6504ffb4032ed2d4b15cf2eb.woff"
+            }
+          },
+          {
+            "handle": "twentieth_century_i3",
+            "font": {
+              "family": "Outfit",
+              "fallback_families": "sans-serif",
+              "weight": "200",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.13,
+              "woff2": "/fonts/outfit/outfit_n2.789f288d061952dc1dbc9afdf50d9a7c26ec8c64.woff2",
+              "woff": "/fonts/outfit/outfit_n2.9754a496b280dc3d6504ffb4032ed2d4b15cf2eb.woff"
+            }
+          },
+          {
+            "handle": "twentieth_century_n4",
+            "font": {
+              "family": "Outfit",
+              "fallback_families": "sans-serif",
+              "weight": "300",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.13,
+              "woff2": "/fonts/outfit/outfit_n3.8c97ae4c4fac7c2ea467a6dc784857f4de7e0e37.woff2",
+              "woff": "/fonts/outfit/outfit_n3.b50a189ccde91f9bceee88f207c18c09f0b62a7b.woff"
+            }
+          },
+          {
+            "handle": "twentieth_century_n5",
+            "font": {
+              "family": "Outfit",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.13,
+              "woff2": "/fonts/outfit/outfit_n4.387c2e2715c484a1f1075eb90d64808f1b37ac58.woff2",
+              "woff": "/fonts/outfit/outfit_n4.aca8c81f18f62c9baa15c2dc5d1f6dd5442cdc50.woff"
+            }
+          },
+          {
+            "handle": "twentieth_century_i5",
+            "font": {
+              "family": "Outfit",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.13,
+              "woff2": "/fonts/outfit/outfit_n4.387c2e2715c484a1f1075eb90d64808f1b37ac58.woff2",
+              "woff": "/fonts/outfit/outfit_n4.aca8c81f18f62c9baa15c2dc5d1f6dd5442cdc50.woff"
+            }
+          },
+          {
+            "handle": "twentieth_century_n6",
+            "font": {
+              "family": "Outfit",
+              "fallback_families": "sans-serif",
+              "weight": "500",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.13,
+              "woff2": "/fonts/outfit/outfit_n5.8646f8eed6d6d0a1ac9821ab288cc9621d1e145e.woff2",
+              "woff": "/fonts/outfit/outfit_n5.9e3c12421e42661c948a7f5b879e5e0c7d394cd6.woff"
+            }
+          },
+          {
+            "handle": "twentieth_century_n7",
+            "font": {
+              "family": "Outfit",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.13,
+              "woff2": "/fonts/outfit/outfit_n6.dfcbaa80187851df2e8384061616a8eaa1702fdc.woff2",
+              "woff": "/fonts/outfit/outfit_n6.88384e9fc3e36038624caccb938f24ea8008a91d.woff"
+            }
+          },
+          {
+            "handle": "twentieth_century_i7",
+            "font": {
+              "family": "Outfit",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.13,
+              "woff2": "/fonts/outfit/outfit_n6.dfcbaa80187851df2e8384061616a8eaa1702fdc.woff2",
+              "woff": "/fonts/outfit/outfit_n6.88384e9fc3e36038624caccb938f24ea8008a91d.woff"
+            }
+          },
+          {
+            "handle": "twentieth_century_n8",
+            "font": {
+              "family": "Outfit",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.13,
+              "woff2": "/fonts/outfit/outfit_n7.bfc2ca767cd7c6962e82c320123933a7812146d6.woff2",
+              "woff": "/fonts/outfit/outfit_n7.f0b22ea9a32b6f1f6f493dd3a7113aae3464d8b2.woff"
+            }
+          },
+          {
+            "handle": "twentieth_century_i8",
+            "font": {
+              "family": "Outfit",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.13,
+              "woff2": "/fonts/outfit/outfit_n7.bfc2ca767cd7c6962e82c320123933a7812146d6.woff2",
+              "woff": "/fonts/outfit/outfit_n7.f0b22ea9a32b6f1f6f493dd3a7113aae3464d8b2.woff"
+            }
+          },
+          {
+            "handle": "twentieth_century_n9",
+            "font": {
+              "family": "Outfit",
+              "fallback_families": "sans-serif",
+              "weight": "900",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.13,
+              "woff2": "/fonts/outfit/outfit_n9.860250bea825a5eb12b22579df26823ac1df648b.woff2",
+              "woff": "/fonts/outfit/outfit_n9.24d7c431e44f8b4622ceaf809ffa8dfc16efa898.woff"
+            }
+          },
+          {
+            "handle": "twentieth_century_i9",
+            "font": {
+              "family": "Outfit",
+              "fallback_families": "sans-serif",
+              "weight": "900",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.13,
+              "woff2": "/fonts/outfit/outfit_n9.860250bea825a5eb12b22579df26823ac1df648b.woff2",
+              "woff": "/fonts/outfit/outfit_n9.24d7c431e44f8b4622ceaf809ffa8dfc16efa898.woff"
+            }
+          },
+          {
+            "handle": "univers_next_n1",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n4.db86542ae5e1596dbdb28c279ae6c2086c4c5bfa.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n4.510f1b081e58d08c30978f465518799851ef6d8b.woff"
+            }
+          },
+          {
+            "handle": "univers_next_i1",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i4.028d3c3cd8d085648c808ceb20cd2fd1eb3560e5.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i4.7e90d82df8dee29a99237cd19cc529d2206706a2.woff"
+            }
+          },
+          {
+            "handle": "univers_next_n2",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n4.db86542ae5e1596dbdb28c279ae6c2086c4c5bfa.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n4.510f1b081e58d08c30978f465518799851ef6d8b.woff"
+            }
+          },
+          {
+            "handle": "univers_next_i2",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i4.028d3c3cd8d085648c808ceb20cd2fd1eb3560e5.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i4.7e90d82df8dee29a99237cd19cc529d2206706a2.woff"
+            }
+          },
+          {
+            "handle": "univers_next_n3",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n4.db86542ae5e1596dbdb28c279ae6c2086c4c5bfa.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n4.510f1b081e58d08c30978f465518799851ef6d8b.woff"
+            }
+          },
+          {
+            "handle": "univers_next_i3",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i4.028d3c3cd8d085648c808ceb20cd2fd1eb3560e5.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i4.7e90d82df8dee29a99237cd19cc529d2206706a2.woff"
+            }
+          },
+          {
+            "handle": "univers_next_n4",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n4.db86542ae5e1596dbdb28c279ae6c2086c4c5bfa.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n4.510f1b081e58d08c30978f465518799851ef6d8b.woff"
+            }
+          },
+          {
+            "handle": "univers_next_i4",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i4.028d3c3cd8d085648c808ceb20cd2fd1eb3560e5.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i4.7e90d82df8dee29a99237cd19cc529d2206706a2.woff"
+            }
+          },
+          {
+            "handle": "univers_next_n5",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "500",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n5.1ce463e1cc056566f977610764d93d4704464858.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n5.9079eb7bba230c9d8d8d3a7d101aa9d9f40b6d14.woff"
+            }
+          },
+          {
+            "handle": "univers_next_i5",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "500",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i5.d2033775d4997e4dcd0d47ebdd5234b5c14e3f53.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i5.8e3cfa86b65acf809ce72bc4f9b58f185ef6b8c7.woff"
+            }
+          },
+          {
+            "handle": "univers_next_n6",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n6.27dc66245013a6f7f317d383a3cc9a0c347fb42d.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n6.1a71efbeeb140ec495af80aad612ad55e19e6d0e.woff"
+            }
+          },
+          {
+            "handle": "univers_next_i6",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i6.ba8063f6adfa1e7ffe690cc5efa600a1e0a8ec32.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i6.a5bb29b76a0bb820ddaa9417675a5d0bafaa8c1f.woff"
+            }
+          },
+          {
+            "handle": "univers_next_n7",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n7.e4ad9032e203f9a0977786c356573ced65a7419a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n7.b9e40f166fb7639074ba34738101a9d2990bb41a.woff"
+            }
+          },
+          {
+            "handle": "univers_next_i7",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i7.d6063bb5d8f9cbf96eace9e8801697c54f363c6a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i7.ce33afe63f8198a3ac4261b826b560103542cd36.woff"
+            }
+          },
+          {
+            "handle": "univers_next_n8",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n7.e4ad9032e203f9a0977786c356573ced65a7419a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n7.b9e40f166fb7639074ba34738101a9d2990bb41a.woff"
+            }
+          },
+          {
+            "handle": "univers_next_i8",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i7.d6063bb5d8f9cbf96eace9e8801697c54f363c6a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i7.ce33afe63f8198a3ac4261b826b560103542cd36.woff"
+            }
+          },
+          {
+            "handle": "univers_next_n9",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n7.e4ad9032e203f9a0977786c356573ced65a7419a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n7.b9e40f166fb7639074ba34738101a9d2990bb41a.woff"
+            }
+          },
+          {
+            "handle": "univers_next_i9",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i7.d6063bb5d8f9cbf96eace9e8801697c54f363c6a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i7.ce33afe63f8198a3ac4261b826b560103542cd36.woff"
+            }
+          },
+          {
+            "handle": "univers_next_typewriter_n4",
+            "font": {
+              "family": "\"Source Code Pro\"",
+              "fallback_families": "monospace",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1445,
+              "woff2": "/fonts/source_code_pro/sourcecodepro_n4.057a1deeb017f07198e1e712ce5e03dbfb3c5dfa.woff2",
+              "woff": "/fonts/source_code_pro/sourcecodepro_n4.9575234ffbb5a688fb454ab8c917c06259a52d9f.woff"
+            }
+          },
+          {
+            "handle": "univers_next_typewriter_i4",
+            "font": {
+              "family": "\"Source Code Pro\"",
+              "fallback_families": "monospace",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1445,
+              "woff2": "/fonts/source_code_pro/sourcecodepro_n4.057a1deeb017f07198e1e712ce5e03dbfb3c5dfa.woff2",
+              "woff": "/fonts/source_code_pro/sourcecodepro_n4.9575234ffbb5a688fb454ab8c917c06259a52d9f.woff"
+            }
+          },
+          {
+            "handle": "univers_next_typewriter_n7",
+            "font": {
+              "family": "\"Source Code Pro\"",
+              "fallback_families": "monospace",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1445,
+              "woff2": "/fonts/source_code_pro/sourcecodepro_n6.ba90ea94b890edb85521b147a3a7fb9db347065d.woff2",
+              "woff": "/fonts/source_code_pro/sourcecodepro_n6.69b1810d3be737f8880ab60e60c9dc451b01184f.woff"
+            }
+          },
+          {
+            "handle": "univers_next_typewriter_i7",
+            "font": {
+              "family": "\"Source Code Pro\"",
+              "fallback_families": "monospace",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1445,
+              "woff2": "/fonts/source_code_pro/sourcecodepro_n6.ba90ea94b890edb85521b147a3a7fb9db347065d.woff2",
+              "woff": "/fonts/source_code_pro/sourcecodepro_n6.69b1810d3be737f8880ab60e60c9dc451b01184f.woff"
+            }
+          },
+          {
+            "handle": "unna_n4",
+            "font": {
+              "family": "Gelasio",
+              "fallback_families": "serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.20703125,
+              "woff2": "/fonts/gelasio/gelasio_n4.4c16aa443f7a871bf3cd01ef1a4aee00a144b7f4.woff2",
+              "woff": "/fonts/gelasio/gelasio_n4.5d24746d8f4bd63b39d8bb5edfdfb5ee3cf0492a.woff"
+            }
+          },
+          {
+            "handle": "unna_i4",
+            "font": {
+              "family": "Gelasio",
+              "fallback_families": "serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.20703125,
+              "woff2": "/fonts/gelasio/gelasio_i4.c50b716fbc67a2114744ab4aa51f066dc8f01f2f.woff2",
+              "woff": "/fonts/gelasio/gelasio_i4.46378d4964cee3c24f863967a3f86e8f6c1da295.woff"
+            }
+          },
+          {
+            "handle": "unna_n7",
+            "font": {
+              "family": "Gelasio",
+              "fallback_families": "serif",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.20703125,
+              "woff2": "/fonts/gelasio/gelasio_n6.3ab171c2a9d88dabe25f01e9878226f3c062edd7.woff2",
+              "woff": "/fonts/gelasio/gelasio_n6.d5f5656b2004a9f08d1b494a2c0dea78beffd7b8.woff"
+            }
+          },
+          {
+            "handle": "unna_i7",
+            "font": {
+              "family": "Gelasio",
+              "fallback_families": "serif",
+              "weight": "600",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.20703125,
+              "woff2": "/fonts/gelasio/gelasio_i6.81c8025bc47c80306824e3cd78f5053063810991.woff2",
+              "woff": "/fonts/gelasio/gelasio_i6.141e889dc6ad835b106183c7d938779e1327fe17.woff"
+            }
+          },
+          {
+            "handle": "vala_n4",
+            "font": {
+              "family": "\"Lobster Two\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.125,
+              "woff2": "/fonts/lobster_two/lobstertwo_i7.d990604a4cd16b9f1e83ca47aba256f380b4527c.woff2",
+              "woff": "/fonts/lobster_two/lobstertwo_i7.f938ba9c645680dc4bbf44985a46c79c87301ad9.woff"
+            }
+          },
+          {
+            "handle": "varela_n4",
+            "font": {
+              "family": "\"Nunito Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.171,
+              "woff2": "/fonts/nunito_sans/nunitosans_n4.0276fe080df0ca4e6a22d9cb55aed3ed5ba6b1da.woff2",
+              "woff": "/fonts/nunito_sans/nunitosans_n4.b4964bee2f5e7fd9c3826447e73afe2baad607b7.woff"
+            }
+          },
+          {
+            "handle": "varela_round_n4",
+            "font": {
+              "family": "Nunito",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.171,
+              "woff2": "/fonts/nunito/nunito_n6.1a6c50dce2e2b3b0d31e02dbd9146b5064bea503.woff2",
+              "woff": "/fonts/nunito/nunito_n6.6b124f3eac46044b98c99f2feb057208e260962f.woff"
+            }
+          },
+          {
+            "handle": "verdana_pro_n3",
+            "font": {
+              "family": "\"Open Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "300",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.112060546875,
+              "woff2": "/fonts/open_sans/opensans_n3.b10466eda05a6b2d1ef0f6ba490dcecf7588dd78.woff2",
+              "woff": "/fonts/open_sans/opensans_n3.056c4b5dddadba7018747bd50fdaa80430e21710.woff"
+            }
+          },
+          {
+            "handle": "verdana_pro_i3",
+            "font": {
+              "family": "\"Open Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "300",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.112060546875,
+              "woff2": "/fonts/open_sans/opensans_i3.853ebda1c5f31329bb2a566ea7797548807a48bf.woff2",
+              "woff": "/fonts/open_sans/opensans_i3.3359d7c8c5a869c65cb7df3aa76a8d52237b1b65.woff"
+            }
+          },
+          {
+            "handle": "verdana_pro_n4",
+            "font": {
+              "family": "\"Open Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.112060546875,
+              "woff2": "/fonts/open_sans/opensans_n4.c32e4d4eca5273f6d4ee95ddf54b5bbb75fc9b61.woff2",
+              "woff": "/fonts/open_sans/opensans_n4.5f3406f8d94162b37bfa232b486ac93ee892406d.woff"
+            }
+          },
+          {
+            "handle": "verdana_pro_i4",
+            "font": {
+              "family": "\"Open Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.112060546875,
+              "woff2": "/fonts/open_sans/opensans_i4.6f1d45f7a46916cc95c694aab32ecbf7509cbf33.woff2",
+              "woff": "/fonts/open_sans/opensans_i4.4efaa52d5a57aa9a57c1556cc2b7465d18839daa.woff"
+            }
+          },
+          {
+            "handle": "verdana_pro_n6",
+            "font": {
+              "family": "\"Open Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.112060546875,
+              "woff2": "/fonts/open_sans/opensans_n6.15aeff3c913c3fe570c19cdfeed14ce10d09fb08.woff2",
+              "woff": "/fonts/open_sans/opensans_n6.14bef14c75f8837a87f70ce22013cb146ee3e9f3.woff"
+            }
+          },
+          {
+            "handle": "verdana_pro_i6",
+            "font": {
+              "family": "\"Open Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.112060546875,
+              "woff2": "/fonts/open_sans/opensans_i6.828bbc1b99433eacd7d50c9f0c1bfe16f27b89a3.woff2",
+              "woff": "/fonts/open_sans/opensans_i6.a79e1402e2bbd56b8069014f43ff9c422c30d057.woff"
+            }
+          },
+          {
+            "handle": "verdana_pro_n7",
+            "font": {
+              "family": "\"Open Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.112060546875,
+              "woff2": "/fonts/open_sans/opensans_n7.a9393be1574ea8606c68f4441806b2711d0d13e4.woff2",
+              "woff": "/fonts/open_sans/opensans_n7.7b8af34a6ebf52beb1a4c1d8c73ad6910ec2e553.woff"
+            }
+          },
+          {
+            "handle": "verdana_pro_i7",
+            "font": {
+              "family": "\"Open Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.112060546875,
+              "woff2": "/fonts/open_sans/opensans_i7.916ced2e2ce15f7fcd95d196601a15e7b89ee9a4.woff2",
+              "woff": "/fonts/open_sans/opensans_i7.99a9cff8c86ea65461de497ade3d515a98f8b32a.woff"
+            }
+          },
+          {
+            "handle": "verdana_pro_n9",
+            "font": {
+              "family": "\"Open Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "800",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.112060546875,
+              "woff2": "/fonts/open_sans/opensans_n8.8397a8153d7172f9fd2b668340b216c70cae90a5.woff2",
+              "woff": "/fonts/open_sans/opensans_n8.e6b8c8da9a85739da8727944118b210848d95f08.woff"
+            }
+          },
+          {
+            "handle": "verdana_pro_i9",
+            "font": {
+              "family": "\"Open Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "800",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.112060546875,
+              "woff2": "/fonts/open_sans/opensans_i8.677319af1852e587858f0d12fe49bfe640a8e14c.woff2",
+              "woff": "/fonts/open_sans/opensans_i8.77fafba30cfcb72e4c6963135ff055209eecce0f.woff"
+            }
+          },
+          {
+            "handle": "vidaloka_n4",
+            "font": {
+              "family": "\"Playfair Display\"",
+              "fallback_families": "serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.0845,
+              "woff2": "/fonts/playfair_display/playfairdisplay_n4.9980f3e16959dc89137cc1369bfc3ae98af1deb9.woff2",
+              "woff": "/fonts/playfair_display/playfairdisplay_n4.c562b7c8e5637886a811d2a017f9e023166064ee.woff"
+            }
+          },
+          {
+            "handle": "volkhov_n4",
+            "font": {
+              "family": "Rasa",
+              "fallback_families": "serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.272,
+              "woff2": "/fonts/rasa/rasa_n4.e685d1007863dad080fcd04a439e02130207bdbf.woff2",
+              "woff": "/fonts/rasa/rasa_n4.616bbf71ec8d908501ab4cd461e2db399b1e7c55.woff"
+            }
+          },
+          {
+            "handle": "volkhov_i4",
+            "font": {
+              "family": "Rasa",
+              "fallback_families": "serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.272,
+              "woff2": "/fonts/rasa/rasa_i4.6cab8939c807b80668fcd668897bdb1109102e6c.woff2",
+              "woff": "/fonts/rasa/rasa_i4.3861f12d01bd4130660034af45f9637d9dcedf9b.woff"
+            }
+          },
+          {
+            "handle": "volkhov_n7",
+            "font": {
+              "family": "Rasa",
+              "fallback_families": "serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.272,
+              "woff2": "/fonts/rasa/rasa_n7.49966ed350a4c7398e92e222a257de7de1c71264.woff2",
+              "woff": "/fonts/rasa/rasa_n7.385781672724296339e3708c9da3be5c1e7ae3d6.woff"
+            }
+          },
+          {
+            "handle": "volkhov_i7",
+            "font": {
+              "family": "Rasa",
+              "fallback_families": "serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.272,
+              "woff2": "/fonts/rasa/rasa_i7.0e689a11867de7d1840c102e181b1db025b48dab.woff2",
+              "woff": "/fonts/rasa/rasa_i7.035dc110eb595ce08cbe12c452db83c8d5ea0757.woff"
+            }
+          },
+          {
+            "handle": "vollkorn_n4",
+            "font": {
+              "family": "\"Andada Pro\"",
+              "fallback_families": "serif",
+              "weight": "500",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1465,
+              "woff2": "/fonts/andada_pro/andadapro_n5.ba0525b510606c02ae6c594b730a09bb5976e04f.woff2",
+              "woff": "/fonts/andada_pro/andadapro_n5.da9b2a0c8513f84fa719a512d2bf0165b8f1eef1.woff"
+            }
+          },
+          {
+            "handle": "vollkorn_i4",
+            "font": {
+              "family": "\"Andada Pro\"",
+              "fallback_families": "serif",
+              "weight": "500",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.1465,
+              "woff2": "/fonts/andada_pro/andadapro_i5.7888702cbb3e4860211acdff04bf05141d444b50.woff2",
+              "woff": "/fonts/andada_pro/andadapro_i5.4e5b431dacee81b744b3a20fdf47c9fe79e9719e.woff"
+            }
+          },
+          {
+            "handle": "vollkorn_n5",
+            "font": {
+              "family": "\"Andada Pro\"",
+              "fallback_families": "serif",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1465,
+              "woff2": "/fonts/andada_pro/andadapro_n6.9d2eb02e005e338e8521851933208672b925c734.woff2",
+              "woff": "/fonts/andada_pro/andadapro_n6.241a3d50493eb67a763805ba171825ca6782aac2.woff"
+            }
+          },
+          {
+            "handle": "vollkorn_i5",
+            "font": {
+              "family": "\"Andada Pro\"",
+              "fallback_families": "serif",
+              "weight": "600",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.1465,
+              "woff2": "/fonts/andada_pro/andadapro_i6.0e288f34aac87bccbb1a45b28bc04c5031c3b65e.woff2",
+              "woff": "/fonts/andada_pro/andadapro_i6.b4843822eda4ca67d47703cef1b53706e3c729e1.woff"
+            }
+          },
+          {
+            "handle": "vollkorn_n6",
+            "font": {
+              "family": "\"Andada Pro\"",
+              "fallback_families": "serif",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1465,
+              "woff2": "/fonts/andada_pro/andadapro_n6.9d2eb02e005e338e8521851933208672b925c734.woff2",
+              "woff": "/fonts/andada_pro/andadapro_n6.241a3d50493eb67a763805ba171825ca6782aac2.woff"
+            }
+          },
+          {
+            "handle": "vollkorn_i6",
+            "font": {
+              "family": "\"Andada Pro\"",
+              "fallback_families": "serif",
+              "weight": "600",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.1465,
+              "woff2": "/fonts/andada_pro/andadapro_i6.0e288f34aac87bccbb1a45b28bc04c5031c3b65e.woff2",
+              "woff": "/fonts/andada_pro/andadapro_i6.b4843822eda4ca67d47703cef1b53706e3c729e1.woff"
+            }
+          },
+          {
+            "handle": "vollkorn_n7",
+            "font": {
+              "family": "\"Andada Pro\"",
+              "fallback_families": "serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1465,
+              "woff2": "/fonts/andada_pro/andadapro_n7.21e2160c1d40c7b5b65df774b887a55eee68a023.woff2",
+              "woff": "/fonts/andada_pro/andadapro_n7.659ca1992e2b875cdc8ff361d149c5e6b9d96cc9.woff"
+            }
+          },
+          {
+            "handle": "vollkorn_i7",
+            "font": {
+              "family": "\"Andada Pro\"",
+              "fallback_families": "serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.1465,
+              "woff2": "/fonts/andada_pro/andadapro_i7.f40607946943d7e4981b53a79bd98abc129cf264.woff2",
+              "woff": "/fonts/andada_pro/andadapro_i7.605fe3e178d6252ed702b3384ecc43e85dd39229.woff"
+            }
+          },
+          {
+            "handle": "vollkorn_n8",
+            "font": {
+              "family": "\"Andada Pro\"",
+              "fallback_families": "serif",
+              "weight": "800",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1465,
+              "woff2": "/fonts/andada_pro/andadapro_n8.bba669b0b4bae96e84e21fb55185cb0f22986297.woff2",
+              "woff": "/fonts/andada_pro/andadapro_n8.10ceeb77e39ec1876efb35f3a2b5460f75eaee6a.woff"
+            }
+          },
+          {
+            "handle": "vollkorn_i8",
+            "font": {
+              "family": "\"Andada Pro\"",
+              "fallback_families": "serif",
+              "weight": "800",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.1465,
+              "woff2": "/fonts/andada_pro/andadapro_i8.4a4baabfa87b2350293bcfbacd9e6fb1916e7af3.woff2",
+              "woff": "/fonts/andada_pro/andadapro_i8.bcaeefe6f5168efecb0fef044f598beedc30c60a.woff"
+            }
+          },
+          {
+            "handle": "vollkorn_n9",
+            "font": {
+              "family": "\"Andada Pro\"",
+              "fallback_families": "serif",
+              "weight": "800",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1465,
+              "woff2": "/fonts/andada_pro/andadapro_n8.bba669b0b4bae96e84e21fb55185cb0f22986297.woff2",
+              "woff": "/fonts/andada_pro/andadapro_n8.10ceeb77e39ec1876efb35f3a2b5460f75eaee6a.woff"
+            }
+          },
+          {
+            "handle": "vollkorn_i9",
+            "font": {
+              "family": "\"Andada Pro\"",
+              "fallback_families": "serif",
+              "weight": "800",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.1465,
+              "woff2": "/fonts/andada_pro/andadapro_i8.4a4baabfa87b2350293bcfbacd9e6fb1916e7af3.woff2",
+              "woff": "/fonts/andada_pro/andadapro_i8.bcaeefe6f5168efecb0fef044f598beedc30c60a.woff"
+            }
+          },
+          {
+            "handle": "waza_n4",
+            "font": {
+              "family": "\"Pinyon Script\"",
+              "fallback_families": "cursive",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.260498046875,
+              "woff2": "/fonts/pinyon_script/pinyonscript_n4.d5cdaa582aa86df1f76ad2002864c37d1f357b0a.woff2",
+              "woff": "/fonts/pinyon_script/pinyonscript_n4.2c85807ad691f4dfea1ae3c4ea85285d0391c6ce.woff"
+            }
+          },
+          {
+            "handle": "wola_n4",
+            "font": {
+              "family": "Kalam",
+              "fallback_families": "cursive",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.234,
+              "woff2": "/fonts/kalam/kalam_n7.9d145e82c2f25f7b78520244aca4418b2ee7dc72.woff2",
+              "woff": "/fonts/kalam/kalam_n7.b981b10c409bf6e63a98ccf8c21bc1f42150badc.woff"
+            }
+          },
+          {
+            "handle": "ysobel_n3",
+            "font": {
+              "family": "\"Source Serif 4\"",
+              "fallback_families": "serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1495,
+              "woff2": "/fonts/source_serif_4/sourceserif4_n4.0b3e8927bb8678aae824c5f2b6a3826350623570.woff2",
+              "woff": "/fonts/source_serif_4/sourceserif4_n4.5759d0c758bab9c1ee75668d3957dcd23b6fac99.woff"
+            }
+          },
+          {
+            "handle": "ysobel_i3",
+            "font": {
+              "family": "\"Source Serif 4\"",
+              "fallback_families": "serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.1495,
+              "woff2": "/fonts/source_serif_4/sourceserif4_i4.529d9717a8db4329d1f4cd7dffe2bdc99435ecfa.woff2",
+              "woff": "/fonts/source_serif_4/sourceserif4_i4.39385a9408187ae37751a5680159592298d30721.woff"
+            }
+          },
+          {
+            "handle": "ysobel_n4",
+            "font": {
+              "family": "\"Source Serif 4\"",
+              "fallback_families": "serif",
+              "weight": "500",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1495,
+              "woff2": "/fonts/source_serif_4/sourceserif4_n5.66195e19da512871e13720719446b02eb0ad6d08.woff2",
+              "woff": "/fonts/source_serif_4/sourceserif4_n5.7190fbb7deb53a7711fe3457e449d3c716a05f42.woff"
+            }
+          },
+          {
+            "handle": "ysobel_i4",
+            "font": {
+              "family": "\"Source Serif 4\"",
+              "fallback_families": "serif",
+              "weight": "500",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.1495,
+              "woff2": "/fonts/source_serif_4/sourceserif4_i5.f2f99c4a1795ac131c2f7f6cca04f2d48a18567e.woff2",
+              "woff": "/fonts/source_serif_4/sourceserif4_i5.be304ee937b5aa4f302ad6a4fbe19127cdcc1fe3.woff"
+            }
+          },
+          {
+            "handle": "ysobel_n6",
+            "font": {
+              "family": "\"Source Serif 4\"",
+              "fallback_families": "serif",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1495,
+              "woff2": "/fonts/source_serif_4/sourceserif4_n6.95f0b4b0c48888f7bbbe6586fc9c50e8f98c6276.woff2",
+              "woff": "/fonts/source_serif_4/sourceserif4_n6.d1dfc25223b4ed046fa065538a370cbfaa922731.woff"
+            }
+          },
+          {
+            "handle": "ysobel_i6",
+            "font": {
+              "family": "\"Source Serif 4\"",
+              "fallback_families": "serif",
+              "weight": "600",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.1495,
+              "woff2": "/fonts/source_serif_4/sourceserif4_i6.e58d30f9ee9205efefa33583bd2485dadf2bd38d.woff2",
+              "woff": "/fonts/source_serif_4/sourceserif4_i6.f65f4a8cb92329f91f51997560d2b7030c2faf05.woff"
+            }
+          },
+          {
+            "handle": "ysobel_n7",
+            "font": {
+              "family": "\"Source Serif 4\"",
+              "fallback_families": "serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.1495,
+              "woff2": "/fonts/source_serif_4/sourceserif4_n7.3640beda88ff1767fe86bbe7ff5c800a9262b987.woff2",
+              "woff": "/fonts/source_serif_4/sourceserif4_n7.21faae578553a6fe581c0b76cb802cca9e3c400e.woff"
+            }
+          },
+          {
+            "handle": "ysobel_i7",
+            "font": {
+              "family": "\"Source Serif 4\"",
+              "fallback_families": "serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.1495,
+              "woff2": "/fonts/source_serif_4/sourceserif4_i7.db2734884f598ca0cfec2939c852e1a75c4e555a.woff2",
+              "woff": "/fonts/source_serif_4/sourceserif4_i7.526cda7545fd1f3dbeb0252329f5dc183bbeba95.woff"
+            }
+          },
+          {
+            "handle": "zurich_n3",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n4.db86542ae5e1596dbdb28c279ae6c2086c4c5bfa.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n4.510f1b081e58d08c30978f465518799851ef6d8b.woff"
+            }
+          },
+          {
+            "handle": "zurich_i3",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i4.028d3c3cd8d085648c808ceb20cd2fd1eb3560e5.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i4.7e90d82df8dee29a99237cd19cc529d2206706a2.woff"
+            }
+          },
+          {
+            "handle": "zurich_n4",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n4.db86542ae5e1596dbdb28c279ae6c2086c4c5bfa.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n4.510f1b081e58d08c30978f465518799851ef6d8b.woff"
+            }
+          },
+          {
+            "handle": "zurich_i4",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i4.028d3c3cd8d085648c808ceb20cd2fd1eb3560e5.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i4.7e90d82df8dee29a99237cd19cc529d2206706a2.woff"
+            }
+          },
+          {
+            "handle": "zurich_n7",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n6.27dc66245013a6f7f317d383a3cc9a0c347fb42d.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n6.1a71efbeeb140ec495af80aad612ad55e19e6d0e.woff"
+            }
+          },
+          {
+            "handle": "zurich_i7",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i6.ba8063f6adfa1e7ffe690cc5efa600a1e0a8ec32.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i6.a5bb29b76a0bb820ddaa9417675a5d0bafaa8c1f.woff"
+            }
+          },
+          {
+            "handle": "zurich_n8",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n7.e4ad9032e203f9a0977786c356573ced65a7419a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n7.b9e40f166fb7639074ba34738101a9d2990bb41a.woff"
+            }
+          },
+          {
+            "handle": "zurich_i8",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "italic",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_i7.d6063bb5d8f9cbf96eace9e8801697c54f363c6a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_i7.ce33afe63f8198a3ac4261b826b560103542cd36.woff"
+            }
+          },
+          {
+            "handle": "zurich_n9",
+            "font": {
+              "family": "\"Instrument Sans\"",
+              "fallback_families": "sans-serif",
+              "weight": "700",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.14,
+              "woff2": "/fonts/instrument_sans/instrumentsans_n7.e4ad9032e203f9a0977786c356573ced65a7419a.woff2",
+              "woff": "/fonts/instrument_sans/instrumentsans_n7.b9e40f166fb7639074ba34738101a9d2990bb41a.woff"
+            }
+          },
+          {
+            "handle": "zurich_extended_n4",
+            "font": {
+              "family": "Epilogue",
+              "fallback_families": "sans-serif",
+              "weight": "400",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.2225,
+              "woff2": "/fonts/epilogue/epilogue_n4.1f76c7520f03b0a6e3f97f1207c74feed2e1968f.woff2",
+              "woff": "/fonts/epilogue/epilogue_n4.38049608164cf48b1e6928c13855d2ab66b3b435.woff"
+            }
+          },
+          {
+            "handle": "zurich_extended_n7",
+            "font": {
+              "family": "Epilogue",
+              "fallback_families": "sans-serif",
+              "weight": "600",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.2225,
+              "woff2": "/fonts/epilogue/epilogue_n6.08fec64cb98bb1d92d6fa8e2c6f6b0dbc9d17b85.woff2",
+              "woff": "/fonts/epilogue/epilogue_n6.c4a59100c1459cdffd805ffafdeadfcb3de81168.woff"
+            }
+          },
+          {
+            "handle": "zurich_extended_n8",
+            "font": {
+              "family": "Epilogue",
+              "fallback_families": "sans-serif",
+              "weight": "800",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.2225,
+              "woff2": "/fonts/epilogue/epilogue_n8.fce680a466ed4f23f54385c46aa2c014c51d421a.woff2",
+              "woff": "/fonts/epilogue/epilogue_n8.2961970d19583d06f062e98ceb588027397f5810.woff"
+            }
+          },
+          {
+            "handle": "zurich_extended_n9",
+            "font": {
+              "family": "Epilogue",
+              "fallback_families": "sans-serif",
+              "weight": "900",
+              "style": "normal",
+              "system": false,
+              "baseline_ratio": 0.2225,
+              "woff2": "/fonts/epilogue/epilogue_n9.41f32e09dec56d6e52ae7b21f54ebbdefe1d7b25.woff2",
+              "woff": "/fonts/epilogue/epilogue_n9.34c2d8a11cd7ab17dcc4ba1a00e1f043a90b7901.woff"
+            }
+          },
+          {
+            "handle": "sans-serif",
+            "font": {
+              "family": "\"system_ui\"",
+              "fallback_families": "-apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', 'Liberation Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
+              "weight": "400",
+              "style": "normal",
+              "system": true,
+              "baseline_ratio": 0.15808375,
+              "woff2": "",
+              "woff": ""
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{%- assign first = true -%}
+{"fonts":[
+{%- for block in section.blocks -%}
+{%- for i in (1..8) -%}
+{%- capture handle_key -%}handle_{{ i }}{%- endcapture -%}
+{%- capture font_key -%}font_{{ i }}{%- endcapture -%}
+{%- assign handle = block.settings[handle_key] -%}
+{%- if handle != blank -%}
+{%- assign f = block.settings[font_key] -%}
+{%- capture family -%}{{ f.family }}{%- endcapture -%}
+{%- if family contains 'Liquid error' -%}{%- assign f = nil -%}{%- endif -%}
+{%- unless first -%},{%- endunless -%}
+{%- assign first = false -%}
+{"handle":{{ handle | json }},"font":
+{%- if f -%}
+{"family":{{ f.family | json }},"fallback_families":{{ f.fallback_families | json }},"weight":{{ f.weight | json }},"style":{{ f.style | json }},"system":{{ f.system? | json }},"baseline_ratio":{{ f.baseline_ratio | json }},"woff2":{{ f | font_url | json }},"woff":{{ f | font_url: 'woff' | json }}
+{%- if section.settings.variants -%}
+,"variants":[
+{%- for v in f.variants -%}
+{"family":{{ v.family | json }},"fallback_families":{{ v.fallback_families | json }},"weight":{{ v.weight | json }},"style":{{ v.style | json }},"system":{{ v.system? | json }},"baseline_ratio":{{ v.baseline_ratio | json }},"woff2":{{ v | font_url | json }},"woff":{{ v | font_url: 'woff' | json }}}
+{%- unless forloop.last -%},{%- endunless -%}
+{%- endfor -%}
+]
+{%- endif -%}
+}
+{%- else -%}null{%- endif -%}
+}
+{%- endif -%}
+{%- endfor -%}
+{%- endfor -%}
+]}
+{% schema %}
+{
+  "name": "Probe fonts",
+  "max_blocks": 50,
+  "settings": [{ "type": "checkbox", "id": "variants", "label": "Variants", "default": false }],
+  "blocks": [
+    {
+      "type": "fonts",
+      "name": "Fonts",
+      "settings": [
+        { "type": "text", "id": "handle_1", "label": "Handle 1" }, { "type": "font_picker", "id": "font_1", "label": "Font 1", "default": "assistant_n4" },
+        { "type": "text", "id": "handle_2", "label": "Handle 2" }, { "type": "font_picker", "id": "font_2", "label": "Font 2", "default": "assistant_n4" },
+        { "type": "text", "id": "handle_3", "label": "Handle 3" }, { "type": "font_picker", "id": "font_3", "label": "Font 3", "default": "assistant_n4" },
+        { "type": "text", "id": "handle_4", "label": "Handle 4" }, { "type": "font_picker", "id": "font_4", "label": "Font 4", "default": "assistant_n4" },
+        { "type": "text", "id": "handle_5", "label": "Handle 5" }, { "type": "font_picker", "id": "font_5", "label": "Font 5", "default": "assistant_n4" },
+        { "type": "text", "id": "handle_6", "label": "Handle 6" }, { "type": "font_picker", "id": "font_6", "label": "Font 6", "default": "assistant_n4" },
+        { "type": "text", "id": "handle_7", "label": "Handle 7" }, { "type": "font_picker", "id": "font_7", "label": "Font 7", "default": "assistant_n4" },
+        { "type": "text", "id": "handle_8", "label": "Handle 8" }, { "type": "font_picker", "id": "font_8", "label": "Font 8", "default": "assistant_n4" }
+      ]
+    }
+  ]
+}
+{% endschema %}
