@@ -1,3 +1,21 @@
+# [1.6.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v1.5.0...debutify-v1.6.0) (2026-10-18)
+
+
+### Bug Fixes
+
+* **shopify:** Shopify.loadFeatures loads Shopify's feature scripts from its CDN, so the 3D viewer and video UI start ([106fe38](https://github.com/Debutifycorp/liquidjs/commit/106fe38c586fb25a4a0248bfbb7e674fc10e7a79))
+* **storefront:** a sandboxed preview prints a video or a 3D model at its Shopify CDN address, so the model loads and renders ([ade446a](https://github.com/Debutifycorp/liquidjs/commit/ade446afaac852187cfe333f88c50ea31eb8ae75))
+
+
+### Features
+
+* **shopify:** the preset ends an output at its first } and refuses an unclosed string, with Ruby Liquid's messages, as Shopify's upload does ([66e77e9](https://github.com/Debutifycorp/liquidjs/commit/66e77e9693d3b9e13cd29440081f096789cd2902))
+
+
+### Upstream
+
+Based on [LiquidJS 10.30.0](https://github.com/harttle/liquidjs/releases/tag/v10.30.0).
+
 # [1.5.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v1.4.0...debutify-v1.5.0) (2026-10-18)
 
 
