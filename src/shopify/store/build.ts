@@ -292,7 +292,10 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
     selling_plan_allocations: plans.map(offer => buildAllocation(offer, price, currency)),
     requires_selling_plan: requiresPlan,
     selected_selling_plan_allocation: null,
-    quantity_rule: { min: 1, max: null, increment: 1 },
+    // https://shopify.dev/docs/api/liquid/objects/variant#variant-quantity_price_breaks_configured?: whether the variant "has any quantity price breaks available in the current customer context"
+    'quantity_price_breaks_configured?': (variant.quantity_price_breaks ?? []).length > 0,
+    // https://shopify.dev/docs/api/liquid/objects/quantity_rule: "If no rule exists, then a default value is returned" (min 1, no max, increment 1)
+    quantity_rule: { min: variant.quantity_rule?.min ?? 1, max: variant.quantity_rule?.max ?? null, increment: variant.quantity_rule?.increment ?? 1 },
     metafields: buildMetafields(variant.metafields, resolve)
   }
   // marks a built variant for the `json` filter, which prints it with `variantLiquidJson`, and its images with the place they have in it

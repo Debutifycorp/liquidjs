@@ -116,6 +116,8 @@ export interface VariantData {
   barcode?: string | null
   /** Volume prices, the lowest minimum quantity first; none when omitted. */
   quantity_price_breaks?: QuantityPriceBreakData[]
+  /** The variant's order quantities, https://shopify.dev/docs/api/liquid/objects/quantity_rule: `min` and `increment` default to 1 and `max` to none, the rule a variant with no rule gets. */
+  quantity_rule?: { min?: number, max?: number | null, increment?: number }
   /** For the variant's `unit_price`, which is its price per `reference_value` of the measurement. */
   unit_price_measurement?: UnitPriceMeasurementData | null
   /** The locations that stock the variant; none when omitted. */
