@@ -321,6 +321,16 @@ describe('tags/for', function () {
       const html = await liquid.parseAndRender(src, { arr: [1, 2, 3, 4, 5] })
       return expect(html).toBe('12-345')
     })
+    it('should start at the beginning, and then continue, when the first loop to use offset:continue is inside an outer loop', async function () {
+      const src = '{%for o in outer%}[{%for i in arr offset:continue limit:2%}{{i}}{%endfor%}]{%endfor%}'
+      const html = await liquid.parseAndRender(src, { outer: [1, 2, 3], arr: [1, 2, 3, 4, 5] })
+      return expect(html).toBe('[12][34][5]')
+    })
+    it('should continue in an outer loop from the loop before it', async function () {
+      const src = '{%for i in arr limit:2%}{{i}}{%endfor%}{%for o in outer%}[{%for i in arr offset:continue limit:2%}{{i}}{%endfor%}]{%endfor%}'
+      const html = await liquid.parseAndRender(src, { outer: [1, 2], arr: [1, 2, 3, 4, 5, 6] })
+      return expect(html).toBe('12[34][56]')
+    })
     it('should continue nothing for fully iterated loop', async function () {
       const src = '{%for i in arr%}{{i}}{%endfor%}-{%for i in arr offset:continue%}{{i}}{%endfor%}'
       const html = await liquid.parseAndRender(src, { arr: [1, 2, 3, 4, 5] })

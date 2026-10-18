@@ -52,7 +52,7 @@ export default class extends Tag {
     }
 
     const continueKey = 'continue-' + this.variable + '-' + this.collection.getText()
-    ctx.push(createScope({ continue: ctx.getRegister(continueKey, {}) }))
+    ctx.push(createScope({ continue: ctx.getRegister(continueKey, 0) }))
     const hash = (yield this.hash.render(ctx)) as Record<string, any>
     ctx.pop()
 
