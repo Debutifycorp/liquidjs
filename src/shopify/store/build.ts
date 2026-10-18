@@ -1,5 +1,5 @@
 import { LiquidFloat } from '../../util/liquid-float'
-import { ImageDrop } from '../objects/image'
+import { IMAGE_ROLE, ImageDrop } from '../objects/image'
 import { HandleMap } from '../objects/handle-map'
 import { buildMetafields } from '../objects/metafield'
 import type { MetafieldResolver } from '../objects/metafield'
@@ -108,9 +108,6 @@ const MANUAL_ORDER = 'manual_products'
 /** The products of a built collection in the order of the store data: what the collection page's `sort_by=manual` shows, and what its other sorts start from, so a tie keeps the data's order. */
 export const manualProductsOf = (collection: LiquidObject): LiquidObject[] => (collection[MANUAL_ORDER] as LiquidObject[] | undefined) ?? collection.products as LiquidObject[]
 
-/** The hidden field that says which place of a product an image was built for, so `json` prints it as the product prints that place inside `product | json` (`imageJsonRole`). */
-const IMAGE_ROLE = '__image_role'
-
 /** Where a product's image sits, which sets its form in JSON: `image` (`product.images`, `product.featured_image`: the address), `media` (`product.media`, `product.featured_media`), `variant_image` (`variant.featured_image`, `variant.image`) and `variant_media` (`variant.featured_media`). `variant` is the variant that holds a variant's image. */
 export interface ImageRole {
   role: 'image' | 'media' | 'variant_image' | 'variant_media'
@@ -175,6 +172,8 @@ function buildMedia (media: MediaData, index?: number, title = '', host = ''): u
   const ratio = given === null ? null : Math.round(given * 1000) / 1000
   // the preview picture has the media's alt text, as the parity store prints it in `<img alt="The tote in a short clip">`
   const preview = media.preview_image ? new ImageDrop({ ...media.preview_image, alt: media.alt || media.preview_image.alt }, false, null, title) : null
+  // `media.preview_image | json` is the picture's address, as the parity store prints it for a video, an external video and a model (scenarios `probe-product-video-media` and `probe-product-model-media`)
+  if (preview) hidden(preview as unknown as LiquidObject, IMAGE_ROLE, { role: 'image' } satisfies ImageRole)
   const built: LiquidObject = { ...media, alt: media.alt ?? '', preview_image: preview, position, ...(media.media_type === 'model' ? {} : { aspect_ratio: ratio === null ? null : new LiquidFloat(ratio) }), ...(media.media_type === 'video' ? { duration: media.duration ?? null } : {}) }
   // the files of a video or a model are Shopify's CDN addresses in the data and the Ajax API (`https://cdn.shopify.com/videos/…`); Liquid prints them under the store (`//<host>/cdn/shop/videos/…?v=0`, https://shopify.dev/docs/api/liquid/objects/video_source and https://shopify.dev/docs/api/liquid/objects/model_source)
   hidden(built, MEDIA_MARKER, true)

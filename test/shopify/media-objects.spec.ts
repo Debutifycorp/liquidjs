@@ -83,6 +83,17 @@ describe('media objects', () => {
     expect(video.sources.map((source: { format: string }) => source.format)).toEqual(['mp4', 'm3u8'])
     expect(Object.keys(video.sources[0])).toEqual(['format', 'height', 'mime_type', 'url', 'width'])
   })
+  it('prints the preview picture of a media in json as its address, as the parity store does', async () => {
+    const data = { ...storefrontSampleData, products: (storefrontSampleData.products ?? []).filter(item => ['video-tote', 'display-cube'].includes(item.handle)) }
+    const store = buildStore(data)
+    const tote = store.products.liquidMethodMissing('video-tote')
+    const cube = store.products.liquidMethodMissing('display-cube')
+    for (const [p, index] of [[tote, 0], [tote, 1], [tote, 2], [cube, 0], [cube, 1]] as const) {
+      const printed = JSON.parse(await render(`{{ p.media[${index}].preview_image | json }}`, { p }))
+      expect(printed).toEqual(expect.stringMatching(/^\/\/.+\.jpg/))
+    }
+    expect(await render('{{ p.media[1].preview_image | json }}', { p: tote })).toBe(JSON.stringify(JSON.parse(await render('{{ p.media[1].preview_image.src | json }}', { p: tote }))).replace(/\//g, '\\/'))
+  })
   it('marks the product images a variant shows, and lists those variants', async () => {
     const p = buildProduct({
       id: 1,
