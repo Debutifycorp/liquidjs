@@ -118,7 +118,13 @@ describe('shopify filters the three themes use', () => {
     })
     it('lists the codes of the cart with whether they apply', async () => {
       const html = (await page('/cart', "{{ cart | standard_event_data: 'view' }}", { cart: cartOf([[ocean.id, 1]], ['NOPE']) })).html
-      expect(JSON.parse(html).cart.discountCodes).toEqual([{ code: 'NOPE', applicable: false }])
+      expect(JSON.parse(html).cart.discountCodes).toEqual([{ applicable: false, code: 'NOPE' }])
+      expect(html).toContain('"discountCodes":[{"applicable":false,"code":"NOPE"}]')
+    })
+    it('prints a cart that was emptied, which is created, with its zero totals (recording ajax-checkout-redirects of Horizon)', async () => {
+      const emptied: CartState = { ...cartOf([]), note: '' }
+      const html = (await page('/cart', "{{ cart | standard_event_data: 'view', context: 'dialog' }}", { cart: emptied })).html
+      expect(JSON.parse(html).cart).toEqual({ totalQuantity: 0, cost: { totalAmount: { amount: '0.0', currencyCode: 'USD' } }, lines: [], discountCodes: [] })
     })
     it('prints nothing for another event type or object, and reports it', async () => {
       const { html, report } = await page('/products/hoodie', "[{{ product | standard_event_data: 'click' }}{{ product.variants.first | standard_event_data: 'view' }}]")

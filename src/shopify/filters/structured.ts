@@ -54,9 +54,9 @@ const CART_CONTEXTS = new Set(['page', 'dialog'])
  *
  * - a product: `{"product":{"id","title","handle","selectedVariant"},"context","selectedOptions"}`. `selectedVariant` is the variant the request selected (`product.selected_variant`) as `{"id","title","availableForSale","price":{"amount","currencyCode"},"selectedOptions":[{"name","value"}]}`, and null without one; the top-level `selectedOptions` repeats its options, `[]` without one (recordings `page-product-variant`, `/products/hoodie?variant=…`: `"title":"Ocean \/ Small"`, `"price":{"amount":"90.0","currencyCode":"USD"}`, and `page-product`: `"selectedVariant":null`, `"selectedOptions":[]`).
  * - a collection: `{"collection":{"id","handle","productsCount"}}`, the count after the page's filters (recording `page-collection-filtered` of Horizon: `{"id":null,"handle":"all","productsCount":5}`, the catalogue having no id); the context is ignored, as the page says.
- * - a cart: `{"context","cart"}`, with `cart` null for a cart that was never created (recording `page-cart-empty` of Dawn: `{"context":"page","cart":null}`), and otherwise `{"totalQuantity","cost":{"totalAmount"},"lines":[{"id","quantity","cost":{"totalAmount"}}],"discountCodes"}` (recording `ajax-cart-sections` of Dawn: `{"totalQuantity":1,"cost":{"totalAmount":{"amount":"50.0","currencyCode":"USD"}},"lines":[{"id":"<line key>","quantity":1,…}],"discountCodes":[]}`).
+ * - a cart: `{"context","cart"}`, with `cart` null for a cart that was never created (recording `page-cart-empty` of Dawn: `{"context":"page","cart":null}`; a cart that was emptied is created and prints zero totals, recording `ajax-checkout-redirects` of Horizon), and otherwise `{"totalQuantity","cost":{"totalAmount"},"lines":[{"id","quantity","cost":{"totalAmount"}}],"discountCodes"}` (recording `ajax-cart-sections` of Dawn: `{"totalQuantity":1,"cost":{"totalAmount":{"amount":"50.0","currencyCode":"USD"}},"lines":[{"id":"<line key>","quantity":1,…}],"discountCodes":[]}`, a code as `{"applicable":false,"code":"WELCOME10"}`, recording `ajax-cart-lines-dawn`).
  *
- * `context` is null when it is not given, as the page says. Not pinned: a context outside the lists the page gives (null here); a line's amount with a discount on it (its final line price here) and the entries of `discountCodes` (`{"code","applicable"}`, as the Storefront API writes a cart's codes); a cart that holds no lines but was created (null here, like one never created). An event type other than `view`, which the page says is the only one, or another object prints nothing and is reported. Nil prints nothing and is not reported, since a theme passes nil where a page has no such object (Horizon's `closest.product` outside a product); what Shopify prints for nil is not pinned.
+ * `context` is null when it is not given, as the page says. Not pinned: a context outside the lists the page gives (null here); a line's amount with a discount on it (its final line price here). An event type other than `view`, which the page says is the only one, or another object prints nothing and is reported. Nil prints nothing and is not reported, since a theme passes nil where a page has no such object (Horizon's `closest.product` outside a product); what Shopify prints for nil is not pinned.
  */
 function standardEventData (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const state = shopifyState(this.context)
@@ -81,12 +81,13 @@ function standardEventData (this: FilterImpl, input: unknown, ...args: unknown[]
   if (isBuiltCart(value)) {
     const lines = value.items as LiquidObject[]
     const code = stringify((value.currency as LiquidObject | undefined)?.iso_code ?? currencyCode(this, state))
-    const cart = lines.length
+    // a cart nobody has changed has no note (`null`), and Shopify has not created it: it prints `null`; a cart that was emptied is created and prints its zero totals (recording `ajax-checkout-redirects` of Horizon, after `/cart/clear.js`)
+    const cart = lines.length || value.note !== null
       ? {
         totalQuantity: value.item_count,
         cost: { totalAmount: moneyJson(this, state, value.total_price, code) },
         lines: lines.map(line => ({ id: line.key, quantity: line.quantity, cost: { totalAmount: moneyJson(this, state, line.final_line_price, code) } })),
-        discountCodes: codeStatus(value)
+        discountCodes: codeStatus(value).map(({ code, applicable }) => ({ applicable, code }))
       }
       : null
     return printJson(this, { context: context !== null && CART_CONTEXTS.has(context) ? context : null, cart })
