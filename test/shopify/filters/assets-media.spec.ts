@@ -222,11 +222,20 @@ describe('shopify/filters/media', () => {
     expect(await render('{{ product | image_url: width: 450, quality: 5 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?quality=10&v=1683744744&width=450`)
     expect(await render('{{ product | image_url: width: 450, quality: 200 }}')).toBe(`${HOST}/files/science-beakers-blue-light-new.jpg?quality=90&v=1683744744&width=450`)
   })
+  // scenario `probe-product-video-media`: a width and a height together print `crop=center` on every size the probe asks for (550 by 550, 400 by 225, 300 by 100, 400 by 400), and a width or a height alone prints no `crop`
+  it('image_url crops from the centre when it has a width and a height and nothing else says how', async () => {
+    const url = (query: string) => `${HOST}/files/science-beakers-blue-light-new.jpg?${query}`
+    expect(await render('{{ product | image_url: width: 400, height: 225 }}')).toBe(url('crop=center&height=225&v=1683744744&width=400'))
+    expect(await render('{{ product | image_url: width: 400 }}')).toBe(url('v=1683744744&width=400'))
+    expect(await render('{{ product | image_url: height: 200 }}')).toBe(url('height=200&v=1683744744'))
+    expect(await render("{{ product | image_url: width: 400, height: 400, crop: 'top' }}")).toBe(url('crop=top&height=400&v=1683744744&width=400'))
+    expect(await render("{{ product | image_url: width: 400, height: 400, pad_color: 'fff' }}")).toBe(url('height=400&pad_color=fff&v=1683744744&width=400'))
+  })
   it('image_url scales a request over 5760 proportionally, so a square stays a square', async () => {
     const url = (query: string) => `${HOST}/files/science-beakers-blue-light-new.jpg?${query}`
-    expect(await render('{{ product | image_url: width: 6000, height: 6000 }}')).toBe(url('height=5760&v=1683744744&width=5760'))
-    expect(await render('{{ product | image_url: width: 7200, height: 3600 }}')).toBe(url('height=2880&v=1683744744&width=5760'))
-    expect(await render('{{ product | image_url: width: 800, height: 800 }}')).toBe(url('height=800&v=1683744744&width=800'))
+    expect(await render('{{ product | image_url: width: 6000, height: 6000 }}')).toBe(url('crop=center&height=5760&v=1683744744&width=5760'))
+    expect(await render('{{ product | image_url: width: 7200, height: 3600 }}')).toBe(url('crop=center&height=2880&v=1683744744&width=5760'))
+    expect(await render('{{ product | image_url: width: 800, height: 800 }}')).toBe(url('crop=center&height=800&v=1683744744&width=800'))
   })
   it('image_tag holds the width it works out from a height alone to the 5760 maximum, keeping the ratio', async () => {
     const wide = { title: 'Wide', featured_image: { src: BEAKERS, width: 1000, height: 600, alt: 'Wide' } }
@@ -297,7 +306,7 @@ describe('shopify/filters/media', () => {
   })
   it('image_tag rescales the srcset heights with the widths', async () => {
     expect(await render('{{ product | image_url: height: 450 | image_tag }}')).toBe(`<img src="${HOST}/files/science-beakers-blue-light-new.jpg?height=450&amp;v=1683744744" alt="Health potion" srcset="${BEAKERS}&amp;width=352 352w" width="675" height="450">`)
-    expect(await render('{{ product | image_url: width: 400, height: 200 | image_tag }}')).toBe(`<img src="${HOST}/files/science-beakers-blue-light-new.jpg?height=200&amp;v=1683744744&amp;width=400" alt="Health potion" srcset="${HOST}/files/science-beakers-blue-light-new.jpg?height=176&amp;v=1683744744&amp;width=352 352w" width="400" height="200">`)
+    expect(await render('{{ product | image_url: width: 400, height: 200 | image_tag }}')).toBe(`<img src="${HOST}/files/science-beakers-blue-light-new.jpg?crop=center&amp;height=200&amp;v=1683744744&amp;width=400" alt="Health potion" srcset="${HOST}/files/science-beakers-blue-light-new.jpg?crop=center&amp;height=176&amp;v=1683744744&amp;width=352 352w" width="400" height="200">`)
   })
   it('image_tag drops invalid attribute names and reports them', async () => {
     const { html, report } = await renderWithReport('{% assign pair = \'x" onerror="alert(1),v\' | split: \',\' %}{{ product | image_url: width: 200 | image_tag: pair, class: \'ok\' }}')

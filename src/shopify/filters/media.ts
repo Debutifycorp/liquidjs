@@ -50,6 +50,8 @@ function imageUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
       (params as Record<string, string>)[key] = stringify(value)
     }
   }
+  // a width and a height together crop from the centre unless the template says how (scenario `probe-product-video-media`: `image_url: width: 550, height: 550`, `400` by `225`, `300` by `100` and `400` by `400` all print `crop=center`, on an image and on the preview of a video or a model, and so does Horizon's `media | image_url: width: 550, height: 550`; a width or a height alone prints no `crop`)
+  if (params.width && params.height && !params.crop && !params.pad_color) params.crop = 'center'
   // the URL names the size that was asked for, held to the 5760 maximum; it is not cut to the image's own size (scenario `page-collections`: a request for 1500 pixels of an image 1024 pixels wide is `width=1500` in the address)
   const asked = withinLimit(params, MAX_DIMENSION)
   // `image_tag` writes the size and builds its srcset from the URL's size, as the parity store prints it: Horizon's `image_url: width: 3840 | image_tag: widths: …` of a collection image 1024 pixels wide is width="3840" height="3840" with a candidate for every width up to 3840 (scenario `page-collections` of the Horizon recording)
