@@ -1,3 +1,26 @@
+# [1.4.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v1.3.0...debutify-v1.4.0) (2026-10-18)
+
+
+### Bug Fixes
+
+* **for:** offset: continue starts from the previous loop's end when it is the first loop with its iterator, including inside an outer loop ([7c866e8](https://github.com/Debutifycorp/liquidjs/commit/7c866e82f91df64dc68d2e98a3e80a05a0840d87))
+* **shopify:** add country.popular? (MarketData countries take popular, false by default) ([5651367](https://github.com/Debutifycorp/liquidjs/commit/5651367c24368d14b91d04f7c9ca28303d4f8e8f))
+* **shopify:** add variant.quantity_price_breaks_configured? and let the data set variant.quantity_rule ([35cb673](https://github.com/Debutifycorp/liquidjs/commit/35cb6738bcf8445f00cd680228691b2c42a18fd7))
+* **shopify:** product.gift_card? and line_item.gift_card follow the data (ProductData.gift_card) instead of always being false ([fbfea6a](https://github.com/Debutifycorp/liquidjs/commit/fbfea6a62dd2de16798eed86600620cfbd0157bd))
+* **shopify:** render a template--<name>__<key> section id in the template it names, so /recommendations/products reaches a product page's section ([7e3c8a2](https://github.com/Debutifycorp/liquidjs/commit/7e3c8a2113cd71b1b5eb2b251595fe504c274003))
+
+
+### Features
+
+* **shopify:** add previewSampleData, the sample store with a gift card, volume pricing, product disclosures and video products for theme previews ([e711196](https://github.com/Debutifycorp/liquidjs/commit/e7111960bcbb81c4f28668d9f11598dc99476744))
+* **shopify:** serve the complementary products a merchant set up (ProductData.complementary_products) for intent=complementary ([e358ebf](https://github.com/Debutifycorp/liquidjs/commit/e358ebf737c5e4b6db79478e5d952de129742266))
+* **storefront:** keep a sandboxed page's localStorage and sessionStorage across page loads, saved in the visitor's state ([0aad05b](https://github.com/Debutifycorp/liquidjs/commit/0aad05ba24b4bb2bd1b085e6724b258523d6b5f2))
+
+
+### Upstream
+
+Based on [LiquidJS 10.30.0](https://github.com/harttle/liquidjs/releases/tag/v10.30.0).
+
 # [1.3.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v1.2.0...debutify-v1.3.0) (2026-10-17)
 
 
