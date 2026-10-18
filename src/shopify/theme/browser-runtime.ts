@@ -1,27 +1,64 @@
-/**
- * The versions of the features Shopify's feature loader (`load_feature-<hash>.js`, the script `Shopify.loadFeatures` queues for on every page) registers, by name: a `loadFeatures` call for one of them goes to its script on Shopify's CDN, and for anything else answers "does not exist". Read from the loader Shopify served with the parity store's pages (recordings of Horizon 4.3.0 and Dawn 16.0.0, `data-source-attribution="shopify.loadfeatures"`).
- */
-const FEATURES: Record<string, string[]> = {
-  'model-viewer': ['0.6', '0.7', '0.8', '1.2', '1.7', '1.9', '1.10', '1.11', '1.12'],
-  'model-viewer-ui': ['1.0'],
-  'shopify-xr': ['1.0'],
-  'video-ui': ['1.0', '1.1', '2.0'],
-  'consent-tracking-api': ['0.1', '0.2']
+const LOCALES_A = ['bg-BG', 'cs', 'da', 'de', 'el', 'es', 'fi', 'fr', 'hi', 'hr-HR', 'hu', 'id', 'it', 'ja', 'ko', 'lt-LT', 'ms', 'nb', 'nl', 'pl', 'pt-BR', 'pt-PT', 'ro-RO', 'ru', 'sk-SK', 'sl-SI', 'sv', 'th', 'tr', 'vi', 'zh-CN', 'zh-TW']
+const LOCALES_B = ['cs', 'da', 'de', 'es', 'fi', 'fr', 'hi', 'it', 'ja', 'ko', 'ms', 'nb', 'nl', 'pl', 'pt-BR', 'pt-PT', 'sv', 'th', 'tr', 'zh-CN', 'zh-TW']
+
+interface FeatureEntry {
+  name: string
+  version: string
+  /** The folder under `shopifycloud/` when it is not the feature's name. */
+  baseName?: string
+  /** The script's name when it is not the folder's. */
+  fileName?: string
+  /** The locales the script comes in; the others get `en`. A feature without them has one script for every language. */
+  locales?: string[]
+  /** The selector of the elements that load the feature on their own. */
+  autoLoad?: string
 }
 
 /**
- * The inline script that gives a page `Shopify.modules`, `Shopify.loadFeatures` and `Shopify.autoloadFeatures`, which Shopify defines on every page (`content_for_header` queues both calls until its feature loader arrives). The functions check their arguments and answer as the loader does (https://shopify.dev/docs/api/customer-privacy loads `consent-tracking-api` through `Shopify.loadFeatures([{ name, version }], callback)`): a feature that is not one of the loader's registered ones fails with "does not exist", and a registered one fails to load, since the scripts on Shopify's CDN (the model viewer, Shopify XR, the video player, the consent API) are not part of a preview and its content security policy admits no other script. Each feature's `onLoad` receives the error and the callback the list of errors, after the current task as a script load is, so a theme that returns on an error (every theme here does: `if (errors) return`) goes on without a model viewer, as it does on a store whose CDN is out of reach. Debutify's: shopify.dev documents the call and not the loader's answers, which are read from the loader's source.
+ * The features Shopify's feature loader (`load_feature-<hash>.js`) registers when `Shopify.modules` is set, which is every entry the loader holds that is not a `shop-js` one. Read from the loader Shopify served with the parity store's pages (recordings of Horizon 4.3.0 and Dawn 16.0.0, `data-source-attribution="shopify.loadfeatures"`) and fetched from `https://cdn.shopify.com/shopifycloud/storefront/assets/storefront/load_feature-1bd60354.js` on 2026-10-18.
+ */
+const FEATURES: FeatureEntry[] = [
+  ...['0.6', '0.7', '0.8', '1.2', '1.7', '1.9', '1.10', '1.11', '1.12'].map(version => ({ name: 'model-viewer', version, autoLoad: `model-viewer[data-shopify-feature="${version}"]` })),
+  { name: 'model-viewer-ui', version: '1.0', locales: LOCALES_A },
+  { name: 'shopify-xr', version: '1.0', baseName: 'shopify-xr-js', fileName: 'shopify-xr', locales: LOCALES_A },
+  { name: 'video-ui', version: '1.0', baseName: 'shopify-plyr', locales: LOCALES_B },
+  { name: 'video-ui', version: '1.1', baseName: 'shopify-plyr', locales: LOCALES_B },
+  { name: 'video-ui', version: '2.0', baseName: 'plyr', fileName: 'shopify-plyr', locales: LOCALES_A },
+  { name: 'consent-tracking-api', version: '0.1' },
+  { name: 'consent-tracking-api', version: '0.2' }
+]
+
+/**
+ * The inline script that gives a page `Shopify.modules`, `Shopify.loadFeatures` and `Shopify.autoloadFeatures`, which Shopify defines on every page (`content_for_header` queues both calls until its feature loader arrives). It reproduces that loader (`load_feature-<hash>.js`, https://cdn.shopify.com/shopifycloud/storefront/assets/storefront/load_feature-1bd60354.js, fetched 2026-10-18) so the model viewer, Shopify XR, the video player and the consent API start in a preview as on a store:
+ *
+ * - A registered `{ name, version }` loads `https://cdn.shopify.com/shopifycloud/<baseName or name>/v<version>/<fileName or baseName or name>[.<locale>].js` as a `<script type="module">` (`Shopify.modules` is set, so the loader takes its module scripts), where the locale is the one in `#shopify-features` (else `en`) when the feature is localized and supports it, else `en`. The loader builds the address from `Shopify.cdnHost`, which on a store is the store's own `/cdn` that proxies the same files; a preview's `cdnHost` is not a server, so the files are read from `cdn.shopify.com`, which serves them with `access-control-allow-origin: *`. The loader loads scripts only: a feature's stylesheet is linked by the theme.
+ * - `onLoad(null)` runs when the feature's script loaded, `onLoad(error)` with `load error: <address>` when it did not, and the callback receives the list of errors, or `null`. A feature the loader does not register fails with "does not exist" in `onLoad` and the callback, at once; a name loaded at two versions fails with "has already been loaded at version".
+ * - `model-viewer[data-shopify-feature="<version>"]` elements load their version by themselves, at `DOMContentLoaded` and whenever nodes are added, which is how Dawn's `<template>` model starts once the theme clones it.
+ *
+ * The `shop-js` features are left out: the shop's scripts have their own fields in `content_for_header` (`shopScripts`). Debutify's: shopify.dev documents the call and not the loader, whose behaviour is read from its source.
  */
 export function featureLoaderScript (): string {
-  return `(function(w){var S=w.Shopify=w.Shopify||{};S.modules=true;var F=${JSON.stringify(FEATURES)};function noop(){}function later(fn){setTimeout(fn,0)}` +
-    'function loadFeatures(features,callback){var done=typeof callback==="function"?callback:noop;' +
-    'if(!Array.isArray(features))throw new Error("Features should be an Array. Received: "+JSON.stringify(features));' +
-    'features.forEach(function(f){if(!(f&&typeof f.name==="string"&&typeof f.version==="string"))throw new Error("Features should be defined as `{ name: \\"name\\", version: \\"version\\" }`. Received: "+JSON.stringify(f))});' +
-    'later(function(){var errors=[];features.forEach(function(f){var known=Object.prototype.hasOwnProperty.call(F,f.name)&&F[f.name].indexOf(f.version)>-1;' +
-    'var error=new Error(known?"load error: the feature { name: \\""+f.name+"\\", version: \\""+f.version+"\\"} is not available in the preview":"The feature { name: \\""+f.name+"\\", version: \\""+f.version+"\\"} does not exist");' +
-    'errors.push(error);(typeof f.onLoad==="function"?f.onLoad:noop)(error)});done(errors.length?errors:null)})}' +
-    'function autoloadFeatures(callback){var done=typeof callback==="function"?callback:noop;later(function(){done(null)})}' +
-    'S.loadFeatures=loadFeatures;S.autoloadFeatures=autoloadFeatures})(window);'
+  return `(function(w){var S=w.Shopify=w.Shopify||{};S.modules=true;var R={};var D=w.document;var consumed={};var loaded=[];var failed=[];var autoload={};function noop(){}` +
+    `${JSON.stringify(FEATURES)}.forEach(function(e){R[e.name+"@"+e.version]=e;if(e.autoLoad){(autoload[e.autoLoad]=autoload[e.autoLoad]||[]).push({name:e.name,version:e.version})}});` +
+    'function locale(){var el=D.getElementById("shopify-features");if(el){try{return JSON.parse(el.textContent).locale||"en"}catch(x){}}return"en"}' +
+    'function url(e){var base=e.baseName||e.name;var file=(e.fileName||base).replace(/\\.js$/,"");if(e.locales){var l=locale();file+="."+(e.locales.indexOf(l)>-1?l:"en")}' +
+    'var v=e.version!==undefined?"/v"+e.version:"";return"https://cdn.shopify.com/shopifycloud/"+base+v+"/"+file+".js"}' +
+    'function entry(f){var e=R[f.name+"@"+(f.version||"latest")];if(!e)throw new Error("The feature { name: \\""+f.name+"\\", version: \\""+f.version+"\\"} does not exist");' +
+    'if(consumed[e.name]&&consumed[e.name]!==e.version)throw new Error(f.name+"@"+f.version+" has already been loaded at version "+consumed[e.name]);consumed[e.name]=e.version;return url(e)}' +
+    'function tag(src,cb){var s=D.querySelector("script[src=\\""+src+"\\"]");function done(){s.removeEventListener("load",ok);s.removeEventListener("error",bad)}' +
+    'function ok(){loaded.push(s);done();cb(null)}function bad(){failed.push(s);done();cb(new Error("load error: "+src))}' +
+    'if(s&&loaded.indexOf(s)>-1){ok();return}if(s&&failed.indexOf(s)>-1){bad();return}if(s){s.addEventListener("load",ok);s.addEventListener("error",bad);return}' +
+    's=D.createElement("script");s.setAttribute("type","module");s.setAttribute("defer","");s.src=src;s.addEventListener("load",ok);s.addEventListener("error",bad);D.head.appendChild(s)}' +
+    'function load(features,callback){var errors=[];var pending=[];features.forEach(function(f){var onLoad=typeof f.onLoad==="function"?f.onLoad:noop;try{pending.push([entry(f),onLoad])}catch(error){onLoad(error);errors.push(error)}});' +
+    'var left=pending.length;if(!left){callback(errors.length?errors:null);return}' +
+    'pending.forEach(function(p){tag(p[0],function(error){if(error)errors.push(error);p[1](error||null);if(--left===0)callback(errors.length?errors:null)})})}' +
+    'function loadFeatures(features,callback){if(!Array.isArray(features))throw new Error("Features should be an Array. Received: "+JSON.stringify(features));' +
+    'features.forEach(function(f){if(!(f&&typeof f.name==="string"&&typeof f.version==="string"))throw new Error("Features should be defined as `{ name: \\"name\\", version: \\"version\\" }`. Received: "+JSON.stringify(f))});load(features,typeof callback==="function"?callback:noop)}' +
+    'function autoloadFeatures(callback){var found=[];Object.keys(autoload).forEach(function(selector){if(D.querySelector(selector)){found=found.concat(autoload[selector]);delete autoload[selector]}});load(found,typeof callback==="function"?callback:noop)}' +
+    'S.loadFeatures=loadFeatures;S.autoloadFeatures=autoloadFeatures;' +
+    'function auto(){autoloadFeatures(function(errors){if(errors)throw errors[0]})}' +
+    'function ready(){auto();if(w.MutationObserver&&D.body)new w.MutationObserver(function(list){for(var i=0;i<list.length;i++){if(list[i].addedNodes.length){auto();break}}}).observe(D.body,{childList:true,subtree:true})}' +
+    'if(D.readyState!=="loading")ready();else D.addEventListener("DOMContentLoaded",ready)})(window);'
 }
 
 /** The shadow root's styles of the account stand-in: the host sits inline and holds the link at the size Shopify's avatar button has (`--shopify-account-avatar-size`, else 1.57 times the avatar size clamped between 24 and 32 pixels), in the page's text colour. */

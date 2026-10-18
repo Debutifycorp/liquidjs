@@ -76,7 +76,7 @@ describe('shopify/theme/header', () => {
     expect(header).toContain('Shopify.theme.handle = "null";Shopify.theme.style = {"id":null,"handle":null};Shopify.cdnHost = "a.example/cdn";Shopify.routes = Shopify.routes || {};Shopify.routes.root = "/";')
     expect(header).not.toContain('designMode')
     expect(header).not.toContain('<style')
-    expect(header).not.toContain('DOMContentLoaded')
+    expect(header).not.toContain("document.addEventListener('DOMContentLoaded'")
   })
   it('names the theme from its theme_info', () => {
     const state = createState()
