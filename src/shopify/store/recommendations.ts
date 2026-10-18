@@ -56,7 +56,7 @@ export function buildRecommendations (store: StoreObjects, request: Recommendati
     report.unsupported('recommendations', `recommendations intent ${intent} is not related or complementary`)
     return notPerformed()
   }
-  const product = HandleMap.values(store.products).find(item => String(item.id) === String(request.productId))
+  const product = HandleMap.every(store.products).find(item => String(item.id) === String(request.productId))
   if (!product) {
     report.missing('resource', `product ${request.productId}`)
     return notPerformed()

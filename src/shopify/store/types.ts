@@ -113,6 +113,8 @@ export interface VariantData {
   /** Grams. */
   weight?: number
   requires_shipping?: boolean
+  /** Whether the variant is taxable, true when omitted; a gift card's variants are not. https://shopify.dev/docs/api/liquid/objects/variant#variant-taxable */
+  taxable?: boolean
   barcode?: string | null
   /** Volume prices, the lowest minimum quantity first; none when omitted. */
   quantity_price_breaks?: QuantityPriceBreakData[]
@@ -187,6 +189,8 @@ export interface ProductData {
   published_at?: string
   /** The product is a gift card, https://shopify.dev/docs/api/liquid/objects/product#product-gift_card?. False when omitted. */
   gift_card?: boolean
+  /** The product's status is Unlisted (https://help.shopify.com/en/manual/products/details/product-status): its page opens at its address, but no collection, search, recommendation or product list shows it. False when omitted. */
+  unlisted?: boolean
   metafields?: Metafields
   /** Picks `templates/product.<suffix>.json`. https://shopify.dev/docs/storefronts/themes/architecture/templates/alternate-templates */
   template_suffix?: string | null

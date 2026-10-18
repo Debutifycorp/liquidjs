@@ -105,7 +105,7 @@ describe('shopify filters the three themes use', () => {
     it("prints a collection's id, handle and count, the catalogue's id as null, and ignores the context", async () => {
       const tops = data.collections!.find(collection => collection.handle === 'tops')!
       expect((await page('/collections/tops', "{{ collection | standard_event_data: 'view', context: 'page' }}")).html).toBe(`{"collection":{"id":${tops.id},"handle":"tops","productsCount":15}}`)
-      expect((await page('/collections/all', "{{ collection | standard_event_data: 'view' }}")).html).toBe(`{"collection":{"id":null,"handle":"all","productsCount":${data.products!.length}}}`)
+      expect((await page('/collections/all', "{{ collection | standard_event_data: 'view' }}")).html).toBe(`{"collection":{"id":null,"handle":"all","productsCount":${data.products!.filter(product => !product.unlisted).length}}}`)
     })
     it('prints a cart that was never created as null, and a cart with lines in the shape the parity store prints', async () => {
       expect((await page('/cart', "{{ cart | standard_event_data: 'view', context: 'page' }}")).html).toBe('{"context":"page","cart":null}')

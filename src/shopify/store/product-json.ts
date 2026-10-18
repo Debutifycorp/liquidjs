@@ -99,7 +99,8 @@ function variantJson (variant: LiquidObject, product: LiquidObject, shape: 'ajax
     compare_at_price: variant.compare_at_price,
     inventory_management: variant.inventory_management,
     barcode: variant.barcode ?? null,
-    featured_media: media ? variantMediaJson(media, shape) : null
+    // a variant with no image has no `featured_media` key (fixtures `ajax-product-js-media`, variants of the gift card and the olive oil)
+    ...(media ? { featured_media: variantMediaJson(media, shape) } : {})
   }
   const plans = { requires_selling_plan: variant.requires_selling_plan ?? false, selling_plan_allocations: (variant.selling_plan_allocations as LiquidObject[]).map(allocationJson) }
   return shape === 'ajax'

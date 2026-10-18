@@ -34,6 +34,11 @@ export class HandleMap<T = unknown> extends Drop {
     return [...map[ITEMS].values()]
   }
 
+  /** The listed items and the hidden ones: every item `get` finds. */
+  public static every<T> (map: HandleMap<T>): T[] {
+    return [...map[ITEMS].values(), ...map[HIDDEN].values()]
+  }
+
   public get size (): number {
     return this[ITEMS].size
   }

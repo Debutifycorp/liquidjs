@@ -2,7 +2,7 @@ import { HandleMap } from '../objects/handle-map'
 import { TemplateDrop } from '../objects/template'
 import { own } from '../util/own'
 import type { ReportCollector } from '../report'
-import { buildLinklists, LiquidObject, PostedComment, postedCommentObject, selectProduct, selectSellingPlan, StoreObjects, withPostedComments } from './build'
+import { buildLinklists, isUnlisted, LiquidObject, PostedComment, postedCommentObject, selectProduct, selectSellingPlan, StoreObjects, withPostedComments } from './build'
 import { buildCartObject } from './cart'
 import type { CartState } from './cart'
 import { collectionView, typeCollection, vendorCollection } from './collection-view'
@@ -197,7 +197,7 @@ export interface PageGlobals {
   /** The request's menus, with `active` and `current` set for its path. */
   linklists: HandleMap<LiquidObject>
   /** The resolved request: path, origin and page, for the Shopify state, with the `hreflang` links of its page (`content_for_header`). */
-  request: { path: string, origin: string, page: number, prefix: string, alternates: Array<{ hreflang: string, path: string }>, endpoints: Endpoints, query?: Array<[string, string]> }
+  request: { path: string, origin: string, page: number, prefix: string, alternates: Array<{ hreflang: string, path: string }>, endpoints: Endpoints, noindex: boolean, query?: Array<[string, string]> }
   /** The policy a `policy` page shows (`/policies/<handle>`), which Shopify renders itself; nil on any other page and for a policy the store has not set. */
   policy?: LiquidObject | null
 }
@@ -326,12 +326,12 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     ...(postedComment ? { comment: postedComment } : {}),
     ...resources
   }
-  return { globals, linklists, policy, request: { path, origin, page, prefix: view.prefix, query: request.query, alternates: pageType === '404' ? [] : alternates(data, view, path, request.searchTerms, pageType), endpoints: endpointsOf(pageType, resource, resources.blog, view.prefix) } }
+  return { globals, linklists, policy, request: { path, origin, page, prefix: view.prefix, query: request.query, noindex: pageType === 'product' && isUnlisted(resource), alternates: pageType === '404' ? [] : alternates(data, view, path, request.searchTerms, pageType), endpoints: endpointsOf(pageType, resource, resources.blog, view.prefix) } }
 }
 
 /** The built variant with `id`, or nil when the store has none. */
 function variantObject (store: StoreObjects, id: number): LiquidObject | null {
-  for (const product of HandleMap.values(store.products)) {
+  for (const product of HandleMap.every(store.products)) {
     const found = (product.variants as LiquidObject[]).find(variant => variant.id === id)
     if (found) return found
   }

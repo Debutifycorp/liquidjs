@@ -9,7 +9,7 @@ import { renderProbeHtml, PROBE_DIR } from './probe'
 describe('storefrontSampleData', () => {
   const data = storefrontSampleData
   it('holds every kind of record part P seeds', () => {
-    expect(data.products?.length).toBe(29)
+    expect(data.products?.length).toBe(30)
     expect(data.collections?.map(c => c.handle)).toEqual(['men', 'women', 'unisex', 'tops', 'bottoms', 'accessories', 'featured', 'shoes', 'frontpage'])
     expect(data.discounts?.map(d => d.type).sort()).toEqual(['amount_off_order', 'amount_off_products', 'amount_off_products', 'buy_x_get_y', 'buy_x_get_y', 'free_shipping'])
     expect(data.markets?.map(m => m.handle)).toEqual(['us', 'ca', 'eu'])

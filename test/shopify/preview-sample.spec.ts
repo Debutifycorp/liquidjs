@@ -7,11 +7,24 @@ const store = buildStore(previewSampleData)
 const product = (handle: string) => store.products.liquidMethodMissing(handle)
 
 describe('previewSampleData', () => {
-  it('is the parity store with four more products, and leaves the parity data as it was', () => {
+  it('is the parity store with three more products, and leaves the parity data as it was', () => {
     const handles = (previewSampleData.products ?? []).map(item => item.handle)
-    expect(handles.slice(-4)).toEqual(['gift-card', 'wholesale-tee', 'scented-candle', 'video-tote'])
-    expect(handles).toHaveLength((storefrontSampleData.products ?? []).length + 4)
+    expect(handles.slice(-3)).toEqual(['wholesale-tee', 'scented-candle', 'video-tote'])
+    expect(handles).toHaveLength((storefrontSampleData.products ?? []).length + 3)
     expect(Object.isFrozen(previewSampleData)).toBe(true)
+  })
+
+  it('lists the products the parity store leaves unlisted, which its own lists and search do not show', async () => {
+    const unlisted = ['gift-card']
+    expect((storefrontSampleData.products ?? []).filter(item => item.unlisted).map(item => item.handle).sort()).toEqual([...unlisted].sort())
+    expect((previewSampleData.products ?? []).some(item => item.unlisted)).toBe(false)
+    const listing = '{% for p in products %}{{ p.handle }},{% endfor %}'
+    const parity = await render(listing, { products: buildStore(storefrontSampleData).products })
+    const preview = await render(listing, { products: store.products })
+    for (const handle of unlisted) {
+      expect(parity).not.toContain(`${handle},`)
+      expect(preview).toContain(`${handle},`)
+    }
   })
 
   it('has a gift card that needs no shipping', async () => {

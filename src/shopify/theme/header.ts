@@ -47,7 +47,9 @@ export function contentForHeader (state: ShopifyState, globals: Record<string | 
   const before = (buy ? `<link rel="buy" href="${escapeHtml(buy)}?ucp/version=2026-08-25" payment="">\n` : '') + (atom ? `<link rel="alternate" type="application/atom+xml" title="Feed" href="${escapeHtml(atom)}" />\n` : '')
   const endpoints = (oembed ? `<link rel="alternate" type="application/json+oembed" href="${escapeHtml(`${state.request.origin}${oembed}`)}">\n` : '')
   const theme = state.theme
-  let header = before + links + endpoints + '<script>var Shopify = Shopify || {};' +
+  // the first thing Shopify's header holds for the page of an unlisted product (fixture `page-product-video`)
+  const robots = state.request.noindex ? '<meta name="robots" content="noindex,nofollow">\n' : ''
+  let header = robots + before + links + endpoints + '<script>var Shopify = Shopify || {};' +
     `Shopify.shop = ${scriptJson(shop.permanent_domain)};` +
     `Shopify.locale = ${scriptJson(request.locale?.iso_code)};` +
     // the currency and country of the shopper's market: `{"active":"CAD","rate":"1.35"}` and `"CA"` on the parity store's recorded Canadian French home page (recording `page-home-fr-ca`), the rate a string

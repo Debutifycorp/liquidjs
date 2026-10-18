@@ -1,3 +1,4 @@
+import type { ImageData } from '../types'
 import type { PageData, ProductData, StoreData, VariantData } from '../store/types'
 import { COUNTRY_OPTIONS } from './country-options'
 import { customerAccountMainMenu } from './default-menus'
@@ -89,6 +90,33 @@ const pages: PageData[] = [
   { id: 50004, handle: 'track-order', title: 'Track your order', content: '<p>Where is it?</p>', template_suffix: 'track-order' }
 ]
 
+function picture (handle: string, n: number): ImageData {
+  const found = product(handle).images?.[n]
+  if (!found) throw new Error(`${handle} has no image ${n}`)
+  return { ...found }
+}
+
+// The unlisted products. Shopify's status Unlisted keeps a product out of every collection, search, recommendation and list, while its page opens at its address, so these products hold the features the mock.shop catalogue cannot show (a gift card, video, a 3D model, unit prices, ratings, local pickup) and change none of the recordings of the products, collections and searches the parity store already had. Their pictures are the catalogue's, which Shopify fetches from their URLs; the files of the hosted video and of the model, and the pictures Shopify made of them, are the store's own (`tools/shopify-parity/seed/unlisted.mjs` puts them there and reads their addresses back).
+const unlisted: ProductData[] = [
+  // https://shopify.dev/docs/api/liquid/objects/product#product-gift_card?: a gift card product has `gift_card?` true; its variants need no shipping and keep no stock
+  {
+    id: 8100000000001,
+    handle: 'gift-card',
+    created_at: '2026-10-18T07:47:33-04:00',
+    published_at: '2026-10-18T07:47:35-04:00',
+    title: 'Gift card',
+    description: '<p>A digital gift card, sent by email, to spend on anything in the store.</p>',
+    vendor: 'Debutify Parity',
+    type: 'Gift Cards',
+    tags: ['gift-card'],
+    gift_card: true,
+    unlisted: true,
+    images: [picture('beanie', 0)],
+    options: ['Denominations'],
+    variants: [2500, 5000, 10000].map((price, i) => ({ id: 8100000000011 + i, title: `$${price / 100}`, option1: `$${price / 100}`, price, available: true, requires_shipping: false, taxable: false, inventory_management: null }))
+  }
+]
+
 /** The dataset the parity store is seeded from (item 22, `tools/shopify-parity/` in the Debutify repository): Shopify's mock.shop `demostore` catalogue (`mock-shop.ts`) with what the parity scenarios need on top, in a USD shop of its own: product types, weights, material metafields, compare-at prices, best-seller ranks, selling plans, template suffixes, three pages, the Home page collection, one issued gift card (`sampleGiftCard`, served at its `url`; the parity store holds none), the six card types the store accepts, a privacy policy, storefront filters, discounts, shipping zones, three markets, and French as a second language with its translations. Prices are USD cents. */
 export const storefrontSampleData: StoreData = freeze({
   shop: {
@@ -104,7 +132,7 @@ export const storefrontSampleData: StoreData = freeze({
     // the parity store has the privacy policy Shopify writes for a new store and no other (its footers list that one, `/policies/privacy-policy`, and the other policies answer 404); this one is a short stand-in for Shopify's text
     policies: [{ type: 'privacy_policy', body: '<p>Debutify Parity collects only what it needs to take and deliver your orders: your name, your email and shipping addresses, and what you buy. We never sell it. To see, correct or delete what we hold about you, write to store@example.com.</p>' }]
   },
-  products: catalog.products,
+  products: [...catalog.products, ...unlisted],
   collections: catalog.collections,
   pages,
   blogs: catalog.blogs,

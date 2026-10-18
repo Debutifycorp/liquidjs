@@ -158,7 +158,7 @@ function builtVariant (store: StoreObjects, variantId: number): BuiltVariant | u
   if (!index) {
     index = new Map()
     const titles = new Map((store.data.products ?? []).map(product => [product.id, product.title]))
-    for (const product of HandleMap.values(store.products)) {
+    for (const product of HandleMap.every(store.products)) {
       for (const variant of product.variants as LiquidObject[]) index.set(variant.id as number, { product, variant, untranslatedTitle: titles.get(product.id as number) ?? String(product.title) })
     }
     variantIndexes.set(store, index)

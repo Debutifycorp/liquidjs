@@ -91,7 +91,7 @@ describe('the default order of a collection (row 22; scenarios page-home, page-c
     const [first, titles] = out.split('|')
     expect(first).toBe('beanie,black-sunnies,canvas-sneakers,clear-sunnies,')
     const collator = new Intl.Collator('en')
-    expect(titles.split('~').slice(0, -1).map(title => title.replace('&#39;', "'"))).toEqual((storefrontSampleData.products ?? []).map(p => p.title).sort(collator.compare))
+    expect(titles.split('~').slice(0, -1).map(title => title.replace('&#39;', "'"))).toEqual((storefrontSampleData.products ?? []).filter(p => !p.unlisted).map(p => p.title).sort(collator.compare))
   })
 
   it('lists a collection in its own default order: best selling puts the newest first when nothing sold', async () => {

@@ -123,6 +123,12 @@ export const imageJsonRole = (value: unknown): ImageRole | undefined => typeof v
 /** The hidden field that marks a built product for the `json` filter. */
 const PRODUCT_MARKER = '__product'
 
+/** The hidden field that says the product's status is Unlisted. */
+const UNLISTED = 'unlisted_status'
+
+/** Whether `value` is a built product whose status is Unlisted, which Shopify answers with `noindex,nofollow` (`content_for_header`, fixture `page-product-video`) and leaves out of every list. */
+export const isUnlisted = (value: unknown): boolean => typeof value === 'object' && value !== null && (value as LiquidObject)[UNLISTED] === true
+
 /** The hidden field that marks a built variant for the `json` filter. */
 const VARIANT_MARKER = '__variant'
 
@@ -282,7 +288,7 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
     inventory_management: variant.inventory_management ?? null,
     inventory_policy: variant.inventory_policy ?? 'deny',
     requires_shipping: variant.requires_shipping ?? true,
-    taxable: true,
+    taxable: variant.taxable ?? true,
     weight: variant.weight ?? 0,
     barcode: variant.barcode ?? null,
     unit_price_measurement: variant.unit_price_measurement ? { ...variant.unit_price_measurement } : null,
@@ -417,6 +423,7 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
   }
   // marks a built product for the `json` filter, which prints it with `productLiquidJson`
   hidden(product, PRODUCT_MARKER, true)
+  hidden(product, UNLISTED, data.unlisted === true)
   keepOptionInfo(product, infos)
   // the store's place in the best-selling order, which `sort_by=best-selling` reads and templates cannot print
   hidden(product, 'sales_rank', data.sales_rank)
@@ -1189,14 +1196,18 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   const resolve: MetafieldResolver = (kind, key) => {
     const ready = finished.objects
     if (!ready) return null
-    if (kind === 'variant') return HandleMap.values(ready.products).flatMap(product => product.variants as LiquidObject[]).find(variant => String(variant.id) === key) ?? null
+    if (kind === 'variant') return HandleMap.every(ready.products).flatMap(product => product.variants as LiquidObject[]).find(variant => String(variant.id) === key) ?? null
     const map = kind === 'product' ? ready.products : kind === 'collection' ? ready.collections : kind === 'page' ? ready.pages : undefined
     return map ? HandleMap.get(map, key) ?? null : null
   }
-  const products = new HandleMap((source.products ?? []).map(product => [product.handle, buildProduct(product, prefix, currency, resolve)]))
-  // Every shop answers `collections.all` with all its products. https://shopify.dev/docs/api/liquid/objects/collections
+  // an unlisted product is built and found by its handle and id (`all_products`, its page, its variants in the cart), and left out of every list: `HandleMap.values` and the iteration skip it
+  const isListed = (product: ProductData) => product.unlisted !== true
+  const built = (source.products ?? []).map(product => [product.handle, buildProduct(product, prefix, currency, resolve), isListed(product)] as const)
+  const products = new HandleMap(built.filter(([, , listed]) => listed).map(([handle, product]) => [handle, product] as [string, LiquidObject]), built.filter(([, , listed]) => !listed).map(([handle, product]) => [handle, product] as [string, LiquidObject]))
+  const listedData = (source.products ?? []).filter(isListed)
+  // Every shop answers `collections.all` with all its listed products. https://shopify.dev/docs/api/liquid/objects/collections
   // its default order is by title (fixture `probe-collection-all`)
-  const all = buildCollection({ id: 0, handle: 'all', title: own(ALL_TITLES, view.language.split('-')[0].toLowerCase()) ?? 'Products', products: (source.products ?? []).map(product => product.handle), sort_order: 'title-ascending' }, products, data.filters, prefix, currency)
+  const all = buildCollection({ id: 0, handle: 'all', title: own(ALL_TITLES, view.language.split('-')[0].toLowerCase()) ?? 'Products', products: listedData.map(product => product.handle), sort_order: 'title-ascending' }, products, data.filters, prefix, currency)
   // a collection Shopify makes has no id: the parity store prints Dawn's and Horizon's `data-collection-id="{{ collection.id }}"` empty on `/collections/all` (their recordings `page-collection-filtered`)
   all.id = null
   // `collections` lists the store's collections alphabetically by title, whatever order the data has them in: https://shopify.dev/docs/api/liquid/objects/collections shows its example sorted so, and the parity store lists /collections that way (scenario `page-collections`: Accessories, Bottoms, Featured, Home page, Men, Shoes, Tops, Unisex, Women)
@@ -1232,10 +1243,10 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
       enabled_payment_types: data.shop.enabled_payment_types ?? [],
       customer_accounts_enabled: true,
       customer_accounts_optional: true,
-      products_count: source.products?.length ?? 0,
+      products_count: listedData.length,
       collections_count: source.collections?.length ?? 0,
-      types: unique((source.products ?? []).map(product => product.type ?? '').filter(Boolean)).sort(),
-      vendors: unique((source.products ?? []).map(product => product.vendor ?? '').filter(Boolean)).sort(),
+      types: unique(listedData.map(product => product.type ?? '').filter(Boolean)).sort(),
+      vendors: unique(listedData.map(product => product.vendor ?? '').filter(Boolean)).sort(),
       // https://shopify.dev/docs/api/liquid/objects/shop: `policies` are "the policies for the store", each also under its own name, nil when it is not set; the parity store's footer lists its one policy (Dawn's `for policy in shop.policies`, recordings `page-home` of Dawn and Horizon)
       policies: policies.map(policy => policy.built),
       privacy_policy: policyOf('privacy_policy'),
