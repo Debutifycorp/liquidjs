@@ -1,6 +1,5 @@
 import { stripTags } from '../../util/strip-tags'
 import { SafeHtmlDrop } from '../objects/safe-html'
-import { escapeHtml } from '../util/html'
 import type { LiquidObject } from './build'
 
 /** The most characters of a page's text its description holds, as the parity store cuts it (recordings `page-article` and `page-product-requires-plan`: 320, in the middle of a word, with no ellipsis). */
@@ -37,7 +36,7 @@ export function descriptionOf (html: unknown): string | null {
 }
 
 /**
- * The `page_title` of a template that shows no resource: Shopify's own words for the cart (`Your Shopping Cart`), the collection list (`Collections`), the 404 page (`404 Not Found`) and search (recordings `page-cart-empty`, `page-collections`, `page-not-found` and `page-search`). A search with a term names the number of results and the term, as `Search: 5 results found for "shirt"`; the recording holds only that one, so the singular (`1 result found`) and the bare `Search` for a search without a term are Shopify's English as the engine reads it, not pinned. The term is escaped and the title is HTML-safe, because the layout prints it unescaped inside `<title>` (the recording prints `&quot;shirt&quot;` there) and escapes it again for `og:title` (which prints the same `&quot;shirt&quot;`: Shopify's `escape` leaves an HTML-safe string alone, `SafeHtmlDrop`). Undefined for any other template, whose title is its resource's or the shop's name.
+ * The `page_title` of a template that shows no resource: Shopify's own words for the cart (`Your Shopping Cart`), the collection list (`Collections`), the 404 page (`404 Not Found`) and search (recordings `page-cart-empty`, `page-collections`, `page-not-found` and `page-search`). A search with a term names the number of results and the term, as `Search: 5 results found for "shirt"`; the recording holds only that one, so the singular (`1 result found`) and the bare `Search` for a search without a term are Shopify's English as the engine reads it, not pinned. The term comes escaped from `search.terms` (`buildSearch`), its quotes are escaped here, and the title is HTML-safe, because the layout prints it unescaped inside `<title>` (the recording prints `&quot;shirt&quot;` there) and escapes it again for `og:title` (which prints the same `&quot;shirt&quot;`: Shopify's `escape` leaves an HTML-safe string alone, `SafeHtmlDrop`). Undefined for any other template, whose title is its resource's or the shop's name.
  */
 export function templateTitle (pageType: string, search: LiquidObject | undefined): string | SafeHtmlDrop | undefined {
   switch (pageType) {
@@ -48,7 +47,7 @@ export function templateTitle (pageType: string, search: LiquidObject | undefine
       const terms = typeof search?.terms === 'string' ? search.terms : ''
       if (!terms.trim()) return 'Search'
       const count = Number(search?.results_count ?? 0)
-      return new SafeHtmlDrop(`Search: ${count} ${count === 1 ? 'result' : 'results'} found for ${escapeHtml(`"${terms}"`)}`)
+      return new SafeHtmlDrop(`Search: ${count} ${count === 1 ? 'result' : 'results'} found for &quot;${terms}&quot;`)
     }
     default: return undefined
   }
