@@ -1,3 +1,50 @@
+# [1.5.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v1.4.0...debutify-v1.5.0) (2026-10-18)
+
+
+### Bug Fixes
+
+* **drop:** a value assigned blank equals blank, so a theme's blank default runs its fallback and the product JSON-LD prints aggregateRating ([0b19022](https://github.com/Debutifycorp/liquidjs/commit/0b19022fe8b6f89a095d5f71dc327e97c23c1d9b))
+* **shopify:** collections.all counts unlisted products in all_tags, all_types and all_vendors; vendor and type collections keep store order ([bd6f358](https://github.com/Debutifycorp/liquidjs/commit/bd6f358ea61dc2bed4e201570430c90d09293130))
+* **shopify:** content_for_header writes the MCP, shop-js feature and Shop sign-in eligibility globals in their own scripts, as Shopify does ([f3de11d](https://github.com/Debutifycorp/liquidjs/commit/f3de11d10b3189946f06126b8c6d7fd878ae43b4))
+* **shopify:** image_url crops from the centre when it has a width and a height, as the parity store prints a video or model preview at 550 by 550 ([42fe1f8](https://github.com/Debutifycorp/liquidjs/commit/42fe1f892297be17936d62b4fad7f9227617f54a))
+* **shopify:** inline_asset_content prints Shopify's Asset not found comment for a missing asset ([5e52c54](https://github.com/Debutifycorp/liquidjs/commit/5e52c549aef80a6ec6896679cd6ec395feddc923))
+* **shopify:** json prints a media's preview_image as its address, as the parity store does ([dd37dbe](https://github.com/Debutifycorp/liquidjs/commit/dd37dbe256a08ac43151630d15b486165b732461))
+* **shopify:** json prints the aspect ratio of a media's preview picture to three places, as the Ajax answer does ([6d44c05](https://github.com/Debutifycorp/liquidjs/commit/6d44c05ef68c5df2f63451b39e53a0a88d91b6d5))
+* **shopify:** json refuses the metafields object, a rating, a unit price measurement and the sources of a video or model ([7171f30](https://github.com/Debutifycorp/liquidjs/commit/7171f3060c404f9697a2c0c1ea3e6feba4d24938))
+* **shopify:** media json lists a video's files with the HLS playlist last, as the Ajax answer does ([8bd4620](https://github.com/Debutifycorp/liquidjs/commit/8bd4620ae78e528b60c700c082f97cea423557e5))
+* **shopify:** media_tag of a 3D model prints its model-viewer, and a video, external video or model prints in product.media | json ([f3fcec0](https://github.com/Debutifycorp/liquidjs/commit/f3fcec0207a9d202953e12727f494d6ce86f3e1f))
+* **shopify:** media_tag of an image is an img with its attributes, alt and the legacy size file, and image_size master adds no suffix ([b730276](https://github.com/Debutifycorp/liquidjs/commit/b730276fabd0d7b38814c9836abd9ad97315c2a5))
+* **shopify:** page_title escapes only the quotes around search.terms, and the public entry lists arrangeNested, oembedJson and quantityRuleOf ([79cef3b](https://github.com/Debutifycorp/liquidjs/commit/79cef3bac4267d16cf6769707c2fb61cdd3ad6fe))
+* **shopify:** search matches pages and articles by id (a product id finds none) and its filter links leave resources[...] out ([53356ee](https://github.com/Debutifycorp/liquidjs/commit/53356eee3d87c145ccc9fb77d142fe4b74564373))
+* **shopify:** standard_event_data prints an emptied cart with its zero totals and a discount code as applicable before code, as Shopify does ([bec95f2](https://github.com/Debutifycorp/liquidjs/commit/bec95f26ee389a2610256b44016bd996dd384e58))
+* **shopify:** the parity store's unlisted products each have their own image ids, as the store gives them ([118c10a](https://github.com/Debutifycorp/liquidjs/commit/118c10aa9e3545f375261afecf6591edf91cc567))
+* **shopify:** video_tag writes a video's files and not its playlist, a named preload and the fallback's alt, and Liquid lists the playlist first ([7458c98](https://github.com/Debutifycorp/liquidjs/commit/7458c98b42bfa415ac212ba2cde032a93f8ff487))
+* **storefront:** a parent_id that names a cart line but no request item gets the parity store's answer ([ddfb4c0](https://github.com/Debutifycorp/liquidjs/commit/ddfb4c0c6c05d17348674abad86fc0e4db51a1ce))
+* **storefront:** the recommendations answer reads the product it is asked for ([6b20bd6](https://github.com/Debutifycorp/liquidjs/commit/6b20bd6dc40d4886abb8640311f7eb3938fd4ac9))
+* **tags:** assign holds the empty string for blank and empty, as Ruby Liquid does, and the literal blank == blank stays false ([a897b76](https://github.com/Debutifycorp/liquidjs/commit/a897b76873be5592ede7639d61854edf409a438c))
+
+
+### Features
+
+* **shopify:** 3D model media data, with its files under the store's CDN path and its Ajax answer as the parity store prints it ([b842a95](https://github.com/Debutifycorp/liquidjs/commit/b842a959e0259217debad9dac7c8251450299bf5))
+* **shopify:** hosted and external video media as the parity store prints them, with the media's alt on its preview and 1 or 0 for booleans ([fe81e77](https://github.com/Debutifycorp/liquidjs/commit/fe81e77f4018ab85df7a311837c195dade1fcdab))
+* **shopify:** link.object is the product, collection, page, blog, article or policy a menu link points at ([5263d12](https://github.com/Debutifycorp/liquidjs/commit/5263d121a9a2177becb6c383d6ac15e0cca4c79c))
+* **shopify:** the parity store's pickup mug, stock at one location with a size sold past zero stock ([6b8e2a7](https://github.com/Debutifycorp/liquidjs/commit/6b8e2a7bc0b756f73e4cb81a6eb13a1a9e799885))
+* **shopify:** the storefront search reads Shopify's query syntax (fields, phrases, OR, AND, NOT, groups), ORs plain words and escapes search.terms ([a9bad30](https://github.com/Debutifycorp/liquidjs/commit/a9bad306bc61e275772c22eeab2fa7fe09a4e501))
+* **shopify:** unit prices and ratings, with the measurement in the product answers and a rating printed as text in JSON ([5a27b73](https://github.com/Debutifycorp/liquidjs/commit/5a27b73b1794d5e2ca8e08ea6b5c94e4f604d5ed))
+* **shopify:** unlisted products and the parity store's gift card, an untaxed product with no stock whose page answers noindex ([e28508b](https://github.com/Debutifycorp/liquidjs/commit/e28508bdfe963c3b2d2f723f27c62e24d7cc13cd))
+* **shopify:** window.Shopify carries the MCP, shop-js feature and Shop sign-in fields in their shape, with neutral values ([2fb1de1](https://github.com/Debutifycorp/liquidjs/commit/2fb1de150e87cd9be200817761230df658d067c6))
+* **shopify:** window.Shopify carries theme, cdnHost and the Shop sign-in fields, Shopify.loadFeatures answers, and shopify-account is defined ([77cdeb0](https://github.com/Debutifycorp/liquidjs/commit/77cdeb02e00731caf9b198bbfa11d680f15e9134))
+* **storefront:** blog comments, the article's new_comment form posts, shows pending moderation, and article.comments holds the published ones ([2b52630](https://github.com/Debutifycorp/liquidjs/commit/2b526309009c60d2e4927f3c24f5c16c92692864))
+* **storefront:** print Shopify's accelerated checkout and wallets, redirect checkout, account and permalinks, serve oEmbed, drop the contact fragment ([55d78ba](https://github.com/Debutifycorp/liquidjs/commit/55d78ba9ab4f18314453793ae66cd582200f1872))
+* **storefront:** the cart holds a variant's quantity rule and price breaks and nests lines under a parent (parent_id, parent_relationship) ([9d0c77d](https://github.com/Debutifycorp/liquidjs/commit/9d0c77da2b6f3c0a73e0d356e6e77c819b54b223))
+* **storefront:** the sandbox policy allows popups that escape it, so a link that opens a new tab works as on Shopify ([e8cbf7f](https://github.com/Debutifycorp/liquidjs/commit/e8cbf7f1d5574ff8dbaa5b7cd241aeb5f6dfd460))
+
+
+### Upstream
+
+Based on [LiquidJS 10.30.0](https://github.com/harttle/liquidjs/releases/tag/v10.30.0).
+
 # [1.4.0](https://github.com/Debutifycorp/liquidjs/compare/debutify-v1.3.0...debutify-v1.4.0) (2026-10-18)
 
 
