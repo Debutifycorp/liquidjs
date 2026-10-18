@@ -84,6 +84,9 @@ const POLICY_TYPES = new Set<string>(['privacy_policy', 'refund_policy', 'shippi
 /** The engine's render options for a page of this request. */
 function renderOptions (ctx: Context, page: PageRequest, form?: FormOutcome) {
   const url = new URL(ctx.request.url)
+  // the redirect that follows a comment names it (`?comment=<id>`): the page shows that comment as posted when it is the visitor's, on this article
+  const commentId = /^\d+$/.test(url.searchParams.get('comment') ?? '') ? Number(url.searchParams.get('comment')) : undefined
+  const justPosted = page.templateName === 'article' && commentId !== undefined && (ctx.visitor.comments ?? []).some(entry => entry.id === commentId && `${entry.blog}/${entry.article}` === page.request.resource)
   return {
     theme: ctx.theme,
     templateName: page.templateName,
@@ -92,8 +95,9 @@ function renderOptions (ctx: Context, page: PageRequest, form?: FormOutcome) {
     // the global assets a theme names (`shopify_asset_url`) are served by the storefront under its base path, unless the caller's services say where they are
     services: { shopifyAssetUrl: (path: string) => `${ctx.basePath}/shopify-assets/${path}`, shopifyCloudUrl: (path: string) => `${ctx.basePath}/cdn/shopifycloud/${path}`, ...ctx.services },
     cart: ctx.visitor.cart,
+    comments: ctx.visitor.comments,
     // https://shopify.dev/docs/storefronts/themes/architecture/section-groups#contextual-section-groups: a group file `<group>.context.<context>.json` with `"market": "<market handle>"` overrides its parent for that market; the page's market is the context when the store data names it (a store with no markets has the engine's stand-in handle `default`, which is no market handle), and no B2B customers exist here, so `b2b` is never set. Which file wins when several match, and what happens when none does, the page does not say: the engine takes the first match and otherwise the group as it is
-    request: { ...page.request, ...(ctx.data.markets?.some(market => market.handle === page.request.market) ? { context: { market: page.request.market } } : {}), host: url.host, origin: url.origin, ...(form ? { form } : {}) },
+    request: { ...page.request, ...(ctx.data.markets?.some(market => market.handle === page.request.market) ? { context: { market: page.request.market } } : {}), host: url.host, origin: url.origin, ...(form ? { form } : justPosted ? { form: { type: 'new_comment', posted: true } } : {}), ...(justPosted ? { comment: commentId } : {}) },
     // the theme's compiled stylesheet and javascript files, which `compiledAssetResponse` serves
     compiledAssetsUrl: `${ctx.basePath}${COMPILED_ASSETS}`
   }

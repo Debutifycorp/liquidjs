@@ -238,7 +238,19 @@ export interface ArticleData {
   published_at: string
   image?: ImageData | null
   tags?: string[]
+  /** The published comments, https://shopify.dev/docs/api/liquid/objects/article#article-comments: oldest first. Only a blog that takes comments (`BlogData.commentable`) shows them. */
+  comments?: CommentData[]
   metafields?: Metafields
+}
+
+/** The data behind Shopify's `comment` object, https://shopify.dev/docs/api/liquid/objects/comment: a published comment. `created_at` and `updated_at` are timestamps (`updated_at` is `created_at` when omitted). */
+export interface CommentData {
+  id: number
+  author: string
+  email: string
+  content: string
+  created_at: string
+  updated_at?: string
 }
 
 /** The data behind Shopify's `blog` object, https://shopify.dev/docs/api/liquid/objects/blog. */
@@ -247,6 +259,8 @@ export interface BlogData {
   handle: string
   title: string
   articles: ArticleData[]
+  /** Whether the blog takes comments, as the Admin API's blog `commentable` has it (https://shopify.dev/docs/api/admin-rest/latest/resources/blog): `no` (the default) takes none, `moderate` holds each for approval and `yes` publishes each at once. It sets `comments_enabled?` and `moderated?`. */
+  commentable?: 'no' | 'moderate' | 'yes'
   metafields?: Metafields
 }
 

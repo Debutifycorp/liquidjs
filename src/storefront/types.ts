@@ -1,4 +1,4 @@
-import type { CartState, RenderReport, ShopifyServices, StoreData, ThemeInput } from '../shopify'
+import type { CartState, PostedComment, RenderReport, ShopifyServices, StoreData, ThemeInput } from '../shopify'
 
 /** What the storefront keeps for one visitor, as plain JSON: the cart, the country and language they chose, and whether they passed the storefront password. */
 export interface VisitorState {
@@ -6,6 +6,8 @@ export interface VisitorState {
   country?: string
   language?: string
   unlocked?: boolean
+  /** The comments the visitor posted on the store's articles (`POST <article url>/comments`), oldest first. */
+  comments?: PostedComment[]
   /** The names and values of the sandboxed page's `localStorage` and `sessionStorage`, which the client script saves with `POST /storefront-storage`. */
   storage?: { local: Record<string, string>, session: Record<string, string> }
 }

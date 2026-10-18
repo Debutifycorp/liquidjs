@@ -53,15 +53,17 @@ Every change is additive in the types: each new field is optional, and a store t
 **Objects**
 
 - **`link.object` is the object a menu link points at.** The collection, page, blog, article, policy or product of the link's address, which Horizon's mega menu reads for its images and featured products; 1.4.0 held nil. A link to the catalogue, the list of collections, a product type or vendor or another site has none.
+- **Blog comments.** `BlogData.commentable` (`no`, `moderate` or `yes`, as the Admin API has it) sets `blog.comments_enabled?` and `blog.moderated?`, and `ArticleData.comments` the published comments. `article.comments`, `comments_count`, `comments_enabled?`, `moderated?` and `comment_post_url` follow, and a `comment` object has `author`, `content`, `created_at`, `email`, `id`, `status`, `updated_at` and `url`. 1.4.0 had none of it.
 - **A cart line can be nested, and a variant's quantity rule and price breaks are held.** `CartLineState.parentKey` nests a line under another; `line_item.parent_relationship.parent` is the parent line item (Dawn and Horizon mark and label the nested line from it), and the Ajax answers print `parent_relationship` and `instructions` for it. A line under a quantity price break is priced at the highest break its variant's quantity in the cart reaches.
 
 **Storefront**
 
+- **`POST <article url>/comments` takes a comment.** The `new_comment` form posts there. A blog that takes none, or an article it lacks, answers the 404 page; an incomplete comment renders the article again with `form.errors`; a valid one is kept with the visitor (`VisitorState.comments`) and redirects to the article with `?comment=<id>#comment_form`, where `form.posted_successfully?` is true. On a blog that publishes comments it joins `article.comments`; on one that moderates them it does not, and the page's `comment` has the status `unapproved`, which the themes read to say it awaits approval. See [Routes](#routes).
 - **`add.js` takes `parent_id` and `parent_line_key`, and holds the cart to the quantity rules.** `parent_id` names a variant of the same request, `parent_line_key` a line the cart holds; a nested line is listed right after its parent and goes with it. `add.js` and `change.js` answer 422 for a quantity under the minimum, over the maximum or off the increment of the variant (counting every line of it), and `update.js` does for a variant not yet in the cart. See [The cart](#the-cart).
 
 **Types**
 
-- **New optional fields and exports.** `CartLineState.parentKey`, and `arrangeNested` and `quantityRuleOf` from `/shopify`.
+- **New optional fields and exports.** `BlogData.commentable`, `ArticleData.comments`, `CommentData`, `PostedComment`, `VisitorState.comments`, `CartLineState.parentKey`, `RenderPageOptions.comments`, `RequestInput.comment`, and `arrangeNested` and `quantityRuleOf` from `/shopify`.
 
 ## Upgrading from 1.3
 

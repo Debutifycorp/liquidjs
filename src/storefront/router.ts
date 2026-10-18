@@ -18,6 +18,7 @@ export type Route =
   | { kind: 'recommendations-json', page: PageRequest }
   | { kind: 'storage' }
   | { kind: 'contact' }
+  | { kind: 'comment', blog: string, article: string }
   | { kind: 'localization' }
   | { kind: 'password' }
   | { kind: 'shopify-asset', path: string }
@@ -140,6 +141,9 @@ export function routeRequest (method: string, rawUrl: string, data: StoreData, o
   if (verb === 'POST' && path === STORAGE_PATH) return done({ kind: 'storage' })
   // the forms' targets, https://shopify.dev/docs/api/liquid/tags/form: `contact` posts to `/contact`, `localization` to `/localization` and `storefront_password` to `/password`
   if (verb === 'POST' && path === '/contact') return done({ kind: 'contact' })
+  // an article's `new_comment` form posts to `<article url>/comments` (https://shopify.dev/docs/api/liquid/tags/form, https://shopify.dev/docs/api/liquid/objects/article#article-comment_post_url)
+  const comment = verb === 'POST' ? /^\/blogs\/([^/]+)\/([^/]+)\/comments$/.exec(path) : null
+  if (comment) return done({ kind: 'comment', blog: decode(comment[1]), article: decode(comment[2]) })
   if (verb === 'POST' && path === '/localization') return done({ kind: 'localization' })
   if (verb === 'POST' && path === '/password') return done({ kind: 'password' })
   // https://shopify.dev/docs/api/section-rendering: `section_id` answers one section's HTML and `sections` a JSON map of up to five, on any page address; the handler enforces the count

@@ -13,7 +13,7 @@ import { sampleStoreData } from '../sample/sample-data'
 import type { ShopifyServices } from '../services'
 import { SettingDefinition, SettingsDrop, SettingsEnv, SettingSources } from '../settings'
 import { createState, currentFrame, Frame, ShopifyState, STATE, ThemeHooks } from '../state'
-import { buildStore, LiquidObject, setViewCacheSize, StoreObjects } from '../store/build'
+import { buildStore, LiquidObject, PostedComment, setViewCacheSize, StoreObjects } from '../store/build'
 import type { CartState } from '../store/cart'
 import { buildGlobals, requestedResource, RequestInput } from '../store/globals'
 import { resolveView } from '../store/view'
@@ -47,6 +47,8 @@ export interface RenderPageOptions {
   request?: RequestInput
   /** The cart the page shows, in place of `data.cart`: a visitor's cart as the storefront keeps it (`CartState`). Its lines are priced in the currency of the request's market. */
   cart?: CartState
+  /** The comments a visitor posted on the store's articles, as the storefront keeps them (`PostedComment`): the published ones join the article's `comments`, and the one `request.comment` names is the page's `comment`. */
+  comments?: PostedComment[]
   services?: Partial<ShopifyServices>
   /** The most views of `data` kept for the next requests (default 16): a view is a full copy of the store's objects for one market, language and URL prefix, so each base path a store is served under (one per preview) holds one. Set on the `data` object, as `setViewCacheSize` sets it, and left as it is when omitted. About 40 MB per view for 5,000 products and 45,000 variants. */
   viewCacheSize?: number
@@ -460,7 +462,7 @@ class PageRender implements ThemeHooks {
       runtime: this
     })
     this.state.currency = { iso_code: store.currency.iso_code, rate: store.currency.rate }
-    const page = buildGlobals({ store, data, templateName: this.templateName, request: options.request ?? {}, locale, report: this.state.report, cart: options.cart })
+    const page = buildGlobals({ store, data, templateName: this.templateName, request: options.request ?? {}, locale, report: this.state.report, cart: options.cart, comments: options.comments })
     this.state.request = page.request
     this.policy = page.policy
     this.state.form = options.request?.form

@@ -18,7 +18,7 @@ import { byTitle, SORT_VALUES, sortProducts } from './sort'
 import { translateData } from './translate'
 import { resolveView, viewKey, withoutPrefix, withPrefix } from './view'
 import type { StoreView } from './view'
-import type { AddressData, ArticleData, BlogData, CollectionData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, PolicyData, ProductData, SellingPlanData, SellingPlanGroupData, StoreAvailabilityData, StoreData, TransactionData, UnitPriceMeasurementData, VariantData } from './types'
+import type { AddressData, ArticleData, BlogData, CollectionData, CommentData, CountryOptionData, CustomerData, FilterData, GiftCardData, LinkData, LinkListData, MediaData, OrderData, PageData, PolicyData, ProductData, SellingPlanData, SellingPlanGroupData, StoreAvailabilityData, StoreData, TransactionData, UnitPriceMeasurementData, VariantData } from './types'
 
 /**
  * Turns `StoreData` into the objects Liquid reads, computing what Shopify derives (URLs, price ranges, the first available variant, option values) so templates find every field they expect. Built objects are plain objects, readable under `ownPropertyOnly`; images become `ImageDrop`s and handle-keyed collections `HandleMap`s. Field lists follow https://shopify.dev/docs/api/liquid/objects, object by object as each builder cites.
@@ -584,9 +584,46 @@ function buildPage (data: PageData, prefix: string, resolve?: MetafieldResolver)
   return printsHandle({ ...data, url: withPrefix(prefix, `/pages/${data.handle}`), template_suffix: data.template_suffix ?? null, published_at: data.published_at ?? null, metafields: buildMetafields(data.metafields, resolve) })
 }
 
-/** https://shopify.dev/docs/api/liquid/objects/article, at its URL under `prefix`. Comments are not modelled: `comments` is empty and `comments_enabled?` false. */
-function buildArticle (data: ArticleData, blogHandle: string, prefix: string, resolve?: MetafieldResolver): LiquidObject {
+/** The hidden fields of a built article that say which blog it is in and how that blog takes comments, which `withPostedComments` reads. */
+const ARTICLE_BLOG = '__blog_handle'
+const ARTICLE_COMMENTABLE = '__commentable'
+
+/** A comment a visitor posted on an article of the store, kept with the visitor (`VisitorState.comments`): `status` is `unapproved` while its blog moderates comments (the page of `comment.status` says a comment outside the Liquid context "can vary based on spam detection and whether blog comments are moderated", and Dawn and Horizon test for `unapproved` to say the comment awaits approval) and `published` otherwise. The text is as the visitor wrote it. */
+export interface PostedComment {
+  id: number
+  blog: string
+  article: string
+  author: string
+  email: string
+  content: string
+  created_at: string
+  status: 'published' | 'unapproved'
+}
+
+/**
+ * One comment, https://shopify.dev/docs/api/liquid/objects/comment: `url` is the article's address with the comment's id appended (the page's example ends `#129089273921`), `status` is `published` for every comment of `article.comments`, and `updated_at` is `created_at` for a comment nobody has changed. A visitor's comment (`escape`) has its author, email and text escaped and its line breaks written as `<br />`, because a theme prints `comment.content` as it is (Dawn does), and the text is a visitor's.
+ */
+function buildComment (data: CommentData | PostedComment, articleUrl: string, status: string, escape = false): LiquidObject {
+  return {
+    author: escape ? escapeHtml(data.author) : data.author,
+    content: escape ? escapeHtml(data.content).replace(/\r?\n/g, '<br />') : data.content,
+    created_at: data.created_at,
+    email: escape ? escapeHtml(data.email) : data.email,
+    id: data.id,
+    status,
+    updated_at: 'updated_at' in data ? data.updated_at ?? data.created_at : data.created_at,
+    url: `${articleUrl}#${data.id}`
+  }
+}
+
+/**
+ * https://shopify.dev/docs/api/liquid/objects/article, at its URL under `prefix`. `comments` are the published ones of the data, "an empty array if comments are disabled", and `comments_count` their number; `comments_enabled?` and `moderated?` are the blog's (`BlogData.commentable`), and `comment_post_url` is where the `new_comment` form posts.
+ */
+function buildArticle (data: ArticleData, blog: BlogData, prefix: string, resolve?: MetafieldResolver): LiquidObject {
   const author = data.author ?? ''
+  const url = withPrefix(prefix, `/blogs/${blog.handle}/${data.handle}`)
+  const commentable = blog.commentable ?? 'no'
+  const comments = commentable === 'no' ? [] : (data.comments ?? []).map(comment => buildComment(comment, url, 'published'))
   const article = printsHandle({
     id: data.id,
     handle: data.handle,
@@ -594,20 +631,47 @@ function buildArticle (data: ArticleData, blogHandle: string, prefix: string, re
     content: data.content,
     excerpt: data.excerpt ?? '',
     excerpt_or_content: data.excerpt || data.content,
-    url: withPrefix(prefix, `/blogs/${blogHandle}/${data.handle}`),
+    url,
     author,
     user: { name: author, first_name: author.split(' ')[0] ?? '', last_name: author.split(' ').slice(1).join(' ') },
     published_at: data.published_at,
     created_at: data.published_at,
     image: image(data.image),
     tags: data.tags ?? [],
-    comments: [],
-    comments_count: 0,
-    'comments_enabled?': false,
+    comment_post_url: `${url}/comments`,
+    comments,
+    comments_count: comments.length,
+    'comments_enabled?': commentable !== 'no',
+    'moderated?': commentable === 'moderate',
     metafields: buildMetafields(data.metafields, resolve)
   })
   hidden(article, ARTICLE_MARKER, true)
+  hidden(article, ARTICLE_BLOG, blog.handle)
+  hidden(article, ARTICLE_COMMENTABLE, commentable)
   return article
+}
+
+/** Whether the blog of a built article takes comments, and whether it holds them for approval (`BlogData.commentable`). */
+export const commentableOf = (article: LiquidObject): 'no' | 'moderate' | 'yes' => (article[ARTICLE_COMMENTABLE] as 'no' | 'moderate' | 'yes' | undefined) ?? 'no'
+
+/** The comments `posted` holds for a built article. */
+const postedOn = (article: LiquidObject, posted: PostedComment[]) => posted.filter(comment => comment.blog === article[ARTICLE_BLOG] && comment.article === article.handle)
+
+/** A copy of a built article whose `comments` also hold the published comments a visitor posted on it, after the data's, and whose `comments_count` counts them; the built article is the store's and is shared, so it is not changed. The article itself when the visitor posted none there. */
+export function withPostedComments (article: LiquidObject, posted: PostedComment[]): LiquidObject {
+  const own = postedOn(article, posted).filter(comment => comment.status === 'published')
+  if (own.length === 0) return article
+  const comments = [...article.comments as LiquidObject[], ...own.map(comment => buildComment(comment, String(article.url), 'published', true))]
+  const copy = copyObject(article, 'comments', 'comments_count')
+  Object.defineProperty(copy, 'comments', { value: comments, enumerable: true, configurable: true, writable: true })
+  Object.defineProperty(copy, 'comments_count', { value: comments.length, enumerable: true, configurable: true, writable: true })
+  return copy
+}
+
+/** The `comment` object of the page a visitor lands on after posting comment `id` on `article`: https://shopify.dev/docs/api/liquid/objects/comment, with the `unapproved` status of a comment that awaits moderation, which is what the themes read to say so (`blog.moderated? and comment.status == 'unapproved'`). Nil when the visitor posted no such comment there. */
+export function postedCommentObject (article: LiquidObject, posted: PostedComment[], id: number): LiquidObject | null {
+  const found = postedOn(article, posted).find(comment => comment.id === id)
+  return found ? buildComment(found, String(article.url), found.status, true) : null
 }
 
 /** The title Shopify gives each policy, as its checkout's policy list and the parity store's privacy policy page name them (`Privacy policy`, recording of `/policies/privacy-policy`); the titles of the others are Shopify's admin names, not recorded. */
@@ -648,10 +712,10 @@ const DATA_ORDER = 'articles_in_data_order'
 /** The articles of a built blog in the order of the store data, which the search and the predictive search rank their ties by. */
 export const articlesInDataOrder = (blog: LiquidObject): LiquidObject[] => (blog[DATA_ORDER] as LiquidObject[] | undefined) ?? blog.articles as LiquidObject[]
 
-/** https://shopify.dev/docs/api/liquid/objects/blog, at its URL under `prefix`. Comments are not modelled: `comments_enabled?` and `moderated?` are false. */
+/** https://shopify.dev/docs/api/liquid/objects/blog, at its URL under `prefix`. `comments_enabled?` and `moderated?` follow `commentable` (a blog takes no comments unless the data says so). */
 function buildBlog (data: BlogData, prefix: string, resolve?: MetafieldResolver): LiquidObject {
   // a blog lists its articles newest first, https://shopify.dev/docs/api/liquid/objects/blog#blog-articles ("all of the articles in the blog"): the parity store's blog page starts with the latest article (scenario `page-blog`); articles published at the same time keep the data's order, and one with no date comes last
-  const inDataOrder = data.articles.map(article => buildArticle(article, data.handle, prefix, resolve))
+  const inDataOrder = data.articles.map(article => buildArticle(article, data, prefix, resolve))
   const articles = newestFirst(inDataOrder)
   const blog = printsHandle({
     id: data.id,
@@ -662,8 +726,8 @@ function buildBlog (data: BlogData, prefix: string, resolve?: MetafieldResolver)
     articles_count: articles.length,
     all_tags: unique(data.articles.flatMap(article => article.tags ?? [])).sort(),
     tags: [],
-    'comments_enabled?': false,
-    'moderated?': false,
+    'comments_enabled?': (data.commentable ?? 'no') !== 'no',
+    'moderated?': data.commentable === 'moderate',
     metafields: buildMetafields(data.metafields, resolve)
   })
   hidden(blog, DATA_ORDER, inDataOrder)
@@ -698,6 +762,25 @@ function linkType (url: string): string {
   if (/^\/policies\/[^/]+$/.test(path)) return 'policy_link'
   if (path === '/account' || path.startsWith('/account/')) return 'customer_account_page_link'
   return 'http_link'
+}
+
+/** The objects a menu link can point at, by the kind of link (`StoreObjects` holds them all). */
+export type LinkObjects = Pick<StoreObjects, 'products' | 'collections' | 'pages' | 'blogs' | 'articles' | 'policies'>
+
+/**
+ * The object a link points at, https://shopify.dev/docs/api/liquid/objects/link#link-object: "the article, blog, collection, metaobject, page, policy or product" (shopify.dev does not say how a menu item holds it; the Admin API's MenuItem carries a `resourceId` for those types only, https://shopify.dev/docs/api/admin-graphql/latest/objects/MenuItem), so the catalogue (`/collections/all`), the list of collections and the other links have none. The object is the one of the link's type and handle, so a product reached through a collection is the product.
+ */
+function linkObject (objects: LinkObjects, url: string): LiquidObject | null {
+  const path = linkPath(url)
+  const type = linkType(url)
+  const handle = decodeURIComponent(path.split('/').slice(2).join('/'))
+  if (type === 'product_link') return HandleMap.get(objects.products, handle) ?? null
+  if (type === 'collection_link') return path === '/collections/all' ? null : HandleMap.get(objects.collections, handle) ?? null
+  if (type === 'page_link') return HandleMap.get(objects.pages, handle) ?? null
+  if (type === 'blog_link') return HandleMap.get(objects.blogs, handle) ?? null
+  if (type === 'article_link') return HandleMap.get(objects.articles, handle) ?? null
+  if (type === 'policy_link') return HandleMap.get(objects.policies, handle) ?? null
+  return null
 }
 
 /**
@@ -764,25 +847,6 @@ function buildLineItems (lines: Array<{ product_handle: string, variant_id: numb
     const product = HandleMap.get(products, line.product_handle)
     const variant = (product?.variants as LiquidObject[] | undefined)?.find(item => item.id === line.variant_id)
     if (!product || !variant) continue
-/** The objects a menu link can point at, by the kind of link (`StoreObjects` holds them all). */
-export type LinkObjects = Pick<StoreObjects, 'products' | 'collections' | 'pages' | 'blogs' | 'articles' | 'policies'>
-
-/**
- * The object a link points at, https://shopify.dev/docs/api/liquid/objects/link#link-object: "the article, blog, collection, metaobject, page, policy or product" (shopify.dev does not say how a menu item holds it; the Admin API's MenuItem carries a `resourceId` for those types only, https://shopify.dev/docs/api/admin-graphql/latest/objects/MenuItem), so the catalogue (`/collections/all`), the list of collections and the other links have none. The object is the one of the link's type and handle, so a product reached through a collection is the product.
- */
-function linkObject (objects: LinkObjects, url: string): LiquidObject | null {
-  const path = linkPath(url)
-  const type = linkType(url)
-  const handle = decodeURIComponent(path.split('/').slice(2).join('/'))
-  if (type === 'product_link') return HandleMap.get(objects.products, handle) ?? null
-  if (type === 'collection_link') return path === '/collections/all' ? null : HandleMap.get(objects.collections, handle) ?? null
-  if (type === 'page_link') return HandleMap.get(objects.pages, handle) ?? null
-  if (type === 'blog_link') return HandleMap.get(objects.blogs, handle) ?? null
-  if (type === 'article_link') return HandleMap.get(objects.articles, handle) ?? null
-  if (type === 'policy_link') return HandleMap.get(objects.policies, handle) ?? null
-  return null
-}
-
     const price = variant.price as number
     items.push({
       // `index` (0-based) is not a property of https://shopify.dev/docs/api/liquid/objects/line_item, but themes read it as a row number (`item.index | plus: 1`), so it is built; the page does not pin its base

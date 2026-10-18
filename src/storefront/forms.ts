@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from 'crypto'
 import { localePrefixes } from '../shopify'
-import type { StoreData } from '../shopify'
+import type { PostedComment, StoreData } from '../shopify'
 import type { Fields } from './body'
 import { addToCart, changeCart, clearCart, updateCart } from './cart'
 import { checkoutRedirect } from './checkout'
@@ -103,6 +103,52 @@ const contact: RouteHandler = async ctx => {
   return { response: await renderPageResponse(ctx, page, 200, { type, posted: false, errors, values }) }
 }
 
+/** The first id of the comments visitors post: Shopify's comment ids are twelve digits (the example of https://shopify.dev/docs/api/liquid/objects/comment is `129089273921`). */
+const FIRST_COMMENT_ID = 700000000001
+
+/**
+ * `POST <article url>/comments`, the `new_comment` form of https://shopify.dev/docs/api/liquid/tags/form: `comment[author]`, `comment[email]` and `comment[body]` (https://shopify.dev/docs/storefronts/themes/architecture/templates/article#the-comment-form). A blog that takes no comments (`BlogData.commentable`) has no such address, and a missing article or blog neither: both answer the 404 page. A comment missing its author, email or body, or with an email that is not one, renders the article again with the form's errors (`author`, `body` and `email` are the keys https://shopify.dev/docs/api/liquid/objects/form_errors lists) and what was posted, status 200. A valid one is kept with the visitor (`VisitorState.comments`, at most `limits.lines` of them, the oldest dropped first), `published` on a blog that publishes comments (it joins the article's `comments`) and `unapproved` on one that moderates them (it does not, and the page that follows has it as `comment`, so the theme says it awaits approval), and the visitor goes to the article with `?comment=<id>` and the form's `#comment_form`, where `form.posted_successfully?` is true. Nothing here is recorded: the parity store's blog takes no comments, so the redirect's address, the error wording (the contact form's) and the answer for a blog that takes none are Debutify's reading of the pages above. The text is bounded by the storefront's limits: the author and email by `propertyLength`, the body by `noteLength`.
+ */
+const comment: RouteHandler = async ctx => {
+  const route = ctx.routed.route
+  if (route.kind !== 'comment') throw new Error('not a comment route')
+  const blog = (ctx.data.blogs ?? []).find(entry => entry.handle === route.blog)
+  const article = blog?.articles.find(entry => entry.handle === route.article)
+  if (!blog || !article || (blog.commentable ?? 'no') === 'no') return { response: await renderPageResponse(ctx, pageForPath(ctx, `${ctx.routed.localePrefix}/404`), 404) }
+  const posted = ctx.fields.comment
+  const values: Record<string, string> = typeof posted === 'object' && posted !== null && !Array.isArray(posted)
+    ? Object.fromEntries(Object.entries(posted).filter((entry): entry is [string, string] => typeof entry[1] === 'string'))
+    : {}
+  const author = (values.author ?? '').trim()
+  const email = (values.email ?? '').trim()
+  const body = (values.body ?? '').trim()
+  const errors: Record<string, string[]> = {}
+  if (!author) errors.author = ["can't be blank"]
+  else if (author.length > ctx.limits.propertyLength) errors.author = ['is too long']
+  if (!email) errors.email = ["can't be blank"]
+  else if (email.length > EMAIL_MAX || !EMAIL.test(email)) errors.email = ['is invalid']
+  if (!body) errors.body = ["can't be blank"]
+  else if (body.length > ctx.limits.noteLength) errors.body = ['is too long']
+  const here = `/blogs/${blog.handle}/${article.handle}`
+  if (Object.keys(errors).length) {
+    const page = pageForPath(ctx, `${ctx.routed.localePrefix}${here}`)
+    return { response: await renderPageResponse(ctx, page, 200, { type: 'new_comment', posted: false, errors, values: { author, email, body } }) }
+  }
+  const kept = ctx.visitor.comments ?? []
+  const made: PostedComment = {
+    id: Math.max(FIRST_COMMENT_ID - 1, ...kept.map(entry => entry.id)) + 1,
+    blog: blog.handle,
+    article: article.handle,
+    author,
+    email,
+    content: body,
+    created_at: new Date().toISOString(),
+    status: blog.commentable === 'moderate' ? 'unapproved' : 'published'
+  }
+  const comments = [...kept, made].slice(-ctx.limits.lines)
+  return { response: redirect(ctx, `${here}?comment=${made.id}#comment_form`), state: { ...ctx.visitor, comments } }
+}
+
 /** The locale prefix and language of `language` in the market that sells to `country`: the primary market when none does, and the market's default language when it is not offered in it (a store without markets has its languages). */
 function choose (data: StoreData, country: string | undefined, language: string | undefined): { prefix: string, language: string | undefined } {
   const markets = data.markets ?? []
@@ -157,4 +203,4 @@ const variant: RouteHandler = async ctx => {
 }
 
 /** The handlers this unit adds, by route kind. The `cart` handler is not among them: it answers the `form` format only, and `index.ts` picks it or the Ajax unit's by the route's format. */
-export const FORM_HANDLERS: Partial<Record<Route['kind'], RouteHandler>> = { contact, localization, password, variant }
+export const FORM_HANDLERS: Partial<Record<Route['kind'], RouteHandler>> = { contact, comment, localization, password, variant }

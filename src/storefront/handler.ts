@@ -87,10 +87,10 @@ export function redirect (ctx: Context, target: string | null | undefined, fallb
 export const ROUTE_HANDLERS: Partial<Record<Route['kind'], RouteHandler>> = {}
 
 /** The routes that change visitor state, whatever their method: they run one at a time per visitor. */
-export const mutates = (route: Route) => route.kind === 'cart' || route.kind === 'checkout' || route.kind === 'permalink' || route.kind === 'discount' || route.kind === 'storage' || route.kind === 'contact' || route.kind === 'localization' || route.kind === 'password'
+export const mutates = (route: Route) => route.kind === 'cart' || route.kind === 'checkout' || route.kind === 'permalink' || route.kind === 'discount' || route.kind === 'storage' || route.kind === 'contact' || route.kind === 'comment' || route.kind === 'localization' || route.kind === 'password'
 
 /** Whether a route reads the body of its request: a `POST` to one of the routes that take a form or JSON. */
-const readsBody = (route: Route, method: string) => method === 'POST' && (route.kind === 'cart' || route.kind === 'storage' || route.kind === 'contact' || route.kind === 'localization' || route.kind === 'password' || route.kind === 'shipping')
+const readsBody = (route: Route, method: string) => method === 'POST' && (route.kind === 'cart' || route.kind === 'storage' || route.kind === 'contact' || route.kind === 'comment' || route.kind === 'localization' || route.kind === 'password' || route.kind === 'shipping')
 
 /** The page the visitor came from: its path from the store's root (the base path taken off) and its query. A sandboxed page's form posts carry no `Referer` (its document has an opaque origin, and Chrome sends none: seen on the private theme's contact form), so there the client script names the page in the post's address, `storefront_page`, and that is read first; every other request has the `Referer`. Undefined when there is none, when it is outside the base path, or when it is not an address with a path on a store: the address is the visitor's to write, so anything but a plain path (a malformed address, `//host`, a backslash) is not used. */
 export function refererPath (ctx: Context): { path: string, search: string } | undefined {
@@ -216,6 +216,10 @@ const isCart = (cart: unknown): boolean => isRecord(cart) && Array.isArray(cart.
   isRecord(cart.attributes) && Object.values(cart.attributes).every(value => typeof value === 'string') &&
   Array.isArray(cart.discountCodes) && cart.discountCodes.every(code => typeof code === 'string')
 
+/** Whether stored `VisitorState.comments` are comments a page can show: a number for the id, text for the rest, and a status that is one of the two. */
+const isComments = (comments: unknown): boolean => Array.isArray(comments) && comments.every(entry => isRecord(entry) && Number.isFinite(entry.id) &&
+  ['blog', 'article', 'author', 'email', 'content', 'created_at'].every(field => typeof entry[field] === 'string') && (entry.status === 'published' || entry.status === 'unapproved'))
+
 /** Whether a stored `VisitorState.storage` is two maps of text to text. */
 const isStorage = (storage: unknown): boolean => isRecord(storage) && [storage.local, storage.session].every(map => isRecord(map) && Object.values(map).every(value => typeof value === 'string'))
 
@@ -224,7 +228,7 @@ const isStorage = (storage: unknown): boolean => isRecord(storage) && [storage.l
  */
 function usable (stored: unknown, key: string, options: StorefrontOptions, request: Request): VisitorState {
   if (isRecord(stored) && isCart(stored.cart) &&
-    (stored.country === undefined || typeof stored.country === 'string') && (stored.language === undefined || typeof stored.language === 'string') && (stored.unlocked === undefined || typeof stored.unlocked === 'boolean') && (stored.storage === undefined || isStorage(stored.storage))) return stored as unknown as VisitorState
+    (stored.country === undefined || typeof stored.country === 'string') && (stored.language === undefined || typeof stored.language === 'string') && (stored.unlocked === undefined || typeof stored.unlocked === 'boolean') && (stored.storage === undefined || isStorage(stored.storage)) && (stored.comments === undefined || isComments(stored.comments))) return stored as unknown as VisitorState
   report(options, { kind: 'error', error: new Error('the cart store returned a visitor state that is not a VisitorState (a cart with lines, a note, attributes and discount codes): the visitor starts with an empty cart') }, request)
   const kept = isRecord(stored) ? stored : {}
   return {

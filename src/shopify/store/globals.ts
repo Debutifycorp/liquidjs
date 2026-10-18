@@ -2,7 +2,7 @@ import { HandleMap } from '../objects/handle-map'
 import { TemplateDrop } from '../objects/template'
 import { own } from '../util/own'
 import type { ReportCollector } from '../report'
-import { buildLinklists, LiquidObject, selectProduct, selectSellingPlan, StoreObjects } from './build'
+import { buildLinklists, LiquidObject, PostedComment, postedCommentObject, selectProduct, selectSellingPlan, StoreObjects, withPostedComments } from './build'
 import { buildCartObject } from './cart'
 import type { CartState } from './cart'
 import { collectionView, typeCollection, vendorCollection } from './collection-view'
@@ -74,6 +74,8 @@ export interface RequestInput {
   predictive?: PredictiveRequest
   /** The outcome of the form posted before this page, for the `form` tag. */
   form?: FormOutcome
+  /** The id of the comment the visitor has just posted on the article the page shows, which is the page's `comment` (`RenderPageOptions.comments` holds it). */
+  comment?: number
   /** The path every URL starts with (`/p/<token>`); empty when omitted. Debutify's: a store served under a path of its own, which shopify.dev does not describe. */
   basePath?: string
   /** The market and language prefix after the base path (`/fr-ca`); empty for the primary market's default language. */
@@ -177,6 +179,8 @@ export interface GlobalsInput {
   report: ReportCollector
   /** The cart the page shows (`RenderPageOptions.cart`); the store data's cart when omitted. */
   cart?: CartState
+  /** The comments a visitor posted (`RenderPageOptions.comments`). */
+  comments?: PostedComment[]
 }
 
 export interface PageGlobals {
@@ -218,6 +222,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   const data = input.data ?? sampleStoreData
   const view = resolveView(data, request)
   const resources: Record<string, LiquidObject | null> = {}
+  let postedComment: LiquidObject | null = null
   const kind = own(RESOURCE_TYPES, template.name)
   if (kind) {
     // `/collections/vendors?q=` and `/collections/types?q=` are collections Shopify makes from the term
@@ -226,6 +231,11 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     if (request.resource && !found) report.missing('resource', `${template.name} ${request.resource}`)
     // a product page shows the variant `?variant=` or `?option_values=` names (`selectProduct`) and the selling plan `?selling_plan=` names (`selectSellingPlan`); the built product is shared by every request, so a selection is a copy
     resources[template.name] = found && template.name === 'product' ? selectSellingPlan(selectProduct(found, request.variant, request.optionValues), request.sellingPlan) : found ?? null
+    // an article shows the published comments its visitor posted, and the one just posted is the page's `comment`
+    if (template.name === 'article' && found && input.comments?.length) {
+      resources.article = withPostedComments(found, input.comments)
+      if (request.comment !== undefined) postedComment = postedCommentObject(found, input.comments, request.comment)
+    }
     // `/collections/<collection>/products/<product>` shows the product with that collection as the `collection` global: https://shopify.dev/docs/api/liquid/objects/collection says `collection.next_product` and `collection.previous_product` "can be used on the product page", which they could not be without it. The product's own URL does not carry the collection (fixture `probe-product-in-collection`: `/products/men-t-shirt`). A collection the store does not have sets none.
     if (template.name === 'product' && request.collection !== undefined) {
       const collection = HandleMap.get(store.collections, request.collection)
@@ -299,6 +309,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     ...(request.productVariant !== undefined ? { product_variant: variantObject(store, request.productVariant) } : {}),
     ...(pageType === 'gift_card' ? { gift_card: store.gift_card } : {}),
     ...(pageType === 'customers/order' ? { order: orderFor(store.customer, request.resource, report) } : {}),
+    ...(postedComment ? { comment: postedComment } : {}),
     ...resources
   }
   return { globals, linklists, policy, request: { path, origin, page, prefix: view.prefix, query: request.query, alternates: pageType === '404' ? [] : alternates(data, view, path, request.searchTerms, pageType), endpoints: endpointsOf(pageType, resource, resources.blog, view.prefix) } }
