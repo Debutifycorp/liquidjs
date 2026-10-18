@@ -189,6 +189,8 @@ export interface ProductData {
   /** The product can be bought only with a selling plan. https://shopify.dev/docs/api/liquid/objects/product#product-requires_selling_plan */
   requires_selling_plan?: boolean
   selling_plan_groups?: SellingPlanGroupData[]
+  /** The handles of the products the merchant set as this product's complementary products, in order (Shopify's Search & Discovery app, https://shopify.dev/docs/storefronts/themes/product-merchandising/recommendations/complementary-products); none when omitted, as for a product with none set up. */
+  complementary_products?: string[]
   /** Place in the store's best-selling order, 1 first; products without one follow, newest first (what Shopify lists for a store with no sales, fixture `probe-collection-sort-best-selling`). */
   sales_rank?: number
 }

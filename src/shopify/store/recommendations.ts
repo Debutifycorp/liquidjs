@@ -40,10 +40,16 @@ function related (store: StoreObjects, product: LiquidObject): LiquidObject[] {
   return [...fromCollections, ...sameType]
 }
 
+/** The complementary products the merchant set up for the product (`ProductData.complementary_products`), in the merchant's order; none for a product with none set up, as the parity store answers (fixture `probe-recommendations-complementary`). */
+function complementary (store: StoreObjects, product: LiquidObject, data: StoreData | undefined): LiquidObject[] {
+  const handles = data?.products?.find(item => item.handle === product.handle)?.complementary_products ?? []
+  return handles.flatMap(handle => HandleMap.get(store.products, handle) ?? []) as LiquidObject[]
+}
+
 /**
- * The `recommendations` object, https://shopify.dev/docs/api/liquid/objects/recommendations. Without a recommendations request it is not performed: `performed?` false, no products, `products_count` 0 and `intent` nil, as the page gives for that case (`performed` mirrors `performed?`). With one, it is performed for the product whose `id` is `productId`, with the request's `intent`, and holds up to `limit` products. Related products come from the store data (`related`, Debutify's rule); complementary products are set up by the merchant in the admin ("Complementary recommendations need to be manually set up", https://shopify.dev/docs/storefronts/themes/product-merchandising/recommendations), which the store data does not model, so they are none, as the parity store, which has none set up, answers (fixture `probe-recommendations-complementary`). Either way the product itself, products that are not available, products with a price of 0, gift cards and products in the cart are left out, as the related and complementary products pages list in their limitations. A product id the store does not have is reported as a missing resource and an intent other than `related` or `complementary` as unsupported, and both leave `recommendations` not performed, where Shopify answers 404 and 422.
+ * The `recommendations` object, https://shopify.dev/docs/api/liquid/objects/recommendations. Without a recommendations request it is not performed: `performed?` false, no products, `products_count` 0 and `intent` nil, as the page gives for that case (`performed` mirrors `performed?`). With one, it is performed for the product whose `id` is `productId`, with the request's `intent`, and holds up to `limit` products. Related products come from the store data (`related`, Debutify's rule); complementary products are set up by the merchant in the admin ("Complementary recommendations need to be manually set up", https://shopify.dev/docs/storefronts/themes/product-merchandising/recommendations), which the store data models as `ProductData.complementary_products`; a product with none set up has none, as the parity store, which has none set up, answers (fixture `probe-recommendations-complementary`). Either way the product itself, products that are not available, products with a price of 0, gift cards and products in the cart are left out, as the related and complementary products pages list in their limitations. A product id the store does not have is reported as a missing resource and an intent other than `related` or `complementary` as unsupported, and both leave `recommendations` not performed, where Shopify answers 404 and 422.
  */
-export function buildRecommendations (store: StoreObjects, request: RecommendationsRequest | undefined, report: ReportCollector): LiquidObject {
+export function buildRecommendations (store: StoreObjects, request: RecommendationsRequest | undefined, report: ReportCollector, data?: StoreData): LiquidObject {
   if (!request) return notPerformed()
   const intent = request.intent === undefined || request.intent === null || request.intent === '' ? 'related' : String(request.intent)
   if (intent !== 'related' && intent !== 'complementary') {
@@ -56,7 +62,7 @@ export function buildRecommendations (store: StoreObjects, request: Recommendati
     return notPerformed()
   }
   const inCart = new Set((store.cart.items as LiquidObject[]).map(item => item.product))
-  const candidates = intent === 'related' ? related(store, product) : []
+  const candidates = intent === 'related' ? related(store, product) : complementary(store, product, data)
   const products = [...new Set(candidates)]
     .filter(item => item !== product && item.available && (item.price as number) > 0 && !item['gift_card?'] && !inCart.has(item))
     .slice(0, limitOf(request.limit))
@@ -86,7 +92,7 @@ export function recommendationsJson (data: StoreData, request: RecommendationsRe
   const built = buildStore(data, view)
   // the visitor's cart, when the caller has one, is built on the shared store's products, currency and prefix, as a page's is (`buildGlobals`), so the products in it are left out as they are on the `section_id` path
   const store = cart ? { ...built, cart: buildCartObject(built, cart) } : built
-  const found = buildRecommendations(store, request, new ReportCollector())
+  const found = buildRecommendations(store, request, new ReportCollector(), data)
   const intent = typeof found.intent === 'string' ? found.intent : request.intent || 'related'
   const id = trackingId(request.productId, limitOf(request.limit), intent)
   const products = ((found.products ?? []) as LiquidObject[]).map(product => {

@@ -285,7 +285,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     current_page: page,
     current_tags: pageType === 'collection' && request.tags?.length ? request.tags : null,
     search,
-    recommendations: buildRecommendations({ ...store, cart }, request.recommendations, report),
+    recommendations: buildRecommendations({ ...store, cart }, request.recommendations, report, data),
     // https://shopify.dev/docs/api/liquid/objects/predictive_search: only a Predictive Search API request has it; any other page has none, and the recording prints nil (fixture `ajax-sections-page`)
     ...(request.predictive ? { predictive_search: buildPredictiveSearch(store, request.predictive, input.data) } : {}),
     powered_by_link: poweredByLink(request.language ?? input.locale),
