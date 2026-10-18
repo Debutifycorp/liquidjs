@@ -1,6 +1,7 @@
 import { Value, Liquid, TopLevelToken, TagToken, Context, Tag } from '..'
 import { Arguments } from '../template'
 import { IdentifierToken } from '../tokens'
+import { EmptyDrop } from '../drop'
 
 export default class extends Tag {
   private key: string
@@ -20,7 +21,9 @@ export default class extends Tag {
     this.value = new Value(this.tokenizer.readFilteredValue(), this.liquid)
   }
   * render (ctx: Context): Generator<unknown, void, unknown> {
-    ctx.bottom()[this.key] = yield this.value.value(ctx, this.liquid.options.lenientIf)
+    const value = yield this.value.value(ctx, this.liquid.options.lenientIf)
+    // Ruby Liquid's literals `blank` and `empty` are the empty string outside a condition (`Expression::LITERALS`), so `{% assign x = blank %}` holds `''`, which equals `blank` and `empty`, while the literal `blank == blank` stays false (liquid-spec `Comparing blank and blank resolves to false`)
+    ctx.bottom()[this.key] = value instanceof EmptyDrop ? '' : value
   }
 
   public * arguments (): Arguments {

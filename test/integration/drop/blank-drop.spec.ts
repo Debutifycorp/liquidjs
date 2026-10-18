@@ -50,10 +50,6 @@ describe('drop/blank-drop', function () {
     expect(await liquid.parseAndRender(src, { box: new Box(1) })).toBe('not|not')
     expect(await liquid.parseAndRender('{% if obj == blank %}blank{% else %}not{% endif %}', { obj: { items: [], 'empty?': true } })).toBe('blank')
   })
-  it('a value assigned blank is blank, unlike empty == empty', async function () {
-    const src = '{% assign x = blank %}{% if x == blank %}is{% else %}is not{% endif %} blank|{% if x != blank %}differs{% else %}same{% endif %}|{% assign y = empty %}{% if y == empty %}is{% else %}is not{% endif %} empty'
-    expect(await liquid.parseAndRender(src)).toBe('is blank|same|is not empty')
-  })
   it('[] is blank', async function () {
     const src = '{%if arr == blank %}[] == blank{%else%}[] != blank{% endif %}'
     const html = await liquid.parseAndRender(src, { arr: [] })
@@ -63,5 +59,9 @@ describe('drop/blank-drop', function () {
     const src = '{%if arr == blank %}[1] == blank{%else%}[1] != blank{% endif %}'
     const html = await liquid.parseAndRender(src, { arr: [1] })
     expect(html).toBe('[1] != blank')
+  })
+  it('a value assigned blank or empty is the empty string, which equals both, while the literals stay unequal', async function () {
+    const src = '{% assign x = blank %}{% if x == blank %}is{% else %}is not{% endif %} blank|{% if x != blank %}differs{% else %}same{% endif %}|{% assign y = empty %}{% if y == empty %}is{% else %}is not{% endif %} empty|{% if blank == blank %}equal{% else %}unequal{% endif %}|[{{ x }}]{{ x.size }}'
+    expect(await liquid.parseAndRender(src)).toBe('is blank|same|is empty|unequal|[]0')
   })
 })
