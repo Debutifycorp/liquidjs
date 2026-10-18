@@ -58,11 +58,11 @@ describe('shopify filters the three themes use', () => {
       expect(html).toBe(`<span>${svg}</span>a{}x()`)
       expect(report.stubbedFilters).toEqual([])
     })
-    it('prints nothing for a missing asset, another type or one of 15 KB or more, and reports each', async () => {
+    it("prints Shopify's comment for a missing asset (recording page-product-model of Dawn: 'icon-3d-model' has no .svg), nothing for another type or one of 15 KB or more, and reports each", async () => {
       const { html, report } = await render("[{{ 'nope.svg' | inline_asset_content }}{{ 'theme.json' | inline_asset_content }}{{ 'big.svg' | inline_asset_content }}{{ 'icon-error' | inline_asset_content }}]", {}, files)
-      expect(html).toBe('[]')
-      expect(report.missing).toEqual([{ kind: 'resource', name: 'assets/nope.svg' }])
-      expect(report.unsupported.map(entry => entry.detail)).toEqual(['theme.json is not an SVG, JS or CSS asset', 'assets/big.svg is 15 KB or larger', 'icon-error is not an SVG, JS or CSS asset'])
+      expect(html).toBe('[<!-- inline_asset_content: Asset not found. --><!-- inline_asset_content: Asset not found. -->]')
+      expect(report.missing).toEqual([{ kind: 'resource', name: 'assets/nope.svg' }, { kind: 'resource', name: 'assets/icon-error' }])
+      expect(report.unsupported.map(entry => entry.detail)).toEqual(['theme.json is not an SVG, JS or CSS asset', 'assets/big.svg is 15 KB or larger'])
     })
     it("reads a page's theme, and its base's asset where the theme lays over one", async () => {
       const base: ThemeInput = { files: { 'layout/theme.liquid': '{{ content_for_layout }}', 'assets/icon-search.svg': svg, 'templates/index.liquid': "{{ 'icon-search.svg' | inline_asset_content }}" } }
@@ -72,7 +72,7 @@ describe('shopify filters the three themes use', () => {
     it('reads only a file under assets/, so a path out of it or an address prints nothing and is reported missing', async () => {
       const outside = { ...files, 'snippets/s.css': 's{}', 'x.svg': '<svg/>' }
       const { html, report } = await render("[{{ '../snippets/s.css' | inline_asset_content }}{{ 'https://example.com/x.svg' | inline_asset_content }}{{ '/x.svg' | inline_asset_content }}]", {}, outside)
-      expect(html).toBe('[]')
+      expect(html).toBe('[<!-- inline_asset_content: Asset not found. --><!-- inline_asset_content: Asset not found. --><!-- inline_asset_content: Asset not found. -->]')
       expect(report.missing).toEqual([{ kind: 'resource', name: 'assets/../snippets/s.css' }, { kind: 'resource', name: 'assets/https://example.com/x.svg' }, { kind: 'resource', name: 'assets//x.svg' }])
     })
   })

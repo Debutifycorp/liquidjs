@@ -78,22 +78,25 @@ function themeFile (filter: FilterImpl, path: string): string | undefined {
   }
 }
 
+/** The comment Shopify prints for an asset the theme does not have: the parity store's answer twice on a Dawn product page, where `'icon-3d-model' | inline_asset_content` names no file (recording `recordings-dawn/page-product-model`, the asset is `icon-3d-model.svg`). */
+const ASSET_NOT_FOUND = '<!-- inline_asset_content: Asset not found. -->'
+
 /**
  * The text of the theme's asset `assets/<name>`, read from the theme's own files (never from the network), https://shopify.dev/docs/api/liquid/filters/inline_asset_content (`{{ 'icon.svg' | inline_asset_content }}` prints the file's `<svg …/>`). The file is printed byte for byte, its last line break included, as the parity store prints Horizon's icons (private parity recordings of Horizon: `assets/icon-search.svg`, `icon-cart.svg`, `icon-checkmark.svg` and the rest appear whole in the page).
  *
- * Only SVG, JS and CSS assets under 15 KB are inlined, as the page says. What Shopify prints for another type, a larger file or a missing one is not pinned: here each prints nothing; a missing asset is reported as a missing resource (`assets/<name>`) and the other two as unsupported.
+ * A missing asset prints `ASSET_NOT_FOUND` and is reported as a missing resource (`assets/<name>`). Only SVG, JS and CSS assets under 15 KB are inlined, as the page says. What Shopify prints for another type or a larger file is not pinned: here each prints nothing and is reported as unsupported.
  */
 function inlineAssetContent (this: FilterImpl, input: unknown) {
   const report = shopifyState(this.context).report
   const name = stringify(input)
-  if (!INLINE_ASSET.test(name)) {
-    report.unsupported('inline_asset_content', `${name.slice(0, 80)} is not an SVG, JS or CSS asset`)
-    return ''
-  }
   const path = `assets/${name}`
   const text = themeFile(this, path)
   if (text === undefined) {
     report.missing('resource', path)
+    return ASSET_NOT_FOUND
+  }
+  if (!INLINE_ASSET.test(name)) {
+    report.unsupported('inline_asset_content', `${name.slice(0, 80)} is not an SVG, JS or CSS asset`)
     return ''
   }
   if (Buffer.byteLength(text, 'utf8') >= INLINE_ASSET_LIMIT) {
