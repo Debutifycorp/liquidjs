@@ -127,13 +127,26 @@ export function imageLiquidJson (image: ImageDrop, place: ImageRole): unknown {
   }
 }
 
-/** A media entry as the Ajax API writes it. An image carries its own fields beside its `preview_image` (fixture `ajax-product-js`); the page shows no video, so a hosted or external video keeps the fields of its media object with the preview in the same compact form, which no recording pins. */
+/** The preview picture of a video, an external video or a model: its fields as `previewImage` writes them, the aspect ratio of the Ajax answer to three places (`1.778` for 960 by 540, fixture `ajax-product-js-media`). */
+function mediaPreview (image: ImageDrop | null | undefined, shape: 'ajax' | 'liquid'): Record<string, unknown> | null {
+  const preview = previewImage(image, shape)
+  if (preview && shape === 'ajax' && typeof preview.aspect_ratio === 'number') preview.aspect_ratio = Math.round(preview.aspect_ratio * 1000) / 1000
+  return preview
+}
+
+/** A media entry as the Ajax API writes it. An image carries its own fields beside its `preview_image` (fixture `ajax-product-js`); a hosted video has its `aspect_ratio` and `duration` and its sources, an external video its `aspect_ratio`, `external_id` and `host`, a model only its sources, each source with `format`, `height`, `mime_type`, `url` and `width` (a model's without the size), as the parity store prints them (fixture `ajax-product-js-media`). */
 function mediaJson (media: LiquidObject, shape: 'ajax' | 'liquid'): Record<string, unknown> {
   if (media.media_type === 'image') {
     const image = media as unknown as ImageDrop
     return { alt: altOf(image), id: image.id, position: image.position, preview_image: previewImage(image, shape), aspect_ratio: aspectRatio(image, shape), height: image.height, media_type: 'image', src: imageUrl(image, shape), width: image.width }
   }
-  return { ...media, alt: textOrNull(media.alt), preview_image: previewImage(media.preview_image as ImageDrop | null, shape) }
+  const head = { alt: textOrNull(media.alt), id: media.id, position: media.position, preview_image: mediaPreview(media.preview_image as ImageDrop | null, shape) }
+  const ratio = media.aspect_ratio === null || media.aspect_ratio === undefined ? null : shape === 'ajax' ? Number(media.aspect_ratio) : media.aspect_ratio
+  const sources = ((shape === 'ajax' ? media.ajax_sources : undefined) ?? media.sources ?? []) as Array<Record<string, unknown>>
+  const files = sources.map(source => ({ format: source.format, ...(source.height === undefined ? {} : { height: source.height }), mime_type: source.mime_type, url: source.url, ...(source.width === undefined ? {} : { width: source.width }) }))
+  if (media.media_type === 'video') return { ...head, aspect_ratio: ratio, duration: media.duration, media_type: 'video', sources: files }
+  if (media.media_type === 'external_video') return { ...head, aspect_ratio: ratio, external_id: media.external_id, host: media.host, media_type: 'external_video' }
+  return { ...head, media_type: media.media_type, sources: files }
 }
 
 /** The fields both answers start with, in their order (fixtures `ajax-product-js` and `probe-product-default`). */

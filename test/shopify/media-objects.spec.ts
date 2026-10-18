@@ -20,6 +20,20 @@ describe('media objects', () => {
     })
     expect(await render('{% for m in p.media %}{{ m.aspect_ratio | round: 3 }}/{{ m.duration | json }};{% endfor %}{{ 1 | divided_by: p.media[2].aspect_ratio }}', { p })).toBe('1.778/12500;0.5/null;0.5/null;1.778/null;2.0')
   })
+  it('gives a 3D model its files under the store and no aspect ratio, and prints its viewer', async () => {
+    const p = buildProduct({
+      id: 1,
+      handle: 'cube',
+      title: 'Cube',
+      media: [
+        { media_type: 'model', id: 7, alt: 'The cube in 3D', preview_image: { src: 'https://shop.example/cdn/shop/files/preview_images/box.jpg', width: 1024, height: 1024 }, sources: [{ url: 'https://cdn.shopify.com/3d/models/o/abc/box.glb', mime_type: 'model/gltf-binary', format: 'glb' }, { url: 'https://cdn.shopify.com/3d/models/o/def/box.usdz', mime_type: 'model/vnd.usdz+zip', format: 'usdz' }] }
+      ],
+      variants: [{ id: 9, title: 'Default Title', price: 1, available: true, option1: 'Default Title' }]
+    }, '', undefined, undefined, 'shop.example')
+    expect(await render('{% for m in p.media %}{{ m.media_type }}|{{ m.position }}|{{ m.alt }}|{{ m.aspect_ratio | json }}|{% for s in m.sources %}{{ s.url }}={{ s.format }},{% endfor %}{% endfor %}', { p }))
+      .toBe('model|1|The cube in 3D|null|//shop.example/cdn/shop/3d/models/o/abc/box.glb?v=0=glb,//shop.example/cdn/shop/3d/models/o/def/box.usdz?v=0=usdz,')
+    expect(await render('{{ p.media[0] | model_viewer_tag }}|{{ p.media[0] | media_tag }}', { p })).toContain('<model-viewer src="//shop.example/cdn/shop/3d/models/o/abc/box.glb?v=0" camera-controls="true"')
+  })
   it('marks the product images a variant shows, and lists those variants', async () => {
     const p = buildProduct({
       id: 1,

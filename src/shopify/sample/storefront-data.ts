@@ -97,6 +97,9 @@ function picture (handle: string, n: number): ImageData {
 }
 
 // The unlisted products. Shopify's status Unlisted keeps a product out of every collection, search, recommendation and list, while its page opens at its address, so these products hold the features the mock.shop catalogue cannot show (a gift card, video, a 3D model, unit prices, ratings, local pickup) and change none of the recordings of the products, collections and searches the parity store already had. Their pictures are the catalogue's, which Shopify fetches from their URLs; the files of the hosted video and of the model, and the pictures Shopify made of them, are the store's own (`tools/shopify-parity/seed/unlisted.mjs` puts them there and reads their addresses back).
+/** Where the parity store's own files are on Shopify's CDN: the pictures of a video, a YouTube video and a 3D model are made by the store from the media it was given. */
+const STORE_FILES = 'https://cdn.shopify.com/s/files/1/0956/7315/5883/files/'
+
 const unlisted: ProductData[] = [
   // https://shopify.dev/docs/api/liquid/objects/product#product-gift_card?: a gift card product has `gift_card?` true; its variants need no shipping and keep no stock
   {
@@ -114,6 +117,34 @@ const unlisted: ProductData[] = [
     images: [picture('beanie', 0)],
     options: ['Denominations'],
     variants: [2500, 5000, 10000].map((price, i) => ({ id: 8100000000011 + i, title: `$${price / 100}`, option1: `$${price / 100}`, price, available: true, requires_shipping: false, taxable: false, inventory_management: null }))
+  },
+  // https://shopify.dev/docs/api/liquid/objects/model: a 3D model (Box by Cesium, CC BY 4.0, from the Khronos glTF sample assets) beside the product's image
+  {
+    id: 8100000000005,
+    handle: 'display-cube',
+    created_at: '2026-10-18T07:45:48-04:00',
+    published_at: '2026-10-18T07:45:59-04:00',
+    title: 'Display cube',
+    description: '<p>A small cube to turn around in 3D.</p>',
+    vendor: 'Debutify Parity',
+    type: 'Decor',
+    tags: ['3d'],
+    unlisted: true,
+    images: [picture('beanie', 1)],
+    media: [
+      { media_type: 'image', ...picture('beanie', 1) },
+      {
+        media_type: 'model',
+        id: 8100000000052,
+        alt: 'The cube in 3D',
+        preview_image: { src: `${STORE_FILES}preview_images/box.jpg`, width: 1024, height: 1024 },
+        sources: [
+          { url: 'https://cdn.shopify.com/3d/models/o/1cccb72ac9dba814/box.glb', mime_type: 'model/gltf-binary', format: 'glb' },
+          { url: 'https://cdn.shopify.com/3d/models/o/4c3494cd5a06e43f/box.usdz', mime_type: 'model/vnd.usdz+zip', format: 'usdz' }
+        ]
+      }
+    ],
+    variants: [{ id: 8100000000051, title: 'Default Title', option1: 'Default Title', price: 1800, available: true, inventory_management: 'shopify', inventory_quantity: 20 }]
   }
 ]
 

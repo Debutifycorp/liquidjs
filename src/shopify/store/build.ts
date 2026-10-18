@@ -156,17 +156,29 @@ export function printsHandle (object: LiquidObject): LiquidObject {
 }
 
 /** Product media: images (https://shopify.dev/docs/api/liquid/objects/media), videos (https://shopify.dev/docs/api/liquid/objects/video) and external videos (https://shopify.dev/docs/api/liquid/objects/external_video). Only media images carry a `preview_image`, https://shopify.dev/docs/api/liquid/objects/image#image-preview_image. `index` is the media's place in `product.media`; it becomes the media's `position`, counted from 1 (https://shopify.dev/docs/api/liquid/objects/media#media-position). The media page and shopify.dev's image page (https://shopify.dev/docs/api/liquid/objects/image#image-position) both show `1` in their example for the first entry but neither states the base; the parity store counts from 1 (fixture `probe-product-default`: the hoodie's eight media print positions 1 to 8 in `product | json`). Media from anywhere else has no position. */
-function buildMedia (media: MediaData, index?: number, title = ''): unknown {
+function buildMedia (media: MediaData, index?: number, title = '', host = ''): unknown {
   const position = index === undefined ? null : index + 1
   if (media.media_type === 'image') {
     const drop = new ImageDrop(media, true, position, title)
     hidden(drop as unknown as LiquidObject, IMAGE_ROLE, { role: 'media' } satisfies ImageRole)
     return drop
   }
-  // https://shopify.dev/docs/api/liquid/objects/video and https://shopify.dev/docs/api/liquid/objects/external_video: `aspect_ratio` is "the aspect ratio of the video as a decimal", the data's, else the width over the height of a hosted video's first sized source, else of its preview image; a hosted video's `duration` is in milliseconds, nil when the data has none
+  // https://shopify.dev/docs/api/liquid/objects/video and https://shopify.dev/docs/api/liquid/objects/external_video: `aspect_ratio` is "the aspect ratio of the video as a decimal", the data's, else the width over the height of a hosted video's first sized source, else of its preview image; a hosted video's `duration` is in milliseconds, nil when the data has none. A 3D model has no aspect ratio.
   const sized = media.media_type === 'video' ? media.sources.find(source => source.width && source.height) : undefined
   const ratio = media.media_type === 'video' && media.aspect_ratio ? media.aspect_ratio : sized ? sized.width! / sized.height! : media.preview_image?.width && media.preview_image.height ? media.preview_image.width / media.preview_image.height : null
-  return { ...media, alt: media.alt ?? '', preview_image: image(media.preview_image), position, aspect_ratio: ratio === null ? null : new LiquidFloat(ratio), ...(media.media_type === 'video' ? { duration: media.duration ?? null } : {}) }
+  const built: LiquidObject = { ...media, alt: media.alt ?? '', preview_image: image(media.preview_image), position, ...(media.media_type === 'model' ? {} : { aspect_ratio: ratio === null ? null : new LiquidFloat(ratio) }), ...(media.media_type === 'video' ? { duration: media.duration ?? null } : {}) }
+  // the files of a video or a model are Shopify's CDN addresses in the data and the Ajax API (`https://cdn.shopify.com/videos/…`); Liquid prints them under the store (`//<host>/cdn/shop/videos/…?v=0`, https://shopify.dev/docs/api/liquid/objects/video_source and https://shopify.dev/docs/api/liquid/objects/model_source)
+  if (media.media_type === 'video' || media.media_type === 'model') {
+    hidden(built, 'ajax_sources', media.sources)
+    built.sources = (media.sources as Array<{ url: string }>).map(source => ({ ...source, url: storeFileUrl(source.url, host) }))
+  }
+  return built
+}
+
+/** The address Liquid prints for a file on Shopify's CDN that the store hosts (`https://cdn.shopify.com/videos/c/vp/<id>/<file>` or `/3d/models/o/<id>/<file>`): under the store's domain, `//<host>/cdn/shop/<path>?v=0`. Any other address stays as it is. */
+function storeFileUrl (url: string, host: string): string {
+  const match = host ? /^https?:\/\/cdn\.shopify\.com\/((?:videos|3d)\/[^?]*)$/.exec(url) : null
+  return match ? `//${host}/cdn/shop/${match[1]}?v=0` : url
 }
 
 /** Whether two image entries are the same image: matched by `id` when both have one, by `src` otherwise. */
@@ -339,7 +351,7 @@ function optionValueInfos (data: ProductData, options: string[], variants: Liqui
 /**
  * https://shopify.dev/docs/api/liquid/objects/product. The product's and its variants' URLs sit under `prefix` (the view's base path and locale prefix, as the parity store prints them, fixture `probe-page-fr-ca`). `price` is the lowest variant price and `compare_at_price` the lowest variant compare-at price, as that page documents them; `compare_at_price` is nil when no variant has one, as the parity store prints it (fixtures `probe-product-in-collection` and `probe-product-plans`: `null` for men-t-shirt and slides; shopify.dev does not pin that case), so dividing by it raises "divided by 0" as Ruby does. `first_available_variant` is nil when no variant is available (the page: "The first available variant of the product"; fixture `probe-product-en-eu-leggings`, whose variants are all sold out, records null), while `selected_or_first_available_variant` (no `?variant=` is known here) then falls back to the first variant, as the page says, and so does each option's `selected_value` (the same fixture); `options_with_values` and `has_only_default_variant` follow the same page, each option's `values` being `product_option_value` objects (`buildOptions`) for the selected-or-first-available variant's values, and `options_by_name` finds an option by its name in any case (`OptionsByNameDrop`). `selling_plan_groups` are the data's (`buildSellingPlanGroup`), `requires_selling_plan` the data's flag, and `selected_selling_plan` and `selected_selling_plan_allocation` nil until a request selects a plan (`selectSellingPlan`). `selected_or_first_available_selling_plan_allocation` is, with nothing selected, "the first allocation on the first available variant", or on the first variant when none is available, and nil when the product has no selling plans (https://shopify.dev/docs/api/liquid/objects/product#product-selected_or_first_available_selling_plan_allocation); the parity store prints it for every product with plans, not only one that requires them (fixtures `probe-product-plans` and `probe-product-requires-plan`: 71001 and 71003). Every price field is in the view's currency when `currency` is given, because the variants' are (`buildVariant`) and the product's are the lowest and highest of them; the parity store's product-level `compare_at_price` is the lowest converted variant compare-at price in the markets that show them (fixtures `probe-product-default` and `probe-product-en-ca`: 110.00 USD and 149.00 CAD, with one variant on sale) and nil in one that hides them, with `compare_at_price_min` and `compare_at_price_max` 0 as for any product without one (fixtures `probe-product-en-eu-hoodie` and `ajax-product-js`).
  */
-export function buildProduct (data: ProductData, prefix = '', currency?: ViewCurrency, resolve?: MetafieldResolver): LiquidObject {
+export function buildProduct (data: ProductData, prefix = '', currency?: ViewCurrency, resolve?: MetafieldResolver, host = ''): LiquidObject {
   const url = withPrefix(prefix, `/products/${data.handle}`)
   // The image `position` counts from 1, which shopify.dev's image page does not state (its example shows 1 for the first image) and the parity store prints (fixture `probe-product-default`: the first variant's image, the hoodie's sixth, prints `position` 6 in `product | json`).
   const images = (data.images ?? []).map((img, i) => {
@@ -348,7 +360,7 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
     return drop
   })
   const mediaData: MediaData[] = data.media ?? (data.images ?? []).map(img => ({ ...img, media_type: 'image' as const }))
-  const media = mediaData.map((entry, i) => buildMedia(entry, i, data.title))
+  const media = mediaData.map((entry, i) => buildMedia(entry, i, data.title, host))
   // https://shopify.dev/docs/api/liquid/objects/product#product-selling_plan_groups lists "the selling plan groups that the variants of the product are included in", and the selling_plan_group page describes a group as one "that include[s] any of a product's variants": a group that offers none of the product's variants (`variant_ids` empty, or naming only variants the product lacks) is not listed
   const groupData = (data.selling_plan_groups ?? []).filter(group => data.variants.some(variant => offersVariant(group, variant)))
   const groups = groupData.map(group => buildSellingPlanGroup(group, currency))
@@ -1202,7 +1214,7 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   }
   // an unlisted product is built and found by its handle and id (`all_products`, its page, its variants in the cart), and left out of every list: `HandleMap.values` and the iteration skip it
   const isListed = (product: ProductData) => product.unlisted !== true
-  const built = (source.products ?? []).map(product => [product.handle, buildProduct(product, prefix, currency, resolve), isListed(product)] as const)
+  const built = (source.products ?? []).map(product => [product.handle, buildProduct(product, prefix, currency, resolve, data.shop.domain), isListed(product)] as const)
   const products = new HandleMap(built.filter(([, , listed]) => listed).map(([handle, product]) => [handle, product] as [string, LiquidObject]), built.filter(([, , listed]) => !listed).map(([handle, product]) => [handle, product] as [string, LiquidObject]))
   const listedData = (source.products ?? []).filter(isListed)
   // Every shop answers `collections.all` with all its listed products. https://shopify.dev/docs/api/liquid/objects/collections
@@ -1265,7 +1277,7 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
     articles,
     policies: new HandleMap(policies.map(policy => [policyHandle(policy.type), policy.built])),
     images: new HandleMap(Object.entries(data.images ?? {}).map(([name, img]) => [name, new ImageDrop(img)])),
-    videos: Object.fromEntries(Object.entries(data.videos ?? {}).map(([name, video]) => [name, buildMedia(video) as LiquidObject])),
+    videos: Object.fromEntries(Object.entries(data.videos ?? {}).map(([name, video]) => [name, buildMedia(video, undefined, '', data.shop.domain) as LiquidObject])),
     linklists: source.linklists ?? [],
     cart: {},
     customer: data.customer ? buildCustomer(data.customer, products, prefix, currency, resolve) : null,

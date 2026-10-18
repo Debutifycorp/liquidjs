@@ -164,8 +164,24 @@ export interface ExternalVideoMediaData {
   preview_image?: ImageData
 }
 
-/** The three kinds of product media, https://shopify.dev/docs/api/liquid/objects/media. */
-export type MediaData = ImageMediaData | VideoMediaData | ExternalVideoMediaData
+/** One file of a 3D model, https://shopify.dev/docs/api/liquid/objects/model_source. */
+export interface ModelSourceData {
+  url: string
+  mime_type: string
+  format: string
+}
+
+/** 3D model media, https://shopify.dev/docs/api/liquid/objects/model. */
+export interface ModelMediaData {
+  media_type: 'model'
+  id: number
+  alt?: string
+  preview_image: ImageData
+  sources: ModelSourceData[]
+}
+
+/** The four kinds of product media, https://shopify.dev/docs/api/liquid/objects/media. */
+export type MediaData = ImageMediaData | VideoMediaData | ExternalVideoMediaData | ModelMediaData
 
 /** The data behind Shopify's `product` object, https://shopify.dev/docs/api/liquid/objects/product. */
 export interface ProductData {
