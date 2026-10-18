@@ -191,7 +191,7 @@ function lineItem (store: StoreObjects, state: CartLineState, index: number): Li
     requires_shipping: variant.requires_shipping,
     taxable: variant.taxable,
     grams: variant.weight,
-    gift_card: false,
+    gift_card: product['gift_card?'] === true,
     options_with_values: (product.options as string[]).map((name, i) => ({ name, value: (variant.options as string[])[i] ?? null })),
     unit_price_measurement: variant.unit_price_measurement,
     // https://shopify.dev/docs/api/liquid/objects/line_item: a cart line can be removed and its quantity changed (`instructions`), has no components and no parent: the store data has no bundles, and Dawn and Horizon read the defaults so (`can_remove` and `can_update_quantity` true)

@@ -183,6 +183,8 @@ export interface ProductData {
   variants: VariantData[]
   created_at?: string
   published_at?: string
+  /** The product is a gift card, https://shopify.dev/docs/api/liquid/objects/product#product-gift_card?. False when omitted. */
+  gift_card?: boolean
   metafields?: Metafields
   /** Picks `templates/product.<suffix>.json`. https://shopify.dev/docs/storefronts/themes/architecture/templates/alternate-templates */
   template_suffix?: string | null

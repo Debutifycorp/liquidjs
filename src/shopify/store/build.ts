@@ -393,7 +393,8 @@ export function buildProduct (data: ProductData, prefix = '', currency?: ViewCur
     selected_selling_plan: null,
     selected_selling_plan_allocation: null,
     selected_or_first_available_selling_plan_allocation: ((firstOrAvailable?.selling_plan_allocations as LiquidObject[] | undefined) ?? [])[0] ?? null,
-    'gift_card?': false,
+    // https://shopify.dev/docs/api/liquid/objects/product#product-gift_card?: "true if the product is a gift card"
+    'gift_card?': data.gift_card === true,
     // https://shopify.dev/docs/api/liquid/objects/product#product-quantity_price_breaks_configured?: whether the product "has at least one variant with quantity price breaks in the current customer context"
     'quantity_price_breaks_configured?': variants.some(variant => (variant.quantity_price_breaks as unknown[]).length > 0),
     // the suffix of the alternate template the product uses, https://shopify.dev/docs/api/liquid/objects/product#product-template_suffix; nil when it uses the base template (fixture `probe-product-default`)
