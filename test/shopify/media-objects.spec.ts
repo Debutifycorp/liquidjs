@@ -94,6 +94,15 @@ describe('media objects', () => {
     }
     expect(await render('{{ p.media[1].preview_image | json }}', { p: tote })).toBe(JSON.stringify(JSON.parse(await render('{{ p.media[1].preview_image.src | json }}', { p: tote }))).replace(/\//g, '\\/'))
   })
+  // scenarios `probe-product-video-media` and `probe-product-model-media`: Shopify's json refuses each source of a video and of a 3D model, and `media | json` writes the files itself
+  it('refuses to print the sources of a video and a model in json', async () => {
+    const data = { ...storefrontSampleData, products: (storefrontSampleData.products ?? []).filter(item => ['video-tote', 'display-cube'].includes(item.handle)) }
+    const store = buildStore(data)
+    const refused = '{"error":"json not allowed for this object"}'
+    expect(await render('{{ p.media[1].sources | json }}|{{ p.media[1].sources[0] | json }}|{{ p.media[1].sources[0].url | json }}', { p: store.products.liquidMethodMissing('video-tote') })).toMatch(new RegExp(`^\\[${refused.replace(/[{}]/g, '\\$&')},${refused.replace(/[{}]/g, '\\$&')}\\]\\|${refused.replace(/[{}]/g, '\\$&')}\\|"`))
+    expect(await render('{{ p.media[1].sources | json }}', { p: store.products.liquidMethodMissing('display-cube') })).toBe(`[${refused},${refused}]`)
+    expect(JSON.parse(await render('{{ p.media[1] | json }}', { p: store.products.liquidMethodMissing('display-cube') })).sources[0].format).toBe('glb')
+  })
   it('marks the product images a variant shows, and lists those variants', async () => {
     const p = buildProduct({
       id: 1,

@@ -28,6 +28,13 @@ describe('variant properties', () => {
     expect(await render('{% for v in p.variants %}{{ v.barcode | json }} {{ v.unit_price | json }} {{ v.unit_price_measurement.reference_value }}{{ v.unit_price_measurement.reference_unit }} {% for b in v.quantity_price_breaks %}{{ b.minimum_quantity }}@{{ b.price }},{% endfor %}|{% endfor %}{{ p["quantity_price_breaks_configured?"] }}', { p }))
       .toBe('"0123456789012" 400 100ml |null 300 100ml 5@2700,10@2500,|null null 1l |true')
   })
+  // scenario `probe-product-extras-unit-price`: Shopify's json refuses a variant's unit price measurement, while its fields print and `product | json` writes them itself
+  it('refuses to print a unit price measurement in json and keeps its fields', async () => {
+    const p = buildStore(data).products.liquidMethodMissing('oil')
+    expect(await render('{{ p.variants[0].unit_price_measurement | json }}|{{ p.variants[0].unit_price_measurement.quantity_unit | json }}', { p }))
+      .toBe('{"error":"json not allowed for this object"}|"ml"')
+    expect(JSON.parse(await render('{{ p | json }}', { p })).variants[0].unit_price_measurement).toMatchObject({ measured_type: 'volume', reference_unit: 'ml' })
+  })
   it('lists the store availabilities of the first available variant and the selected one only', async () => {
     const p = buildStore(data).products.liquidMethodMissing('oil') as Record<string, unknown>
     const source = '{% for v in p.variants %}{{ v.id }}:{% for a in v.store_availabilities %}{{ a.location.name }}/{{ a.available }}/{{ a.pick_up_enabled }}/{{ a.physical_storefront }}/{{ a.pick_up_time }}/{{ a.location.address.city }}/{{ a.location.latitude }}{% endfor %}{% if v.store_availabilities == nil %}nil{% endif %};{% endfor %}'

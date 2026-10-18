@@ -7,6 +7,7 @@ import { hasOwn, isRecord } from '../util/own'
 import { isSafeUrl } from '../util/sanitize'
 import { ColorDrop } from './color'
 import { ImageDrop } from './image'
+import { jsonRefused, refuseJson } from './json-refused'
 
 /** Finds what a reference metafield points at: a product, collection or page by handle, a variant by id. Nil when the store has none. */
 export type MetafieldResolver = (kind: 'product' | 'collection' | 'page' | 'variant', key: string) => Record<string, unknown> | null | undefined
@@ -82,8 +83,9 @@ export class RatingDrop extends Drop {
     return this.rating.toString()
   }
 
+  /** Shopify's `json` refuses a rating (scenario `probe-product-extras-unit-price`: `{{ rating.value | json }}` is `{"error":"json not allowed for this object"}`, while `{{ rating.value.rating | json }}` is `"4.5"`). */
   public toJSON () {
-    return { rating: this.rating.toString(), scale_min: this.scale_min.toString(), scale_max: this.scale_max.toString() }
+    return jsonRefused()
   }
 }
 
@@ -277,15 +279,18 @@ export class MetafieldDrop extends Drop {
   }
 
   public toJSON (): unknown {
+    // a metafield prints as its value, so a rating (or a list of them) prints as the rating does: refused (scenario `probe-product-extras-unit-price`)
+    if (this.type === 'rating') return jsonRefused()
+    if (this.type === 'list.rating') return (this.value as unknown[]).map(() => jsonRefused())
     const stored = this.valueOf()
     return typeof stored === 'string' && !TEXT_TYPES.has(this.type) ? parsed(stored) : stored
   }
 }
 
-/** The `metafields` of a resource, https://shopify.dev/docs/api/liquid/objects/metafield: each namespace an object of its keys, each key a `MetafieldDrop`. A key whose value is nil or empty text (or a typed entry whose `value` is) is left out, as a metafield with no value does not exist: Shopify does not store an empty value. Only the data's own namespaces and keys are read. */
+/** The `metafields` of a resource, https://shopify.dev/docs/api/liquid/objects/metafield (`json` refuses the whole object, `refuseJson`): each namespace an object of its keys, each key a `MetafieldDrop`. A key whose value is nil or empty text (or a typed entry whose `value` is) is left out, as a metafield with no value does not exist: Shopify does not store an empty value. Only the data's own namespaces and keys are read. */
 export function buildMetafields (data: Metafields | undefined, resolve?: MetafieldResolver): Record<string, Record<string, MetafieldDrop>> {
   const out: Record<string, Record<string, MetafieldDrop>> = {}
-  if (!isRecord(data)) return out
+  if (!isRecord(data)) return refuseJson(out)
   for (const namespace of Object.keys(data)) {
     const keys = data[namespace]
     if (!isRecord(keys)) continue
@@ -298,5 +303,6 @@ export function buildMetafields (data: Metafields | undefined, resolve?: Metafie
     }
     out[namespace] = built
   }
-  return out
+  // `{{ product.metafields | json }}` is refused, with metafields or none (scenarios `probe-product-extras-unit-price`, `probe-product-extras-gift-card` and `probe-product-extras-pickup`)
+  return refuseJson(out)
 }

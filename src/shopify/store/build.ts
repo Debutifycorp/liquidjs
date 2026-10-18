@@ -1,6 +1,7 @@
 import { LiquidFloat } from '../../util/liquid-float'
 import { IMAGE_ROLE, ImageDrop } from '../objects/image'
 import { HandleMap } from '../objects/handle-map'
+import { refuseJson } from '../objects/json-refused'
 import { buildMetafields } from '../objects/metafield'
 import type { MetafieldResolver } from '../objects/metafield'
 import { buildOptions, keepOptionInfo, optionInfoOf, optionValueId, OptionsByNameDrop, SwatchDrop } from '../objects/product-option'
@@ -180,7 +181,8 @@ function buildMedia (media: MediaData, index?: number, title = '', host = ''): u
   if (media.media_type === 'video' || media.media_type === 'model') {
     hidden(built, 'ajax_sources', media.sources)
     // Liquid lists a video's HLS playlist (`m3u8`) before its files, the Ajax API after them (scenario `page-product-video`: a theme's `{% for source in media.sources %}` writes the `.m3u8` first; fixture `ajax-product-js-media` lists the `mp4` first)
-    const files = (media.sources as Array<{ url: string, format?: string }>).map(source => ({ ...source, url: storeFileUrl(source.url, host) }))
+    // `json` refuses each source (scenarios `probe-product-video-media` and `probe-product-model-media`: `media.sources | json` is a list of `{"error":…}`); `media | json` writes the files itself, `mediaJson`
+    const files = (media.sources as Array<{ url: string, format?: string }>).map(source => refuseJson({ ...source, url: storeFileUrl(source.url, host) }))
     built.sources = [...files.filter(source => source.format === 'm3u8'), ...files.filter(source => source.format !== 'm3u8')]
   }
   return built
@@ -257,6 +259,11 @@ function buildAllocation ({ group, plan, data }: PlanOffer, price: number, curre
 /** Each unit of measure as a multiple of its type's base unit (millilitre, gram, millimetre, square metre, item): the units of https://shopify.dev/docs/api/liquid/objects/unit_price_measurement's `quantity_unit` and `reference_unit`, by the codes of Shopify's Admin API (`ML`, `KG`, `FLOZ`…), compared without regard to case. */
 const UNIT_SIZES: Record<string, number> = { ml: 1, cl: 10, l: 1000, m3: 1e6, floz: 29.5735, pt: 473.176, qt: 946.353, gal: 3785.41, mg: 0.001, g: 1, kg: 1000, oz: 28.3495, lb: 453.592, mm: 1, cm: 10, m: 1000, in: 25.4, ft: 304.8, yd: 914.4, m2: 1, ft2: 0.092903, item: 1 }
 
+/** A copy of a variant's unit price measurement for Liquid, which `json` refuses to print (scenario `probe-product-extras-unit-price`: `{{ variant.unit_price_measurement | json }}` is `{"error":"json not allowed for this object"}`; `product | json` writes its fields itself, `variantJson`). Nil when the variant has none. */
+function unitMeasurement (measurement: UnitPriceMeasurementData | null | undefined): LiquidObject | null {
+  return measurement ? refuseJson({ ...measurement } as LiquidObject) : null
+}
+
 /** The unit price of `price` (minor units) under `measurement`: the price of `reference_value` `reference_unit` of what `quantity_value` `quantity_unit` cost, rounded to the minor unit (https://shopify.dev/docs/api/liquid/objects/variant#variant-unit_price: "The unit price of the variant in the currency's subunit"). Nil without a measurement, or with a unit this table does not know. How Shopify rounds is not pinned. */
 export function unitPrice (price: number, measurement: UnitPriceMeasurementData | null | undefined): number | null {
   if (!measurement) return null
@@ -314,7 +321,7 @@ function buildVariant (variant: VariantData, productUrl: string, productImages: 
     taxable: variant.taxable ?? true,
     weight: variant.weight ?? 0,
     barcode: variant.barcode ?? null,
-    unit_price_measurement: variant.unit_price_measurement ? { ...variant.unit_price_measurement } : null,
+    unit_price_measurement: unitMeasurement(variant.unit_price_measurement),
     unit_price: unitPrice(price, variant.unit_price_measurement),
     // "in the current customer context": the data's volume prices, each in the view's currency
     quantity_price_breaks: (variant.quantity_price_breaks ?? []).map(entry => ({ minimum_quantity: entry.minimum_quantity, price: currency ? convert(entry.price, currency) : entry.price })),
@@ -905,7 +912,7 @@ function buildLineItems (lines: Array<{ product_handle: string, variant_id: numb
       properties: {},
       discount_allocations: [],
       line_level_discount_allocations: [],
-      unit_price_measurement: variant.unit_price_measurement,
+      unit_price_measurement: unitMeasurement(variant.unit_price_measurement as UnitPriceMeasurementData | null | undefined),
       unit_price: unitPrice(price, variant.unit_price_measurement as UnitPriceMeasurementData | null),
       selling_plan_allocation: null,
       requires_shipping: true,
