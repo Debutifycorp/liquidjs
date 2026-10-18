@@ -6,6 +6,9 @@ import { NormalizedFullOptions, defaultOptions } from '../liquid-options'
 import { FilterArg } from './filter-arg'
 import { whiteSpaceCtrl } from './whitespace-ctrl'
 
+const RUBY_TAG_NOT_TERMINATED = String.raw`Tag '{%' was not properly terminated with regexp: /\%\}/`
+const RUBY_VARIABLE_NOT_TERMINATED = (token: string) => String.raw`Variable '${token}' was not properly terminated with regexp: /\}\}/`
+
 export class Tokenizer {
   p: number
   N: number
@@ -20,7 +23,8 @@ export class Tokenizer {
     operators: Operators = defaultOptions.operators,
     public file?: string,
     range?: [number, number],
-    groupedExpressions = false
+    groupedExpressions = false,
+    public rubyTokenizer = false
   ) {
     this.p = range ? range[0] : 0
     this.N = range ? range[1] : input.length
@@ -150,7 +154,7 @@ export class Tokenizer {
     const { file, input } = this
     const begin = this.p
     if (this.readToDelimiter(options.tagDelimiterRight) === -1) {
-      throw this.error(`tag ${this.snapshot(begin)} not closed`, begin)
+      throw this.error(options.rubyTokenizer && options.tagDelimiterRight === '%}' ? RUBY_TAG_NOT_TERMINATED : `tag ${this.snapshot(begin)} not closed`, begin)
     }
     const token = new TagToken(input, begin, this.p, options, file)
     if (options.rawTags.includes(token.name)) {
@@ -177,10 +181,31 @@ export class Tokenizer {
     const { file, input } = this
     const { outputDelimiterRight } = options
     const begin = this.p
-    if (this.readToDelimiter(outputDelimiterRight, true) === -1) {
+    if (options.rubyTokenizer && outputDelimiterRight === '}}') {
+      this.readOutputToFirstBrace(begin)
+    } else if (this.readToDelimiter(outputDelimiterRight, true) === -1) {
       throw this.error(`output ${this.snapshot(begin)} not closed`, begin)
     }
     return new OutputToken(input, begin, this.p, options, file)
+  }
+
+  /**
+   * Ruby Liquid's tokenizer ends an output at its first `}`, whatever quotes surround it, and the output is an error unless that `}` starts `}}`; the error names the token it cut, or `{{` when no `}` follows. A tag ends at its first `%}` (`readToDelimiter` already does), and one that never meets `%}` is named `{%`.
+   * https://github.com/Shopify/liquid/blob/main/lib/liquid/tokenizer.rb (`next_variable_token`, `next_tag_token`), https://github.com/Shopify/liquid/blob/main/lib/liquid/block_body.rb (`create_variable`) and https://github.com/Shopify/liquid/blob/main/lib/liquid/locales/en.yml (`variable_termination`, `tag_termination`).
+   * Ruby Liquid's own tokenizer does this, but upstream LiquidJS's tests render `{{ "[]{}" }}`, so it is the `rubyTokenizer` option and not the default.
+   */
+  private readOutputToFirstBrace (begin: number) {
+    const close = this.input.indexOf('}', begin + 2)
+    if (close === -1 || close >= this.N) {
+      this.p = this.N
+      throw this.error(RUBY_VARIABLE_NOT_TERMINATED('{{'), begin)
+    }
+    if (close + 1 < this.N && this.input[close + 1] === '}') {
+      this.p = close + 2
+      return
+    }
+    this.p = close + 1
+    throw this.error(RUBY_VARIABLE_NOT_TERMINATED(this.input.slice(begin, this.p)), begin)
   }
 
   readEndrawOrRawContent (options: NormalizedFullOptions): HTMLToken | TagToken {
@@ -453,12 +478,18 @@ export class Tokenizer {
     if (!(this.peekType() & QUOTE)) return
     ++this.p
     let escaped = false
+    let closed = false
     while (this.p < this.N) {
       ++this.p
-      if (this.input[this.p - 1] === this.input[begin] && !escaped) break
+      if (this.input[this.p - 1] === this.input[begin] && !escaped) {
+        closed = true
+        break
+      }
       if (escaped) escaped = false
       else if (this.input[this.p - 1] === '\\') escaped = true
     }
+    // Ruby Liquid's lexer: `Unexpected character '` for a string that never closes, https://github.com/Shopify/liquid/blob/main/lib/liquid/lexer.rb
+    if (this.rubyTokenizer && !closed) throw this.error(`Unexpected character ${this.input[begin]}`, begin)
     return new QuotedToken(this.input, begin, this.p, this.file)
   }
 

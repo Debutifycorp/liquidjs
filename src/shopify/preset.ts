@@ -83,6 +83,8 @@ export function createShopifyLiquid (options: ShopifyLiquidOptions = {}): Liquid
     forloopParentloop: true,
     rawTags: [...SHOPIFY_RAW_TAGS],
     inlineErrors: true,
+    // Ruby Liquid's tokenizer ends an output at its first `}` and Shopify refuses the file on upload with `Variable '…' was not properly terminated with regexp: /\}\}/`: https://github.com/Shopify/liquid/blob/main/lib/liquid/tokenizer.rb (`next_variable_token`); upstream LiquidJS reads a quoted `}` as text, so the root engine keeps that unless this is set
+    rubyTokenizer: true,
     jsTruthy: false,
     ownPropertyOnly: true,
     extname: '.liquid',

@@ -41,6 +41,8 @@ export interface LiquidOptions {
   inlineErrors?: boolean;
   /** What `{{ size }}` prints when no scope defines `size`. Upstream LiquidJS looks the name up on the render's globals, so it prints their number of keys. With `false` it is undefined, as in Ruby Liquid, where an unknown name is nil whatever it is called. A `size` that a scope or the globals define, and the `size` of a value (`list.size`), are not affected. Defaults to `true`. */
   topLevelSize?: boolean;
+  /** End an output at its first `}` and a tag at its first `%}`, whatever quotes surround them, and refuse them with Ruby Liquid's messages (`Variable '{{ 'a}' was not properly terminated with regexp: /\}\}/`, `Tag '{%' was not properly terminated with regexp: /\%\}/`). A string that never closes is refused too (`Unexpected character '`). Ruby Liquid's tokenizer works so, and Shopify refuses a theme file whose output holds a `}` in a string (`{{ x | replace: 'a', '{b}' }}`) when it is uploaded. Upstream LiquidJS reads a quoted string whole, so with `false` that output renders and an unclosed output reads `output "{{ x" not closed`. Only an output closed by `}}` is affected. Defaults to `false`. */
+  rubyTokenizer?: boolean;
   /** If set, treat the `filepath` parameter in `{%include filepath %}` and `{%layout filepath%}` as a variable, otherwise as a literal value. Defaults to `true`. */
   dynamicPartials?: boolean;
   /** Whether or not to assert filter existence. If set to `false`, undefined filters will be skipped. Otherwise, undefined filters will cause an exception. Defaults to `false`. */
@@ -163,6 +165,7 @@ export interface NormalizedFullOptions extends NormalizedOptions {
   rawTags: string[];
   inlineErrors: boolean;
   topLevelSize: boolean;
+  rubyTokenizer: boolean;
   dynamicPartials: boolean;
   fs: FS;
   strictFilters: boolean;
@@ -209,6 +212,7 @@ export const defaultOptions: NormalizedFullOptions = {
   rawTags: Object.freeze(['raw']) as string[],
   inlineErrors: false,
   topLevelSize: true,
+  rubyTokenizer: false,
   dateFormat: '%A, %B %-e, %Y at %-l:%M %P %z',
   locale: '',
   trimTagRight: false,

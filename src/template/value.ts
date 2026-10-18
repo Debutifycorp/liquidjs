@@ -15,7 +15,7 @@ export class Value {
    */
   public constructor (input: string | FilteredValueToken, liquid: Liquid) {
     const token: FilteredValueToken = typeof input === 'string'
-      ? new Tokenizer(input, liquid.options.operators, undefined, undefined, liquid.options.groupedExpressions).readFilteredValue()
+      ? new Tokenizer(input, liquid.options.operators, undefined, undefined, liquid.options.groupedExpressions, liquid.options.rubyTokenizer).readFilteredValue()
       : input
     this.initial = token.initial
     this.filters = token.filters.map(token => new Filter(token, this.getFilter(liquid, token.name), liquid))
