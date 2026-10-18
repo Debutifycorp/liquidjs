@@ -42,8 +42,14 @@ describe('nested cart lines', () => {
     expect(order(third)).toEqual([[OTHER, null], [TV, null], [WARRANTY, 'nested']])
   })
 
-  it('refuses a parent_id that names no item of the request, with the text a merchant reports from the live API', () => {
+  it('refuses a parent_id that names a line of the cart but no item of the request, with the text the parity store answers (recording ajax-cart-nested, step 2)', () => {
     const failed = add(ok(add(emptyVisitor('t'), [{ id: TV, quantity: 1 }])).state, [{ id: WARRANTY, quantity: 1, parent_id: TV }])
+    expect(failed.ok).toBe(false)
+    expect(!failed.ok && failed.error).toEqual({ status: 422, body: { status: 422, message: 'Cannot reference existing parent lines by variant_id.', description: 'Cannot reference existing parent lines by variant_id.' } })
+  })
+
+  it('refuses a parent_id that names neither an item of the request nor a line of the cart, with the text a merchant reports from the live API', () => {
+    const failed = add(emptyVisitor('t'), [{ id: WARRANTY, quantity: 1, parent_id: OTHER }])
     expect(failed.ok).toBe(false)
     expect(!failed.ok && failed.error).toEqual({ status: 422, body: { status: 422, message: 'Parent line does not match any existing or added lines', description: 'Parent line does not match any existing or added lines' } })
   })
