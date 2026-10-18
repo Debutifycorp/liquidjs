@@ -26,7 +26,8 @@ const ACCEPTED_PROBE_KEYS: Record<string, { keys: string[], reason: string, unor
   'probe-page-fr-eu': { keys: ['routes.account_login_url'], reason: NEW_ACCOUNTS, engine: login('/fr-eu') }
 }
 
-const names = readdirSync(join(__dirname, 'fixtures')).map(f => f.replace(/\.json$/, '')).filter(n => n.startsWith('probe-'))
+// the `probe-search-q-*` fixtures record queries with syntax, whose results the parity store ranks its own way and whose search index lacks one product; search.spec.ts compares them (counts and filters exactly, results as a set)
+const names = readdirSync(join(__dirname, 'fixtures')).map(f => f.replace(/\.json$/, '')).filter(n => n.startsWith('probe-') && !n.startsWith('probe-search-q-'))
 
 /** `body` with the value at the dotted `path` left out, or, with `unordered`, sorted; the rest is the same object. */
 function accept (body: any, path: string[], unordered: boolean): any {

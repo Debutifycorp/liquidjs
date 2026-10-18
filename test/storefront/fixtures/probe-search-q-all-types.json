@@ -1,0 +1,44 @@
+{
+  "scenario": "probe-search-q-all-types",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/search?q=title%3Aabout&view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "performed": true,
+        "terms": "title:about",
+        "types": [
+          "article",
+          "page",
+          "product"
+        ],
+        "results_count": 1,
+        "results": [
+          {
+            "object_type": "page",
+            "handle": "about"
+          }
+        ],
+        "sort_by": "relevance",
+        "default_sort_by": "relevance",
+        "sort_options": [
+          {
+            "name": "Relevance",
+            "value": "relevance"
+          },
+          {
+            "name": "Price, low to high",
+            "value": "price-ascending"
+          },
+          {
+            "name": "Price, high to low",
+            "value": "price-descending"
+          }
+        ],
+        "filters": []
+      }
+    }
+  ]
+}

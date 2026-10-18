@@ -1,8 +1,13 @@
+import { readdirSync } from 'fs'
+import { join } from 'path'
 import { renderPage, requestFromUrl, storefrontSampleData } from '../../src/shopify'
 import type { StoreData } from '../../src/shopify'
 import { buildStore } from '../../src/shopify/store/build'
 import { HandleMap } from '../../src/shopify/objects/handle-map'
 import { buildSearch } from '../../src/shopify/store/search'
+import { parseQuery } from '../../src/shopify/store/search-query'
+import { encodeQueryComponent } from '../../src/shopify/util/query'
+import { loadFixture } from './fixtures'
 import { probeMatches } from './expect-probe'
 import { renderProbeHtml } from './probe'
 
@@ -24,6 +29,39 @@ describe('search per request', () => {
     it(`matches ${name}`, async () => {
       const { actual, expected } = await probeMatches(name, ACCEPTED_ORDER.has(name) ? unordered : undefined)
       expect(actual).toEqual(expected)
+    })
+  }
+})
+
+// the query syntax: fixtures `probe-search-q-*` record what the parity store finds for each query (see `buildSearch`). Its search index lacks the product `men-crewneck`, which no query finds (every query that finds the store's other 28 products finds 28), so it is taken out of the data; how it ranks what it finds is its own and the probe prints only the first ten, so the count and the filters (whose counts walk every match) are compared exactly, the recorded results must be among ours, and a query with ten results or fewer must find exactly those.
+describe('search queries with syntax', () => {
+  const names = readdirSync(join(__dirname, 'fixtures')).filter(file => file.startsWith('probe-search-q-')).map(file => file.replace(/\.json$/, ''))
+  const indexed = (): StoreData => {
+    const data = structuredClone(storefrontSampleData) as StoreData
+    data.products = data.products!.filter(product => product.handle !== 'men-crewneck')
+    return data
+  }
+  it('has the recorded queries', () => {
+    expect(names.length).toBeGreaterThanOrEqual(34)
+  })
+  for (const name of names) {
+    it(`finds what the parity store finds for ${name}`, async () => {
+      const recorded = loadFixture(name).steps[0]
+      const expected = recorded.body as any
+      const data = indexed()
+      const actual = await probe(recorded.url, data)
+      const found = await searchJson(recorded.url, 'search.results | map: "handle"', data) as string[]
+      expect(actual.terms).toBe(expected.terms)
+      // the store matches `and` in the text of white-leather-sneakers too, which has no description here: one more product than the dataset's texts hold
+      if (name === 'probe-search-q-and-word') {
+        expect(actual.results_count).toBe(expected.results_count - 1)
+        return
+      }
+      expect(actual.results_count).toBe(expected.results_count)
+      expect(actual.filters).toEqual(expected.filters)
+      const recordedHandles = expected.results.map((result: any) => result.handle)
+      expect(found).toEqual(expect.arrayContaining(recordedHandles))
+      if (expected.results_count <= 10) expect([...found].sort()).toEqual([...recordedHandles].sort())
     })
   }
 })
@@ -80,11 +118,12 @@ describe('search beyond the recorded scenarios', () => {
     expect((await probe('/search?q=shi&options%5Bprefix%5D=last&view=probe')).results_count).toBe(5)
   })
 
-  it('treats only the last term as a partial word', async () => {
-    expect(handles(await probe('/search?q=leather%20sneak&view=probe'))).toEqual(['white-leather-sneakers', 'gray-leather-sneakers'])
-    expect((await probe('/search?q=leather%20sneak&options%5Bprefix%5D=none&view=probe')).results_count).toBe(0)
+  it('treats only the last term as a partial word, and finds what holds either term, what holds both first', async () => {
+    expect(handles(await probe('/search?q=leather%20sneak&view=probe'))).toEqual(['white-leather-sneakers', 'gray-leather-sneakers', 'canvas-sneakers', 'high-top-sneakers'])
+    expect(handles(await probe('/search?q=leather%20sneak&options%5Bprefix%5D=none&view=probe'))).toEqual(['white-leather-sneakers', 'gray-leather-sneakers'])
     // the first term stays a whole word
-    expect((await probe('/search?q=leath%20sneakers&view=probe')).results_count).toBe(0)
+    expect(handles(await probe('/search?q=leath%20sneakers&view=probe'))).toEqual(['canvas-sneakers', 'white-leather-sneakers', 'gray-leather-sneakers', 'high-top-sneakers'])
+    expect((await probe('/search?q=leath%20sneak&view=probe')).results_count).toBe(4)
   })
 
   it('puts unavailable products last, in place or nowhere, as the option says', async () => {
@@ -226,5 +265,37 @@ describe('search: the work a request causes (final review B, I1 and M3)', () => 
       expect(handles('sneak', { search: { prefix: 'none' } })).toEqual([])
       expect(handles('sneakers')).toEqual(expect.arrayContaining(['canvas-sneakers']))
     }
+  })
+})
+
+describe('the syntax of a query', () => {
+  it('reads a query with no syntax as its words, an uppercase AND or OR among them', () => {
+    expect(parseQuery('gray sneakers')).toEqual({ words: ['gray', 'sneakers'] })
+    expect(parseQuery('gray AND sneakers or boots')).toEqual({ words: ['gray', 'AND', 'sneakers', 'or', 'boots'] })
+    expect(parseQuery('title: hoodie')).toEqual({ words: ['hoodie'] })
+  })
+
+  it('reads fields, phrases, negations, groups and the precedence of OR', () => {
+    expect(parseQuery('tag:women AND (title:shirt OR title:leggings)').tree).toEqual({
+      type: 'and',
+      items: [{ type: 'field', field: 'tag', value: 'women' }, { type: 'or', items: [{ type: 'field', field: 'title', value: 'shirt' }, { type: 'field', field: 'title', value: 'leggings' }] }]
+    })
+    expect(parseQuery('a OR b tag:c').tree).toEqual({ type: 'and', items: [{ type: 'or', items: [{ type: 'word', word: 'a' }, { type: 'word', word: 'b' }] }, { type: 'field', field: 'tag', value: 'c' }] })
+    expect(parseQuery('sneakers -leather NOT gray').tree).toEqual({ type: 'and', items: [{ type: 'word', word: 'sneakers' }, { type: 'not', item: { type: 'word', word: 'leather' } }, { type: 'not', item: { type: 'word', word: 'gray' } }] })
+    expect(parseQuery('title:"gray leather" \'blue sky\'').tree).toEqual({ type: 'and', items: [{ type: 'field', field: 'title', value: 'gray leather' }, { type: 'phrase', phrase: 'blue sky' }] })
+  })
+
+  it('keeps a hyphen inside a word and ignores wildcards and comparisons', () => {
+    expect(parseQuery('t-shirt')).toEqual({ words: ['t-shirt'] })
+    expect(parseQuery('hood*').tree).toEqual({ type: 'neutral' })
+    expect(parseQuery('id:<5').tree).toEqual({ type: 'neutral' })
+  })
+
+  it('survives a query that is broken', () => {
+    for (const text of ['(', ')', '((a)', 'a OR', 'OR a', '-', 'NOT', '"unterminated', 'tag:', 'AND AND']) expect(() => parseQuery(text)).not.toThrow()
+  })
+
+  it('writes a query component as Shopify\'s links do', () => {
+    expect(encodeQueryComponent('a b+c(d)*\'!-._~é')).toBe('a+b%2Bc%28d%29%2A%27%21-._~%C3%A9')
   })
 })

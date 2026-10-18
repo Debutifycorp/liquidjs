@@ -1,0 +1,37 @@
+{
+  "scenario": "probe-search-q-phrase-reversed",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/search?q=%22leather%20gray%22&type=product&view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "performed": true,
+        "terms": "&quot;leather gray&quot;",
+        "types": [
+          "product"
+        ],
+        "results_count": 0,
+        "results": [],
+        "sort_by": "relevance",
+        "default_sort_by": "relevance",
+        "sort_options": [
+          {
+            "name": "Relevance",
+            "value": "relevance"
+          },
+          {
+            "name": "Price, low to high",
+            "value": "price-ascending"
+          },
+          {
+            "name": "Price, high to low",
+            "value": "price-descending"
+          }
+        ],
+        "filters": []
+      }
+    }
+  ]
+}

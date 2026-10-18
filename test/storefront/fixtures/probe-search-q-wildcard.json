@@ -1,0 +1,424 @@
+{
+  "scenario": "probe-search-q-wildcard",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/search?q=hood*&type=product&view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "performed": true,
+        "terms": "hood*",
+        "types": [
+          "product"
+        ],
+        "results_count": 28,
+        "results": [
+          {
+            "object_type": "product",
+            "handle": "hoodie-old"
+          },
+          {
+            "object_type": "product",
+            "handle": "hoodie"
+          },
+          {
+            "object_type": "product",
+            "handle": "soft-cotton-hoodie-in-jam"
+          },
+          {
+            "object_type": "product",
+            "handle": "soft-cotton-hoodie-in-ocean"
+          },
+          {
+            "object_type": "product",
+            "handle": "soft-cotton-hoodie-in-green"
+          },
+          {
+            "object_type": "product",
+            "handle": "soft-cotton-hoodie-in-violet"
+          },
+          {
+            "object_type": "product",
+            "handle": "men-t-shirt"
+          },
+          {
+            "object_type": "product",
+            "handle": "gray-leather-sneakers"
+          },
+          {
+            "object_type": "product",
+            "handle": "high-top-sneakers"
+          },
+          {
+            "object_type": "product",
+            "handle": "frontpack"
+          }
+        ],
+        "sort_by": "relevance",
+        "default_sort_by": "relevance",
+        "sort_options": [
+          {
+            "name": "Relevance",
+            "value": "relevance"
+          },
+          {
+            "name": "Price, low to high",
+            "value": "price-ascending"
+          },
+          {
+            "name": "Price, high to low",
+            "value": "price-descending"
+          }
+        ],
+        "filters": [
+          {
+            "label": "Availability",
+            "type": "list",
+            "param_name": "filter.v.availability",
+            "active_values": [],
+            "values": [
+              {
+                "value": "1",
+                "count": 25,
+                "active": false,
+                "url_to_add": "/search?filter.v.availability=1&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "0",
+                "count": 6,
+                "active": false,
+                "url_to_add": "/search?filter.v.availability=0&q=hood%2A&type=product&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Price",
+            "type": "price_range",
+            "param_name": "filter.v.price",
+            "active_values": [],
+            "values": []
+          },
+          {
+            "label": "Brand",
+            "type": "list",
+            "param_name": "filter.p.vendor",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Mock.shop",
+                "count": 28,
+                "active": false,
+                "url_to_add": "/search?filter.p.vendor=Mock.shop&q=hood%2A&type=product&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Product type",
+            "type": "list",
+            "param_name": "filter.p.product_type",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Bags",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Bags&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Hats",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Hats&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Hoodies",
+                "count": 7,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Hoodies&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Jackets",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Jackets&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Pants",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Pants&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Sandals",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Sandals&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Shoes",
+                "count": 5,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Shoes&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Shorts",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Shorts&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Sunglasses",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Sunglasses&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Sweaters",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Sweaters&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "T-shirts",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=T-shirts&q=hood%2A&type=product&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "More filters",
+            "type": "list",
+            "param_name": "filter.p.tag",
+            "active_values": [],
+            "values": [
+              {
+                "value": "accessories",
+                "count": 9,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=accessories&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "bottoms",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=bottoms&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "men",
+                "count": 9,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=men&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "shoes",
+                "count": 6,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=shoes&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "tops",
+                "count": 14,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=tops&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "unisex",
+                "count": 15,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=unisex&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "women",
+                "count": 4,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=women&q=hood%2A&type=product&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Color",
+            "type": "list",
+            "param_name": "filter.v.option.color",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Clay",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Clay&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Green",
+                "count": 17,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Green&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Ocean",
+                "count": 17,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Ocean&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Olive",
+                "count": 15,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Olive&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Purple",
+                "count": 17,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Purple&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Red",
+                "count": 17,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Red&q=hood%2A&type=product&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Size",
+            "type": "list",
+            "param_name": "filter.v.option.size",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Small",
+                "count": 19,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=Small&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Medium",
+                "count": 18,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=Medium&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Large",
+                "count": 19,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=Large&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "X-Large",
+                "count": 9,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=X-Large&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "4",
+                "count": 4,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=4&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "5",
+                "count": 4,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=5&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "6",
+                "count": 5,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=6&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "7",
+                "count": 5,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=7&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "8",
+                "count": 5,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=8&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "9",
+                "count": 4,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=9&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "10",
+                "count": 4,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=10&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "11",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=11&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "12",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=12&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "13",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=13&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "14",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=14&q=hood%2A&type=product&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Material",
+            "type": "list",
+            "param_name": "filter.p.m.custom.material",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Canvas",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.m.custom.material=Canvas&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Cotton",
+                "count": 12,
+                "active": false,
+                "url_to_add": "/search?filter.p.m.custom.material=Cotton&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Leather",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.p.m.custom.material=Leather&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Nylon",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.m.custom.material=Nylon&q=hood%2A&type=product&view=probe"
+              },
+              {
+                "value": "Wool",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.m.custom.material=Wool&q=hood%2A&type=product&view=probe"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

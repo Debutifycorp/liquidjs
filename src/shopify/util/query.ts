@@ -7,9 +7,14 @@ export interface PreparedQuery {
   readonly encoded: readonly string[]
 }
 
-const encode = (pair: Pair) => `${encodeURIComponent(pair[0])}=${encodeURIComponent(pair[1])}`
+/** A query name or value as Shopify's links write it: everything but letters, digits and `-_.~` percent-encoded and a space a `+`, as Ruby's `CGI.escape` writes it (fixtures `probe-search-q-or`, `-wildcard`, `-group` and `-phrase`: `q=slides+OR+beanie`, `hood%2A`, `%28title%3Ashirt%29`, `%22gray+leather%22`). */
+export function encodeQueryComponent (text: string): string {
+  return encodeURIComponent(text).replace(/%20/g, '+').replace(/[!'()*]/g, ch => `%${ch.charCodeAt(0).toString(16).toUpperCase()}`)
+}
 
-/** `pairs` ordered by name (pairs of one name keep their order) and percent-encoded with `encodeURIComponent`, the form `withQuery` prints them in. */
+const encode = (pair: Pair) => `${encodeQueryComponent(pair[0])}=${encodeQueryComponent(pair[1])}`
+
+/** `pairs` ordered by name (pairs of one name keep their order) and encoded with `encodeQueryComponent`, the form `withQuery` prints them in. */
 export function prepareQuery (pairs: readonly Pair[]): PreparedQuery {
   const ordered = [...pairs].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
   return { pairs: ordered, encoded: ordered.map(encode) }
@@ -35,7 +40,7 @@ export function withPrepared (path: string, query: PreparedQuery, change: { add?
 }
 
 /**
- * `path` followed by `pairs` as its query string: the pairs ordered by name (pairs of one name keep their order) and percent-encoded with `encodeURIComponent`, joined to a `?` or, when `path` already has a query, to its end. The order is the one the parity store prints in filter and pagination links (fixtures `probe-collection-filter-combined` and `probe-collection-types`: `filter.p.tag=…&filter.v.availability=1&page=2&q=…&sort_by=…&view=probe`). shopify.dev does not describe the form of these links; a space encodes as `%20`, which no fixture shows.
+ * `path` followed by `pairs` as its query string: the pairs ordered by name (pairs of one name keep their order) and encoded with `encodeQueryComponent`, joined to a `?` or, when `path` already has a query, to its end. The order is the one the parity store prints in filter and pagination links (fixtures `probe-collection-filter-combined` and `probe-collection-types`: `filter.p.tag=…&filter.v.availability=1&page=2&q=…&sort_by=…&view=probe`), and the encoding is the one the search fixtures show (`probe-search-q-*`: a space is `+`). shopify.dev does not describe the form of these links.
  */
 export function withQuery (path: string, pairs: readonly Pair[]): string {
   return withPrepared(path, prepareQuery(pairs))

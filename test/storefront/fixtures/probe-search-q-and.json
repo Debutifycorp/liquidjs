@@ -1,0 +1,424 @@
+{
+  "scenario": "probe-search-q-and",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/search?q=gray%20AND%20sneakers&type=product&view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "performed": true,
+        "terms": "gray AND sneakers",
+        "types": [
+          "product"
+        ],
+        "results_count": 28,
+        "results": [
+          {
+            "object_type": "product",
+            "handle": "gray-leather-sneakers"
+          },
+          {
+            "object_type": "product",
+            "handle": "canvas-sneakers"
+          },
+          {
+            "object_type": "product",
+            "handle": "high-top-sneakers"
+          },
+          {
+            "object_type": "product",
+            "handle": "white-leather-sneakers"
+          },
+          {
+            "object_type": "product",
+            "handle": "gray-runners"
+          },
+          {
+            "object_type": "product",
+            "handle": "frontpack"
+          },
+          {
+            "object_type": "product",
+            "handle": "women-crewneck"
+          },
+          {
+            "object_type": "product",
+            "handle": "half-zip"
+          },
+          {
+            "object_type": "product",
+            "handle": "beanie"
+          },
+          {
+            "object_type": "product",
+            "handle": "hoodie-old"
+          }
+        ],
+        "sort_by": "relevance",
+        "default_sort_by": "relevance",
+        "sort_options": [
+          {
+            "name": "Relevance",
+            "value": "relevance"
+          },
+          {
+            "name": "Price, low to high",
+            "value": "price-ascending"
+          },
+          {
+            "name": "Price, high to low",
+            "value": "price-descending"
+          }
+        ],
+        "filters": [
+          {
+            "label": "Availability",
+            "type": "list",
+            "param_name": "filter.v.availability",
+            "active_values": [],
+            "values": [
+              {
+                "value": "1",
+                "count": 25,
+                "active": false,
+                "url_to_add": "/search?filter.v.availability=1&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "0",
+                "count": 6,
+                "active": false,
+                "url_to_add": "/search?filter.v.availability=0&q=gray+AND+sneakers&type=product&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Price",
+            "type": "price_range",
+            "param_name": "filter.v.price",
+            "active_values": [],
+            "values": []
+          },
+          {
+            "label": "Brand",
+            "type": "list",
+            "param_name": "filter.p.vendor",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Mock.shop",
+                "count": 28,
+                "active": false,
+                "url_to_add": "/search?filter.p.vendor=Mock.shop&q=gray+AND+sneakers&type=product&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Product type",
+            "type": "list",
+            "param_name": "filter.p.product_type",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Bags",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Bags&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Hats",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Hats&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Hoodies",
+                "count": 7,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Hoodies&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Jackets",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Jackets&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Pants",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Pants&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Sandals",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Sandals&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Shoes",
+                "count": 5,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Shoes&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Shorts",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Shorts&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Sunglasses",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Sunglasses&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Sweaters",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=Sweaters&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "T-shirts",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.product_type=T-shirts&q=gray+AND+sneakers&type=product&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "More filters",
+            "type": "list",
+            "param_name": "filter.p.tag",
+            "active_values": [],
+            "values": [
+              {
+                "value": "accessories",
+                "count": 9,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=accessories&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "bottoms",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=bottoms&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "men",
+                "count": 9,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=men&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "shoes",
+                "count": 6,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=shoes&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "tops",
+                "count": 14,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=tops&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "unisex",
+                "count": 15,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=unisex&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "women",
+                "count": 4,
+                "active": false,
+                "url_to_add": "/search?filter.p.tag=women&q=gray+AND+sneakers&type=product&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Color",
+            "type": "list",
+            "param_name": "filter.v.option.color",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Clay",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Clay&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Green",
+                "count": 17,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Green&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Ocean",
+                "count": 17,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Ocean&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Olive",
+                "count": 15,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Olive&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Purple",
+                "count": 17,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Purple&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Red",
+                "count": 17,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.color=Red&q=gray+AND+sneakers&type=product&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Size",
+            "type": "list",
+            "param_name": "filter.v.option.size",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Small",
+                "count": 19,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=Small&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Medium",
+                "count": 18,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=Medium&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Large",
+                "count": 19,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=Large&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "X-Large",
+                "count": 9,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=X-Large&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "4",
+                "count": 4,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=4&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "5",
+                "count": 4,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=5&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "6",
+                "count": 5,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=6&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "7",
+                "count": 5,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=7&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "8",
+                "count": 5,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=8&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "9",
+                "count": 4,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=9&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "10",
+                "count": 4,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=10&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "11",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=11&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "12",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=12&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "13",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=13&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "14",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.v.option.size=14&q=gray+AND+sneakers&type=product&view=probe"
+              }
+            ]
+          },
+          {
+            "label": "Material",
+            "type": "list",
+            "param_name": "filter.p.m.custom.material",
+            "active_values": [],
+            "values": [
+              {
+                "value": "Canvas",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.m.custom.material=Canvas&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Cotton",
+                "count": 12,
+                "active": false,
+                "url_to_add": "/search?filter.p.m.custom.material=Cotton&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Leather",
+                "count": 2,
+                "active": false,
+                "url_to_add": "/search?filter.p.m.custom.material=Leather&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Nylon",
+                "count": 3,
+                "active": false,
+                "url_to_add": "/search?filter.p.m.custom.material=Nylon&q=gray+AND+sneakers&type=product&view=probe"
+              },
+              {
+                "value": "Wool",
+                "count": 1,
+                "active": false,
+                "url_to_add": "/search?filter.p.m.custom.material=Wool&q=gray+AND+sneakers&type=product&view=probe"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,9 +1,14 @@
 import { HandleMap } from '../objects/handle-map'
+import { escapeHtml } from '../util/html'
+import { hasOwn } from '../util/own'
 import { variantMedia } from '../objects/image'
 import { articlesInDataOrder, copyObject, printsHandle, remember, selectProduct, type LiquidObject, type StoreObjects } from './build'
 import { sortProducts } from './collection-view'
 import { buildFilters, filterMatcher, requestQuery } from './filters'
 import type { RequestInput } from './globals'
+import { parseQuery } from './search-query'
+import type { QueryNode } from './search-query'
+import { encodeQueryComponent } from '../util/query'
 import { withPrefix } from './view'
 
 const words = (text: string) => text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean)
@@ -29,9 +34,100 @@ function startsAWord (found: Set<string>, term: string): boolean {
   return false
 }
 
-/** Every term but the last is a whole word of the resource, and the last starts one when `prefix` is on (`options[prefix]=last`, the default) or is a whole word too (`none`), as shopify.dev's storefront search page describes ("Perform a partial word match on the last search term"). */
-function matches (found: Set<string>, terms: string[], prefix: boolean): boolean {
-  return terms.every((term, at) => at < terms.length - 1 || !prefix ? found.has(term) : startsAWord(found, term))
+/** How many of `terms` the resource's words hold: a term is a whole word, except the last, which starts one when `prefix` is on (`options[prefix]=last`, the default) or is a whole word too (`none`), as shopify.dev's storefront search page describes ("Perform a partial word match on the last search term"). */
+function countMatches (found: Set<string>, terms: string[], prefix: boolean): number {
+  return terms.reduce((count, term, at) => count + ((at === terms.length - 1 && prefix ? startsAWord(found, term) : found.has(term)) ? 1 : 0), 0)
+}
+
+/**
+ * The terms of a query that uses no syntax. The parity store's search finds a resource that holds ANY of the words, not all of them, and lists the ones that hold more of them first (fixtures `probe-search-q-two-words`, `-two-words-leather` and `-words-miss`: `gray sneakers` finds the five products that have either word, `beanie zzzz` finds the beanie). A lowercase `and` or `or` among other words is not searched (`gray and sneakers` finds those five, `slides or beanie` the two, fixtures `-lower-and` and `-lower-or`), an uppercase one is a word like any other (`gray AND sneakers` finds all 28 products, whose texts hold `and`, fixture `-and`), and on its own it is searched (fixture `-and-word`). shopify.dev's help says terms are joined with AND; the store answers otherwise, and the store is the target.
+ */
+function plainTerms (list: string[]): string[] {
+  const dropped = (word: string) => word === 'and' || word === 'or'
+  const kept = list.some(word => !dropped(word)) ? list.filter(word => !dropped(word)) : list
+  return kept.flatMap(word => words(word))
+}
+
+/** The checks a field query makes, by kind of resource: the values of the field and how a query value is compared with them (https://help.shopify.com/en/manual/online-store/storefront-search/search-behavior lists the fields; "Field searches require exact matches", which the parity store reads as a whole word or phrase of a text field, fixtures `probe-search-q-title` and `-title-partial`, and the whole value of a tag, `-tag` and `-tag-lower`, and a variant's title is a field the search knows but finds nothing by, `-variant-title`: `variants.title:Large` finds none of the products, the slides among them, whose variant is titled exactly `Large`). */
+type Comparison = 'words' | 'exact' | 'prefix'
+type Fields = Record<string, [Comparison, (item: LiquidObject) => string[]]>
+
+const text = (value: unknown) => String(value ?? '')
+const texts = (values: unknown) => (Array.isArray(values) ? values : []).map(text)
+const variantsOf = (product: LiquidObject) => (Array.isArray(product.variants) ? product.variants : []) as LiquidObject[]
+
+const FIELDS: Record<Kind, Fields> = {
+  product: {
+    id: ['exact', item => [text(item.id)]],
+    title: ['words', item => [text(item.title)]],
+    body: ['words', item => [plain(item.description)]],
+    product_type: ['words', item => [text(item.type)]],
+    vendor: ['words', item => [text(item.vendor)]],
+    tag: ['exact', item => texts(item.tags)],
+    // recognised, so the query narrows (an unknown field would find every product), yet the parity store matches no variant title, not even a whole one (fixture `probe-search-q-variant-title`)
+    'variants.title': ['exact', () => []],
+    'variants.sku': ['prefix', item => variantsOf(item).map(variant => text(variant.sku))],
+    'variants.barcode': ['prefix', item => variantsOf(item).map(variant => text(variant.barcode))]
+  },
+  page: {
+    title: ['words', item => [text(item.title)]],
+    body: ['words', item => [plain(item.content)]],
+    author: ['words', item => [text(item.author)]]
+  },
+  article: {
+    title: ['words', item => [text(item.title)]],
+    body: ['words', item => [plain(item.content)]],
+    author: ['words', item => [text(item.author)]],
+    tag: ['exact', item => texts(item.tags)]
+  }
+}
+
+/** Whether `phrase` (words) appears in `sequence` as consecutive words. */
+function containsPhrase (sequence: string[], phrase: string[]): boolean {
+  for (let at = 0; at + phrase.length <= sequence.length; at++) {
+    if (phrase.every((word, i) => sequence[at + i] === word)) return true
+  }
+  return false
+}
+
+/** `undefined` is a part of a query the search does not read (an unknown field, an empty value, a comparison, a wildcard, a plain word beside syntax), which narrows nothing. */
+type Verdict = boolean | undefined
+
+/**
+ * Whether a resource meets a query that uses syntax (`parseQuery`), by what the parity store answers (fixtures `probe-search-q-*`): a field or a quoted phrase narrows (`tag:women`, `title:"gray leather"`); `OR` joins and `AND` and a space meet, OR binding tighter, and parentheses group (`tag:women AND (title:shirt OR title:leggings)`); a negation takes the resources that hold the word or field out (`tag:men -tag:women`), also beside a plain word (`sneakers -leather` finds every product but the two with `leather`); and the plain words beside a field, a phrase or a negation only rank (`tag:women hoodie` finds the four women's products, none of them a hoodie). An unknown field name is ignored ("Unrecognized names are ignored and can return all products": `colour:red` finds all 28), and so is a wildcard (`hood*` finds all 28 as well). A query that narrows nothing finds every resource. A phrase searches the title and the description only ("A quoted phrase on its own doesn't search other fields").
+ */
+function verdict (node: QueryNode, item: LiquidObject, kind: Kind, negated = false): Verdict {
+  switch (node.type) {
+    case 'neutral': return undefined
+    case 'word': return negated ? words(node.word).every(word => foundIn(item, kind).has(word)) : undefined
+    case 'phrase': {
+      const phrase = words(node.phrase)
+      if (phrase.length === 0) return undefined
+      return containsPhrase(words(text(item.title)), phrase) || FIELDS[kind].body[1](item).some(value => containsPhrase(words(value), phrase))
+    }
+    case 'field': {
+      const field = hasOwn(FIELDS[kind], node.field) ? FIELDS[kind][node.field] : undefined
+      if (!field) return undefined
+      const [how, values] = field
+      if (how === 'words') {
+        const phrase = words(node.value)
+        return phrase.length === 0 ? undefined : values(item).some(value => containsPhrase(words(value), phrase))
+      }
+      const wanted = node.value.trim().toLowerCase()
+      if (wanted === '') return undefined
+      return values(item).some(value => how === 'exact' ? value.toLowerCase() === wanted : value.toLowerCase().startsWith(wanted))
+    }
+    case 'not': {
+      const inner = verdict(node.item, item, kind, true)
+      return inner === undefined ? undefined : !inner
+    }
+    case 'and':
+    case 'or': {
+      const parts = node.items.map(part => verdict(part, item, kind, negated)).filter((part): part is boolean => part !== undefined)
+      if (parts.length === 0) return undefined
+      return node.type === 'and' ? parts.every(Boolean) : parts.some(Boolean)
+    }
+  }
 }
 
 /**
@@ -65,6 +161,8 @@ const sortOf = (request: RequestInput) => SORT_OPTIONS.find(option => option.val
 /**
  * The `search` object of https://shopify.dev/docs/api/liquid/objects/search. Without terms no search is run: `performed` is false, `terms` is nil and nothing is found (fixture `probe-search-none`). With terms, `results` holds the store's products, pages and articles whose words match every term, case-insensitively, each a copy with the `object_type` that page documents; `results_count` and the results stop at 1,000.
  *
+ * `terms` is the query as the parity store prints it, HTML-escaped (fixture `probe-search-q-phrase`: `&quot;gray leather&quot;`), so a theme that prints it as it is cannot be broken out of by what the shopper typed. The words of the query, the `OR`, `AND`, `-`, `NOT`, `field:value` and quoted-phrase syntax and the fields searched are `parseQuery`, `plainTerms` and `verdict` (fixtures `probe-search-q-*`).
+ *
  * The request shapes the search as https://shopify.dev/docs/storefronts/themes/navigation-search/search describes. `type` limits the kinds of result (`types` reports them, `article`, `page`, `product` order). `options[prefix]` is `last` by default, so the last term matches the start of a word, and `none` makes it a whole word. `options[unavailable_products]` is `last` by default, so unavailable products come after every other result, `show` leaves them where they are found, and `hide` drops them. `sort_by` is `relevance` or one of the price orders, and with a price order "all non-product results are pushed to the end of the results array" (products first, in price order, unavailable ones last unless the option says otherwise). That page labels `price-ascending` "high to low" and `price-descending` "low to high", the reverse of the names and of the parity store (fixture `probe-search-filtered`: `price-ascending` lists 40.00 before 90.00), so the names win. The `filter.*` parameters of the storefront filters narrow the products (https://shopify.dev/docs/storefronts/themes/navigation-search/filtering/storefront-filtering, as `collectionView` does for a collection), and under variant filters a product's `url` and `featured_media` are its first matching variant's (`Matcher.firstVariant`; that page describes the `product` object, not only collections). `filters` are the store's storefront filters over the products that match the terms, the types and the unavailable option, before the filters, so the counts show what each value would give; their links keep the whole query of the address, `q`, `type`, `options[...]`, `sort_by`, `view` and the filters, ordered by name (`withQuery`; fixtures `probe-search-filtered` and `probe-search-prefix`), at `/search` under `prefix` (the view's base path and locale prefix, like the search route). A request with no `query` (one built by hand) extends `/search?q=<terms>` with its `sort_by` and filters. `sort_options` are the three sort orders the page lists, with the values and names of the parity store (fixture `probe-search-none`); `default_sort_by` is `relevance`.
  *
  * Debutify's matching, which shopify.dev does not pin and so goes on the "confirm on a development store" list: the fields searched (a product's title, vendor, type, tags and description; a page's title and content; an article's title, tags and content), splitting text into words at anything that is not a letter or digit, the order of results (available products, then pages, then articles, each in store order, then unavailable products) in place of Shopify's relevance ranking, an unknown `type` being ignored (and a `type` of only unknown kinds searching all kinds), an unknown `sort_by` reading as `relevance`, and the `q` parameter's encoding in the filter URLs. Shopify's relevance order is not reproduced where the fixtures show it: `probe-search-type-product` lists gray-leather-sneakers, canvas-sneakers, high-top-sneakers, white-leather-sneakers and `probe-search-shirt` lists the article liquidpeak-450 before new-line-of-tennis-products (while `probe-search-prefix` lists them the other way round), which no rule of plain matching yields; they are accepted differences.
@@ -72,12 +170,20 @@ const sortOf = (request: RequestInput) => SORT_OPTIONS.find(option => option.val
 export function buildSearch (store: StoreObjects, terms: string | undefined, request: RequestInput = {}, prefix = ''): LiquidObject {
   const kinds = kindsOf(request)
   const sortBy = sortOf(request)
-  const base = { terms: terms ?? null, types: kinds, sort_by: sortBy, default_sort_by: 'relevance', sort_options: SORT_OPTIONS.map(option => ({ ...option })) }
+  const base = { terms: terms === undefined ? null : escapeHtml(terms), types: kinds, sort_by: sortBy, default_sort_by: 'relevance', sort_options: SORT_OPTIONS.map(option => ({ ...option })) }
   if (terms === undefined || terms.trim() === '') return { performed: false, results: [], results_count: 0, filters: [], ...base }
-  const wanted = words(terms)
+  const parsed = parseQuery(terms)
+  const wanted = parsed.words ? plainTerms(parsed.words) : []
   const partial = (request.search?.prefix ?? 'last') === 'last'
   const unavailable = request.search?.unavailable ?? 'last'
-  const find = (items: LiquidObject[], kind: Kind) => wanted.length && kinds.includes(kind) ? items.filter(item => matches(foundIn(item, kind), wanted, partial)) : []
+  // a query with syntax meets `verdict`; one without finds the resources that hold any of its words, the ones that hold more of them first
+  const find = (items: LiquidObject[], kind: Kind): LiquidObject[] => {
+    if (!kinds.includes(kind)) return []
+    const tree = parsed.tree
+    if (tree) return items.filter(item => verdict(tree, item, kind) !== false)
+    if (wanted.length === 0) return []
+    return items.map(item => ({ item, count: countMatches(foundIn(item, kind), wanted, partial) })).filter(entry => entry.count > 0).sort((a, b) => b.count - a.count).map(entry => entry.item)
+  }
   // the products that match the terms; `hide` drops the unavailable ones
   const matching = find(HandleMap.values(store.products), 'product').filter(product => unavailable !== 'hide' || product.available)
   const { query: asked, active } = requestQuery(request)
@@ -117,7 +223,7 @@ export function buildSearch (store: StoreObjects, terms: string | undefined, req
     results_count: found.length,
     // built when read (final review B, I1): the counts walk every product that matched, and a template that lists the results or their count does not need them
     get filters () {
-      filters ??= buildFilters(store.storefrontFilters, matching, request.query ? withPrefix(prefix, '/search') : withPrefix(prefix, `/search?q=${encodeURIComponent(terms)}`), query, store.currency)
+      filters ??= buildFilters(store.storefrontFilters, matching, request.query ? withPrefix(prefix, '/search') : withPrefix(prefix, `/search?q=${encodeQueryComponent(terms)}`), query, store.currency)
       return filters
     },
     ...base

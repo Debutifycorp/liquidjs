@@ -1,0 +1,37 @@
+{
+  "scenario": "probe-search-q-variant-title",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/search?q=variants.title%3ALarge&type=product&view=probe",
+      "status": 200,
+      "location": null,
+      "body": {
+        "performed": true,
+        "terms": "variants.title:Large",
+        "types": [
+          "product"
+        ],
+        "results_count": 0,
+        "results": [],
+        "sort_by": "relevance",
+        "default_sort_by": "relevance",
+        "sort_options": [
+          {
+            "name": "Relevance",
+            "value": "relevance"
+          },
+          {
+            "name": "Price, low to high",
+            "value": "price-ascending"
+          },
+          {
+            "name": "Price, high to low",
+            "value": "price-descending"
+          }
+        ],
+        "filters": []
+      }
+    }
+  ]
+}
