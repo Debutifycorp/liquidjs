@@ -215,6 +215,23 @@ describe('search beyond the recorded scenarios', () => {
     const html = await searchPage(`${url}&page=1`, '{% paginate search.results by 2 %}{{ paginate.items }}|{{ paginate.pages }}|{{ paginate.next.url }}{% for r in search.results %}|{{ r.handle }}{% endfor %}{% endpaginate %}')
     expect(html).toBe('4|2|/search?filter.p.vendor=Mock.shop&options%5Bunavailable_products%5D=show&page=2&q=sneakers&sort_by=price-descending&type=product|gray-leather-sneakers|high-top-sneakers')
   })
+
+  // fixtures `probe-search-w-id-all` and `probe-search-w-resources-type` (recorded 2026-10-18): a search of every kind for two product ids finds the two products and no page or article, and the search page's filter links leave `resources[type]` out
+  it('finds no page and no article by a product id, and leaves the predictive search\'s resources parameters out of the filter links', async () => {
+    const [first, second] = [(storefrontSampleData.products ?? [])[0], (storefrontSampleData.products ?? [])[1]]
+    const query = `id%3A${first.id}%20OR%20id%3A${second.id}`
+    const all = await probe(`/search?q=${query}&view=probe`)
+    expect(all.types).toEqual(['article', 'page', 'product'])
+    expect(handles(all).sort()).toEqual([first.handle, second.handle].sort())
+    const pages = await probe('/search?q=id%3A106594172950&type=page&view=probe')
+    expect(handles(pages)).toEqual(['contact'])
+    const typed = await probe(`/search?q=${query}&resources%5Btype%5D=product&view=probe`)
+    expect(typed.types).toEqual(['article', 'page', 'product'])
+    const links = typed.filters.flatMap((filter: any) => filter.values.map((value: any) => value.url_to_add))
+    expect(links.length).toBeGreaterThan(0)
+    for (const link of links) expect(link).toMatch(/&view=probe$/)
+    for (const link of links) expect(link).not.toContain('resources')
+  })
 })
 
 describe('search: the work a request causes (final review B, I1 and M3)', () => {

@@ -69,12 +69,15 @@ const FIELDS: Record<Kind, Fields> = {
     'variants.sku': ['prefix', item => variantsOf(item).map(variant => text(variant.sku))],
     'variants.barcode': ['prefix', item => variantsOf(item).map(variant => text(variant.barcode))]
   },
+  // a page and an article have an id the search matches too: `id:<a product's id>` finds no page and no article (fixture `probe-search-w-id-all`, a search of every kind), where a field the search ignores would find them all
   page: {
+    id: ['exact', item => [text(item.id)]],
     title: ['words', item => [text(item.title)]],
     body: ['words', item => [plain(item.content)]],
     author: ['words', item => [text(item.author)]]
   },
   article: {
+    id: ['exact', item => [text(item.id)]],
     title: ['words', item => [text(item.title)]],
     body: ['words', item => [plain(item.content)]],
     author: ['words', item => [text(item.author)]],
@@ -186,7 +189,9 @@ export function buildSearch (store: StoreObjects, terms: string | undefined, req
   }
   // the products that match the terms; `hide` drops the unavailable ones
   const matching = find(HandleMap.values(store.products), 'product').filter(product => unavailable !== 'hide' || product.available)
-  const { query: asked, active } = requestQuery(request)
+  const { query: requested, active } = requestQuery(request)
+  // `resources[type]` and `resources[limit]` belong to the predictive search: the search page ignores them and its filter links leave them out (fixture `probe-search-w-resources-type`: the links of `q=…&resources[type]=product` end `&view=probe`)
+  const asked = requested.filter(([name]) => !name.startsWith('resources['))
   // the filters' links keep the terms: a request built by hand with a query of its own but no `q` gets one
   const query = request.query && !asked.some(([name]) => name === 'q') ? [['q', terms] as [string, string], ...asked] : asked
   // compiled once for every product of the request
