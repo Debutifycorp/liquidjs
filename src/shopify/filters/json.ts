@@ -2,9 +2,9 @@ import { NullDrop } from '../../drop'
 import { filters as engineFilters } from '../../filters'
 import type { FilterImpl } from '../../template/filter-impl-options'
 import type { ImageDrop } from '../objects/image'
-import { imageJsonRole, isBuiltProduct, isBuiltVariant } from '../store/build'
+import { imageJsonRole, isBuiltMedia, isBuiltProduct, isBuiltVariant } from '../store/build'
 import { cartLiquidJson, isBuiltCart, isBuiltLine, lineItemJson } from '../store/cart'
-import { imageLiquidJson, productLiquidJson, variantLiquidJson } from '../store/product-json'
+import { imageLiquidJson, mediaLiquidJson, productLiquidJson, variantLiquidJson } from '../store/product-json'
 import type { ShopifyFilterSet } from './types'
 
 const ESCAPES: Record<string, string> = { '/': '\\/', '<': '\\u003c', '>': '\\u003e', '&': '\\u0026', '\u2028': '\\u2028', '\u2029': '\\u2029' }
@@ -18,13 +18,14 @@ export function escapeJson (json: string): string {
 
 type JsonFilter = (this: FilterImpl, value: unknown, space?: number) => string | undefined
 
-/** Whether `printedProducts` prints `value` in a form of its own: a built product, a built variant or an image that sits in a product. */
-const hasProductForm = (value: unknown): boolean => isBuiltProduct(value) || isBuiltVariant(value) || imageJsonRole(value) !== undefined
+/** Whether `printedProducts` prints `value` in a form of its own: a built product, a built variant, a video or 3D model, or an image that sits in a product. */
+const hasProductForm = (value: unknown): boolean => isBuiltProduct(value) || isBuiltVariant(value) || isBuiltMedia(value) || imageJsonRole(value) !== undefined
 
-/** A product, or a list of them (`collection.products`), as the parity store prints it (`productLiquidJson`; fixtures `probe-product-default`, `probe-product-en-ca` and `probe-product-en-eu-hoodie`), which is not the `/products/<handle>.js` object. A variant, or a list of them (`product.variants`), prints as in `product | json` (`variantLiquidJson`; scenarios `page-product` and `page-product-variant`), and so does an image of a product, or a list of them (`product.media`, `product.images`, `variant.featured_media`; `imageLiquidJson`). Any other value is left as it is. */
+/** A product, or a list of them (`collection.products`), as the parity store prints it (`productLiquidJson`; fixtures `probe-product-default`, `probe-product-en-ca` and `probe-product-en-eu-hoodie`), which is not the `/products/<handle>.js` object. A variant, or a list of them (`product.variants`), prints as in `product | json` (`variantLiquidJson`; scenarios `page-product` and `page-product-variant`), and so does an image of a product, or a list of them (`product.media`, `product.images`, `variant.featured_media`; `imageLiquidJson`); a video, external video or 3D model prints the same way (`mediaLiquidJson`; scenario `page-product-model`: `product.media | where: 'media_type', 'model' | json`). Any other value is left as it is. */
 function printedProducts (value: unknown): unknown {
   if (isBuiltProduct(value)) return productLiquidJson(value)
   if (isBuiltVariant(value)) return variantLiquidJson(value)
+  if (isBuiltMedia(value)) return mediaLiquidJson(value)
   const place = imageJsonRole(value)
   if (place) return imageLiquidJson(value as ImageDrop, place)
   return Array.isArray(value) && value.some(hasProductForm) ? value.map(printedProducts) : value

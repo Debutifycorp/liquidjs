@@ -390,6 +390,18 @@ describe('shopify filters the three themes use', () => {
         `<model-viewer src="//shop.example/cdn/shop/3d/models/o/eb93/WaterBottle.glb?v=0" ${tail} poster="//shop.example/cdn/shop/products/WaterBottle_400x.jpg?v=1655189057"></model-viewer>`
       ])
     })
+    // scenarios `probe-product-model-media` and `page-product-model`: the parity store moves an argument that names a default attribute to the front with the others, writes a boolean as text, and keeps the media's alt text for `alt`; `media_tag` of a model is the same viewer
+    it('moves a named default attribute to the front, writes booleans as text, and is what media_tag prints for a model', async () => {
+      const src = '//shop.example/cdn/shop/3d/models/o/eb93/WaterBottle.glb?v=0'
+      const poster = 'poster="//shop.example/cdn/shop/products/WaterBottle_small.jpg?v=1655189057"'
+      const { html } = await render("{{ m | model_viewer_tag: class: 'cube', alt: 'A cube' }}\n{{ m | model_viewer_tag: interaction-policy: 'allow-when-focused', camera-controls: false }}\n{{ m | model_viewer_tag: reveal: 'interaction', toggleable: true }}\n{{ m | media_tag: image_size: '400x', toggleable: true }}", { m: model })
+      expect(html.split('\n')).toEqual([
+        `<model-viewer class="cube" alt="Potion bottle" src="${src}" camera-controls="true" style="--poster-color: transparent;" data-shopify-feature="1.12" ${poster}></model-viewer>`,
+        `<model-viewer interaction-policy="allow-when-focused" camera-controls="false" src="${src}" style="--poster-color: transparent;" data-shopify-feature="1.12" alt="Potion bottle" ${poster}></model-viewer>`,
+        `<model-viewer reveal="interaction" toggleable="true" src="${src}" ${tail} ${poster}></model-viewer>`,
+        `<model-viewer toggleable="true" src="${src}" ${tail} poster="//shop.example/cdn/shop/products/WaterBottle_400x.jpg?v=1655189057"></model-viewer>`
+      ])
+    })
     it('prints nothing for media that is not a model, and reports it', async () => {
       const { html, report } = await render('[{{ m | model_viewer_tag }}]', { m: { media_type: 'image', src: '//x/a.jpg' } })
       expect(html).toBe('[]')

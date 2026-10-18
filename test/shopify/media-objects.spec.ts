@@ -45,6 +45,22 @@ describe('media objects', () => {
     })
     expect(await render('{{ p.media[0].preview_image.alt }}|{{ p.media[0].preview_image | image_url: width: 300 | image_tag }}', { p })).toContain('The tote in a short clip|<img src="/p.jpg?width=300" alt="The tote in a short clip"')
   })
+  it('prints a video, an external video and a 3D model in product.media | json as the parity store does', async () => {
+    const store = buildStore({ ...storefrontSampleData, products: (storefrontSampleData.products ?? []).filter(item => ['video-tote', 'display-cube'].includes(item.handle)) })
+    const cube = store.products.liquidMethodMissing('display-cube')
+    const models = JSON.parse(await render("{{ p.media | where: 'media_type', 'model' | json }}", { p: cube }).then(html => html.replace(/\\\//g, '/')))
+    expect(models).toEqual([{
+      alt: 'The cube in 3D',
+      id: 8100000000052,
+      position: 2,
+      preview_image: { aspect_ratio: 1, height: 1024, width: 1024, src: expect.stringMatching(/\/preview_images\/box\.jpg$/) },
+      media_type: 'model',
+      sources: [{ format: 'glb', mime_type: 'model/gltf-binary', url: expect.stringMatching(/\/cdn\/shop\/3d\/models\/o\/1cccb72ac9dba814\/box\.glb\?v=0$/) }, { format: 'usdz', mime_type: 'model/vnd.usdz+zip', url: expect.stringMatching(/\.usdz\?v=0$/) }]
+    }])
+    const tote = store.products.liquidMethodMissing('video-tote')
+    const kinds = JSON.parse(await render('{{ p.media | json }}', { p: tote })).map((media: { media_type: string }) => media.media_type)
+    expect(kinds).toEqual(['image', 'video', 'external_video'])
+  })
   it('lists the HLS playlist of a video first in Liquid and last in the Ajax answer, as the parity store does', async () => {
     const data = { ...storefrontSampleData, products: (storefrontSampleData.products ?? []).filter(item => item.handle === 'video-tote') }
     const p = buildStore(data).products.liquidMethodMissing('video-tote')

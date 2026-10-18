@@ -120,6 +120,12 @@ export interface ImageRole {
 /** The place of a product's image, or undefined for an image from anywhere else (`images['logo']`, a collection's, an article's), which `json` prints as the drop's own fields. */
 export const imageJsonRole = (value: unknown): ImageRole | undefined => typeof value === 'object' && value !== null ? (value as LiquidObject)[IMAGE_ROLE] as ImageRole | undefined : undefined
 
+/** The hidden field that marks a built video, external video or 3D model for the `json` filter, which prints it as `product | json` prints it in `media`. */
+const MEDIA_MARKER = '__media'
+
+/** Whether `value` is a built video, external video or 3D model of a product. */
+export const isBuiltMedia = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject)[MEDIA_MARKER] === true
+
 /** The hidden field that marks a built product for the `json` filter. */
 const PRODUCT_MARKER = '__product'
 
@@ -171,6 +177,7 @@ function buildMedia (media: MediaData, index?: number, title = '', host = ''): u
   const preview = media.preview_image ? new ImageDrop({ ...media.preview_image, alt: media.alt || media.preview_image.alt }, false, null, title) : null
   const built: LiquidObject = { ...media, alt: media.alt ?? '', preview_image: preview, position, ...(media.media_type === 'model' ? {} : { aspect_ratio: ratio === null ? null : new LiquidFloat(ratio) }), ...(media.media_type === 'video' ? { duration: media.duration ?? null } : {}) }
   // the files of a video or a model are Shopify's CDN addresses in the data and the Ajax API (`https://cdn.shopify.com/videos/…`); Liquid prints them under the store (`//<host>/cdn/shop/videos/…?v=0`, https://shopify.dev/docs/api/liquid/objects/video_source and https://shopify.dev/docs/api/liquid/objects/model_source)
+  hidden(built, MEDIA_MARKER, true)
   if (media.media_type === 'video' || media.media_type === 'model') {
     hidden(built, 'ajax_sources', media.sources)
     // Liquid lists a video's HLS playlist (`m3u8`) before its files, the Ajax API after them (scenario `page-product-video`: a theme's `{% for source in media.sources %}` writes the `.m3u8` first; fixture `ajax-product-js-media` lists the `mp4` first)

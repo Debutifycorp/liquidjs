@@ -264,7 +264,7 @@ function externalVideoTag (this: FilterImpl, input: unknown, ...args: unknown[])
 }
 
 /**
- * The tag for any media: `image_tag` (an `ImageDrop` from `product.media` or an image record), `video_tag` (with controls), `external_video_tag`; 3D models are not rendered. https://shopify.dev/docs/api/liquid/filters/media_tag
+ * The tag for any media: `image_tag` (an `ImageDrop` from `product.media` or an image record), `video_tag` (with controls), `external_video_tag`, and `model_viewer_tag` for a 3D model, which the parity store prints with the template's attributes first (`<model-viewer toggleable="true" src=…`, scenario `page-product-model`). https://shopify.dev/docs/api/liquid/filters/media_tag
  *
  * The page has no image example, so the image branch is not pinned: it renders `image_tag` at the image's own width (1100 when it has none).
  */
@@ -283,20 +283,17 @@ function mediaTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
     return videoTag.call(this, media, ...(hasOwn(controls, 'controls') ? [] : [['controls', true]]), ...args)
   }
   if (type === 'external_video') return externalVideoTag.call(this, media, ...args)
-  if (type === 'model') {
-    shopifyState(this.context).report.unsupported('media_tag', '3D model media renders nothing')
-    return ''
-  }
+  if (type === 'model') return modelViewerTag.call(this, media, ...args)
   return imageTagFor(media)
 }
 
-/** The attributes `model_viewer_tag` writes after the model's `src`, in the order of https://shopify.dev/docs/api/liquid/filters/model_viewer_tag's output; a template's argument of the same name replaces the value in its place. */
+/** The attributes `model_viewer_tag` writes after the model's `src`, in the order of https://shopify.dev/docs/api/liquid/filters/model_viewer_tag's output. A template's argument of the same name moves to the front with the other arguments, in the order written, and the default is not written again; `alt` keeps the media's alt text there (scenario `probe-product-model-media`: `alt: 'A cube'` prints `alt="The cube in 3D"`). */
 const MODEL_VIEWER_DEFAULTS = ['camera-controls', 'style', 'data-shopify-feature', 'alt', 'poster']
 
 /**
  * A `<model-viewer>` for a 3D model, https://shopify.dev/docs/api/liquid/filters/model_viewer_tag: `src` (the model's `glb` source), `camera-controls="true"`, `style="--poster-color: transparent;"`, `data-shopify-feature="1.12"`, `alt` (the media's alt text, else the product's title) and `poster` (the preview image with the legacy `image_size`, `small` by default), as the page prints them. Other attributes a template names come first (`<model-viewer interaction-policy="allow-when-focused" src=…`), as the page's example shows; one that names a default attribute replaces its value in place, which the page states ("You can override these attributes") without an example of where it goes, so the place is not pinned.
  *
- * A model is a media with `media_type: 'model'` and its `sources` (`url`, `format`), https://shopify.dev/docs/api/liquid/objects/model; the store data has no 3D models (`MediaData` describes images and videos), so a theme meets one only in data a caller supplies. Anything that is not a model prints nothing and is reported.
+ * A model is a media with `media_type: 'model'` and its `sources` (`url`, `format`), https://shopify.dev/docs/api/liquid/objects/model; the store data holds one in `ModelMediaData`. Anything that is not a model prints nothing and is reported.
  */
 function modelViewerTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const state = shopifyState(this.context)
@@ -316,8 +313,10 @@ function modelViewerTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
     alt: altOrProductTitle(this.context, media.alt),
     poster: preview ? state.services.imageUrl(preview.image, legacySize(named.image_size)) : undefined
   }
-  const extra = namedAttributes(state.report, 'model_viewer_tag', named, order, ['src', 'image_size', ...MODEL_VIEWER_DEFAULTS])
-  const own = MODEL_VIEWER_DEFAULTS.map(name => attribute(name, hasOwn(named, name) ? named[name] : defaults[name])).join('')
+  // a boolean argument is written as text, `toggleable: true` as `toggleable="true"` and `camera-controls: false` as `camera-controls="false"` (scenario `probe-product-model-media`)
+  const written = Object.fromEntries(Object.entries(named).map(([name, value]) => [name, typeof value === 'boolean' ? String(value) : value]))
+  const extra = namedAttributes(state.report, 'model_viewer_tag', hasOwn(named, 'alt') ? { ...written, alt: defaults.alt } : written, order, ['src', 'image_size'])
+  const own = MODEL_VIEWER_DEFAULTS.filter(name => !hasOwn(named, name)).map(name => attribute(name, defaults[name])).join('')
   return `<model-viewer${extra}${attribute('src', source?.url)}${own}></model-viewer>`
 }
 

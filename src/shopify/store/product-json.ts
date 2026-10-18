@@ -155,6 +155,9 @@ function mediaJson (media: LiquidObject, shape: 'ajax' | 'liquid'): Record<strin
   return { ...head, media_type: media.media_type, sources: files }
 }
 
+/** A video, external video or 3D model of a product as `product | json` and `product.media | json` print it. */
+export const mediaLiquidJson = (media: LiquidObject): Record<string, unknown> => mediaJson(media, 'liquid')
+
 /** The fields both answers start with, in their order (fixtures `ajax-product-js` and `probe-product-default`). */
 function productHead (product: LiquidObject): Record<string, unknown> {
   return {
