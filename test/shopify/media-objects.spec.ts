@@ -76,6 +76,13 @@ describe('media objects', () => {
     expect(ratios).toContain('"preview_image":{"aspect_ratio":1.333,')
     expect(await render('{{ p.media[1].preview_image.aspect_ratio }}', { p })).toBe('1.7777777777777777')
   })
+  it('lists the files of a video in json with the playlist last and the keys format, height, mime_type, url, width', async () => {
+    const data = { ...storefrontSampleData, products: (storefrontSampleData.products ?? []).filter(item => item.handle === 'video-tote') }
+    const p = buildStore(data).products.liquidMethodMissing('video-tote')
+    const video = JSON.parse(await render('{{ p.media[1] | json }}', { p }))
+    expect(video.sources.map((source: { format: string }) => source.format)).toEqual(['mp4', 'm3u8'])
+    expect(Object.keys(video.sources[0])).toEqual(['format', 'height', 'mime_type', 'url', 'width'])
+  })
   it('marks the product images a variant shows, and lists those variants', async () => {
     const p = buildProduct({
       id: 1,

@@ -151,7 +151,9 @@ function mediaJson (media: LiquidObject, shape: 'ajax' | 'liquid'): Record<strin
   }
   const head = { alt: textOrNull(media.alt), id: media.id, position: media.position, preview_image: mediaPreview(media.preview_image as ImageDrop | null, shape) }
   const ratio = media.aspect_ratio === null || media.aspect_ratio === undefined ? null : shape === 'ajax' ? Number(media.aspect_ratio) : media.aspect_ratio
-  const sources = ((shape === 'ajax' ? media.ajax_sources : undefined) ?? media.sources ?? []) as Array<Record<string, unknown>>
+  // Liquid lists a video's HLS playlist first (`media.sources`), and `media | json` and `product | json` list it last, as the Ajax answer does (scenario `probe-product-video-media`: `mp4` then `m3u8` in both)
+  const listed = ((shape === 'ajax' ? media.ajax_sources : undefined) ?? media.sources ?? []) as Array<Record<string, unknown>>
+  const sources = shape === 'ajax' ? listed : [...listed.filter(source => source.format !== 'm3u8'), ...listed.filter(source => source.format === 'm3u8')]
   const files = sources.map(source => ({ format: source.format, ...(source.height === undefined ? {} : { height: source.height }), mime_type: source.mime_type, url: source.url, ...(source.width === undefined ? {} : { width: source.width }) }))
   if (media.media_type === 'video') return { ...head, aspect_ratio: ratio, duration: media.duration, media_type: 'video', sources: files }
   if (media.media_type === 'external_video') return { ...head, aspect_ratio: ratio, external_id: media.external_id, host: media.host, media_type: 'external_video' }
