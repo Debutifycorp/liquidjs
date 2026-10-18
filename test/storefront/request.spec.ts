@@ -1,6 +1,6 @@
 import { readdirSync } from 'fs'
 import { join } from 'path'
-import { requestFromUrl, localePrefixes, storefrontSampleData as data } from '../../src/shopify'
+import { renderSection, requestFromUrl, localePrefixes, storefrontSampleData as data } from '../../src/shopify'
 import { loadFixture } from './fixtures'
 
 describe('requestFromUrl', () => {
@@ -148,5 +148,16 @@ describe('requestFromUrl', () => {
       }
     }
     expect(checked).toBeGreaterThan(40)
+  })
+})
+
+describe('the product of a recommendations request', () => {
+  it('is the product global of a section rendered by the Product Recommendations API, and the closest product', async () => {
+    const page = requestFromUrl('/recommendations/products?product_id=7982853619734&section_id=x&intent=related', data)
+    const files = { 'config/settings_schema.json': '[]', 'config/settings_data.json': '{"current":{}}', 'layout/theme.liquid': '{{ content_for_layout }}', 'templates/index.json': '{"sections":{},"order":[]}', 'sections/x.liquid': '<p id="{{ product.id }}|{{ closest.product.id }}|{{ recommendations.performed }}"></p>' }
+    const { html } = await renderSection({ theme: { files }, templateName: page.templateName, section: 'x', data, request: page.request })
+    expect(html).toContain('<p id="7982853619734|7982853619734|true"></p>')
+    const none = requestFromUrl('/recommendations/products?product_id=1&section_id=x', data)
+    expect((await renderSection({ theme: { files }, templateName: none.templateName, section: 'x', data, request: none.request })).html).toContain('<p id="||false"></p>')
   })
 })

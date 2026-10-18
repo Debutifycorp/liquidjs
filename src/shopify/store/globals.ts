@@ -253,6 +253,11 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     // the article's blog is the one that lists it (the article objects are the same in `store.articles` and in its blog's `articles`); its URL is no help, as a base path or locale prefix adds segments before the blog's
     if (template.name === 'article' && found) resources.blog = HandleMap.values(store.blogs).find(blog => (blog.articles as LiquidObject[]).includes(found)) ?? null
   }
+  // Debutify's reading, not pinned by shopify.dev: a section rendered by the Product Recommendations API sees the product it was asked for as `product`, as it does on that product's own page, so Horizon's `data-product-id="{{ product.id }}"` in the answer is the id of the element it replaces (Horizon morphs the answer over the page and reloads its recommendations on any attribute change, which throws on an empty id)
+  if (request.recommendations) {
+    const asked = HandleMap.values(store.products).find(item => String(item.id) === String(request.recommendations!.productId))
+    if (asked) resources.product = asked
+  }
   const policy = isPolicy ? HandleMap.get(store.policies, request.resource ?? '') ?? null : undefined
   if (isPolicy && !policy) report.missing('resource', `policy ${request.resource ?? ''}`)
   const resource = kind ? resources[template.name] : policy ?? null
