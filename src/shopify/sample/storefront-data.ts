@@ -175,6 +175,27 @@ const unlisted: ProductData[] = [
       }
     ],
     variants: [{ id: 8100000000051, title: 'Default Title', option1: 'Default Title', price: 1800, available: true, inventory_management: 'shopify', inventory_quantity: 20 }]
+  },
+  // https://shopify.dev/docs/api/liquid/objects/store_availability: stock at the one store location, which the recording of these pages has local pickup switched on for (`tools/shopify-parity/record.mjs` switches it on for a scenario that says `pickup` and off again); the Large size is sold past zero stock, so it can be bought and cannot be picked up
+  {
+    id: 8100000000007,
+    handle: 'pickup-mug',
+    created_at: '2026-10-18T07:46:05-04:00',
+    published_at: '2026-10-18T07:46:09-04:00',
+    title: 'Pickup mug',
+    description: '<p>A stoneware mug you can collect from the shop.</p>',
+    vendor: 'Debutify Parity',
+    type: 'Kitchen',
+    tags: ['pickup'],
+    unlisted: true,
+    // Horizon shows local pickup only through a template of its own that the parity store adds (`tools/shopify-parity/lib/derived.mjs`); a theme without that template shows the product with its default one
+    template_suffix: 'parity-pickup',
+    images: [picture('beanie', 4)],
+    options: ['Size'],
+    variants: [
+      { id: 8100000000071, title: 'Small', option1: 'Small', price: 1400, available: true, inventory_management: 'shopify', inventory_quantity: 5, weight: 300 },
+      { id: 8100000000072, title: 'Large', option1: 'Large', price: 1800, available: true, inventory_management: 'shopify', inventory_policy: 'continue', inventory_quantity: 0, weight: 400 }
+    ]
   }
 ]
 

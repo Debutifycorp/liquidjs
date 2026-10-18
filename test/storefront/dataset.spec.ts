@@ -9,7 +9,7 @@ import { renderProbeHtml, PROBE_DIR } from './probe'
 describe('storefrontSampleData', () => {
   const data = storefrontSampleData
   it('holds every kind of record part P seeds', () => {
-    expect(data.products?.length).toBe(32)
+    expect(data.products?.length).toBe(33)
     expect(data.collections?.map(c => c.handle)).toEqual(['men', 'women', 'unisex', 'tops', 'bottoms', 'accessories', 'featured', 'shoes', 'frontpage'])
     expect(data.discounts?.map(d => d.type).sort()).toEqual(['amount_off_order', 'amount_off_products', 'amount_off_products', 'buy_x_get_y', 'buy_x_get_y', 'free_shipping'])
     expect(data.markets?.map(m => m.handle)).toEqual(['us', 'ca', 'eu'])
@@ -58,6 +58,11 @@ describe('storefrontSampleData', () => {
       for (const i of items) if (!('all' in i)) for (const h of i.products ?? []) expect(handles).toContain(h)
     }
     for (const h of Object.keys(data.translations?.fr.products ?? {})) expect(handles).toContain(h)
+  })
+  it('holds a pickup mug whose Large size is sold past zero stock, so it can be bought and cannot be picked up', () => {
+    const mug = data.products?.find(item => item.handle === 'pickup-mug')
+    expect(mug?.unlisted).toBe(true)
+    expect(mug?.variants.map(variant => [variant.title, variant.inventory_quantity, variant.inventory_policy ?? 'deny'])).toEqual([['Small', 5, 'deny'], ['Large', 0, 'continue']])
   })
   it('is frozen all the way down', () => {
     const frozen = (value: unknown): boolean => !value || typeof value !== 'object' || (Object.isFrozen(value) && Object.values(value).every(frozen))
