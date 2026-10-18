@@ -199,6 +199,7 @@ export function buildLocalization (data: StoreData, view: StoreView, country?: s
     iso_code: c.iso_code,
     name: countryName(data, view, c),
     unit_system: 'metric',
+    'popular?': c.popular === true,
     currency: legacyCurrency ?? { iso_code: m.currency.iso_code, symbol: m.currency.symbol, name: m.currency.name ?? m.currency.iso_code },
     market: { id: id(m), handle: m.handle }
   })))
