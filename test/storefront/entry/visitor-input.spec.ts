@@ -408,9 +408,9 @@ describe('a prefetch changes nothing (final review A, M4)', () => {
 describe('the sandbox header (final review A, M5)', () => {
   const sandbox = { visitor: 'preview-token-0000000001', basePath: '/p/tok', sandbox: true }
 
-  it('puts Content-Security-Policy: sandbox allow-scripts allow-forms on every sandboxed answer that has none', async () => {
+  it('puts Content-Security-Policy: sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox on every sandboxed answer that has none', async () => {
     const { send } = harness({}, sandbox)
-    const policy = 'sandbox allow-scripts allow-forms'
+    const policy = 'sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox'
     for (const [method, url] of [['GET', '/p/tok'], ['GET', '/p/tok/cart.js'], ['GET', '/p/tok/discount/X'], ['POST', '/p/tok/cart/add.js'], ['GET', '/p/tok/products/nope'], ['GET', '/p/tok/checkouts/cn/abc/en-us']]) {
       const answer = await send(method, url, method === 'POST' ? { id: SUNNIES } : undefined)
       expect([url, answer.headers.get('content-security-policy')]).toEqual([url, policy])

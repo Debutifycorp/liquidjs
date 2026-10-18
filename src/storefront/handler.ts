@@ -174,8 +174,8 @@ function injectClient (html: string, basePath: string, storage: VisitorState['st
   return html.slice(0, end) + tag + html.slice(end)
 }
 
-/** The policy that gives a page its opaque origin and still lets its scripts and forms run (the storefront spec's "Sandboxed pages": `sandbox allow-scripts allow-forms`, since with `allow-scripts` alone the theme's add-to-cart form never reaches its own script). */
-const SANDBOX_POLICY = 'sandbox allow-scripts allow-forms'
+/** The policy that gives a page its opaque origin and still lets its scripts and forms run (the storefront spec's "Sandboxed pages": `sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox`, since with `allow-scripts` alone the theme's add-to-cart form never reaches its own script; `allow-popups allow-popups-to-escape-sandbox` lets a link that opens a new tab open it as a normal page, as on Shopify). */
+const SANDBOX_POLICY = 'sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox'
 
 /** The last step of a sandboxed page's answer: any origin may read it, it sets no cookie (the visitor is the option's, never a cookie's), it carries the sandbox policy unless the answer has a policy of its own, and a document gets the client script. The script is added to HTML that is a document and not a redirect, a `HEAD` answer or a fragment, never to JSON. The policy is defence in depth (final review A, M5): the isolation of a theme nobody reviewed would otherwise rest on the host remembering the header on every answer. */
 async function sandboxed (response: Response, basePath: string, fragment: boolean, storage: VisitorState['storage']): Promise<Response> {

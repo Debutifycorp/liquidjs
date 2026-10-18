@@ -962,8 +962,8 @@ const shared = createStorefront({ theme, data: storefrontSampleData, cartStore }
 
 A preview that runs a theme you did not write must not let the theme's scripts reach the host that serves it. The storefront serves such a preview as a page in a sandboxed iframe under an address nobody can guess, `/p/<token>`, and `sandbox: true` is its half of that. The host's half is two things, and both are needed:
 
-- Send `Content-Security-Policy: sandbox allow-scripts allow-forms` on every answer under the base path: pages, JSON, redirects, 404s and the host's own error answers, not only the pages the storefront returns. In `sandbox` mode the storefront puts that policy on each answer it returns that has no `Content-Security-Policy` of its own, as a second line of defence; it cannot reach the answers it does not return, so the host still sets it.
-- Frame the page with `<iframe sandbox="allow-scripts allow-forms" src="/p/<token>/">`.
+- Send `Content-Security-Policy: sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox` on every answer under the base path: pages, JSON, redirects, 404s and the host's own error answers, not only the pages the storefront returns. In `sandbox` mode the storefront puts that policy on each answer it returns that has no `Content-Security-Policy` of its own, as a second line of defence; it cannot reach the answers it does not return, so the host still sets it.
+- Frame the page with `<iframe sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox" src="/p/<token>/">`.
 
 The reason is the origin. Under `sandbox` without `allow-same-origin`, a document has an opaque origin and not the host's, so the theme's scripts cannot reach the host's cookies, storage or pages; and the header keeps that true when the address is opened outside the iframe (a link opened in a new tab, a form post that navigates), which the iframe attribute alone does not. Never add `allow-same-origin`: the page would then have the host's origin and the sandbox would protect nothing. Scripts and forms are what a theme needs; modals, popups and navigating the parent page stay off. An opaque origin also has no working storage or cookies, which themes use, and its requests to the host are cross-origin and carry no cookies. So in `sandbox` mode the storefront answers for it, and the [client script](#the-client-script) gives the page in-memory storage and cookies.
 
@@ -973,7 +973,7 @@ import { storefrontSampleData } from '@debutify/liquidjs/shopify'
 
 const TOKEN = 'a-long-random-token-made-for-this-preview'
 const BASE = `/p/${TOKEN}`
-const SANDBOX = 'sandbox allow-scripts allow-forms'
+const SANDBOX = 'sandbox allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox'
 
 const storefront = createStorefront({ theme, data: storefrontSampleData })
 
@@ -987,7 +987,7 @@ const sandboxed = (response) => {
 export async function host (request) {
   const { pathname } = new URL(request.url)
   if (pathname === '/') {
-    return new Response(`<!doctype html><iframe sandbox="allow-scripts allow-forms" src="${BASE}/" style="border:0;width:100%;height:100vh"></iframe>`, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+    return new Response(`<!doctype html><iframe sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox" src="${BASE}/" style="border:0;width:100%;height:100vh"></iframe>`, { headers: { 'content-type': 'text/html; charset=utf-8' } })
   }
   if (pathname !== BASE && !pathname.startsWith(`${BASE}/`)) return new Response('Not found', { status: 404 })
   try {
