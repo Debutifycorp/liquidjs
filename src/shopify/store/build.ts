@@ -550,10 +550,16 @@ export function selectSellingPlan (product: LiquidObject, planId: number | undef
   return copy
 }
 
+/** What `all_tags`, `all_types` and `all_vendors` read besides the collection's products: the `unlisted` products `collections.all` counts in them, and whether `all_types` and `all_vendors` keep the order the products show them (`keepOrder`) and are not sorted. */
+export interface CollectionLists {
+  unlisted?: LiquidObject[]
+  keepOrder?: boolean
+}
+
 /**
  * https://shopify.dev/docs/api/liquid/objects/collection, at its URL under `prefix`. Filtering, tags and sorting are not applied here (`collectionView` applies them per request): `products` is the collection's product list as given, `filters` are the store's storefront filters over those products (`buildFilters`, in the view `currency` when given), built when first read and kept, so a store build does not pay for collections no page shows, `default_sort_by` is the collection's `sort_order` (`manual` when it has none, or one that is no sort value) and `sort_options` lists the options the parity store lists, `Most relevant` included (fixture `probe-collection-all`). `tags` are read when asked. A collection of the store's has the tags of all its products, on any page and whatever the request's filters, as the parity store prints them (fixtures `probe-collection-suffix`, `probe-collection-suffix-page-3` and `probe-collection-suffix-filtered`: `featured` prints the same six tags on its first page, which holds no shoe, on its third, which holds one product, and under `filter.p.tag=women`, which shows two), although https://shopify.dev/docs/api/liquid/objects/collection#collection-tags says they do not "include tags for products that have been filtered out of the current view"; the fixture wins. A collection Shopify makes itself (`AUTOMATIC_COLLECTIONS`) has the tags of the products in `products`, so inside a `paginate` block the tags of the page's products, as the parity store prints them (fixtures `probe-collection-all`, `probe-collection-page-2`, `probe-collection-page-past`, where the page after the last has none, the `probe-collection-filter-*` fixtures and `probe-collection-vendors`). A store collection under a tag path or a sort is not recorded and takes the same rule.
  */
-export function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>, filters: FilterData[] | undefined, prefix: string, currency?: ViewCurrency, resolve?: MetafieldResolver): LiquidObject {
+export function buildCollection (data: CollectionData, products: HandleMap<LiquidObject>, filters: FilterData[] | undefined, prefix: string, currency?: ViewCurrency, resolve?: MetafieldResolver, lists: CollectionLists = {}): LiquidObject {
   const items = data.products.map(handle => HandleMap.get(products, handle)).filter((product): product is LiquidObject => !!product)
   // `products` lists the collection in its default order wherever it is read, not only on the collection page: https://shopify.dev/docs/api/liquid/objects/collection#collection-default_sort_by; the parity store lists `collections['all'].products` by title in the header's predictive search suggestions and the empty cart's featured collection (scenarios `page-home` and `page-cart-empty`), where the data's order is Slides, Sweatpants, Men's T-shirt, Hoodie. The store data's order is the manual one (`MANUAL_ORDER`), which the collection page's own sort starts from (`collectionView`).
   // a `sort_order` that is none of the sort values reads as `manual`, the data's own order, and not as the order of the handles that `Array.sort` falls back to for a value it has no comparison for (final review B, M5). https://shopify.dev/docs/api/liquid/objects/collection#collection-default_sort_by lists manual, best-selling, title-ascending, price-ascending, price-descending, created-ascending and created-descending; `title-descending` is the sort option that page's `sort_options` lists besides. Nothing says the data may name another order, so one that does is read as the first value listed.
@@ -564,7 +570,12 @@ export function buildCollection (data: CollectionData, products: HandleMap<Liqui
     listed ??= sortProducts(items, sortOrder, AUTOMATIC_COLLECTIONS.has(data.handle))
     return listed
   }
-  const collect = (key: string) => unique(items.flatMap(product => product[key] as string | string[]).filter(Boolean)).sort()
+  // `all_tags`, `all_types` and `all_vendors` (https://shopify.dev/docs/api/liquid/objects/collection#collection-all_tags, #collection-all_types and #collection-all_vendors list "all of the tags", "the product types" and "the product vendors" of the collection's products) are read from the collection's own products, and on `collections.all` from its unlisted products too, although `products` and `products_count` leave those out: the parity store's `all_tags` holds `3d`, `gift-card`, `pantry`, `pickup` and `video`, its `all_types` `Decor`, `Gift Cards`, `Kitchen`, `Pantry` and `Bags`, and its `all_vendors` `Debutify Parity`, the tags, types and vendor of its unlisted products (fixtures `probe-collection-all`, `probe-collection-tags`, `probe-collection-sort-*`, `probe-collection-filter-*`, `probe-collection-en-eu-price`). The `/collections/vendors?q=` and `/collections/types?q=` collections count none of them, and list `all_types` and `all_vendors` in the order the products first show them, not sorted as `all_tags` is and as `all` prints all three (fixture `probe-collection-vendors`: Sandals, Pants, T-shirts, Hoodies, Sweaters, Shoes, Bags, Jackets, Shorts, Sunglasses, Hats, the order of the store's products).
+  const counted = [...items, ...(lists.unlisted ?? [])]
+  const collect = (key: string, keepOrder = false) => {
+    const values = unique(counted.flatMap(product => product[key] as string | string[]).filter(Boolean))
+    return keepOrder ? values : values.sort()
+  }
   // the collection's own image reads the collection's title as its alt when it has none of its own, as the parity store prints Dawn's `card_collection.featured_image.alt` (`alt="Men"`, its recording `page-collections`)
   const own = data.image ? new ImageDrop(data.image, false, null, data.title) : null
   const url = withPrefix(prefix, `/collections/${data.handle}`)
@@ -586,8 +597,8 @@ export function buildCollection (data: CollectionData, products: HandleMap<Liqui
     products_count: items.length,
     all_products_count: items.length,
     all_tags: collect('tags'),
-    all_types: collect('type'),
-    all_vendors: collect('vendor'),
+    all_types: collect('type', lists.keepOrder),
+    all_vendors: collect('vendor', lists.keepOrder),
     get tags () {
       return tagsOf(AUTOMATIC_COLLECTIONS.has(data.handle) ? (this as LiquidObject).products as LiquidObject[] : items)
     },
@@ -1237,7 +1248,7 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   const listedData = (source.products ?? []).filter(isListed)
   // Every shop answers `collections.all` with all its listed products. https://shopify.dev/docs/api/liquid/objects/collections
   // its default order is by title (fixture `probe-collection-all`)
-  const all = buildCollection({ id: 0, handle: 'all', title: own(ALL_TITLES, view.language.split('-')[0].toLowerCase()) ?? 'Products', products: listedData.map(product => product.handle), sort_order: 'title-ascending' }, products, data.filters, prefix, currency)
+  const all = buildCollection({ id: 0, handle: 'all', title: own(ALL_TITLES, view.language.split('-')[0].toLowerCase()) ?? 'Products', products: listedData.map(product => product.handle), sort_order: 'title-ascending' }, products, data.filters, prefix, currency, undefined, { unlisted: built.filter(([, , listed]) => !listed).map(([, product]) => product) })
   // a collection Shopify makes has no id: the parity store prints Dawn's and Horizon's `data-collection-id="{{ collection.id }}"` empty on `/collections/all` (their recordings `page-collection-filtered`)
   all.id = null
   // `collections` lists the store's collections alphabetically by title, whatever order the data has them in: https://shopify.dev/docs/api/liquid/objects/collections shows its example sorted so, and the parity store lists /collections that way (scenario `page-collections`: Accessories, Bottoms, Featured, Home page, Men, Shoes, Tops, Unisex, Women)

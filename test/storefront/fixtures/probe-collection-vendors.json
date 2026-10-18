@@ -96,17 +96,17 @@
           "women"
         ],
         "all_types": [
-          "Bags",
-          "Hats",
-          "Hoodies",
-          "Jackets",
-          "Pants",
           "Sandals",
+          "Pants",
+          "T-shirts",
+          "Hoodies",
+          "Sweaters",
           "Shoes",
+          "Bags",
+          "Jackets",
           "Shorts",
           "Sunglasses",
-          "Sweaters",
-          "T-shirts"
+          "Hats"
         ],
         "all_vendors": [
           "Mock.shop"

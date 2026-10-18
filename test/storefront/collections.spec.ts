@@ -56,6 +56,29 @@ describe('collections beyond the recorded scenarios', () => {
     expect((await probe('/collections/types?view=probe')).products_count).toBe(0)
   })
 
+  it('counts the unlisted products in the tags, types and vendors of collections.all and nowhere else', async () => {
+    const all = await probe('/collections/all?view=probe')
+    expect(all.products_count).toBe(29)
+    expect(all.all_tags).toEqual(expect.arrayContaining(['3d', 'gift-card', 'pantry', 'pickup', 'video']))
+    expect(all.all_types).toEqual(expect.arrayContaining(['Decor', 'Gift Cards', 'Kitchen', 'Pantry', 'Bags']))
+    expect(all.all_vendors).toEqual(['Debutify Parity', 'Mock.shop'])
+    expect(all.all_tags).toEqual([...all.all_tags].sort())
+    expect(all.all_types).toEqual([...all.all_types].sort())
+    const featured = await probe('/collections/featured?view=probe')
+    expect([...featured.all_tags, ...featured.all_types, ...featured.all_vendors]).not.toEqual(expect.arrayContaining(['3d']))
+    expect(featured.all_vendors).toEqual(['Mock.shop'])
+    const vendor = await probe('/collections/vendors?q=Mock.shop&view=probe')
+    expect(vendor.all_vendors).toEqual(['Mock.shop'])
+    expect(vendor.all_tags).not.toContain('3d')
+    expect(vendor.all_types).not.toContain('Decor')
+  })
+
+  it('lists the types of a vendor collection in the order the store\'s products show them, not sorted', async () => {
+    const vendor = await probe('/collections/vendors?q=Mock.shop&view=probe')
+    expect(vendor.all_types).toEqual(['Sandals', 'Pants', 'T-shirts', 'Hoodies', 'Sweaters', 'Shoes', 'Bags', 'Jackets', 'Shorts', 'Sunglasses', 'Hats'])
+    expect(vendor.all_tags).toEqual([...vendor.all_tags].sort())
+  })
+
   it('combines a filter\'s selected values with the operator the store data gives it, OR when it gives none', async () => {
     const url = '/collections/all?view=probe&filter.p.tag=shoes&filter.p.tag=bottoms'
     expect((await probe(url)).products_count).toBe(0)

@@ -61,19 +61,28 @@
         "current_tags": null,
         "tags": [],
         "all_tags": [
+          "3d",
           "accessories",
           "bottoms",
+          "gift-card",
           "men",
+          "pantry",
+          "pickup",
           "shoes",
           "tops",
           "unisex",
+          "video",
           "women"
         ],
         "all_types": [
           "Bags",
+          "Decor",
+          "Gift Cards",
           "Hats",
           "Hoodies",
           "Jackets",
+          "Kitchen",
+          "Pantry",
           "Pants",
           "Sandals",
           "Shoes",
@@ -83,6 +92,7 @@
           "T-shirts"
         ],
         "all_vendors": [
+          "Debutify Parity",
           "Mock.shop"
         ],
         "paginate": {
