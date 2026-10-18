@@ -84,6 +84,14 @@ describe('shopify/theme/header', () => {
     const header = contentForHeader(state, { shop: { permanent_domain: 'a.example', currency: 'USD' }, localization: {}, request: {} })
     expect(header).toMatch(/Shopify\.theme = \{"name":"Dawn","id":\d{12},"schema_name":"Dawn","schema_version":"16\.0\.0","theme_store_id":null,"role":"main"\};/)
   })
+  it('prints the MCP, shop-js feature and Shop sign-in fields in their shape with neutral values', () => {
+    const header = contentForHeader(createState(), { shop: { permanent_domain: 'a.example', currency: 'USD' }, localization: {}, request: {} })
+    expect(header).toContain('Shopify.MCP = Shopify.MCP || {};Shopify.MCP.enabled = false;Shopify.MCP.shop = "";Shopify.MCP.mcpEndpoint = "";Shopify.MCP.tools = [];')
+    expect(header).toContain(`Shopify.featureAssets = Shopify.featureAssets || {};Shopify.featureAssets['shop-js'] = Shopify.featureAssets['shop-js'] || {};`)
+    expect(header).toContain('Shopify.SignInWithShop.User.recognized = false;Shopify.SignInWithShop.eligible = false;')
+    expect(header).not.toContain('assetMetrics')
+    expect(header).not.toContain('myshopify')
+  })
 })
 
 describe('shopify/theme/header marker', () => {
