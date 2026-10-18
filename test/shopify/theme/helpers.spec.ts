@@ -67,7 +67,7 @@ describe('shopify/theme/header', () => {
     expect(header).toContain('Shopify.shop = "\\u003c/script>\\u003cb>";')
     expect(header).toContain('<style data-shopify="stylesheet-tags">a::after { content: "<\\/style>" }</style>')
     expect(header).toContain('document.write("<\\/script>")')
-    expect(header.match(/<\/script>/g)).toHaveLength(3)
+    expect(header.match(/<\/script>/g)).toHaveLength(6)
     expect(header.match(/<\/style>/g)).toHaveLength(1)
   })
   it('writes no style or deferred script when the page has none', () => {
@@ -84,12 +84,18 @@ describe('shopify/theme/header', () => {
     const header = contentForHeader(state, { shop: { permanent_domain: 'a.example', currency: 'USD' }, localization: {}, request: {} })
     expect(header).toMatch(/Shopify\.theme = \{"name":"Dawn","id":\d{12},"schema_name":"Dawn","schema_version":"16\.0\.0","theme_store_id":null,"role":"main"\};/)
   })
-  it('prints the MCP, shop-js feature and Shop sign-in fields in their shape with neutral values', () => {
+  it('writes the MCP, shop-js feature and Shop sign-in eligibility fields in scripts of their own, after the feature loader, as Shopify does', () => {
     const header = contentForHeader(createState(), { shop: { permanent_domain: 'a.example', currency: 'USD' }, localization: {}, request: {} })
-    expect(header).toContain('Shopify.MCP = Shopify.MCP || {};Shopify.MCP.enabled = false;Shopify.MCP.shop = "";Shopify.MCP.mcpEndpoint = "";Shopify.MCP.tools = [];')
-    expect(header).toContain(`Shopify.featureAssets = Shopify.featureAssets || {};Shopify.featureAssets['shop-js'] = Shopify.featureAssets['shop-js'] || {};`)
-    expect(header).toContain('Shopify.SignInWithShop.User.recognized = false;Shopify.SignInWithShop.eligible = false;')
-    expect(header).not.toContain('assetMetrics')
+    const scripts = [...header.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1])
+    const bootstrap = scripts.find(body => body.startsWith('var Shopify = Shopify || {};'))!
+    expect(bootstrap).toContain('Shopify.shopJsCdnBaseUrl = "https://cdn.shopify.com/shopifycloud/shop-js";Shopify.SignInWithShop = Shopify.SignInWithShop || {};Shopify.SignInWithShop.User = Shopify.SignInWithShop.User || {};Shopify.SignInWithShop.User.recognized = false;')
+    expect(bootstrap).not.toMatch(/MCP|featureAssets|eligible|assetMetrics/)
+    const own = scripts.filter(body => body.startsWith('\n  window.Shopify = window.Shopify || {};\n'))
+    expect(own).toHaveLength(3)
+    expect(own[0]).toContain('  window.Shopify.SignInWithShop = window.Shopify.SignInWithShop || {};\n  window.Shopify.SignInWithShop.assetMetrics = { sampleRate: 0.25 };\n  window.Shopify.SignInWithShop.eligible = false;\n')
+    expect(own[1]).toContain("  if (!window.Shopify.featureAssets) window.Shopify.featureAssets = {};\n  window.Shopify.featureAssets['shop-js'] = {};\n")
+    expect(own[2]).toContain('  window.Shopify.MCP = window.Shopify.MCP || {};\n  window.Shopify.MCP.enabled = false;\n  window.Shopify.MCP.shop = "";\n  window.Shopify.MCP.mcpEndpoint = "";\n  window.Shopify.MCP.tools = [];\n')
+    expect(header.indexOf('loadFeatures')).toBeLessThan(header.indexOf('window.Shopify.SignInWithShop.eligible'))
     expect(header).not.toContain('myshopify')
   })
 })
