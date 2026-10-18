@@ -15,11 +15,15 @@ export type Route =
   | { kind: 'product-json', handle: string }
   | { kind: 'suggest-json', page: PageRequest }
   | { kind: 'recommendations-json', page: PageRequest }
+  | { kind: 'storage' }
   | { kind: 'contact' }
   | { kind: 'localization' }
   | { kind: 'password' }
   | { kind: 'shopify-asset', path: string }
   | { kind: 'notice', notice: 'checkout' | 'account' }
+
+/** Where the client script of a sandboxed page saves the page's storage. */
+export const STORAGE_PATH = '/storefront-storage'
 
 export interface Routed {
   route: Route
@@ -118,6 +122,7 @@ export function routeRequest (method: string, rawUrl: string, data: StoreData, o
   const answered = (endpoint: string): PageRequest => requestFromUrl(`${basePath}${localePrefix}${endpoint}${parsed.search}`, data, { basePath, country: options.country })
   if (path === '/search/suggest.json' && read) return done({ kind: 'suggest-json', page: answered('/search/suggest') })
   if (path === '/recommendations/products.json' && read) return done({ kind: 'recommendations-json', page: answered('/recommendations/products') })
+  if (verb === 'POST' && path === STORAGE_PATH) return done({ kind: 'storage' })
   // the forms' targets, https://shopify.dev/docs/api/liquid/tags/form: `contact` posts to `/contact`, `localization` to `/localization` and `storefront_password` to `/password`
   if (verb === 'POST' && path === '/contact') return done({ kind: 'contact' })
   if (verb === 'POST' && path === '/localization') return done({ kind: 'localization' })

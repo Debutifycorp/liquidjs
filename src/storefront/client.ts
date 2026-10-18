@@ -1,31 +1,67 @@
+/** What the client script starts its two storages with: the names and values of `localStorage` and of `sessionStorage`. */
+export interface ClientStorage {
+  local: Record<string, string>
+  session: Record<string, string>
+}
+
 /**
- * The script a sandboxed storefront page runs first. Under `Content-Security-Policy: sandbox` the page has an opaque origin: storage and cookies throw or vanish, and its requests carry no cookies. The script gives the page in-memory `localStorage`, `sessionStorage` and `document.cookie`; adds the base path and the locale prefix (from `Shopify.routes.root`, once the header sets it) to root-relative addresses given to `fetch`, `XMLHttpRequest`, links and forms that lack them; and sends the page's own path in `X-Storefront-Page` on the store's own requests, which the storefront reads as the context of bundled sections, and names it as `storefront_page` in the address of a form posted to the store (a sandboxed document sends no `Referer`, so this is how the storefront knows where to send the visitor back to). Plain ES5, so it runs before any theme code on every browser the theme supports.
+ * The script a sandboxed storefront page runs first. Under `Content-Security-Policy: sandbox` the page has an opaque origin: storage and cookies throw or vanish, and its requests carry no cookies. The script gives the page `localStorage` and `sessionStorage` objects that live in memory, saved to the storefront (see below), and an in-memory `document.cookie`; adds the base path and the locale prefix (from `Shopify.routes.root`, once the header sets it) to root-relative addresses given to `fetch`, `XMLHttpRequest`, links and forms that lack them; and sends the page's own path in `X-Storefront-Page` on the store's own requests, which the storefront reads as the context of bundled sections, and names it as `storefront_page` in the address of a form posted to the store (a sandboxed document sends no `Referer`, so this is how the storefront knows where to send the visitor back to). Plain ES5, so it runs before any theme code on every browser the theme supports.
  *
  * No shopify.dev page describes a sandboxed preview: this is Debutify's own, from the storefront spec's "Sandboxed pages". What it relies on is the platform's: a document's origin under `sandbox` is opaque (https://html.spec.whatwg.org/multipage/browsers.html#sandboxed-origin-browsing-context-flag), so `location.origin` reads `"null"` while `location.protocol` and `location.host` still name the host that served the page, which is what "the store's own host" means here; and the page's own path is the one in `location`, read when a request is made, since a theme moves the page's address with `history.replaceState` when a variant is picked.
  *
  * Limits, on purpose: the in-memory storage is an object with the `Storage` methods, so `localStorage.key = value` as a property is not storage; a cookie is removed by `max-age=0` (or negative) or an `expires` in 1970, and no other expiry, `path` or `domain` is read; links are fixed when clicked (`click`, not `auxclick` or a hover), and a form's `action` when it is submitted (a `formaction` on a button is not, and neither does it name the page); an address given as an absolute URL, or a relative one without a leading slash, is the page's own to get right. The script runs once per window: a second run (the script included twice, or inside a fragment that a library inserts and runs) does nothing, so what the page stored is kept and nothing is wrapped twice.
  *
- * The base path is the only value written into the script. It is a JSON string with `<`, U+2028 and U+2029 escaped, so no base path can close the `<script>` element or break the string.
+ * Persistence: a sandboxed page has no storage of its own, and `window.name` would be readable by any site the frame is sent to, so the storefront keeps the two storages in the visitor's state, beside the cart. The page that carries the script also carries the visitor's storage (`options.storage`, written into the script as JSON), so the storages are full before any script of the page runs, and a change is sent back with `POST <base path>/storefront-storage` (through the page's own `fetch` as it was before the script wrapped it, so a theme that patches `fetch` never sees the save) (the whole of both storages, after 100 ms without another change, and at once when the page is hidden, with `keepalive`), which the next page load reads. The visitor key is the base path's token, so a visitor's storage is the one visitor's and never another's. `sessionStorage` is kept as long as `localStorage`: the preview has no tab to end it with. Without `options.storage` the storages are in memory only.
+ *
+ * The base path and the storage are the only values written into the script. It is a JSON string with `<`, U+2028 and U+2029 escaped, so no base path can close the `<script>` element or break the string.
  */
-export function storefrontClientScript (options: { basePath: string }): string {
-  const base = JSON.stringify(options.basePath.replace(/\/$/, '')).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')
+export function storefrontClientScript (options: { basePath: string, storage?: ClientStorage }): string {
+  const literal = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')
+  const base = literal(options.basePath.replace(/\/$/, ''))
+  const saved = options.storage ? literal(options.storage) : 'null'
   return `(function () {
   try { if (window.__storefrontClient) return; Object.defineProperty(window, '__storefrontClient', { value: true }); } catch (e) {}
   var base = ${base};
   var own = Object.prototype.hasOwnProperty;
-  function memory () {
+  var saved = ${saved};
+  var save = window.fetch;
+  var pending = 0;
+  var stores = {};
+  function send () {
+    pending = 0;
+    if (!save) return;
+    try {
+      save.call(window, base + '/storefront-storage', { method: 'POST', keepalive: true, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ local: stores.local.dump(), session: stores.session.dump() }) }).catch(function () {});
+    } catch (e) {}
+  }
+  function changed () {
+    if (saved && !pending) pending = setTimeout(send, 100);
+  }
+  function memory (name) {
     var keys = [], values = Object.create(null);
-    return {
+    var from = saved && saved[name];
+    if (from && typeof from === 'object') {
+      Object.keys(from).forEach(function (k) { if (typeof from[k] === 'string') { keys.push(k); values[k] = from[k]; } });
+    }
+    var store = {
       get length () { return keys.length; },
       key: function (i) { i = Number(i); return i >= 0 && i < keys.length ? keys[i] : null; },
       getItem: function (k) { k = String(k); return own.call(values, k) ? values[k] : null; },
-      setItem: function (k, v) { k = String(k); if (!own.call(values, k)) keys.push(k); values[k] = String(v); },
-      removeItem: function (k) { k = String(k); if (own.call(values, k)) { delete values[k]; keys.splice(keys.indexOf(k), 1); } },
-      clear: function () { keys = []; values = Object.create(null); }
+      setItem: function (k, v) { k = String(k); v = String(v); var same = own.call(values, k) && values[k] === v; if (!own.call(values, k)) keys.push(k); values[k] = v; if (!same) changed(); },
+      removeItem: function (k) { k = String(k); if (own.call(values, k)) { delete values[k]; keys.splice(keys.indexOf(k), 1); changed(); } },
+      clear: function () { keys = []; values = Object.create(null); changed(); }
     };
+    Object.defineProperty(store, 'dump', { enumerable: false, value: function () { var out = {}; keys.forEach(function (k) { out[k] = values[k]; }); return out; } });
+    stores[name] = store;
+    return store;
   }
-  try { Object.defineProperty(window, 'localStorage', { configurable: true, value: memory() }); } catch (e) {}
-  try { Object.defineProperty(window, 'sessionStorage', { configurable: true, value: memory() }); } catch (e) {}
+  try { Object.defineProperty(window, 'localStorage', { configurable: true, value: memory('local') }); } catch (e) {}
+  try { Object.defineProperty(window, 'sessionStorage', { configurable: true, value: memory('session') }); } catch (e) {}
+  if (saved) {
+    var flush = function () { if (pending) { clearTimeout(pending); send(); } };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flush(); });
+  }
   var jar = [], cookies = Object.create(null);
   try {
     Object.defineProperty(document, 'cookie', {

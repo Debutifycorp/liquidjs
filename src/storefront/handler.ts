@@ -86,10 +86,10 @@ export function redirect (ctx: Context, target: string | null | undefined, fallb
 export const ROUTE_HANDLERS: Partial<Record<Route['kind'], RouteHandler>> = {}
 
 /** The routes that change visitor state, whatever their method: they run one at a time per visitor. */
-export const mutates = (route: Route) => route.kind === 'cart' || route.kind === 'discount' || route.kind === 'contact' || route.kind === 'localization' || route.kind === 'password'
+export const mutates = (route: Route) => route.kind === 'cart' || route.kind === 'discount' || route.kind === 'storage' || route.kind === 'contact' || route.kind === 'localization' || route.kind === 'password'
 
 /** Whether a route reads the body of its request: a `POST` to one of the routes that take a form or JSON. */
-const readsBody = (route: Route, method: string) => method === 'POST' && (route.kind === 'cart' || route.kind === 'contact' || route.kind === 'localization' || route.kind === 'password' || route.kind === 'shipping')
+const readsBody = (route: Route, method: string) => method === 'POST' && (route.kind === 'cart' || route.kind === 'storage' || route.kind === 'contact' || route.kind === 'localization' || route.kind === 'password' || route.kind === 'shipping')
 
 /** The page the visitor came from: its path from the store's root (the base path taken off) and its query. A sandboxed page's form posts carry no `Referer` (its document has an opaque origin, and Chrome sends none: seen on the private theme's contact form), so there the client script names the page in the post's address, `storefront_page`, and that is read first; every other request has the `Referer`. Undefined when there is none, when it is outside the base path, or when it is not an address with a path on a store: the address is the visitor's to write, so anything but a plain path (a malformed address, `//host`, a backslash) is not used. */
 export function refererPath (ctx: Context): { path: string, search: string } | undefined {
@@ -165,10 +165,10 @@ const CORS = { 'access-control-allow-origin': '*' }
 const PREFLIGHT = { ...CORS, 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type, accept, x-requested-with, x-storefront-page', 'access-control-max-age': '600' }
 
 /** The client script first in `<head>` (the storefront spec's "Sandboxed pages"), or, in a document with no `<head>`, after its `<html>` tag or its doctype, where the parser starts the head: before a doctype the script would put the page in quirks mode. HTML with none of the three is not a page (a `{% layout none %}` alternate template read with `?view=`, or JSON or text served as `text/html`): it has no head to put a script in, and the script would be its first bytes, so it is returned as it is. The tag is the first textual match, so a `<head` inside an earlier comment takes the script, and the tag ends at the first `>`; the three are found by scanning, not by one pattern over the whole page, so a long page costs one pass. */
-function injectClient (html: string, basePath: string): string {
+function injectClient (html: string, basePath: string, storage: VisitorState['storage']): string {
   const opening = /<head[\s>]/i.exec(html) ?? /<html[\s>]/i.exec(html) ?? /<!doctype[\s>]/i.exec(html)
   if (!opening) return html
-  const tag = `<script>${storefrontClientScript({ basePath }).replace(/<\/script/gi, '<\\/script')}</script>`
+  const tag = `<script>${storefrontClientScript({ basePath, storage: storage ?? { local: {}, session: {} } }).replace(/<\/script/gi, '<\\/script')}</script>`
   const end = html.indexOf('>', opening.index) + 1
   return html.slice(0, end) + tag + html.slice(end)
 }
@@ -177,7 +177,7 @@ function injectClient (html: string, basePath: string): string {
 const SANDBOX_POLICY = 'sandbox allow-scripts allow-forms'
 
 /** The last step of a sandboxed page's answer: any origin may read it, it sets no cookie (the visitor is the option's, never a cookie's), it carries the sandbox policy unless the answer has a policy of its own, and a document gets the client script. The script is added to HTML that is a document and not a redirect, a `HEAD` answer or a fragment, never to JSON. The policy is defence in depth (final review A, M5): the isolation of a theme nobody reviewed would otherwise rest on the host remembering the header on every answer. */
-async function sandboxed (response: Response, basePath: string, fragment: boolean): Promise<Response> {
+async function sandboxed (response: Response, basePath: string, fragment: boolean, storage: VisitorState['storage']): Promise<Response> {
   const headers = new Headers(response.headers)
   headers.delete('set-cookie')
   for (const [name, value] of Object.entries(CORS)) headers.set(name, value)
@@ -187,7 +187,7 @@ async function sandboxed (response: Response, basePath: string, fragment: boolea
   if (body && !fragment && !redirect && (headers.get('content-type') ?? '').toLowerCase().startsWith('text/html')) {
     // the length of the page changes, and the caller's own `Content-Length` would cut it short
     headers.delete('content-length')
-    return new Response(injectClient(await response.text(), basePath), { status: response.status, statusText: response.statusText, headers })
+    return new Response(injectClient(await response.text(), basePath, storage), { status: response.status, statusText: response.statusText, headers })
   }
   return new Response(body, { status: response.status, statusText: response.statusText, headers })
 }
@@ -215,19 +215,23 @@ const isCart = (cart: unknown): boolean => isRecord(cart) && Array.isArray(cart.
   isRecord(cart.attributes) && Object.values(cart.attributes).every(value => typeof value === 'string') &&
   Array.isArray(cart.discountCodes) && cart.discountCodes.every(code => typeof code === 'string')
 
+/** Whether a stored `VisitorState.storage` is two maps of text to text. */
+const isStorage = (storage: unknown): boolean => isRecord(storage) && [storage.local, storage.session].every(map => isRecord(map) && Object.values(map).every(value => typeof value === 'string'))
+
 /**
  * What the cart store returned for a visitor, as a state the storefront can use (final review A, M7). A custom `CartStore` may return anything after a schema change (a row from Postgres, say), and a state without `cart` or `cart.lines` would make every request of that visitor a 500. One that is not a `VisitorState` is replaced by an empty visitor that keeps the country, language and unlocked flag that are valid, and the problem goes to `onReport` as an `error` (the key, a credential, is not in it). The stored state is replaced when the visitor next changes it; a visitor who does not change it is repaired, and reported, on each request.
  */
 function usable (stored: unknown, key: string, options: StorefrontOptions, request: Request): VisitorState {
   if (isRecord(stored) && isCart(stored.cart) &&
-    (stored.country === undefined || typeof stored.country === 'string') && (stored.language === undefined || typeof stored.language === 'string') && (stored.unlocked === undefined || typeof stored.unlocked === 'boolean')) return stored as unknown as VisitorState
+    (stored.country === undefined || typeof stored.country === 'string') && (stored.language === undefined || typeof stored.language === 'string') && (stored.unlocked === undefined || typeof stored.unlocked === 'boolean') && (stored.storage === undefined || isStorage(stored.storage))) return stored as unknown as VisitorState
   report(options, { kind: 'error', error: new Error('the cart store returned a visitor state that is not a VisitorState (a cart with lines, a note, attributes and discount codes): the visitor starts with an empty cart') }, request)
   const kept = isRecord(stored) ? stored : {}
   return {
     ...emptyVisitor(key),
     ...(typeof kept.country === 'string' ? { country: kept.country } : {}),
     ...(typeof kept.language === 'string' ? { language: kept.language } : {}),
-    ...(kept.unlocked === true ? { unlocked: true } : {})
+    ...(kept.unlocked === true ? { unlocked: true } : {}),
+    ...(isStorage(kept.storage) ? { storage: kept.storage as VisitorState['storage'] } : {})
   }
 }
 
@@ -249,10 +253,12 @@ export function createStorefront (options: StorefrontOptions): Storefront {
     const head = verb === 'HEAD'
     // a `HEAD` and a prefetch change nothing, whatever the route does for a visitor's `GET` (final review A, M4: a prefetcher sends a `GET`, not a `HEAD`, so a prefetched `url_to_remove` or discount link changed the cart); only the `HEAD` answer has no body
     const readOnly = head || prefetching(request)
+    // the visitor's storage, which a sandboxed page starts with (set once the visitor is read)
+    let storage: VisitorState['storage']
     // every answer leaves through here, the error pages too
     const done = (response: Response, cookie?: string, fragment = false, keepCache = false) => {
       const finished = finish(response, head, cookie, keepCache)
-      return sandbox ? sandboxed(finished, basePath, fragment) : finished
+      return sandbox ? sandboxed(finished, basePath, fragment, storage) : finished
     }
     try {
       const fromCookie = handleOptions.visitor ? undefined : cookieVisitor(request)
@@ -260,7 +266,7 @@ export function createStorefront (options: StorefrontOptions): Storefront {
       const theme = await resolve(options.theme, request)
       // the theme's compiled stylesheet and javascript hold no visitor state: answered before any is read, and before the data and services are resolved, which they do not need; with caching of their own, and open to a visitor who has not passed the password
       const asset = compiledAssetResponse(request, basePath, theme)
-      if (asset) return sandbox ? sandboxed(asset, basePath, true) : asset
+      if (asset) return sandbox ? sandboxed(asset, basePath, true, undefined) : asset
       const [given, services] = await Promise.all([resolve(options.data, request), resolve(options.services ?? {}, request)])
       // the store in the theme's languages (`StorefrontOptions.languages`); the same object for the same data and theme languages, so its views stay cached
       const data = options.languages === 'theme' ? withLanguages(given, themeLanguages(theme)) : given
@@ -279,6 +285,7 @@ export function createStorefront (options: StorefrontOptions): Storefront {
         const stored = given === undefined ? emptyVisitor(key) : usable(given, key, options, request)
         // the token is shown, never the key itself, whatever the stored cart holds (`cartToken`)
         const visitor: VisitorState = { ...stored, cart: { ...stored.cart, token: cartToken(key, sandbox) } }
+        storage = visitor.storage
         const routed = routeRequest(request.method, request.url, data, { basePath, country: visitor.country, search: limits.search })
         const view = resolveView(data, { basePath, localePrefix: routed.localePrefix, market: routed.market, language: routed.language })
         const ctx: Context = { request, options, limits, theme, data, services, routed, basePath, view, visitor, key, sandbox, fields }
@@ -292,6 +299,7 @@ export function createStorefront (options: StorefrontOptions): Storefront {
         const answer = await (ROUTE_HANDLERS[routed.route.kind] ?? answerPage)(ctx)
         // a `HEAD` request changes nothing, whatever the route does for a `GET`: HTTP makes it a safe method (https://www.rfc-editor.org/rfc/rfc9110#section-9.2.1), and a link-style route such as `/discount/<code>` is a `GET` that changes the cart; a link prefetcher sends a `GET` that says so in `Sec-Purpose`, `Purpose` or `X-Moz`, which changes nothing either (`prefetching`), and sets no cookie
         if (answer.state && !readOnly) {
+          storage = answer.state.storage
           await store.set(key, answer.state)
           return done(answer.response, !handleOptions.visitor && !fromCookie ? visitorCookie(key, basePath) : undefined, answer.fragment)
         }

@@ -5,6 +5,8 @@ import { harness, harnessTheme, VISITOR } from './harness'
 
 const sandbox = { visitor: 'preview-token-0000000001', basePath: '/p/tok', sandbox: true }
 const HOODIE = 43695847538710
+/** What the script of a visitor who has saved nothing starts its storages with. */
+const EMPTY = { local: {}, session: {} }
 
 /** The text after the opening `<head>`, where the client script goes first. */
 const afterHead = (html: string) => html.slice(html.indexOf('<head>') + '<head>'.length)
@@ -166,7 +168,7 @@ describe('sandbox mode: the form posts', () => {
 describe('sandbox mode: where the client script goes', () => {
   it('goes on the pages, the 404 page and the error page, once each', async () => {
     const { send } = harness({}, sandbox)
-    const script = `<script>${storefrontClientScript({ basePath: '/p/tok' })}</script>`
+    const script = `<script>${storefrontClientScript({ basePath: '/p/tok', storage: EMPTY })}</script>`
     for (const url of ['/p/tok', '/p/tok/products/black-sunnies', '/p/tok/products/nope', '/p/tok/nowhere/at/all']) {
       const page = await send('GET', url)
       expect([url, afterHead(page.text).startsWith(script), page.text.split(script).length - 1]).toEqual([url, true, 1])
@@ -247,16 +249,16 @@ describe('sandbox mode: where the client script goes', () => {
     const { send } = harness({}, sandbox)
     const sandboxed = await send('GET', '/p/tok')
     const plain = await harness({}, { visitor: VISITOR, basePath: '/p/tok' }).send('GET', '/p/tok')
-    expect(sandboxed.text.replace(`<script>${storefrontClientScript({ basePath: '/p/tok' })}</script>`, '')).toBe(plain.text)
+    expect(sandboxed.text.replace(`<script>${storefrontClientScript({ basePath: '/p/tok', storage: EMPTY })}</script>`, '')).toBe(plain.text)
     expect(plain.headers.get('access-control-allow-origin')).toBeNull()
     expect(plain.text).not.toContain('X-Storefront-Page')
   })
   it('escapes the base path, so a base path cannot close the script', async () => {
-    const script = storefrontClientScript({ basePath: '/p/</script><b>' })
+    const script = storefrontClientScript({ basePath: '/p/</script><b>', storage: EMPTY })
     expect(script).not.toContain('</script')
     expect(script).toContain('\\u003c/script')
     const { send } = harness({}, { visitor: 'preview-token-0000000001', basePath: '/p/<b>', sandbox: true })
     const page = await send('GET', '/p/%3Cb%3E')
-    expect(afterHead(page.text).startsWith(`<script>${storefrontClientScript({ basePath: '/p/<b>' })}</script>`)).toBe(true)
+    expect(afterHead(page.text).startsWith(`<script>${storefrontClientScript({ basePath: '/p/<b>', storage: EMPTY })}</script>`)).toBe(true)
   })
 })

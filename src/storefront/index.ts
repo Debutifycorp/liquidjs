@@ -2,9 +2,10 @@
 import { AJAX_HANDLERS } from './ajax'
 import { cartForm, FORM_HANDLERS } from './forms'
 import { ROUTE_HANDLERS } from './handler'
+import { STORAGE_HANDLERS } from './storage'
 
 // each unit exports its handlers as a plain object and this, the one module that imports them all, fills the table: no unit imports another for its side effects
-Object.assign(ROUTE_HANDLERS, AJAX_HANDLERS, FORM_HANDLERS)
+Object.assign(ROUTE_HANDLERS, AJAX_HANDLERS, FORM_HANDLERS, STORAGE_HANDLERS)
 
 // the cart routes have two formats, `/cart/add.js` (JSON, the Ajax unit's) and `/cart/add` (a form post or link, the forms unit's), so the one entry chooses by the route's format
 const cartJs = AJAX_HANDLERS.cart

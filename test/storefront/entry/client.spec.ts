@@ -345,3 +345,56 @@ describe('the client script and the storefront agree on the page header', () => 
     expect(wrapped((await bare.json()).sections.where)).toBe('/p/tok/fr-ca|index|CA|CAD')
   })
 })
+
+describe('the client script: saved storage', () => {
+  function savedWindow (storage: { local: Record<string, string>, session: Record<string, string> }) {
+    const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', { url: 'https://preview.invalid/p/tok/', runScripts: 'outside-only' })
+    const window = dom.window as any
+    const posts: Array<{ url: string, body: any, keepalive: boolean }> = []
+    Object.assign(window, { Headers, Request, Response })
+    window.fetch = async (input: string, init: any = {}) => {
+      posts.push({ url: String(input), body: JSON.parse(String(init.body ?? 'null')), keepalive: init.keepalive === true })
+      return new Response(null, { status: 204 })
+    }
+    window.eval(storefrontClientScript({ basePath: '/p/tok', storage }))
+    return { window, posts }
+  }
+  const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+  it('starts both storages with what the page was sent', () => {
+    const { window } = savedWindow({ local: { recent: '[1,2]', a: 'x' }, session: { view: 'grid' } })
+    expect([window.localStorage.getItem('recent'), window.localStorage.length, window.localStorage.key(1), window.sessionStorage.getItem('view'), window.sessionStorage.getItem('recent')]).toEqual(['[1,2]', 2, 'a', 'grid', null])
+  })
+
+  it('sends both storages whole, once, after a burst of changes, to the storage route under the base path', async () => {
+    const { window, posts } = savedWindow({ local: { keep: '1' }, session: {} })
+    window.localStorage.setItem('recent', '[3]')
+    window.localStorage.setItem('recent', '[4,3]')
+    window.sessionStorage.setItem('view', 'list')
+    window.localStorage.removeItem('missing')
+    expect(posts).toEqual([])
+    await wait(180)
+    expect(posts).toEqual([{ url: '/p/tok/storefront-storage', body: { local: { keep: '1', recent: '[4,3]' }, session: { view: 'list' } }, keepalive: true }])
+  })
+
+  it('sends at once, and only the once, when the page is hidden', async () => {
+    const { window, posts } = savedWindow({ local: {}, session: {} })
+    window.localStorage.setItem('a', '1')
+    window.dispatchEvent(new window.Event('pagehide'))
+    expect(posts).toHaveLength(1)
+    await wait(180)
+    expect(posts).toHaveLength(1)
+  })
+
+  it('sends nothing when nothing changed, a value set again as it was included, and nothing at all for a script made without storage', async () => {
+    const { window, posts } = savedWindow({ local: {}, session: { flag: '1' } })
+    window.localStorage.getItem('a')
+    window.sessionStorage.setItem('flag', '1')
+    window.dispatchEvent(new window.Event('pagehide'))
+    const plain = recordingWindow('https://preview.invalid/p/tok/')
+    plain.window.localStorage.setItem('a', '1')
+    plain.window.dispatchEvent(new plain.window.Event('pagehide'))
+    await wait(180)
+    expect([posts.length, plain.fetched.length]).toEqual([0, 0])
+  })
+})

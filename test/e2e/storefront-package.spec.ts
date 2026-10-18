@@ -75,6 +75,6 @@ describe('the built storefront entry', () => {
     const home = await storefront.handle(new Request('https://store.invalid/p/tok'), sandbox)
     const html = await home.text()
     expect([home.status, home.headers.get('access-control-allow-origin'), home.headers.get('set-cookie')]).toEqual([200, '*', null])
-    expect(html.startsWith(`<html><head><script>${storefrontClientScript({ basePath: '/p/tok' })}</script>`)).toBe(true)
+    expect(html.startsWith(`<html><head><script>${storefrontClientScript({ basePath: '/p/tok', storage: { local: {}, session: {} } })}</script>`)).toBe(true)
   })
 })

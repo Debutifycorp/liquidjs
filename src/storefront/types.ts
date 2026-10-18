@@ -6,6 +6,8 @@ export interface VisitorState {
   country?: string
   language?: string
   unlocked?: boolean
+  /** The names and values of the sandboxed page's `localStorage` and `sessionStorage`, which the client script saves with `POST /storefront-storage`. */
+  storage?: { local: Record<string, string>, session: Record<string, string> }
 }
 
 /** Where visitor states live. The default keeps them in memory (`memoryCartStore`); item 15 may keep them in Postgres later. */
