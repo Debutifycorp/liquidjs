@@ -7,15 +7,15 @@ const store = buildStore(previewSampleData)
 const product = (handle: string) => store.products.liquidMethodMissing(handle)
 
 describe('previewSampleData', () => {
-  it('is the parity store with three more products, and leaves the parity data as it was', () => {
+  it('is the parity store with two more products, and leaves the parity data as it was', () => {
     const handles = (previewSampleData.products ?? []).map(item => item.handle)
-    expect(handles.slice(-3)).toEqual(['wholesale-tee', 'scented-candle', 'video-tote'])
-    expect(handles).toHaveLength((storefrontSampleData.products ?? []).length + 3)
+    expect(handles.slice(-2)).toEqual(['wholesale-tee', 'scented-candle'])
+    expect(handles).toHaveLength((storefrontSampleData.products ?? []).length + 2)
     expect(Object.isFrozen(previewSampleData)).toBe(true)
   })
 
   it('lists the products the parity store leaves unlisted, which its own lists and search do not show', async () => {
-    const unlisted = ['gift-card', 'display-cube']
+    const unlisted = ['gift-card', 'video-tote', 'display-cube']
     expect((storefrontSampleData.products ?? []).filter(item => item.unlisted).map(item => item.handle).sort()).toEqual([...unlisted].sort())
     expect((previewSampleData.products ?? []).some(item => item.unlisted)).toBe(false)
     const listing = '{% for p in products %}{{ p.handle }},{% endfor %}'
@@ -44,6 +44,6 @@ describe('previewSampleData', () => {
   })
 
   it('has video and external video media beside the image', async () => {
-    expect(await render('{% for m in p.media %}{{ m.media_type }}{% if m.media_type == "video" %}:{{ m.sources.last.format }}{% endif %},{% endfor %}', { p: product('video-tote') })).toBe('image,video:mp4,external_video,')
+    expect(await render('{% for m in p.media %}{{ m.media_type }}{% if m.media_type == "video" %}:{{ m.sources.last.format }}{% endif %},{% endfor %}', { p: product('video-tote') })).toBe('image,video:m3u8,external_video,')
   })
 })

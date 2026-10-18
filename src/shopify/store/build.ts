@@ -163,10 +163,13 @@ function buildMedia (media: MediaData, index?: number, title = '', host = ''): u
     hidden(drop as unknown as LiquidObject, IMAGE_ROLE, { role: 'media' } satisfies ImageRole)
     return drop
   }
-  // https://shopify.dev/docs/api/liquid/objects/video and https://shopify.dev/docs/api/liquid/objects/external_video: `aspect_ratio` is "the aspect ratio of the video as a decimal", the data's, else the width over the height of a hosted video's first sized source, else of its preview image; a hosted video's `duration` is in milliseconds, nil when the data has none. A 3D model has no aspect ratio.
+  // https://shopify.dev/docs/api/liquid/objects/video and https://shopify.dev/docs/api/liquid/objects/external_video: `aspect_ratio` is "the aspect ratio of the video as a decimal", the data's, else the width over the height of a hosted video's first sized source, else of its preview image, to three places as the parity store prints it (`"aspect_ratio":1.333` for a 480 by 360 preview, fixture `ajax-product-js-media`); a hosted video's `duration` is in milliseconds, nil when the data has none. A 3D model has no aspect ratio.
   const sized = media.media_type === 'video' ? media.sources.find(source => source.width && source.height) : undefined
-  const ratio = media.media_type === 'video' && media.aspect_ratio ? media.aspect_ratio : sized ? sized.width! / sized.height! : media.preview_image?.width && media.preview_image.height ? media.preview_image.width / media.preview_image.height : null
-  const built: LiquidObject = { ...media, alt: media.alt ?? '', preview_image: image(media.preview_image), position, ...(media.media_type === 'model' ? {} : { aspect_ratio: ratio === null ? null : new LiquidFloat(ratio) }), ...(media.media_type === 'video' ? { duration: media.duration ?? null } : {}) }
+  const given = media.media_type === 'video' && media.aspect_ratio ? media.aspect_ratio : sized ? sized.width! / sized.height! : media.preview_image?.width && media.preview_image.height ? media.preview_image.width / media.preview_image.height : null
+  const ratio = given === null ? null : Math.round(given * 1000) / 1000
+  // the preview picture has the media's alt text, as the parity store prints it in `<img alt="The tote in a short clip">`
+  const preview = media.preview_image ? new ImageDrop({ ...media.preview_image, alt: media.alt || media.preview_image.alt }, false, null, title) : null
+  const built: LiquidObject = { ...media, alt: media.alt ?? '', preview_image: preview, position, ...(media.media_type === 'model' ? {} : { aspect_ratio: ratio === null ? null : new LiquidFloat(ratio) }), ...(media.media_type === 'video' ? { duration: media.duration ?? null } : {}) }
   // the files of a video or a model are Shopify's CDN addresses in the data and the Ajax API (`https://cdn.shopify.com/videos/…`); Liquid prints them under the store (`//<host>/cdn/shop/videos/…?v=0`, https://shopify.dev/docs/api/liquid/objects/video_source and https://shopify.dev/docs/api/liquid/objects/model_source)
   if (media.media_type === 'video' || media.media_type === 'model') {
     hidden(built, 'ajax_sources', media.sources)

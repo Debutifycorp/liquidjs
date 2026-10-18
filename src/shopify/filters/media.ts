@@ -244,7 +244,7 @@ function externalVideoUrl (this: FilterImpl, input: unknown, ...args: unknown[])
   const embed = EMBEDS[host]
   const { named } = splitArgs(args)
   const query: Record<string, string> = embed.defaults(shopifyState(this.context).request.origin)
-  for (const [key, value] of Object.entries(named)) query[key] = stringify(value)
+  for (const [key, value] of Object.entries(named)) query[key] = typeof value === 'boolean' ? (value ? '1' : '0') : stringify(value)
   const keys = Object.keys(query).filter(key => query[key] !== '').sort()
   const url = `${embed.base}${encodeURIComponent(stringify(media.external_id))}${keys.length ? '?' + keys.map(key => `${key}=${encodeURIComponent(query[key])}`).join('&') : ''}`
   return new ExternalVideoUrlDrop(url, media)

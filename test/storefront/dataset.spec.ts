@@ -9,7 +9,7 @@ import { renderProbeHtml, PROBE_DIR } from './probe'
 describe('storefrontSampleData', () => {
   const data = storefrontSampleData
   it('holds every kind of record part P seeds', () => {
-    expect(data.products?.length).toBe(31)
+    expect(data.products?.length).toBe(32)
     expect(data.collections?.map(c => c.handle)).toEqual(['men', 'women', 'unisex', 'tops', 'bottoms', 'accessories', 'featured', 'shoes', 'frontpage'])
     expect(data.discounts?.map(d => d.type).sort()).toEqual(['amount_off_order', 'amount_off_products', 'amount_off_products', 'buy_x_get_y', 'buy_x_get_y', 'free_shipping'])
     expect(data.markets?.map(m => m.handle)).toEqual(['us', 'ca', 'eu'])
@@ -65,7 +65,7 @@ describe('storefrontSampleData', () => {
   })
   it('renders every probe with today\'s engine', async () => {
     const templates = readdirSync(join(PROBE_DIR, 'templates')).filter(f => f.endsWith('.liquid')).map(f => f.replace(/\.liquid$/, ''))
-    expect(templates.sort()).toEqual(['cart.probe', 'cart.probe-text', 'collection.probe', 'page.probe', 'page.probe-form', 'page.probe-payment', 'product.probe', 'search.probe'])
+    expect(templates.sort()).toEqual(['cart.probe', 'cart.probe-text', 'collection.probe', 'page.probe', 'page.probe-form', 'page.probe-payment', 'product.probe', 'product.probe-media', 'search.probe'])
     // `cart.probe-text` prints plain text (fixture `ajax-cart-text`), the others JSON
     for (const t of templates.filter(name => name !== 'cart.probe-text')) {
       const html = await renderProbeHtml(t)

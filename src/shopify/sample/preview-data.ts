@@ -65,28 +65,11 @@ const extraProducts: ProductData[] = [
         }
       }
     }
-  },
-  // https://shopify.dev/docs/api/liquid/objects/video and https://shopify.dev/docs/api/liquid/objects/external_video: a hosted video (a CC0 clip from MDN) and a YouTube one beside the product's image
-  {
-    id: 8100000000004,
-    handle: 'video-tote',
-    title: 'Tote with a video',
-    description: '<p>A canvas tote bag, shown in a short clip.</p>',
-    vendor: 'Debutify Parity',
-    type: 'Bags',
-    tags: ['video'],
-    images: beanieImages.slice(3, 4),
-    media: [
-      { media_type: 'image', ...beanieImages[3] },
-      { media_type: 'video', id: 8100000000041, alt: 'The tote in a short clip', preview_image: beanieImages[3], duration: 5000, sources: [{ url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', mime_type: 'video/mp4', format: 'mp4', width: 640, height: 360 }] },
-      { media_type: 'external_video', id: 8100000000042, alt: 'The tote on YouTube', host: 'youtube', external_id: 'dQw4w9WgXcQ', preview_image: beanieImages[2] }
-    ],
-    variants: [{ id: 8100000000043, title: 'Default Title', option1: 'Default Title', price: 3600, available: true }]
   }
 ]
 
 /**
- * `storefrontSampleData` for previewing a theme: the same store with three products added that the parity store does not hold, each for a feature a theme can have and the mock.shop catalogue cannot show: volume pricing with a quantity rule (`wholesale-tee`), product disclosures (`scented-candle`) and hosted and external video (`video-tote`). The parity store's unlisted products (here its `gift-card`) are listed, so a preview shows every feature in `/collections/all` and search. They sit in no collection, so `/collections/all`, search and their own pages list them; the parity scenarios compare `storefrontSampleData` with recordings of the parity store, which is why they are not in it. Frozen all the way down, like the data it extends.
+ * `storefrontSampleData` for previewing a theme: the same store with two products added that the parity store does not hold, each for a feature a theme can have and the mock.shop catalogue cannot show: volume pricing with a quantity rule (`wholesale-tee`) and product disclosures (`scented-candle`). The parity store's unlisted products (`gift-card`, `video-tote`, `display-cube`, `olive-oil` and `pickup-mug`, which Shopify lists nowhere) are listed here, so a preview shows every feature in `/collections/all` and search; the products sit in no collection, so `/collections/all`, search and their own pages list them. Frozen all the way down, like the data it extends.
  */
 export const previewSampleData: StoreData = deepFreeze<StoreData>({
   ...storefrontSampleData,

@@ -34,6 +34,16 @@ describe('media objects', () => {
       .toBe('model|1|The cube in 3D|null|//shop.example/cdn/shop/3d/models/o/abc/box.glb?v=0=glb,//shop.example/cdn/shop/3d/models/o/def/box.usdz?v=0=usdz,')
     expect(await render('{{ p.media[0] | model_viewer_tag }}|{{ p.media[0] | media_tag }}', { p })).toContain('<model-viewer src="//shop.example/cdn/shop/3d/models/o/abc/box.glb?v=0" camera-controls="true"')
   })
+  it('gives the preview picture of a video the video\'s alt text, as the parity store prints it', async () => {
+    const p = buildProduct({
+      id: 1,
+      handle: 'clip',
+      title: 'Clip',
+      media: [{ media_type: 'video', id: 2, alt: 'The tote in a short clip', preview_image: { src: '/p.jpg', width: 960, height: 540 }, sources: [{ url: '/a.mp4', mime_type: 'video/mp4', format: 'mp4' }] }],
+      variants: [{ id: 9, title: 'Default Title', price: 1, available: true, option1: 'Default Title' }]
+    })
+    expect(await render('{{ p.media[0].preview_image.alt }}|{{ p.media[0].preview_image | image_url: width: 300 | image_tag }}', { p })).toContain('The tote in a short clip|<img src="/p.jpg?width=300" alt="The tote in a short clip"')
+  })
   it('marks the product images a variant shows, and lists those variants', async () => {
     const p = buildProduct({
       id: 1,

@@ -1,0 +1,44 @@
+{%- layout none -%}
+{%- capture media_list -%}
+{%- for m in product.media -%}
+{"id":{{ m.id | json }},"media_type":{{ m.media_type | json }},"alt":{{ m.alt | json }},"position":{{ m.position | json }},"preview_image":{{ m.preview_image | json }},"object":{{ m | json }},
+"image_urls":{"media_square":{{ m | image_url: width: 550, height: 550 | json }},"media_width":{{ m | image_url: width: 550 | json }},"preview_wide":{{ m.preview_image | image_url: width: 300, height: 100 | json }},"preview_square":{{ m.preview_image | image_url: width: 400, height: 400 | json }},"preview_same_ratio":{{ m.preview_image | image_url: width: 400, height: 225 | json }},"preview_height":{{ m.preview_image | image_url: height: 200 | json }},"preview_crop":{{ m.preview_image | image_url: width: 400, height: 400, crop: 'top' | json }},"preview_none":{{ m.preview_image | image_url | json }}},
+"media_tag":{{ m | media_tag | json }},
+"media_tag_class":{{ m | media_tag: class: 'a b', loading: 'lazy' | json }},
+"media_tag_size":{{ m | media_tag: image_size: '400x' | json }},
+{%- case m.media_type -%}
+{%- when 'video' -%}
+"sources":{{ m.sources | json }},"aspect_ratio":{{ m.aspect_ratio | json }},"duration":{{ m.duration | json }},
+"video_tag":{{ m | video_tag | json }},
+"video_controls":{{ m | video_tag: controls: true | json }},
+"video_autoplay":{{ m | video_tag: autoplay: true, loop: true, muted: true | json }},
+"video_loop":{{ m | video_tag: loop: true, controls: true | json }},
+"video_size":{{ m | video_tag: image_size: '400x' | json }},
+"video_class":{{ m | video_tag: class: 'clip wide', id: 'video-1' | json }},
+"video_loading":{{ m | video_tag: loading: 'eager' | json }},
+"video_preload":{{ m | video_tag: preload: 'none' | json }},
+"video_poster_size":{{ m | video_tag: image_size: 'master' | json }},
+{%- when 'external_video' -%}
+"host":{{ m.host | json }},"external_id":{{ m.external_id | json }},"aspect_ratio":{{ m.aspect_ratio | json }},
+"url":{{ m | external_video_url | json }},
+"url_autoplay":{{ m | external_video_url: autoplay: true, loop: true | json }},
+"url_color":{{ m | external_video_url: color: 'white', controls: false | json }},
+"tag":{{ m | external_video_tag | json }},
+"tag_class":{{ m | external_video_tag: class: 'embed', loading: 'lazy' | json }},
+"tag_from_url":{{ m | external_video_url: autoplay: true | external_video_tag | json }},
+{%- when 'model' -%}
+"sources":{{ m.sources | json }},
+"viewer":{{ m | model_viewer_tag | json }},
+"viewer_reveal":{{ m | model_viewer_tag: reveal: 'interaction', toggleable: true | json }},
+"viewer_class":{{ m | model_viewer_tag: class: 'cube', alt: 'A cube' | json }},
+"viewer_size":{{ m | model_viewer_tag: image_size: '400x' | json }},
+"viewer_policy":{{ m | model_viewer_tag: interaction-policy: 'allow-when-focused', camera-controls: false | json }},
+{%- endcase -%}
+"preview_tag":{{ m.preview_image | image_url: width: 300 | image_tag | json }}}{%- unless forloop.last -%},{%- endunless -%}
+{%- endfor -%}
+{%- endcapture -%}
+{%- assign videos = product.media | where: 'media_type', 'video' -%}
+{%- assign models = product.media | where: 'media_type', 'model' -%}
+{%- assign externals = product.media | where: 'media_type', 'external_video' -%}
+{"id":{{ product.id | json }},"title":{{ product.title | json }},"featured_media":{{ product.featured_media | json }},"featured_image":{{ product.featured_image | json }},"images_count":{{ product.images | size | json }},"media_count":{{ product.media | size | json }},"videos":{{ videos | size | json }},"models":{{ models | size | json }},"externals":{{ externals | size | json }},
+"media":[{{ media_list }}],"ajax":{{ product | json }}}

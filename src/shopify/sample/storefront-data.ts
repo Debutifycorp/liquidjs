@@ -118,6 +118,36 @@ const unlisted: ProductData[] = [
     options: ['Denominations'],
     variants: [2500, 5000, 10000].map((price, i) => ({ id: 8100000000011 + i, title: `$${price / 100}`, option1: `$${price / 100}`, price, available: true, requires_shipping: false, taxable: false, inventory_management: null }))
   },
+  // https://shopify.dev/docs/api/liquid/objects/video and https://shopify.dev/docs/api/liquid/objects/external_video: a hosted video (a CC0 clip from MDN) and a YouTube one beside the product's image
+  {
+    id: 8100000000004,
+    handle: 'video-tote',
+    created_at: '2026-10-18T07:45:32-04:00',
+    published_at: '2026-10-18T07:45:45-04:00',
+    title: 'Tote with a video',
+    description: '<p>A canvas tote bag, shown in a short clip.</p>',
+    vendor: 'Debutify Parity',
+    type: 'Bags',
+    tags: ['video'],
+    unlisted: true,
+    images: [picture('beanie', 3)],
+    media: [
+      { media_type: 'image', ...picture('beanie', 3) },
+      {
+        media_type: 'video',
+        id: 8100000000041,
+        alt: 'The tote in a short clip',
+        preview_image: { src: `${STORE_FILES}preview_images/1bf9909c8b1b4c34ba3ff79a8fb486f4.thumbnail.0000000000.jpg`, width: 960, height: 540 },
+        duration: 5050,
+        sources: [
+          { url: 'https://cdn.shopify.com/videos/c/vp/1bf9909c8b1b4c34ba3ff79a8fb486f4/1bf9909c8b1b4c34ba3ff79a8fb486f4.SD-480p-1.2Mbps-98029235.mp4', mime_type: 'video/mp4', format: 'mp4', width: 852, height: 480 },
+          { url: 'https://cdn.shopify.com/videos/c/vp/1bf9909c8b1b4c34ba3ff79a8fb486f4/1bf9909c8b1b4c34ba3ff79a8fb486f4.m3u8', mime_type: 'application/x-mpegURL', format: 'm3u8', width: 852, height: 480 }
+        ]
+      },
+      { media_type: 'external_video', id: 8100000000042, alt: 'The tote on YouTube', host: 'youtube', external_id: 'jNQXAC9IVRw', preview_image: { src: `${STORE_FILES}preview_images/hqdefault.jpg`, width: 480, height: 360 } }
+    ],
+    variants: [{ id: 8100000000043, title: 'Default Title', option1: 'Default Title', price: 3600, available: true, inventory_management: 'shopify', inventory_quantity: 20 }]
+  },
   // https://shopify.dev/docs/api/liquid/objects/model: a 3D model (Box by Cesium, CC BY 4.0, from the Khronos glTF sample assets) beside the product's image
   {
     id: 8100000000005,

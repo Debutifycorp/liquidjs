@@ -362,6 +362,10 @@ describe('shopify/filters/media', () => {
     expect(await render('{{ media | external_video_url: autoplay: 1 }}', { media: { ...external, host: 'vimeo', external_id: '1234' } })).toBe('https://player.vimeo.com/video/1234?autoplay=1')
     expect(await render('{{ media | external_video_url: autoplay: 1 | external_video_tag }}', { media: { ...external, host: 'vimeo', external_id: '1234' } })).toBe('<iframe frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="allowfullscreen" src="https://player.vimeo.com/video/1234?autoplay=1" title="Potion beats"></iframe>')
   })
+  it('external_video_url writes a boolean option as 1 or 0', async () => {
+    const media = { ...external, host: 'vimeo', external_id: '1234' }
+    expect(await render('{{ media | external_video_url: autoplay: true, loop: false }}', { media })).toBe('https://player.vimeo.com/video/1234?autoplay=1&loop=0')
+  })
   it('the external_video_url result is a string to filters that read strings', async () => {
     const url = 'https://player.vimeo.com/video/1234?autoplay=1'
     const media = { ...external, host: 'vimeo', external_id: '1234' }
