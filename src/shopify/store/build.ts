@@ -1232,6 +1232,8 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   const { prefix } = view
   const source = translateData(data, view.language)
   const currency = currencyOf(data, view)
+  // the host the files of a video or a model are printed under (`storeFileUrl`); none in a view outside the store's domain, which leaves their CDN address as it is
+  const filesHost = view.storeFiles === 'cdn' ? '' : data.shop.domain
   // a reference metafield points at an object of this view, which is read when the metafield's `value` is (`MetafieldDrop`), after the view is built
   const finished: { objects?: StoreObjects } = {}
   const resolve: MetafieldResolver = (kind, key) => {
@@ -1243,7 +1245,7 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
   }
   // an unlisted product is built and found by its handle and id (`all_products`, its page, its variants in the cart), and left out of every list: `HandleMap.values` and the iteration skip it
   const isListed = (product: ProductData) => product.unlisted !== true
-  const built = (source.products ?? []).map(product => [product.handle, buildProduct(product, prefix, currency, resolve, data.shop.domain), isListed(product)] as const)
+  const built = (source.products ?? []).map(product => [product.handle, buildProduct(product, prefix, currency, resolve, filesHost), isListed(product)] as const)
   const products = new HandleMap(built.filter(([, , listed]) => listed).map(([handle, product]) => [handle, product] as [string, LiquidObject]), built.filter(([, , listed]) => !listed).map(([handle, product]) => [handle, product] as [string, LiquidObject]))
   const listedData = (source.products ?? []).filter(isListed)
   // Every shop answers `collections.all` with all its listed products. https://shopify.dev/docs/api/liquid/objects/collections
@@ -1306,7 +1308,7 @@ function buildObjects (data: StoreData, view: StoreView): StoreObjects {
     articles,
     policies: new HandleMap(policies.map(policy => [policyHandle(policy.type), policy.built])),
     images: new HandleMap(Object.entries(data.images ?? {}).map(([name, img]) => [name, new ImageDrop(img)])),
-    videos: Object.fromEntries(Object.entries(data.videos ?? {}).map(([name, video]) => [name, buildMedia(video, undefined, '', data.shop.domain) as LiquidObject])),
+    videos: Object.fromEntries(Object.entries(data.videos ?? {}).map(([name, video]) => [name, buildMedia(video, undefined, '', filesHost) as LiquidObject])),
     linklists: source.linklists ?? [],
     cart: {},
     customer: data.customer ? buildCustomer(data.customer, products, prefix, currency, resolve) : null,

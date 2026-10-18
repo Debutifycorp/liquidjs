@@ -6,9 +6,11 @@ export interface StoreView {
   market: string
   language: string
   prefix: string
+  /** `'cdn'` when the page is not served from the store's own domain (a sandboxed preview): the videos and 3D models Liquid prints keep Shopify's CDN address, since `//<store domain>/cdn/shop/<path>` would reach no server. */
+  storeFiles?: 'cdn'
 }
 
-export const viewKey = (view: StoreView) => `${view.market}|${view.language}|${view.prefix}`
+export const viewKey = (view: StoreView) => `${view.market}|${view.language}|${view.prefix}${view.storeFiles ? `|${view.storeFiles}` : ''}`
 
 /**
  * The view a request renders in: the market and language it names, otherwise the primary market's and its first language, and the prefix `basePath + localePrefix`, each normalised to one leading slash, no trailing slash and no doubled slash (`'//'` and `'/'` are no prefix, `'p/tok/'` is `/p/tok`), so no URL built from it can start with `//`. A request that says nothing renders unprefixed in the primary market and language, which is what the store rendered before it had views.
@@ -20,7 +22,8 @@ export function resolveView (data: StoreData, request: RequestInput): StoreView 
   return {
     market: request.market ?? primary?.handle ?? 'default',
     language: request.language ?? primary?.languages[0] ?? data.languages?.[0]?.iso_code ?? data.shop.locale ?? 'en',
-    prefix: `${cleanPrefix(request.basePath)}${cleanPrefix(request.localePrefix)}`
+    prefix: `${cleanPrefix(request.basePath)}${cleanPrefix(request.localePrefix)}`,
+    ...(request.storeFiles ? { storeFiles: request.storeFiles } : {})
   }
 }
 

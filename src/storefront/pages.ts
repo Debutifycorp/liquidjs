@@ -97,7 +97,7 @@ function renderOptions (ctx: Context, page: PageRequest, form?: FormOutcome) {
     cart: ctx.visitor.cart,
     comments: ctx.visitor.comments,
     // https://shopify.dev/docs/storefronts/themes/architecture/section-groups#contextual-section-groups: a group file `<group>.context.<context>.json` with `"market": "<market handle>"` overrides its parent for that market; the page's market is the context when the store data names it (a store with no markets has the engine's stand-in handle `default`, which is no market handle), and no B2B customers exist here, so `b2b` is never set. Which file wins when several match, and what happens when none does, the page does not say: the engine takes the first match and otherwise the group as it is
-    request: { ...page.request, ...(ctx.data.markets?.some(market => market.handle === page.request.market) ? { context: { market: page.request.market } } : {}), host: url.host, origin: url.origin, ...(form ? { form } : justPosted ? { form: { type: 'new_comment', posted: true } } : {}), ...(justPosted ? { comment: commentId } : {}) },
+    request: { ...page.request, ...(ctx.data.markets?.some(market => market.handle === page.request.market) ? { context: { market: page.request.market } } : {}), host: url.host, origin: url.origin, ...(ctx.sandbox ? { storeFiles: 'cdn' as const } : {}), ...(form ? { form } : justPosted ? { form: { type: 'new_comment', posted: true } } : {}), ...(justPosted ? { comment: commentId } : {}) },
     // the theme's compiled stylesheet and javascript files, which `compiledAssetResponse` serves
     compiledAssetsUrl: `${ctx.basePath}${COMPILED_ASSETS}`
   }

@@ -78,6 +78,8 @@ export interface RequestInput {
   comment?: number
   /** The path every URL starts with (`/p/<token>`); empty when omitted. Debutify's: a store served under a path of its own, which shopify.dev does not describe. */
   basePath?: string
+  /** `'cdn'` when the page is served from an address that is not the store's domain (a sandboxed preview): a video or a 3D model keeps its address on Shopify's CDN (`https://cdn.shopify.com/3d/models/o/<id>/<file>`) where Liquid would print it under the store (`//<domain>/cdn/shop/3d/models/o/<id>/<file>?v=0`, which Shopify's store domain answers with the same bytes and no other host does). Debutify's: shopify.dev says nothing about a page outside its store domain. */
+  storeFiles?: 'cdn'
   /** The market and language prefix after the base path (`/fr-ca`); empty for the primary market's default language. */
   localePrefix?: string
   /** The handle of the market the address belongs to, and its language: https://shopify.dev/docs/storefronts/themes/markets/multiple-currencies-languages */

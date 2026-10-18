@@ -296,7 +296,7 @@ export function createStorefront (options: StorefrontOptions): Storefront {
         const visitor: VisitorState = { ...stored, cart: { ...stored.cart, token: cartToken(key, sandbox) } }
         storage = visitor.storage
         const routed = routeRequest(request.method, request.url, data, { basePath, country: visitor.country, search: limits.search })
-        const view = resolveView(data, { basePath, localePrefix: routed.localePrefix, market: routed.market, language: routed.language })
+        const view = resolveView(data, { basePath, localePrefix: routed.localePrefix, market: routed.market, language: routed.language, ...(sandbox ? { storeFiles: 'cdn' as const } : {}) })
         const ctx: Context = { request, options, limits, theme, data, services, routed, basePath, view, visitor, key, sandbox, fields }
         // https://shopify.dev/docs/storefronts/themes/architecture/templates/password: the password page is "shown when password protection is applied to a store". The page does not say how any other address reaches it, so sending every other address there is Debutify's reading (no recording: the parity store was recorded past its password page). The page itself is open as a page; asked for a section (`?section_id=`, `?sections=`) it is any other address, or a section of the theme would show the store's products to a visitor without the password.
         const route = routed.route
