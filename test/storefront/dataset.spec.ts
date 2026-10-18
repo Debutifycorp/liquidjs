@@ -9,7 +9,7 @@ import { renderProbeHtml, PROBE_DIR } from './probe'
 describe('storefrontSampleData', () => {
   const data = storefrontSampleData
   it('holds every kind of record part P seeds', () => {
-    expect(data.products?.length).toBe(33)
+    expect(data.products?.length).toBe(34)
     expect(data.collections?.map(c => c.handle)).toEqual(['men', 'women', 'unisex', 'tops', 'bottoms', 'accessories', 'featured', 'shoes', 'frontpage'])
     expect(data.discounts?.map(d => d.type).sort()).toEqual(['amount_off_order', 'amount_off_products', 'amount_off_products', 'buy_x_get_y', 'buy_x_get_y', 'free_shipping'])
     expect(data.markets?.map(m => m.handle)).toEqual(['us', 'ca', 'eu'])
@@ -64,13 +64,19 @@ describe('storefrontSampleData', () => {
     expect(mug?.unlisted).toBe(true)
     expect(mug?.variants.map(variant => [variant.title, variant.inventory_quantity, variant.inventory_policy ?? 'deny'])).toEqual([['Small', 5, 'deny'], ['Large', 0, 'continue']])
   })
+  it('holds an olive oil with a unit price per 100 ml and a rating', async () => {
+    const store = buildStore(data)
+    const oil = store.products.liquidMethodMissing('olive-oil')
+    const html = await renderLiquid(createShopifyLiquid(), '{% for v in p.variants %}{{ v.unit_price | money }} per {{ v.unit_price_measurement.reference_value }} {{ v.unit_price_measurement.reference_unit }};{% endfor %}{{ p.metafields.reviews.rating.value.rating | json }}/{{ p.metafields.reviews.rating.value.scale_max | json }}/{{ p.metafields.reviews.rating_count.value }}|{{ p.metafields.reviews.rating.value.rating | times: 2 }}', { p: oil })
+    expect(html.html).toBe('$3.60 per 100 ml;$3.20 per 100 ml;$2.80 per 100 ml;"4.5"/"5.0"/37|9.0')
+  })
   it('is frozen all the way down', () => {
     const frozen = (value: unknown): boolean => !value || typeof value !== 'object' || (Object.isFrozen(value) && Object.values(value).every(frozen))
     expect(frozen(data)).toBe(true)
   })
   it('renders every probe with today\'s engine', async () => {
     const templates = readdirSync(join(PROBE_DIR, 'templates')).filter(f => f.endsWith('.liquid')).map(f => f.replace(/\.liquid$/, ''))
-    expect(templates.sort()).toEqual(['cart.probe', 'cart.probe-text', 'collection.probe', 'page.probe', 'page.probe-form', 'page.probe-payment', 'product.probe', 'product.probe-media', 'search.probe'])
+    expect(templates.sort()).toEqual(['cart.probe', 'cart.probe-text', 'collection.probe', 'page.probe', 'page.probe-form', 'page.probe-payment', 'product.probe', 'product.probe-extras', 'product.probe-media', 'search.probe'])
     // `cart.probe-text` prints plain text (fixture `ajax-cart-text`), the others JSON
     for (const t of templates.filter(name => name !== 'cart.probe-text')) {
       const html = await renderProbeHtml(t)

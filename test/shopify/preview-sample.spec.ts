@@ -15,7 +15,7 @@ describe('previewSampleData', () => {
   })
 
   it('lists the products the parity store leaves unlisted, which its own lists and search do not show', async () => {
-    const unlisted = ['gift-card', 'video-tote', 'display-cube', 'pickup-mug']
+    const unlisted = ['gift-card', 'video-tote', 'display-cube', 'olive-oil', 'pickup-mug']
     expect((storefrontSampleData.products ?? []).filter(item => item.unlisted).map(item => item.handle).sort()).toEqual([...unlisted].sort())
     expect((previewSampleData.products ?? []).some(item => item.unlisted)).toBe(false)
     const listing = '{% for p in products %}{{ p.handle }},{% endfor %}'

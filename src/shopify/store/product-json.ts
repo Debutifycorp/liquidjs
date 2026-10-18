@@ -76,6 +76,9 @@ function sellingPlanGroupJson (group: LiquidObject, shape: 'ajax' | 'liquid'): R
   }
 }
 
+/** A decimal as the answers write a measurement's quantity: a whole number with one decimal (`250.0`), any other number as it is, both as text. */
+const decimalText = (value: number) => Number.isInteger(value) ? value.toFixed(1) : String(value)
+
 /** A variant in the Ajax answer (`.js`) or in `product | json` (`'liquid'`): the parity store prints the same fields in a different order, with `quantity_price_breaks` in the first only (fixtures `ajax-product-js` and `probe-product-default`). */
 function variantJson (variant: LiquidObject, product: LiquidObject, shape: 'ajax' | 'liquid'): Record<string, unknown> {
   const featured = variant.featured_image as ImageDrop | null
@@ -103,9 +106,12 @@ function variantJson (variant: LiquidObject, product: LiquidObject, shape: 'ajax
     ...(media ? { featured_media: variantMediaJson(media, shape) } : {})
   }
   const plans = { requires_selling_plan: variant.requires_selling_plan ?? false, selling_plan_allocations: (variant.selling_plan_allocations as LiquidObject[]).map(allocationJson) }
+  // a variant with a unit price measurement has `unit_price` and the measurement, whose `quantity_value` is a decimal written as text (`"250.0"`), after `quantity_rule` in the Ajax answer and after `requires_selling_plan` in `product | json`
+  const measurement = variant.unit_price_measurement as LiquidObject | null
+  const unit = measurement ? { unit_price: variant.unit_price, unit_price_measurement: { measured_type: measurement.measured_type, quantity_value: decimalText(measurement.quantity_value as number), quantity_unit: measurement.quantity_unit, reference_value: measurement.reference_value, reference_unit: measurement.reference_unit } } : {}
   return shape === 'ajax'
-    ? { ...head, quantity_rule: variant.quantity_rule, quantity_price_breaks: variant.quantity_price_breaks ?? [], ...plans }
-    : { ...head, ...plans, quantity_rule: variant.quantity_rule }
+    ? { ...head, quantity_rule: variant.quantity_rule, ...unit, quantity_price_breaks: variant.quantity_price_breaks ?? [], ...plans }
+    : { ...head, requires_selling_plan: plans.requires_selling_plan, ...unit, selling_plan_allocations: plans.selling_plan_allocations, quantity_rule: variant.quantity_rule }
 }
 
 /**

@@ -1,0 +1,23 @@
+{%- layout none -%}
+{%- capture variants -%}
+{%- for v in product.variants -%}
+{"id":{{ v.id | json }},"title":{{ v.title | json }},"price":{{ v.price | json }},"available":{{ v.available | json }},"inventory_policy":{{ v.inventory_policy | json }},"inventory_quantity":{{ v.inventory_quantity | json }},"requires_shipping":{{ v.requires_shipping | json }},"taxable":{{ v.taxable | json }},
+"unit_price":{{ v.unit_price | json }},"unit_price_money":{{ v.unit_price | money | json }},"unit_price_measurement":{{ v.unit_price_measurement | json }},
+"measurement":{%- if v.unit_price_measurement -%}{"measured_type":{{ v.unit_price_measurement.measured_type | json }},"quantity_unit":{{ v.unit_price_measurement.quantity_unit | json }},"quantity_value":{{ v.unit_price_measurement.quantity_value | json }},"reference_unit":{{ v.unit_price_measurement.reference_unit | json }},"reference_value":{{ v.unit_price_measurement.reference_value | json }}}{%- else -%}null{%- endif -%},
+"unit_price_with_measurement":{{ v.unit_price | unit_price_with_measurement: v.unit_price_measurement | json }},
+"store_availabilities":[{%- for s in v.store_availabilities -%}{"available":{{ s.available | json }},"pick_up_enabled":{{ s.pick_up_enabled | json }},"pick_up_time":{{ s.pick_up_time | json }},"location":{"id":{{ s.location.id | json }},"name":{{ s.location.name | json }},"address":{{ s.location.address | json }},"latitude":{{ s.location.latitude | json }},"longitude":{{ s.location.longitude | json }}}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}]}{%- unless forloop.last -%},{%- endunless -%}
+{%- endfor -%}
+{%- endcapture -%}
+{%- capture options -%}
+{%- for o in product.options_with_values -%}
+{"name":{{ o.name | json }},"position":{{ o.position | json }},"selected_value":{{ o.selected_value | json }},"values":[{%- for ov in o.values -%}{"id":{{ ov.id | json }},"name":{{ ov.name | json }},"available":{{ ov.available | json }},"selected":{{ ov.selected | json }},"swatch":{{ ov.swatch | json }},"product_url":{{ ov.product_url | json }},"variant":{{ ov.variant.id | json }}}{%- unless forloop.last -%},{%- endunless -%}{%- endfor -%}]}{%- unless forloop.last -%},{%- endunless -%}
+{%- endfor -%}
+{%- endcapture -%}
+{%- assign rating = product.metafields.reviews.rating -%}
+{%- assign count = product.metafields.reviews.rating_count -%}
+{"id":{{ product.id | json }},"title":{{ product.title | json }},"gift_card":{{ product["gift_card?"] | json }},"template":{"name":{{ template.name | json }},"suffix":{{ template.suffix | json }}},"template_suffix":{{ product.template_suffix | json }},
+"price":{{ product.price | json }},"money":{{ product.price | money | json }},
+"rating":{"type":{{ rating.type | json }},"value":{{ rating.value | json }},"print":{{ rating.value | json }},"rating":{{ rating.value.rating | json }},"scale_min":{{ rating.value.scale_min | json }},"scale_max":{{ rating.value.scale_max | json }},"text":"{{ rating.value }} / {{ rating.value.scale_max }}","metafield":{{ rating | json }}},
+"rating_count":{"type":{{ count.type | json }},"value":{{ count.value | json }},"metafield":{{ count | json }}},
+"metafields":{{ product.metafields | json }},
+"options":[{{ options }}],"variants":[{{ variants }}],"ajax":{{ product | json }}}

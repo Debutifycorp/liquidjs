@@ -176,6 +176,27 @@ const unlisted: ProductData[] = [
     ],
     variants: [{ id: 8100000000051, title: 'Default Title', option1: 'Default Title', price: 1800, available: true, inventory_management: 'shopify', inventory_quantity: 20 }]
   },
+  // https://shopify.dev/docs/api/liquid/objects/unit_price_measurement and https://shopify.dev/docs/api/liquid/objects/metafield (the `rating` type): a unit price per 100 ml and the rating the review apps write to `reviews.rating` and `reviews.rating_count`
+  {
+    id: 8100000000006,
+    handle: 'olive-oil',
+    created_at: '2026-10-18T07:46:01-04:00',
+    published_at: '2026-10-18T07:46:04-04:00',
+    title: 'Olive oil',
+    description: '<p>Cold-pressed olive oil in glass.</p>',
+    vendor: 'Debutify Parity',
+    type: 'Pantry',
+    tags: ['pantry'],
+    unlisted: true,
+    images: [picture('beanie', 2)],
+    options: ['Size'],
+    metafields: { reviews: { rating: { type: 'rating', value: { scale_min: '1.0', scale_max: '5.0', value: '4.5' } }, rating_count: { type: 'number_integer', value: 37 } } },
+    variants: [
+      { id: 8100000000061, title: '250 ml', option1: '250 ml', price: 900, available: true, inventory_management: 'shopify', inventory_quantity: 40, weight: 400, unit_price_measurement: { measured_type: 'volume', quantity_value: 250, quantity_unit: 'ml', reference_value: 100, reference_unit: 'ml' } },
+      { id: 8100000000062, title: '500 ml', option1: '500 ml', price: 1600, available: true, inventory_management: 'shopify', inventory_quantity: 40, weight: 700, unit_price_measurement: { measured_type: 'volume', quantity_value: 500, quantity_unit: 'ml', reference_value: 100, reference_unit: 'ml' } },
+      { id: 8100000000063, title: '1 L', option1: '1 L', price: 2800, available: true, inventory_management: 'shopify', inventory_quantity: 40, weight: 1300, unit_price_measurement: { measured_type: 'volume', quantity_value: 1, quantity_unit: 'l', reference_value: 100, reference_unit: 'ml' } }
+    ]
+  },
   // https://shopify.dev/docs/api/liquid/objects/store_availability: stock at the one store location, which the recording of these pages has local pickup switched on for (`tools/shopify-parity/record.mjs` switches it on for a scenario that says `pickup` and off again); the Large size is sold past zero stock, so it can be bought and cannot be picked up
   {
     id: 8100000000007,

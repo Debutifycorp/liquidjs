@@ -52,6 +52,13 @@ function finite (value: unknown): number | null {
   return Number.isFinite(n) ? n : null
 }
 
+/** A decimal of a rating, which Shopify writes as text in JSON (`"ratingValue": {{ rating.rating | json }}` prints `"4.5"`, `"bestRating"` prints `"5.0"`, fixture `page-product-unit-price`) and prints and computes as a number everywhere else. */
+class RatingNumber extends LiquidFloat {
+  public toJSON (): never {
+    return this.toString() as never
+  }
+}
+
 /**
  * The rating object a `rating` metafield gives, https://shopify.dev/docs/api/liquid/objects/rating: `rating`, `scale_min` and `scale_max`, each a number. Printed on its own it is its `rating`, which Dawn and our theme print as `{{ product.metafields.reviews.rating.value }} / {{ product.metafields.reviews.rating.value.scale_max }}`; shopify.dev does not say what the object prints and no recording holds a rating, so the print is not pinned.
  */
@@ -62,9 +69,9 @@ export class RatingDrop extends Drop {
 
   public constructor (rating: number, scaleMin: number, scaleMax: number) {
     super()
-    this.rating = new LiquidFloat(rating)
-    this.scale_min = new LiquidFloat(scaleMin)
-    this.scale_max = new LiquidFloat(scaleMax)
+    this.rating = new RatingNumber(rating)
+    this.scale_min = new RatingNumber(scaleMin)
+    this.scale_max = new RatingNumber(scaleMax)
   }
 
   public valueOf () {
