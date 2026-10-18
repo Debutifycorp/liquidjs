@@ -12,7 +12,7 @@ import { buildPredictiveSearch } from './predictive'
 import { buildRecommendations, RecommendationsRequest } from './recommendations'
 import { buildSearch } from './search'
 import type { StoreData } from './types'
-import { resolveView, withoutPrefix, withPrefix } from './view'
+import { cleanPrefix, resolveView, withoutPrefix, withPrefix } from './view'
 import type { StoreView } from './view'
 import { sampleStoreData } from '../sample/sample-data'
 
@@ -118,12 +118,20 @@ const BASE_ROUTES: Readonly<Record<string, string>> = {
 /**
  * Shopify's storefront routes under `prefix` (the view's base path, then its locale prefix), https://shopify.dev/docs/api/liquid/objects/routes. Under a locale prefix the parity store prints every route with the prefix before it (fixtures `probe-page-en-ca`, `probe-page-fr-ca` and `probe-page-fr-eu`, where shopify.dev lists only the default locale's paths), and its `root_url` as the bare prefix with no trailing slash (`/fr-ca`), or `/` with no prefix (fixtures `probe-page-fr-ca` and `probe-page-home`).
  *
- * The fixtures print `account_login_url` as an address on the store's own domain (`customer_authentication/redirect`, new customer accounts); customer accounts are out of scope for item 22, so it stays `<prefix>/account/login`, which is where the engine's customer templates are.
+ * `account_login_url` is the classic `<prefix>/account/login` here; `buildGlobals` prints the address of new customer accounts instead (`loginUrl`), which is what the parity store's fixtures print.
  */
 export function buildRoutes (prefix: string): Readonly<Record<string, string>> {
   const out: Record<string, string> = {}
   for (const [name, path] of Object.entries(BASE_ROUTES)) out[name] = withPrefix(prefix, path)
   return Object.freeze(out)
+}
+
+/**
+ * The address of the customer login on a store with new customer accounts: on the store's own domain, under the base path and with no locale prefix, `locale` the page's language and `region_country` the shopper's country (recordings `probe-page-home`, `probe-page-fr-ca` and `probe-page-en-eu`: `https://<domain>/customer_authentication/redirect?locale=fr&region_country=CA`). The storefront answers it with the account notice.
+ */
+function loginUrl (origin: string, basePath: string | undefined, language: string, localization: { country?: unknown }): string {
+  const country = (localization.country as { iso_code?: string } | null | undefined)?.iso_code ?? ''
+  return `${origin}${cleanPrefix(basePath)}/customer_authentication/redirect?locale=${encodeURIComponent(language)}&region_country=${encodeURIComponent(country)}`
 }
 
 /** The routes of an unprefixed store (`buildRoutes('')`). */
@@ -260,6 +268,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   // the cart is per visitor, so one the caller hands in is built on the shared store's products, currency and prefix; recommendations leave out the products of that cart
   const cart = input.cart ? buildCartObject(store, input.cart) : store.cart
   const search = buildSearch(store, request.searchTerms, request, view.prefix)
+  const language = languageIn(data, view, request.language ?? input.locale)
   const globals: Record<string, unknown> = {
     shop: store.shop,
     settings: null,
@@ -273,7 +282,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     articles: store.articles,
     linklists,
     images: store.images,
-    routes: view.prefix ? buildRoutes(view.prefix) : ROUTES,
+    routes: Object.freeze({ ...(view.prefix ? buildRoutes(view.prefix) : ROUTES), account_login_url: loginUrl(origin, request.basePath, language.iso_code, localization) }),
     template,
     request: {
       page_type: pageType,
@@ -282,7 +291,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
       origin,
       // https://shopify.dev/docs/api/liquid/objects/request: `locale` is the language the page is shown in, a shop_locale (https://shopify.dev/docs/api/liquid/objects/shop_locale), with the view's root as its `root_url` (fixtures `probe-page-home`, `probe-page-en-ca` and `probe-page-fr-ca`)
       // the language the request names, otherwise the `locale` the page renders in
-      locale: { ...languageIn(data, view, request.language ?? input.locale), root_url: view.prefix || '/' },
+      locale: { ...language, root_url: view.prefix || '/' },
       design_mode: false,
       visual_preview_mode: false
     },

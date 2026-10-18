@@ -1,6 +1,7 @@
 import type { ShopifyState } from '../state'
 import { escapeHtml } from '../util/html'
 import { checkoutHeader, WALLETS_FOLDER } from './accelerated-checkout'
+import { accountElementsScript, featureLoaderScript } from './browser-runtime'
 import { BUNDLED_FILE, CompiledAssets, SECTION_FILE } from './compiled-assets'
 
 /** Where `content_for_header` goes while the layout renders; replaced once the whole page has rendered, so it can include every section's `{% stylesheet %}` and `{% javascript %}`. A render swaps in `newHeaderMarker()`, not this constant. */
@@ -19,17 +20,24 @@ function scriptJson (value: unknown): string {
   return JSON.stringify(value ?? null).replace(/</g, '\\u003c')
 }
 
+/** A number for `Shopify.theme.id`, where Shopify prints the theme's id in its store (twelve digits, `192407273771` in the recordings): the same number for the same theme and version, from a hash of its name and version, which is Debutify's, as a preview has no theme in a store. */
+function themeId (theme: ShopifyState['theme']): number {
+  let hash = 0
+  for (const char of `${theme?.name ?? ''}@${theme?.version ?? ''}`) hash = (hash * 31 + char.codePointAt(0)!) % 900000000000
+  return 100000000000 + hash
+}
+
 /** A currency rate as Ruby prints a float, which is how the parity store writes `Shopify.currency`'s `rate` (`"1.0"`, `"1.35"`, `"0.92"`, recordings `page-home`, `page-home-fr-ca` and `page-product-en-eu`). */
 const rateText = (rate: number) => Number.isInteger(rate) ? rate.toFixed(1) : String(rate)
 
 /**
- * A minimal `content_for_header`: the `hreflang` links of the page in every market and language (https://shopify.dev/docs/storefronts/themes/seo/hreflang, which says Shopify adds them through `content_for_header`; `state.request.alternates` holds them and the parity store prints them first, one a line, before its scripts), then the `window.Shopify` globals themes read (shop, locale, currency, country, routes, design mode, and the customer events API `Shopify.analytics`), then the page's `{% stylesheet %}` and `{% javascript %}` bodies.
+ * A minimal `content_for_header`: the `hreflang` links of the page in every market and language (https://shopify.dev/docs/storefronts/themes/seo/hreflang, which says Shopify adds them through `content_for_header`; `state.request.alternates` holds them and the parity store prints them first, one a line, before its scripts), then the `window.Shopify` globals themes read (shop, locale, currency, country, theme, cdnHost, routes, and the customer events API `Shopify.analytics`), the feature loader (`Shopify.loadFeatures`) and, when `account` is set (the page holds a `<shopify-account>` element: Shopify's recorded pages of the private theme, which prints none, load no `account.js`), the definitions of `<shopify-account>` and `<shopify-store>`, then the page's `{% stylesheet %}` and `{% javascript %}` bodies.
  *
  * With `compiled` (the address the theme's compiled files are served under, and the files), the bodies are linked as the parity store links them, last in its `content_for_header` (recordings of Horizon 4.3.0 and Dawn 16.0.0): `<link rel="stylesheet" media="screen" href="<url>styles.css?v=<version>">` when the theme has a stylesheet in a section, block or snippet (on every page, as the file holds them all), then `<script id="sections-script" data-sections="<names>" defer="defer" src="<url>scripts.js?v=<version>"></script>`, naming the sections rendered on the page that have a `{% javascript %}` in the order first rendered (`data-sections="main-collection"` on Horizon's collection pages, `"header"` on every page of Dawn), when there are any. The bodies those files do not hold are still inlined after them: a stylesheet of a layout or a template, which Shopify does not bundle, and the javascript of blocks and snippets, whose files (`block-scripts.js`, `snippet-scripts.js`) no recording shows. Without `compiled`, every stylesheet body rendered on the page is inlined in one `<style>`, then every javascript body, each in its own function, run on `DOMContentLoaded`. Each inlined javascript body runs in a `try` that logs its error (`console.error`), as the parity store's compiled `scripts.js` runs each section's, so one that throws does not stop the others (shopify.dev: each body is wrapped so "runtime exceptions won't affect other sections").
  *
  * https://shopify.dev/docs/api/liquid/objects/content_for_header says only that it "dynamically returns all scripts required by Shopify" and that themes must not modify or parse it, and https://shopify.dev/docs/storefronts/themes/architecture/layouts says it goes in the `<head>`. Its content is therefore Debutify's: Shopify adds analytics and app scripts, which a preview leaves out, and the `Shopify` globals here are the ones themes are known to read, not a list from shopify.dev.
  */
-export function contentForHeader (state: ShopifyState, globals: Record<string | symbol, unknown>, compiled?: { url: string, assets: CompiledAssets }): string {
+export function contentForHeader (state: ShopifyState, globals: Record<string | symbol, unknown>, compiled?: { url: string, assets: CompiledAssets }, account = false): string {
   const shop = globals.shop as Record<string, unknown>
   const localization = globals.localization as { country?: { iso_code?: string } }
   const request = globals.request as { locale?: { iso_code?: string } }
@@ -38,19 +46,28 @@ export function contentForHeader (state: ShopifyState, globals: Record<string | 
   // as the parity store orders them: the permalink and the feed before the hreflang links, the oEmbed after (recordings `page-product` and `page-collection`); the feed's address is relative and the oEmbed's absolute
   const before = (buy ? `<link rel="buy" href="${escapeHtml(buy)}?ucp/version=2026-08-25" payment="">\n` : '') + (atom ? `<link rel="alternate" type="application/atom+xml" title="Feed" href="${escapeHtml(atom)}" />\n` : '')
   const endpoints = (oembed ? `<link rel="alternate" type="application/json+oembed" href="${escapeHtml(`${state.request.origin}${oembed}`)}">\n` : '')
+  const theme = state.theme
   let header = before + links + endpoints + '<script>var Shopify = Shopify || {};' +
     `Shopify.shop = ${scriptJson(shop.permanent_domain)};` +
     `Shopify.locale = ${scriptJson(request.locale?.iso_code)};` +
     // the currency and country of the shopper's market: `{"active":"CAD","rate":"1.35"}` and `"CA"` on the parity store's recorded Canadian French home page (recording `page-home-fr-ca`), the rate a string
     `Shopify.currency = ${scriptJson({ active: state.currency?.iso_code ?? shop.currency, rate: rateText(state.currency?.rate ?? 1) })};` +
     `Shopify.country = ${scriptJson(localization.country?.iso_code)};` +
-    'Shopify.designMode = false;Shopify.routes = Shopify.routes || {};' +
+    // the theme as the parity store prints it (recordings `page-home` of the three themes): the object, then `handle` (the text "null" for a theme the store did not take from the theme store) and `style`; and the shop's CDN, which Shopify's feature loader builds the addresses of its scripts from. `Shopify.designMode` is Shopify's inside the theme editor only, so a visitor's page has none.
+    `Shopify.theme = ${scriptJson({ name: theme?.name ?? 'theme', id: themeId(theme), schema_name: theme?.name ?? null, schema_version: theme?.version ?? null, theme_store_id: null, role: 'main' })};` +
+    'Shopify.theme.handle = "null";Shopify.theme.style = {"id":null,"handle":null};' +
+    `Shopify.cdnHost = ${scriptJson(`${String(shop.permanent_domain)}/cdn`)};` +
+    'Shopify.routes = Shopify.routes || {};' +
     // the root route of the view, with a trailing slash: `"/"` unprefixed and `"/fr-ca/"` under `/fr-ca`, as the parity store's header writes it (its recorded home pages, recordings `page-home` and `page-home-fr-ca`, which are not among the fork's fixtures)
     `Shopify.routes.root = ${scriptJson(`${state.request.prefix}/`)};` +
+    // what the parity store's header also sets as data (recordings `page-home`): the address of the Shop sign-in scripts (a preview loads none) and that the visitor is not recognised as a Shop user
+    'Shopify.shopJsCdnBaseUrl = "https://cdn.shopify.com/shopifycloud/shop-js";Shopify.SignInWithShop = Shopify.SignInWithShop || {};Shopify.SignInWithShop.User = Shopify.SignInWithShop.User || {};Shopify.SignInWithShop.User.recognized = false;' +
     // The customer events API, https://shopify.dev/docs/api/web-pixels-api/emitting-data: on the online store `Shopify.analytics.publish(name, data, customData)` publishes a custom event and `Shopify.analytics.visitor(info, options)` hands over the visitor's email or phone and "Returns `true` if the visitor method was successful, and returns `false` if the payload was rejected". Shopify's header defines only `replayQueue` and `publish` up front, `publish` a closure that queues `[name, data, customData]` and answers true, and sets `visitor` once its web pixels manager loads (the parity store's recorded home page, recording `page-home`); the page does not say what `publish` returns, so `true` is the parity store's. Defining `visitor` up front, answering whether it was given data, is Debutify's own addition. With no pixels loaded here nothing is delivered: `publish` keeps the event in `events`, which the storefront's sandbox mode reads. Both are closures over `events`, as Shopify's `publish` is over its queue, so they work passed around or called detached.
     'Shopify.analytics = Shopify.analytics || (function () { var events = []; return { events: events, publish: function (name, data, customData) { events.push({ name: String(name), data: data, customData: customData }); return true; }, visitor: function (data, options) { return !!data; } }; })();' +
-    '</script>'
+    '</script>' +
+    `<script>${featureLoaderScript()}</script>`
   header += checkoutHeader({ button: !!state.checkoutButton, language: request.locale?.iso_code ?? 'en', walletsUrl: file => state.services.shopifyCloudUrl(`${WALLETS_FOLDER}/${file}`) })
+  if (account) header += `<script>${accountElementsScript(String((globals.routes as Record<string, unknown> | undefined)?.account_login_url ?? `${state.request.prefix}/account/login`))}</script>`
   const styles = compiled?.assets.styles
   if (compiled && styles) header += `<link rel="stylesheet" media="screen" href="${escapeHtml(`${compiled.url}styles.css?v=${styles.version}`)}">`
   // a stylesheet the linked file holds is not inlined; one of a layout or template is

@@ -28,7 +28,7 @@ export function resolveView (data: StoreData, request: RequestInput): StoreView 
 export const defaultCountry = (market: MarketData): string | undefined => market.countries.map(c => c.iso_code).sort()[0]
 
 /** A prefix of whole segments: one leading slash, none trailing or doubled; empty for none. */
-function cleanPrefix (path = ''): string {
+export function cleanPrefix (path = ''): string {
   const clean = path.replace(/\/{2,}/g, '/').replace(/^\/|\/$/g, '')
   return clean ? `/${clean}` : ''
 }

@@ -476,6 +476,8 @@ class PageRender implements ThemeHooks {
     const values = Object.fromEntries(Object.entries(this.current).filter(([key]) => !['sections', 'content_for_index', 'blocks'].includes(key)))
     const schema = theme.json('config/settings_schema.json') ?? []
     if (!Array.isArray(schema)) throw new Error('config/settings_schema.json: must be a JSON array')
+    const info = schema.find(group => isRecord(group) && group.name === 'theme_info')
+    if (isRecord(info) && typeof info.theme_name === 'string') this.state.theme = { name: info.theme_name, version: String(info.theme_version ?? '') }
     const definitions = schema.flatMap(group => isRecord(group) && Array.isArray(group.settings) ? group.settings.filter(isRecord) : []) as SettingDefinition[]
     const settings = new SettingsDrop(definitions, values, env)
     // Sections and blocks choose their `color_scheme` settings from the schemes the global `color_scheme_group` holds (https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings#color_scheme: "Shopify returns the selected `color_scheme` object from `color_scheme_group`", and nil "If the theme doesn't have `color_scheme_group` data in `settings_data.json`"), so their settings are built over the global settings' group, and over its palette, which their `color` settings reference (https://shopify.dev/docs/storefronts/themes/architecture/settings/input-settings#color_palette, "a set of named colors available across your theme's `color` and `color_background` settings").
@@ -542,7 +544,7 @@ class PageRender implements ThemeHooks {
     const html = (yield this.theme.liquid.renderer.renderTemplates(templates, this.child({ content_for_layout: content, content_for_header: this.headerMarker }))) as string
     // an empty address would make the links relative to the page; it is read as none
     const url = this.options.compiledAssetsUrl
-    return html.split(this.headerMarker).join(contentForHeader(this.state, this.globals, url ? { url, assets: this.theme.compiledAssets() } : undefined))
+    return html.split(this.headerMarker).join(contentForHeader(this.state, this.globals, url ? { url, assets: this.theme.compiledAssets() } : undefined, /<shopify-account[\s/>]/i.test(html)))
   }
 
   /**

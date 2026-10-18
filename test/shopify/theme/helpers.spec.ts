@@ -67,13 +67,22 @@ describe('shopify/theme/header', () => {
     expect(header).toContain('Shopify.shop = "\\u003c/script>\\u003cb>";')
     expect(header).toContain('<style data-shopify="stylesheet-tags">a::after { content: "<\\/style>" }</style>')
     expect(header).toContain('document.write("<\\/script>")')
-    expect(header.match(/<\/script>/g)).toHaveLength(2)
+    expect(header.match(/<\/script>/g)).toHaveLength(3)
     expect(header.match(/<\/style>/g)).toHaveLength(1)
   })
   it('writes no style or deferred script when the page has none', () => {
     const header = withoutCheckout(contentForHeader(createState(), { shop: { permanent_domain: 'a.example', currency: 'USD' }, localization: {}, request: {} }))
-    expect(header).toBe('<script>var Shopify = Shopify || {};Shopify.shop = "a.example";Shopify.locale = null;Shopify.currency = {"active":"USD","rate":"1.0"};Shopify.country = null;Shopify.designMode = false;Shopify.routes = Shopify.routes || {};Shopify.routes.root = "/";' +
-      'Shopify.analytics = Shopify.analytics || (function () { var events = []; return { events: events, publish: function (name, data, customData) { events.push({ name: String(name), data: data, customData: customData }); return true; }, visitor: function (data, options) { return !!data; } }; })();</script>')
+    expect(header).toContain('<script>var Shopify = Shopify || {};Shopify.shop = "a.example";Shopify.locale = null;Shopify.currency = {"active":"USD","rate":"1.0"};Shopify.country = null;Shopify.theme = {"name":"theme",')
+    expect(header).toContain('Shopify.theme.handle = "null";Shopify.theme.style = {"id":null,"handle":null};Shopify.cdnHost = "a.example/cdn";Shopify.routes = Shopify.routes || {};Shopify.routes.root = "/";')
+    expect(header).not.toContain('designMode')
+    expect(header).not.toContain('<style')
+    expect(header).not.toContain('DOMContentLoaded')
+  })
+  it('names the theme from its theme_info', () => {
+    const state = createState()
+    state.theme = { name: 'Dawn', version: '16.0.0' }
+    const header = contentForHeader(state, { shop: { permanent_domain: 'a.example', currency: 'USD' }, localization: {}, request: {} })
+    expect(header).toMatch(/Shopify\.theme = \{"name":"Dawn","id":\d{12},"schema_name":"Dawn","schema_version":"16\.0\.0","theme_store_id":null,"role":"main"\};/)
   })
 })
 

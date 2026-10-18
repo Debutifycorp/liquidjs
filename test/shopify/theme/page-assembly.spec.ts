@@ -61,9 +61,15 @@ describe('<shopify-store> before <shopify-account>', () => {
   })
 
   it('prints nothing on a page without an account element, nor in a section rendered alone', async () => {
-    expect(await home(homeTheme({ text: '<p>shopify-account</p>' }))).not.toContain('shopify-store')
+    expect(await home(homeTheme({ text: '<p>shopify-account</p>' }))).not.toContain('<shopify-store')
     const { html } = await renderSection({ theme: homeTheme({ account: ACCOUNT }), templateName: 'index', data, section: 'account' })
-    expect(html).not.toContain('shopify-store')
+    expect(html).not.toContain('<shopify-store')
+  })
+
+  it('defines the account elements in the head of a page that holds one, and on no other', async () => {
+    const withAccount = await home(homeTheme({ account: ACCOUNT }))
+    expect(withAccount.slice(0, withAccount.indexOf('</head>'))).toContain('customElements.define("shopify-account"')
+    expect(await home(homeTheme({ text: '<p>shopify-account</p>' }))).not.toContain('customElements.define("shopify-account"')
   })
 
   it('escapes the attributes', async () => {

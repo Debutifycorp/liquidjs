@@ -145,9 +145,8 @@ describe('views and the URL prefix', () => {
     expect(Object.isFrozen(buildRoutes('/fr-ca'))).toBe(true)
   })
   it('matches the parity store\'s routes, request and menu URLs under a locale prefix', async () => {
-    // `account_login_url` is left out: the parity store has new customer accounts, so it prints a `customer_authentication/redirect` address on the store's own domain, and customer accounts are out of scope for item 22 (the engine keeps `<prefix>/account/login`)
     const pick = (b: any) => ({
-      routes: Object.fromEntries(Object.entries(b.routes).filter(([name]) => name !== 'account_login_url')),
+      routes: b.routes,
       request: { path: b.request.path, locale_root_url: b.request.locale_root_url },
       product: b.product.url,
       collection: b.collection.url,
@@ -246,7 +245,7 @@ describe('views and the URL prefix', () => {
     expect(await render('/fr-ca')).toBe('/fr-ca/collections/men/products/hoodie|/fr-ca/collections/men/products/hoodie')
     expect(await render('/p/tok/fr-ca', '/p/tok')).toBe('/p/tok/fr-ca/collections/men/products/hoodie|/p/tok/fr-ca/collections/men/products/hoodie')
   })
-  it('keeps the engine\'s own login route under the prefix', () => {
+  it('keeps the classic login route in the routes of a prefix; the page prints the new accounts\' address', () => {
     expect(buildRoutes('/fr-ca').account_login_url).toBe('/fr-ca/account/login')
   })
   it('prefixes form actions', async () => {
