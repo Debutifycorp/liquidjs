@@ -411,7 +411,7 @@ describe('the sandbox header (final review A, M5)', () => {
   it('puts Content-Security-Policy: sandbox allow-scripts allow-forms on every sandboxed answer that has none', async () => {
     const { send } = harness({}, sandbox)
     const policy = 'sandbox allow-scripts allow-forms'
-    for (const [method, url] of [['GET', '/p/tok'], ['GET', '/p/tok/cart.js'], ['GET', '/p/tok/discount/X'], ['POST', '/p/tok/cart/add.js'], ['GET', '/p/tok/products/nope'], ['GET', '/p/tok/checkout']]) {
+    for (const [method, url] of [['GET', '/p/tok'], ['GET', '/p/tok/cart.js'], ['GET', '/p/tok/discount/X'], ['POST', '/p/tok/cart/add.js'], ['GET', '/p/tok/products/nope'], ['GET', '/p/tok/checkouts/cn/abc/en-us']]) {
       const answer = await send(method, url, method === 'POST' ? { id: SUNNIES } : undefined)
       expect([url, answer.headers.get('content-security-policy')]).toEqual([url, policy])
     }
@@ -419,7 +419,7 @@ describe('the sandbox header (final review A, M5)', () => {
 
   it('leaves a policy the answer has, and adds none outside the sandbox', async () => {
     const { send } = harness({ notice: () => new Response('mine', { headers: { 'content-security-policy': 'sandbox allow-scripts' } }) }, sandbox)
-    expect((await send('GET', '/p/tok/checkout')).headers.get('content-security-policy')).toBe('sandbox allow-scripts')
+    expect((await send('GET', '/p/tok/checkouts/cn/abc/en-us')).headers.get('content-security-policy')).toBe('sandbox allow-scripts')
     const plain = harness()
     expect((await plain.send('GET', '/')).headers.get('content-security-policy')).toBeNull()
   })

@@ -284,6 +284,8 @@ export interface LocalizationData {
 /** A country as `country_option_tags` and `all_country_option_tags` list it: the name its `<option>` shows and submits, and its subregions as `[value, label]` pairs for `data-provinces`, https://shopify.dev/docs/api/liquid/objects/country_option_tags (`[&quot;District of Columbia&quot;,&quot;Washington DC&quot;]` in its example). */
 export interface CountryOptionData {
   name: string
+  /** The text the `<option>` shows when it is not the name (`Åland Islands` for the name `Aland Islands`). */
+  label?: string
   provinces?: Array<[string, string]>
 }
 

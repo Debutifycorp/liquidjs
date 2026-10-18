@@ -1,4 +1,5 @@
 import type { PageData, ProductData, StoreData, VariantData } from '../store/types'
+import { COUNTRY_OPTIONS } from './country-options'
 import { customerAccountMainMenu } from './default-menus'
 import { sampleGiftCard } from './gift-card'
 import { mockShopCatalog } from './mock-shop'
@@ -151,5 +152,5 @@ export const storefrontSampleData: StoreData = freeze({
       policies: { privacy_policy: { title: 'Politique de confidentialité', content: '<p>Debutify Parity ne collecte que ce dont elle a besoin pour prendre et livrer vos commandes : votre nom, vos adresses e-mail et de livraison, et vos achats. Nous ne les vendons jamais. Pour consulter, corriger ou supprimer vos données, écrivez à store@example.com.</p>' } }
     }
   },
-  country_option_tags: [{ name: 'United States' }, { name: 'Canada' }, { name: 'France' }, { name: 'Germany' }]
+  country_option_tags: COUNTRY_OPTIONS
 })

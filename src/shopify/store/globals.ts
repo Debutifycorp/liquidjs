@@ -185,7 +185,7 @@ export interface PageGlobals {
   /** The request's menus, with `active` and `current` set for its path. */
   linklists: HandleMap<LiquidObject>
   /** The resolved request: path, origin and page, for the Shopify state, with the `hreflang` links of its page (`content_for_header`). */
-  request: { path: string, origin: string, page: number, prefix: string, alternates: Array<{ hreflang: string, path: string }>, query?: Array<[string, string]> }
+  request: { path: string, origin: string, page: number, prefix: string, alternates: Array<{ hreflang: string, path: string }>, endpoints: Endpoints, query?: Array<[string, string]> }
   /** The policy a `policy` page shows (`/policies/<handle>`), which Shopify renders itself; nil on any other page and for a policy the store has not set. */
   policy?: LiquidObject | null
 }
@@ -289,6 +289,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     // https://shopify.dev/docs/api/liquid/objects/predictive_search: only a Predictive Search API request has it; any other page has none, and the recording prints nil (fixture `ajax-sections-page`)
     ...(request.predictive ? { predictive_search: buildPredictiveSearch(store, request.predictive, input.data) } : {}),
     powered_by_link: poweredByLink(request.language ?? input.locale),
+    // false on purpose: the parity store's cart pages (recordings `ajax-cart-lines`, `ajax-cart-lines-dawn`, `ajax-cart-lines-horizon`, with a plain, a discounted and a subscription line) print neither Dawn's `additional-checkout-buttons` block nor Horizon's, so Shopify reports it false there; the wallets bootstrap in `content_for_header` is the only trace, and `shopify-accelerated-checkout-cart` is printed by nothing. The product form's own button is `payment_button`
     additional_checkout_buttons: false,
     content_for_additional_checkout_buttons: '',
     metaobjects: {},
@@ -300,7 +301,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
     ...(pageType === 'customers/order' ? { order: orderFor(store.customer, request.resource, report) } : {}),
     ...resources
   }
-  return { globals, linklists, policy, request: { path, origin, page, prefix: view.prefix, query: request.query, alternates: pageType === '404' ? [] : alternates(data, view, path, request.searchTerms, pageType) } }
+  return { globals, linklists, policy, request: { path, origin, page, prefix: view.prefix, query: request.query, alternates: pageType === '404' ? [] : alternates(data, view, path, request.searchTerms, pageType), endpoints: endpointsOf(pageType, resource, resources.blog, view.prefix) } }
 }
 
 /** The built variant with `id`, or nil when the store has none. */
@@ -316,6 +317,33 @@ function variantObject (store: StoreObjects, id: number): LiquidObject | null {
 function canonicalPath (pageType: string, path: string, searchTerms: string | undefined): string {
   if (pageType !== 'search' || !searchTerms?.trim()) return path
   return `${path.split(/[?#]/)[0]}?${new URLSearchParams({ q: searchTerms })}`
+}
+
+/** The endpoints Shopify's `content_for_header` links a page to, as paths from the store's root under the view's prefix. */
+export interface Endpoints {
+  /** The cart permalink of a product's selected or first variant, `/cart/<variant id>:1`; none for a product that is only sold with a plan. */
+  buy?: string
+  atom?: string
+  oembed?: string
+}
+
+/**
+ * The links to the endpoints the parity store's `content_for_header` holds (recordings `page-product`, `page-product-variant`, `page-product-requires-plan`, `page-product-en-eu`, `page-collection`, `page-collection-filtered`, `page-blog` and `page-article`): a product has its oEmbed and, unless it requires a selling plan, the permalink `rel="buy"` of the variant the page shows (the selected one, otherwise the first); a collection has its Atom feed and, unless it is `all`, its oEmbed; a blog and its articles have the blog's Atom feed. https://shopify.dev/docs/apps/build/checkout/create-cart-permalinks documents the permalink; the oEmbed and Atom endpoints are not documented on shopify.dev and the storefront serves them from the recordings.
+ */
+function endpointsOf (pageType: string, resource: LiquidObject | null, articleBlog: LiquidObject | null | undefined, prefix: string): Endpoints {
+  const handle = resource ? String(resource.handle ?? '') : ''
+  if (pageType === 'product' && resource && handle) {
+    const variants = resource.variants as LiquidObject[]
+    const shown = variants.find(variant => variant.selected) ?? variants[0]
+    return { oembed: withPrefix(prefix, `/products/${handle}.oembed`), ...(shown && !resource.requires_selling_plan ? { buy: withPrefix(prefix, `/cart/${String(shown.id)}:1`) } : {}) }
+  }
+  if (pageType === 'collection' && resource && handle) return { atom: withPrefix(prefix, `/collections/${handle}.atom`), ...(handle === 'all' ? {} : { oembed: withPrefix(prefix, `/collections/${handle}.oembed`) }) }
+  if ((pageType === 'blog' || pageType === 'article') && resource) {
+    const blog = pageType === 'blog' ? resource : articleBlog
+    const blogHandle = blog ? String(blog.handle ?? '') : ''
+    return blogHandle ? { atom: withPrefix(prefix, `/blogs/${blogHandle}.atom`) } : {}
+  }
+  return {}
 }
 
 /**

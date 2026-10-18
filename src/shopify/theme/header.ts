@@ -1,5 +1,6 @@
 import type { ShopifyState } from '../state'
 import { escapeHtml } from '../util/html'
+import { checkoutHeader, WALLETS_FOLDER } from './accelerated-checkout'
 import { BUNDLED_FILE, CompiledAssets, SECTION_FILE } from './compiled-assets'
 
 /** Where `content_for_header` goes while the layout renders; replaced once the whole page has rendered, so it can include every section's `{% stylesheet %}` and `{% javascript %}`. A render swaps in `newHeaderMarker()`, not this constant. */
@@ -33,7 +34,11 @@ export function contentForHeader (state: ShopifyState, globals: Record<string | 
   const localization = globals.localization as { country?: { iso_code?: string } }
   const request = globals.request as { locale?: { iso_code?: string } }
   const links = (state.request.alternates ?? []).map(({ hreflang, path }) => `<link rel="alternate" hreflang="${escapeHtml(hreflang)}" href="${escapeHtml(`${state.request.origin}${path}`)}">\n`).join('')
-  let header = links + '<script>var Shopify = Shopify || {};' +
+  const { buy, atom, oembed } = state.request.endpoints ?? {}
+  // as the parity store orders them: the permalink and the feed before the hreflang links, the oEmbed after (recordings `page-product` and `page-collection`); the feed's address is relative and the oEmbed's absolute
+  const before = (buy ? `<link rel="buy" href="${escapeHtml(buy)}?ucp/version=2026-08-25" payment="">\n` : '') + (atom ? `<link rel="alternate" type="application/atom+xml" title="Feed" href="${escapeHtml(atom)}" />\n` : '')
+  const endpoints = (oembed ? `<link rel="alternate" type="application/json+oembed" href="${escapeHtml(`${state.request.origin}${oembed}`)}">\n` : '')
+  let header = before + links + endpoints + '<script>var Shopify = Shopify || {};' +
     `Shopify.shop = ${scriptJson(shop.permanent_domain)};` +
     `Shopify.locale = ${scriptJson(request.locale?.iso_code)};` +
     // the currency and country of the shopper's market: `{"active":"CAD","rate":"1.35"}` and `"CA"` on the parity store's recorded Canadian French home page (recording `page-home-fr-ca`), the rate a string
@@ -45,6 +50,7 @@ export function contentForHeader (state: ShopifyState, globals: Record<string | 
     // The customer events API, https://shopify.dev/docs/api/web-pixels-api/emitting-data: on the online store `Shopify.analytics.publish(name, data, customData)` publishes a custom event and `Shopify.analytics.visitor(info, options)` hands over the visitor's email or phone and "Returns `true` if the visitor method was successful, and returns `false` if the payload was rejected". Shopify's header defines only `replayQueue` and `publish` up front, `publish` a closure that queues `[name, data, customData]` and answers true, and sets `visitor` once its web pixels manager loads (the parity store's recorded home page, recording `page-home`); the page does not say what `publish` returns, so `true` is the parity store's. Defining `visitor` up front, answering whether it was given data, is Debutify's own addition. With no pixels loaded here nothing is delivered: `publish` keeps the event in `events`, which the storefront's sandbox mode reads. Both are closures over `events`, as Shopify's `publish` is over its queue, so they work passed around or called detached.
     'Shopify.analytics = Shopify.analytics || (function () { var events = []; return { events: events, publish: function (name, data, customData) { events.push({ name: String(name), data: data, customData: customData }); return true; }, visitor: function (data, options) { return !!data; } }; })();' +
     '</script>'
+  header += checkoutHeader({ button: !!state.checkoutButton, language: request.locale?.iso_code ?? 'en', walletsUrl: file => state.services.shopifyCloudUrl(`${WALLETS_FOLDER}/${file}`) })
   const styles = compiled?.assets.styles
   if (compiled && styles) header += `<link rel="stylesheet" media="screen" href="${escapeHtml(`${compiled.url}styles.css?v=${styles.version}`)}">`
   // a stylesheet the linked file holds is not inlined; one of a layout or template is

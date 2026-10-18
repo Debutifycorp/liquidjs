@@ -84,7 +84,7 @@ describe('sandbox mode: cookies and visitors', () => {
   it('strips a cookie that a route or the notice callback sets', async () => {
     const notice = () => new Response('<!doctype html><html><head></head><body>notice</body></html>', { headers: { 'content-type': 'text/html', 'set-cookie': 'a=b; Path=/' } })
     const { send } = harness({ notice }, sandbox)
-    const answer = await send('GET', '/p/tok/checkout')
+    const answer = await send('GET', '/p/tok/checkouts/cn/abc/en-us')
     expect([answer.status, answer.headers.get('set-cookie'), answer.headers.get('access-control-allow-origin')]).toEqual([200, null, '*'])
   })
   it('does not set the visitor cookie outside sandbox mode, when it is not given a visitor', async () => {
@@ -106,9 +106,9 @@ describe('sandbox mode: the page a post came from', () => {
   it('goes back to the page the client script named when the post has no Referer', async () => {
     const { send } = harness({}, sandbox)
     const sent = await send('POST', named('/p/tok/pages/about?view=probe-form'), contact, { origin: 'null' })
-    expect([sent.status, sent.headers.get('location')]).toEqual([302, '/p/tok/pages/about?view=probe-form&contact_posted=true#contact_form'])
+    expect([sent.status, sent.headers.get('location')]).toEqual([302, '/p/tok/pages/about?view=probe-form&contact_posted=true'])
     const prefixed = await send('POST', named('/p/tok/fr-ca/pages/about'), contact, { origin: 'null' })
-    expect(prefixed.headers.get('location')).toBe('/p/tok/fr-ca/pages/about?contact_posted=true#contact_form')
+    expect(prefixed.headers.get('location')).toBe('/p/tok/fr-ca/pages/about?contact_posted=true')
     const back = await send('POST', `/p/tok/cart/add?storefront_page=${encodeURIComponent('/p/tok/products/hoodie?variant=1')}`, form({ id: String(HOODIE), return_to: 'back' }), { origin: 'null' })
     expect(back.headers.get('location')).toBe('/p/tok/products/hoodie?variant=1')
   })
@@ -116,11 +116,11 @@ describe('sandbox mode: the page a post came from', () => {
     const { send } = harness({}, sandbox)
     for (const page of ['//evil.example/x', 'https://evil.example/', '/other/pages/about', '/p/tok//evil.example', 'about']) {
       const sent = await send('POST', named(page), contact, { origin: 'null' })
-      expect([page, sent.headers.get('location')]).toEqual([page, '/p/tok/?contact_posted=true#contact_form'])
+      expect([page, sent.headers.get('location')]).toEqual([page, '/p/tok/?contact_posted=true'])
     }
     const plain = harness({}, { visitor: VISITOR, basePath: '/p/tok' })
     const sent = await plain.send('POST', named('/p/tok/pages/about'), contact)
-    expect(sent.headers.get('location')).toBe('/p/tok/?contact_posted=true#contact_form')
+    expect(sent.headers.get('location')).toBe('/p/tok/?contact_posted=true')
   })
 })
 
@@ -186,20 +186,20 @@ describe('sandbox mode: where the client script goes', () => {
     expect((await send('GET', '/p/tok')).text).toContain('Shopify.routes.root = "/p/tok/";')
   })
   it('goes at the first <head, <html or doctype in the text, which a comment or an attribute can mislead', async () => {
-    const odd = await harness({ notice: () => new Response('<!doctype html><!-- <head> --><html><head></head></html>', { headers: { 'content-type': 'text/html' } }) }, sandbox).send('GET', '/p/tok/checkout')
+    const odd = await harness({ notice: () => new Response('<!doctype html><!-- <head> --><html><head></head></html>', { headers: { 'content-type': 'text/html' } }) }, sandbox).send('GET', '/p/tok/checkouts/cn/abc/en-us')
     // the first textual match, as the pattern of any script injector is: the comment's `<head>` takes it
     expect(odd.text.startsWith('<!doctype html><!-- <head><script>')).toBe(true)
   })
   it('goes after the doctype and <html> of a document with no <head>, so its mode stays standards mode', async () => {
     const bare = (html: string) => harness({ notice: () => new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8', 'content-length': String(html.length) } }) }, sandbox)
-    const withHtml = await bare('<!doctype html><html lang="en"><body>x</body></html>').send('GET', '/p/tok/checkout')
+    const withHtml = await bare('<!doctype html><html lang="en"><body>x</body></html>').send('GET', '/p/tok/checkouts/cn/abc/en-us')
     expect(withHtml.text.startsWith('<!doctype html><html lang="en"><script>')).toBe(true)
     expect(withHtml.text.endsWith('</script><body>x</body></html>')).toBe(true)
     expect(withHtml.headers.get('content-length')).toBeNull()
-    const doctypeOnly = await bare('<!DOCTYPE html><p>x</p>').send('GET', '/p/tok/checkout')
+    const doctypeOnly = await bare('<!DOCTYPE html><p>x</p>').send('GET', '/p/tok/checkouts/cn/abc/en-us')
     expect(doctypeOnly.text.startsWith('<!DOCTYPE html><script>')).toBe(true)
     // `<header>` is no `<head>`
-    const header = await bare('<!doctype html><html><body><header>x</header></body></html>').send('GET', '/p/tok/checkout')
+    const header = await bare('<!doctype html><html><body><header>x</header></body></html>').send('GET', '/p/tok/checkouts/cn/abc/en-us')
     expect(header.text.startsWith('<!doctype html><html><script>')).toBe(true)
   })
   it('does not go into HTML with no <head>, <html> or doctype: a fragment, or JSON or text served as text/html', async () => {
@@ -210,7 +210,7 @@ describe('sandbox mode: where the client script goes', () => {
     expect([quick.status, quick.headers.get('content-type'), quick.text, quick.headers.get('access-control-allow-origin')]).toEqual([200, expect.stringMatching(/^text\/html/), '<div class="quick">Black Sunnies</div>', '*'])
     const data = await send('GET', '/p/tok/products/black-sunnies?view=data')
     expect([data.status, data.headers.get('content-type'), data.json]).toEqual([200, expect.stringMatching(/^text\/html/), { title: 'Black Sunnies' }])
-    const served = (body: string) => harness({ notice: () => new Response(body, { headers: { 'content-type': 'text/html' } }) }, sandbox).send('GET', '/p/tok/checkout')
+    const served = (body: string) => harness({ notice: () => new Response(body, { headers: { 'content-type': 'text/html' } }) }, sandbox).send('GET', '/p/tok/checkouts/cn/abc/en-us')
     expect((await served('{"ok":true}')).text).toBe('{"ok":true}')
     expect((await served('plain text')).text).toBe('plain text')
     expect((await served('')).text).toBe('')

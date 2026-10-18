@@ -54,13 +54,16 @@ describe('shopify/theme/json parseWrapper', () => {
   })
 })
 
+/** The header without the scripts Shopify adds for dynamic checkout, which have a test of their own. */
+const withoutCheckout = (header: string) => header.replace(/<script data-source-attribution="shopify\.dynamic_checkout[\s\S]*?<\/script>\n/g, '')
+
 describe('shopify/theme/header', () => {
   it('keeps stylesheet and javascript bodies from closing their element', () => {
     const state = createState()
     state.assets.stylesheets.set('a', 'a::after { content: "</style>" }')
     state.assets.javascripts.set('b', 'document.write("</script>")')
     const globals = { shop: { permanent_domain: '</script><b>', currency: 'USD' }, localization: { country: { iso_code: 'US' } }, request: { locale: { iso_code: 'en' } } }
-    const header = contentForHeader(state, globals)
+    const header = withoutCheckout(contentForHeader(state, globals))
     expect(header).toContain('Shopify.shop = "\\u003c/script>\\u003cb>";')
     expect(header).toContain('<style data-shopify="stylesheet-tags">a::after { content: "<\\/style>" }</style>')
     expect(header).toContain('document.write("<\\/script>")')
@@ -68,7 +71,7 @@ describe('shopify/theme/header', () => {
     expect(header.match(/<\/style>/g)).toHaveLength(1)
   })
   it('writes no style or deferred script when the page has none', () => {
-    const header = contentForHeader(createState(), { shop: { permanent_domain: 'a.example', currency: 'USD' }, localization: {}, request: {} })
+    const header = withoutCheckout(contentForHeader(createState(), { shop: { permanent_domain: 'a.example', currency: 'USD' }, localization: {}, request: {} }))
     expect(header).toBe('<script>var Shopify = Shopify || {};Shopify.shop = "a.example";Shopify.locale = null;Shopify.currency = {"active":"USD","rate":"1.0"};Shopify.country = null;Shopify.designMode = false;Shopify.routes = Shopify.routes || {};Shopify.routes.root = "/";' +
       'Shopify.analytics = Shopify.analytics || (function () { var events = []; return { events: events, publish: function (name, data, customData) { events.push({ name: String(name), data: data, customData: customData }); return true; }, visitor: function (data, options) { return !!data; } }; })();</script>')
   })
@@ -97,5 +100,22 @@ describe('shopify/tags/section outside renderPage', () => {
   it('needs a name', () => {
     expect(() => liquid.parse('{% section %}')).toThrow('section needs a section name')
     expect(() => liquid.parse('{% sections %}')).toThrow('sections needs a section group name')
+  })
+  it('adds the dynamic checkout scripts of Shopify\'s pages: the bootstrap on every page, the module and stylesheet on a page with a button', () => {
+    const globals = { shop: { permanent_domain: 'a.example', currency: 'USD' }, localization: {}, request: { locale: { iso_code: 'fr' } } }
+    const state = createState({ services: { shopifyCloudUrl: path => `/p/tok/cdn/shopifycloud/${path}` } })
+    const plain = contentForHeader(state, globals)
+    expect(plain).toContain('<script data-source-attribution="shopify.dynamic_checkout.dynamic.init">var Shopify=Shopify||{};Shopify.PaymentButton=Shopify.PaymentButton||{isStorefrontPortableWallets:!0,init:function(){')
+    expect(plain).toContain('t.src="/p/tok/cdn/shopifycloud/portable-wallets/latest/portable-wallets.fr.js",t.type="module"')
+    expect(plain).toContain('data-source-attribution="shopify.dynamic_checkout.buyer_consent"')
+    expect(plain).toContain('data-source-attribution="shopify.dynamic_checkout.cart.bootstrap"')
+    expect(plain).not.toContain('shopify-accelerated-checkout-styles')
+    state.checkoutButton = true
+    const withButton = contentForHeader(state, globals)
+    expect(withButton).not.toContain('cart.bootstrap')
+    expect(withButton).toContain('<script type="module" src="/p/tok/cdn/shopifycloud/portable-wallets/latest/portable-wallets.fr.js" onError="portableWalletsCleanup(this)" crossorigin="anonymous"></script>')
+    expect(withButton).toContain('<script nomodule>')
+    expect(withButton).toContain('<link id="shopify-accelerated-checkout-styles" rel="stylesheet" media="screen" href="/p/tok/cdn/shopifycloud/portable-wallets/latest/accelerated-checkout.css" crossorigin="anonymous">')
+    expect(withButton).toContain('<style id="shopify-accelerated-checkout-cart">')
   })
 })

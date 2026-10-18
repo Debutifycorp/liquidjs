@@ -223,7 +223,7 @@ describe('the password lock', () => {
     expect(await ask('GET', '/p/tok/en-ca/products/hoodie')).toBe('/p/tok/en-ca/password')
     expect(await ask('GET', '/p/tok/cart.js')).toBe('/p/tok/password')
     expect(await ask('POST', '/p/tok/cart/add.js')).toBe('/p/tok/password')
-    expect(await ask('GET', '/p/tok/checkout')).toBe('/p/tok/password')
+    expect(await ask('GET', '/p/tok/checkouts/cn/abc/en-us')).toBe('/p/tok/password')
     expect(await ask('GET', '/p/tok/nope')).toBe('/p/tok/password')
   })
 
@@ -262,17 +262,17 @@ describe('the password lock', () => {
 describe('the notice page', () => {
   it('answers checkout and the account pages with status 200 and a link back', async () => {
     const { send } = harness()
-    for (const [method, url] of [['GET', '/checkout'], ['POST', '/checkout'], ['GET', '/checkouts/cn/abc'], ['GET', '/account/login'], ['POST', '/account/login'], ['GET', '/account']]) {
+    for (const [method, url] of [['GET', '/checkouts/cn/abc'], ['GET', '/checkouts/cn/abc/en-us'], ['POST', '/checkouts/cn/abc/en-us'], ['GET', '/customer_authentication/redirect?locale=en&region_country=US'], ['POST', '/customer_authentication/redirect']]) {
       const answer = await send(method, url)
       expect([url, answer.status, answer.text.includes('Available in your own store'), answer.headers.get('cache-control')]).toEqual([url, 200, true, 'private, no-store'])
       expect(answer.text).toContain('<a href="/">')
     }
-    expect((await send('GET', '/checkout')).text).not.toContain('<script')
+    expect((await send('GET', '/checkouts/cn/abc/en-us')).text).not.toContain('<script')
   })
 
   it('links back to the page the visitor came from, only when that is a path on a store', async () => {
     const { send } = harness()
-    const back = async (referer: string) => /<a href="([^"]*)">Back to the store/.exec((await send('GET', '/checkout', undefined, { referer })).text)?.[1]
+    const back = async (referer: string) => /<a href="([^"]*)">Back to the store/.exec((await send('GET', '/checkouts/cn/abc/en-us', undefined, { referer })).text)?.[1]
     expect(await back('https://store.invalid/products/hoodie?variant=1')).toBe('/products/hoodie')
     expect(await back('https://elsewhere.example/products/hoodie')).toBe('/products/hoodie')
     expect(await back('https://store.invalid//evil.com/x')).toBe('/')
@@ -280,28 +280,28 @@ describe('the notice page', () => {
     expect(await back('javascript:alert(1)')).toBe('/')
     expect(await back('not a url')).toBe('/')
     expect(await back('https://store.invalid/\'onmouseover=\'x')).toBe('/&#39;onmouseover=&#39;x')
-    const markup = (await send('GET', '/checkout', undefined, { referer: 'https://store.invalid/"><img src=x onerror=y>' })).text
+    const markup = (await send('GET', '/checkouts/cn/abc/en-us', undefined, { referer: 'https://store.invalid/"><img src=x onerror=y>' })).text
     expect(markup).not.toContain('<img')
   })
 
   it('links back to the store\'s root under its base path and locale prefix when there is no referer', async () => {
     const { storefront } = harness()
-    const answer = await storefront.handle(new Request('https://store.invalid/p/tok/en-ca/checkout'), BASE)
+    const answer = await storefront.handle(new Request('https://store.invalid/p/tok/en-ca/checkouts/cn/abc/en-us'), BASE)
     expect(await answer.text()).toContain('<a href="/p/tok/en-ca">')
   })
 
   it('is replaced by the notice option, whatever headers the replacement has', async () => {
     const seen: string[] = []
     const { send } = harness({ notice: kind => { seen.push(kind); return new Response(`custom ${kind}`, { status: 200 }) } })
-    expect((await send('GET', '/checkout')).text).toBe('custom checkout')
-    const account = await send('GET', '/account/login')
+    expect((await send('GET', '/checkouts/cn/abc/en-us')).text).toBe('custom checkout')
+    const account = await send('GET', '/customer_authentication/redirect')
     expect([account.text, account.headers.get('cache-control')]).toEqual(['custom account', 'private, no-store'])
     expect(seen).toEqual(['checkout', 'account'])
     const frozen = harness({ notice: () => Response.redirect('https://elsewhere.example/', 302) })
-    const redirected = await frozen.send('GET', '/checkout')
+    const redirected = await frozen.send('GET', '/checkouts/cn/abc/en-us')
     expect([redirected.status, redirected.headers.get('location'), redirected.headers.get('cache-control')]).toEqual([302, 'https://elsewhere.example/', 'private, no-store'])
     const failing = harness({ notice: () => { throw new Error('boom') } })
-    expect((await failing.send('GET', '/checkout')).status).toBe(500)
+    expect((await failing.send('GET', '/checkouts/cn/abc/en-us')).status).toBe(500)
   })
 })
 

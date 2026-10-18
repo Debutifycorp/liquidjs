@@ -106,7 +106,7 @@ function lineFor (item: Fields, data: StoreData, limits: StorefrontLimits, inCar
 const inCartOf = (lines: CartLineState[], variantId: number) => lines.reduce((total, line) => line.variantId === variantId ? total + line.quantity : total, 0)
 
 /** `/cart/add.js` and `/cart/add`: `items: [...]` or one item's `id`, `quantity` (1 when absent), `properties` and `selling_plan` (https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-add-js). Lines of the same variant, properties and selling plan merge: "if the same items have differing prices, properties, or selling plans, then they'll be split into their own line items" (fixture `ajax-cart-session`, steps 1 to 3). All items are added or none is; `lines` are the lines the items reached, in the order of the request, each as it stood after its item. */
-export function addToCart (state: VisitorState, fields: Fields, data: StoreData, limits: StorefrontLimits): CartResult {
+export function addToCart (state: VisitorState, fields: Fields, data: StoreData, limits: StorefrontLimits, checkStock = true): CartResult {
   const items = Array.isArray(fields.items) ? fields.items as unknown[] : [fields]
   if (items.length === 0) return CART_ERRORS.notFound()
   if (items.length > limits.lines) return CART_ERRORS.limit(`A request can add at most ${limits.lines} items.`)
@@ -116,7 +116,7 @@ export function addToCart (state: VisitorState, fields: Fields, data: StoreData,
   for (const raw of items) {
     const item = isFields(raw) ? raw : {}
     const id = whole(item.id)
-    const line = lineFor(item, data, limits, id === undefined ? 0 : inCartOf(lines, id), true)
+    const line = lineFor(item, data, limits, id === undefined ? 0 : inCartOf(lines, id), checkStock)
     if (failed(line)) return line
     const key = lineKey(line)
     const at = keys.indexOf(key)

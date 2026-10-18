@@ -13,6 +13,7 @@ export type Route =
   | { kind: 'variant-gone' }
   | { kind: 'shipping', action: 'prepare' | 'async' | 'rates' }
   | { kind: 'product-json', handle: string }
+  | { kind: 'oembed', resource: 'product' | 'collection', handle: string }
   | { kind: 'suggest-json', page: PageRequest }
   | { kind: 'recommendations-json', page: PageRequest }
   | { kind: 'storage' }
@@ -21,6 +22,10 @@ export type Route =
   | { kind: 'password' }
   | { kind: 'shopify-asset', path: string }
   | { kind: 'notice', notice: 'checkout' | 'account' }
+  | { kind: 'checkout' }
+  | { kind: 'account' }
+  | { kind: 'permalink', lines: Array<{ id: string, quantity: string }> }
+  | { kind: 'cloud-asset', path: string }
 
 /** Where the client script of a sandboxed page saves the page's storage. */
 export const STORAGE_PATH = '/storefront-storage'
@@ -91,15 +96,20 @@ export function routeRequest (method: string, rawUrl: string, data: StoreData, o
   const path = squeeze((page.request.path ?? '/').slice(basePath.length + localePrefix.length))
   const verb = method.toUpperCase()
   const read = verb === 'GET' || verb === 'HEAD'
-  // checkout and the customer account pages are Shopify's, not the storefront's (https://shopify.dev/docs/api/liquid/objects/routes lists `/account/login` and the other account links; checkout has no route there, and its address is Shopify's `/checkouts/cn/<token>`): the notice page answers them, whatever the method
-  if (path === '/checkout' || path === '/checkouts' || path.startsWith('/checkouts/')) return done({ kind: 'notice', notice: 'checkout' })
-  if (path === '/account' || path.startsWith('/account/')) return done({ kind: 'notice', notice: 'account' })
+  // https://shopify.dev/docs/api/liquid/objects/routes lists `/account/login` and the other account links; checkout has no route there. Shopify answers `/checkout` and every `/account` address with a 302 (recordings `ajax-checkout-redirects`): the first to its own checkout, `/checkouts/cn/<cart token>/<language>-<country>`, the others to its customer accounts on `shopify.com`. The storefront has neither, so it answers with the redirect and sends the visitor to the notice page at Shopify's own addresses for them: `/checkouts/…` for checkout and `/customer_authentication/redirect` for the account
+  if (path === '/checkout') return done({ kind: 'checkout' })
+  if (path === '/checkouts' || path.startsWith('/checkouts/')) return done({ kind: 'notice', notice: 'checkout' })
+  if (path === '/account' || path.startsWith('/account/')) return done({ kind: 'account' })
+  if (path === '/customer_authentication' || path.startsWith('/customer_authentication/')) return done({ kind: 'notice', notice: 'account' })
   // https://shopify.dev/docs/api/ajax/reference/cart: `GET /cart.js` (`/cart.json` is the same cart, undocumented)
   if (read && (path === '/cart.js' || path === '/cart.json')) return done({ kind: 'cart-json' })
   const cart = CART.exec(path)
   if (cart && verb === 'POST') return done({ kind: 'cart', action: cart[1] as CartAction, format: cart[2] ? 'js' : 'form' })
   // a line's `url_to_remove` is a plain link, so `/cart/change` also answers GET (`/cart/change?id=<key>&quantity=0`, fixtures `ajax-cart-session` and `ajax-cart-en-ca`)
   if (path === '/cart/change' && read) return done({ kind: 'cart', action: 'change', format: 'form' })
+  // https://shopify.dev/docs/apps/build/checkout/create-cart-permalinks: `/cart/<variant id>:<quantity>[,<variant id>:<quantity>…]` loads the cart with those lines and goes on to checkout
+  const permalink = read ? /^\/cart\/(\d+:\d+(?:,\d+:\d+)*)$/.exec(path) : null
+  if (permalink) return done({ kind: 'permalink', lines: permalink[1].split(',').map(part => { const [id, quantity] = part.split(':'); return { id, quantity } }) })
   // the `cart` form posts to `/cart` (https://shopify.dev/docs/api/liquid/tags/form), which updates the quantities
   if (path === '/cart' && verb === 'POST') return done({ kind: 'cart', action: 'update', format: 'form' })
   // https://help.shopify.com/en/manual/discounts/discount-methods/discount-links: `/discount/<code>` applies the code, then redirects (`?redirect=`, fixture `ajax-discount-codes`); an address with no code names no discount
@@ -112,6 +122,11 @@ export function routeRequest (method: string, rawUrl: string, data: StoreData, o
   // https://shopify.dev/docs/api/ajax/reference/product: `GET /products/<handle>.js`
   const product = /^\/products\/([^/]+)\.js$/.exec(path)
   if (product && read) return done({ kind: 'product-json', handle: decode(product[1]) })
+  // https://oembed.com/: the `.oembed` address of a product or collection, which `content_for_header` links with `rel="alternate"`
+  const oembed = read ? /^\/(products|collections)\/([^/]+)\.oembed$/.exec(path) : null
+  if (oembed) return done({ kind: 'oembed', resource: oembed[1] === 'products' ? 'product' : 'collection', handle: decode(oembed[2]) })
+  // the wallets module and stylesheet that `content_for_header` links for dynamic checkout: Shopify serves them from `cdn/shopifycloud`, the storefront from the same path under its base path
+  if (read && path.startsWith('/cdn/shopifycloud/')) return done({ kind: 'cloud-asset', path: path.slice('/cdn/shopifycloud/'.length) })
   // https://shopify.dev/docs/api/liquid/filters/shopify_asset_url: the file of Shopify's global assets that a theme names, which the storefront serves at `/shopify-assets/<path>` (`shopifyAssetUrl`'s default); a path that is not one of its files is answered there too, with 404
   // a file is served at its exact address only: the tail is the path as the address wrote it (`vendor%2Fqrcode.js`, `//vendor/qrcode.js`, a trailing slash and a backslash are not it), so one file has one cached address; the bare `/shopify-assets/` is answered too, with the plain 404
   if (read && (path === '/shopify-assets' || path.startsWith('/shopify-assets/'))) {

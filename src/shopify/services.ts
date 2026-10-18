@@ -11,6 +11,8 @@ export interface ShopifyServices {
   assetUrl: (path: string) => string
   /** `shopify_asset_url`: the URL of one of Shopify's global assets (`option_selection.js`), https://shopify.dev/docs/api/liquid/filters/shopify_asset_url. */
   shopifyAssetUrl: (path: string) => string
+  /** The address of a file of Shopify's `cdn/shopifycloud` (`portable-wallets/latest/portable-wallets.en.js`), the scripts and styles that `content_for_header` links for dynamic checkout. Shopify serves them from its own CDN, so a host serves a file of its own at the address this gives. */
+  shopifyCloudUrl: (path: string) => string
   /** `image_url`, `image_tag`, `img_url`: the URL of `image` with the CDN parameters `params`, https://shopify.dev/docs/api/liquid/filters/image_url, https://shopify.dev/docs/api/liquid/filters/image_tag and https://shopify.dev/docs/api/liquid/filters/img_url. The default service answers without a protocol (`//host/files/a.jpg?width=450`), as the parity store does, so a theme's `prepend: "https:"` makes a valid address; a service that wraps it sees that form. `params.width` and `params.height` are the size the template asked for, up to 5760, and can be larger than the image (the parity store keeps such a request in the address): a service that resizes decides whether to serve or refuse an upscale. */
   imageUrl: (image: ImageData, params: ImageUrlParams) => string
   /** `font_url` and the default `font_face`: the URL of a font file, https://shopify.dev/docs/api/liquid/filters/font_url and https://shopify.dev/docs/api/liquid/filters/font_face. The default is `/fonts/<directory>/<file>`, the font's `files` on https://fonts.shopifycdn.com/ (`/fonts/<handle>.<format>` for a font without them), so a host serves those files at `/fonts/`. A system font has no file: `font_url` prints nothing for it, as the parity store does, and does not ask this service. */
@@ -79,6 +81,7 @@ export function cdnStyleImageUrl (image: ImageData, params: ImageUrlParams): str
 export const defaultServices: Readonly<ShopifyServices> = Object.freeze<ShopifyServices>({
   assetUrl: path => `/assets/${path}`,
   shopifyAssetUrl: path => `/shopify-assets/${path}`,
+  shopifyCloudUrl: path => `/cdn/shopifycloud/${path}`,
   imageUrl: cdnStyleImageUrl,
   fontUrl: (font, format) => font.files ? `/fonts/${font.files[format]}` : `/fonts/${font.handle}.${format}`,
   fontInfo: shopifyFontInfo,

@@ -603,7 +603,7 @@ describe('discounts', () => {
       const quoted = { ...data, products: data.products!.map(product => product.handle === 'hoodie' ? { ...product, title: 'A "big" & <b>' } : product) }
       const lineState = state([line(HOODIE, 1)])
       const liquid = 'A &quot;big&quot; &amp; &lt;b&gt; - Green / Small'
-      expect(built(lineState, quoted).items[0].title).toBe(liquid)
+      expect(String(built(lineState, quoted).items[0].title)).toBe(liquid)
       expect((cartJson(quoted, lineState) as any).items[0].title).toBe(liquid)
       expect((cartJson(quoted, lineState, undefined, 'change') as any).items[0].title).toBe('A "big" & <b> - Green / Small')
     })

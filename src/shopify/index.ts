@@ -24,6 +24,7 @@ export type { RequestInput, PredictiveRequest, FormOutcome } from './store/globa
 export { requestFromUrl, localePrefixes } from './store/request'
 export { withLanguages, languageOf } from './store/languages'
 export { productJson } from './store/product-json'
+export { oembedJson } from './store/oembed-json'
 export { predictiveJson } from './store/predictive'
 export { recommendationsJson } from './store/recommendations'
 export { cartJson, discountCodeStatus, findVariant, lineItemJson, lineKey, stockFor } from './store/cart'

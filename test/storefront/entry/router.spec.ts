@@ -63,10 +63,12 @@ describe('routeRequest', () => {
     expect(kind('POST', '/contact')).toEqual({ kind: 'contact' })
     expect(kind('POST', '/localization')).toEqual({ kind: 'localization' })
     expect(kind('POST', '/password')).toEqual({ kind: 'password' })
-    for (const url of ['/checkout', '/checkouts/cn/abc', '/account', '/account/login', '/account/addresses/1']) {
-      expect(kind('GET', url)).toEqual({ kind: 'notice', notice: url.startsWith('/account') ? 'account' : 'checkout' })
-    }
-    expect(kind('POST', '/account/login')).toEqual({ kind: 'notice', notice: 'account' })
+    for (const url of ['/checkout', '/checkout/']) expect(kind('GET', url)).toEqual({ kind: 'checkout' })
+    expect(kind('POST', '/checkout')).toEqual({ kind: 'checkout' })
+    for (const url of ['/checkouts/cn/abc', '/checkouts/cn/abc/en-us?_r=x']) expect(kind('GET', url)).toEqual({ kind: 'notice', notice: 'checkout' })
+    for (const url of ['/account', '/account/login', '/account/addresses/1']) expect(kind('GET', url)).toEqual({ kind: 'account' })
+    expect(kind('POST', '/account/login')).toEqual({ kind: 'account' })
+    for (const url of ['/customer_authentication/redirect?locale=en&region_country=US', '/customer_authentication']) expect(kind('GET', url)).toEqual({ kind: 'notice', notice: 'account' })
   })
   it('strips the base path and the locale prefix first', () => {
     const routed = routeRequest('POST', '/p/tok/fr-ca/cart/add.js', data, { basePath: '/p/tok' })
@@ -76,7 +78,7 @@ describe('routeRequest', () => {
   })
   it('reads the address as the engine does: trailing slashes, a base path in any spelling, a host-less `//` address', () => {
     expect(kind('POST', '/cart/add.js/')).toEqual({ kind: 'cart', action: 'add', format: 'js' })
-    expect(kind('GET', '/checkout/')).toEqual({ kind: 'notice', notice: 'checkout' })
+    expect(kind('GET', '/checkout/')).toEqual({ kind: 'checkout' })
     expect(kind('GET', 'https://store.example/products/hoodie.js?x=1')).toEqual({ kind: 'product-json', handle: 'hoodie' })
     // an address that opens with `//` is a path, not a host
     expect(kind('GET', '//cart.js')).toEqual({ kind: 'cart-json' })
@@ -85,7 +87,7 @@ describe('routeRequest', () => {
     expect(kind('GET', 'http://x//products//hoodie.js')).toEqual({ kind: 'product-json', handle: 'hoodie' })
     expect(kind('GET', 'http://x//products/hoodie')).toMatchObject({ kind: 'page', page: { templateName: 'product' } })
     expect(kind('POST', 'http://x/p/tok//cart//add.js', '/p/tok')).toEqual({ kind: 'cart', action: 'add', format: 'js' })
-    expect(kind('GET', 'http://x//checkout')).toEqual({ kind: 'notice', notice: 'checkout' })
+    expect(kind('GET', 'http://x//checkout')).toEqual({ kind: 'checkout' })
     expect(routeRequest('GET', 'http://x/p/tok/fr-ca//cart.js', data, { basePath: '/p//tok/' })).toMatchObject({ route: { kind: 'cart-json' }, localePrefix: '/fr-ca', language: 'fr' })
     // the engine finds a locale prefix only as the first segment after the base path, so one behind an empty segment is no prefix, for a page and a route alike
     expect(kind('GET', 'http://x/p/tok//fr-ca/cart.js', '/p/tok')).toMatchObject({ kind: 'not-found' })

@@ -1,5 +1,6 @@
 import type { FilterImpl } from '../../template/filter-impl-options'
-import { stringify } from '../../util'
+import { stringify, toValue } from '../../util'
+import { paymentButtonHtml } from '../theme/accelerated-checkout'
 import { attribute, escapeHtml, insertAttributes, namedAttributes } from '../util/html'
 import { splitArgs } from '../util/args'
 import { shopifyState } from '../state'
@@ -108,9 +109,23 @@ function loginButton () {
   return ''
 }
 
-/** The container Shopify fills with accelerated checkout buttons, `<div data-shopify="payment-button" class="shopify-payment-button">` as https://shopify.dev/docs/api/liquid/filters/payment_button prints it. The page's inside is a `<shopify-accelerated-checkout>` element carrying the shop's access token, shop id and variant data, which this package cannot know; the disabled unbranded "Buy it now" button here is Debutify's stand-in, not Shopify's markup. */
-function paymentButton () {
-  return '<div data-shopify="payment-button" class="shopify-payment-button"><button type="button" class="shopify-payment-button__button shopify-payment-button__button--unbranded" disabled="disabled">Buy it now</button></div>'
+/** The dynamic checkout button of a product form, https://shopify.dev/docs/api/liquid/filters/payment_button: the markup Shopify prints (see `paymentButtonHtml`), made from the form's product and the page's market and language. The page notes that it printed one, so `content_for_header` carries the scripts that go with it. A form that is not a product form prints nothing. */
+function paymentButton (this: FilterImpl, form: unknown) {
+  const product = (form as { formType?: unknown, resource?: unknown } | null)?.resource
+  if ((form as { formType?: unknown } | null)?.formType !== 'product' || typeof product !== 'object' || product === null) return ''
+  const state = shopifyState(this.context)
+  const read = (path: string[]) => toValue(this.context.getSync(path))
+  const variants = (toValue((product as Record<string, unknown>).variants) as Array<Record<string, unknown>> | undefined) ?? []
+  const groups = toValue((product as Record<string, unknown>).selling_plan_groups) as unknown[] | undefined
+  state.checkoutButton = true
+  return paymentButtonHtml({
+    variants: variants.map(variant => ({ id: toValue(variant.id), requiresShipping: toValue(variant.requires_shipping) !== false })),
+    country: stringify(read(['localization', 'country', 'iso_code'])),
+    locale: stringify(read(['request', 'locale', 'iso_code'])),
+    currency: state.currency?.iso_code ?? stringify(read(['shop', 'currency'])),
+    domain: stringify(read(['shop', 'permanent_domain'])),
+    subscription: Array.isArray(groups) && groups.length > 0
+  })
 }
 
 /** The Shop Pay Installments banner, which Shopify shows "only if Shop Pay Installments is enabled in the merchant's store" (https://shopify.dev/docs/storefronts/themes/pricing-payments/installments). The store data has no such setting, so this prints what Shopify prints for a store without it: nothing, as recorded in liquid-spec's Dawn product page. https://shopify.dev/docs/api/liquid/filters/payment_terms does not show the banner's markup. */

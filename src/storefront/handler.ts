@@ -8,6 +8,7 @@ import { compiledAssetResponse, pageForPath, renderPageResponse, renderSectionRe
 import { decode, routeRequest } from './router'
 import type { Route, Routed } from './router'
 import { shopifyAssetResponse } from './shopify-assets'
+import { walletsResponse } from './wallets'
 import { asError, checkWhole, PRIVATE, report, storeRoot, withoutBase } from './support'
 import { DEFAULT_LIMITS } from './types'
 import type { HandleOptions, Storefront, StorefrontLimits, StorefrontOptions, VisitorState } from './types'
@@ -86,7 +87,7 @@ export function redirect (ctx: Context, target: string | null | undefined, fallb
 export const ROUTE_HANDLERS: Partial<Record<Route['kind'], RouteHandler>> = {}
 
 /** The routes that change visitor state, whatever their method: they run one at a time per visitor. */
-export const mutates = (route: Route) => route.kind === 'cart' || route.kind === 'discount' || route.kind === 'storage' || route.kind === 'contact' || route.kind === 'localization' || route.kind === 'password'
+export const mutates = (route: Route) => route.kind === 'cart' || route.kind === 'checkout' || route.kind === 'permalink' || route.kind === 'discount' || route.kind === 'storage' || route.kind === 'contact' || route.kind === 'localization' || route.kind === 'password'
 
 /** Whether a route reads the body of its request: a `POST` to one of the routes that take a form or JSON. */
 const readsBody = (route: Route, method: string) => method === 'POST' && (route.kind === 'cart' || route.kind === 'storage' || route.kind === 'contact' || route.kind === 'localization' || route.kind === 'password' || route.kind === 'shipping')
@@ -278,6 +279,10 @@ export function createStorefront (options: StorefrontOptions): Storefront {
       if (first.kind === 'shopify-asset') {
         const asset = shopifyAssetResponse(first.path, request)
         return done(asset, undefined, true, asset.status === 200 || asset.status === 304)
+      }
+      if (first.kind === 'cloud-asset') {
+        const cloud = walletsResponse(first.path)
+        if (cloud) return done(cloud, undefined, true, true)
       }
       const fields = readsBody(first, verb) ? await readBody(request, limits.body) : {}
       const run = async (): Promise<Response> => {

@@ -1,0 +1,976 @@
+{
+  "scenario": "ajax-checkout-redirects",
+  "steps": [
+    {
+      "method": "GET",
+      "url": "/checkout",
+      "status": 302,
+      "location": "/checkouts/cn/<token>/en-us?_r=<token>",
+      "body": {}
+    },
+    {
+      "method": "GET",
+      "url": "/en-eu/checkout",
+      "status": 302,
+      "location": "/en-eu",
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/fr-ca/checkout",
+      "status": 302,
+      "location": "/fr-ca",
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/en-ca/checkout",
+      "status": 302,
+      "location": "/en-ca",
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/fr-eu/checkout",
+      "status": 302,
+      "location": "/fr-eu",
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/checkout/",
+      "status": 302,
+      "location": "/",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "url": "/checkout",
+      "status": 302,
+      "location": "/",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "url": "/cart/add.js",
+      "json": {
+        "items": [
+          {
+            "id": 43696940613654,
+            "quantity": 1
+          }
+        ]
+      },
+      "status": 200,
+      "location": null,
+      "body": {
+        "items": [
+          {
+            "id": 43696940613654,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696940613654,
+            "key": "43696940613654:<hash>",
+            "title": "Black Sunnies",
+            "product_title": "Black Sunnies",
+            "variant_title": null,
+            "price": 5000,
+            "original_price": 5000,
+            "discounted_price": 5000,
+            "line_price": 5000,
+            "original_line_price": 5000,
+            "presentment_price": 50,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": "",
+            "grams": 50,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595290646,
+            "product_has_only_default_variant": true,
+            "gift_card": false,
+            "final_price": 5000,
+            "final_line_price": 5000,
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "featured_image": {
+              "alt": "Black Sunnies",
+              "aspect_ratio": 1,
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+            "handle": "black-sunnies",
+            "requires_shipping": true,
+            "product_type": "Sunglasses",
+            "untranslated_product_title": "Black Sunnies",
+            "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+            "untranslated_variant_title": null,
+            "variant_options": [
+              "Default Title"
+            ],
+            "options_with_values": [
+              {
+                "name": "Title",
+                "value": "Default Title"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/checkout",
+      "status": 302,
+      "location": "/checkouts/cn/<token>/en-us?_r=<token>",
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/en-eu/checkout",
+      "status": 302,
+      "location": "/checkouts/cn/<token>/en-us?_r=<token>",
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/fr-ca/checkout",
+      "status": 302,
+      "location": "/checkouts/cn/<token>/fr-us?_r=<token>",
+      "body": {}
+    },
+    {
+      "method": "GET",
+      "url": "/account",
+      "status": 302,
+      "location": "https://shopify.com/<shop id>/account?locale=en&region_country=US&buyer_flags=<token>",
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/account/login",
+      "status": 302,
+      "location": "https://shopify.com/<shop id>/account?locale=en&region_country=US&buyer_flags=<token>",
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/account/register",
+      "status": 302,
+      "location": "https://shopify.com/<shop id>/account?locale=en&region_country=US&buyer_flags=<token>",
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/fr-ca/account",
+      "status": 302,
+      "location": "https://shopify.com/<shop id>/account?locale=fr&region_country=US&buyer_flags=<token>",
+      "body": null
+    },
+    {
+      "method": "GET",
+      "url": "/customer_authentication/redirect?locale=en&region_country=US",
+      "status": 302,
+      "location": "https://shopify.com/<shop id>/account?buyer_flags=<token>&locale=en&region_country=US",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "url": "/cart/clear.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 0,
+        "total_price": 0,
+        "total_discount": 0,
+        "total_weight": 0,
+        "item_count": 0,
+        "items": [],
+        "requires_shipping": false,
+        "currency": "USD",
+        "items_subtotal_price": 0,
+        "cart_level_discount_applications": [],
+        "discount_codes": []
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart/43696932126742:2",
+      "status": 302,
+      "location": "/checkouts/cn/<token>/en-us?_r=<token>&cart_link_id=81pNEITT",
+      "body": {}
+    },
+    {
+      "method": "GET",
+      "url": "/cart.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 8000,
+        "total_price": 8000,
+        "total_discount": 0,
+        "total_weight": 600,
+        "item_count": 2,
+        "items": [
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 2,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men&#39;s T-shirt - Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "presentment_price": 40,
+            "discounted_price": 4000,
+            "line_price": 8000,
+            "original_line_price": 8000,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": null,
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 8000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Men's T-shirt",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 8000,
+        "cart_level_discount_applications": [],
+        "discount_codes": []
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart/43696940613654:1?storefront=true",
+      "status": 302,
+      "location": "/cart?cart_link_id=7GSuuT7f",
+      "body": {}
+    },
+    {
+      "method": "GET",
+      "url": "/cart.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 5000,
+        "total_price": 5000,
+        "total_discount": 0,
+        "total_weight": 50,
+        "item_count": 1,
+        "items": [
+          {
+            "id": 43696940613654,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696940613654,
+            "key": "43696940613654:<hash>",
+            "title": "Black Sunnies",
+            "price": 5000,
+            "original_price": 5000,
+            "presentment_price": 50,
+            "discounted_price": 5000,
+            "line_price": 5000,
+            "original_line_price": 5000,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": null,
+            "grams": 50,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983595290646,
+            "product_has_only_default_variant": true,
+            "gift_card": false,
+            "final_price": 5000,
+            "final_line_price": 5000,
+            "url": "/products/black-sunnies?variant=43696940613654",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Black Sunnies",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/850dfaa66527a41f23bfc455ec05fa5229988f2e92519efc116b023a5a820f1f.jpg",
+            "handle": "black-sunnies",
+            "requires_shipping": true,
+            "product_type": "Sunglasses",
+            "product_title": "Black Sunnies",
+            "product_description": "These modern black sunglasses provide 100% UV400 protection from harmful sunrays and feature mirrored lenses for a timeless and stylish look. With lightweight construction and comfortable fit, you can look cool and stay safe in any situation.",
+            "variant_title": null,
+            "variant_options": [
+              "Default Title"
+            ],
+            "options_with_values": [
+              {
+                "name": "Title",
+                "value": "Default Title"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 5000,
+        "cart_level_discount_applications": [],
+        "discount_codes": []
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart/43696932126742:1,43696949592086:2?discount=WELCOME10",
+      "status": 302,
+      "location": "/checkouts/cn/<token>/en-us?_r=<token>&cart_link_id=GoNpYUCk&discount=WELCOME10",
+      "body": {}
+    },
+    {
+      "method": "GET",
+      "url": "/cart.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 24000,
+        "total_price": 20000,
+        "total_discount": 4000,
+        "total_weight": 900,
+        "item_count": 3,
+        "items": [
+          {
+            "id": 43696949592086,
+            "properties": {},
+            "quantity": 2,
+            "variant_id": 43696949592086,
+            "key": "43696949592086:<hash>",
+            "title": "Beanie - Green",
+            "price": 10000,
+            "original_price": 10000,
+            "presentment_price": 100,
+            "discounted_price": 8000,
+            "line_price": 16000,
+            "original_line_price": 20000,
+            "total_discount": 4000,
+            "discounts": [
+              {
+                "amount": 4000,
+                "title": "Beanie week"
+              }
+            ],
+            "sku": null,
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7983602040854,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 8000,
+            "final_line_price": 16000,
+            "url": "/products/beanie?variant=43696949592086",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Beanie",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/415ce2e1c8c97a330e7285eca8b50a1f3ab5bfc36f9a576f6930145619d28ae4.jpg",
+            "handle": "beanie",
+            "requires_shipping": true,
+            "product_type": "Hats",
+            "product_title": "Beanie",
+            "product_description": "This beanie is perfect for all seasons! Crafted in luxurious cashmere – it's classic, warm and comfortable. Just the thing to keep you stylish and cozy.",
+            "variant_title": "Green",
+            "variant_options": [
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [
+              {
+                "amount": 4000,
+                "discount_application": {
+                  "type": "",
+                  "key": "71127085-bbec-4913-acc4-ed6971680744",
+                  "title": "Beanie week",
+                  "description": null,
+                  "value": "20.0",
+                  "created_at": "2026-10-18T11:45:29.170Z",
+                  "value_type": "percentage",
+                  "allocation_method": "each",
+                  "target_selection": "entitled",
+                  "target_type": "line_item",
+                  "total_allocated_amount": 4000
+                }
+              }
+            ],
+            "line_level_total_discount": 4000,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          },
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men&#39;s T-shirt - Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "presentment_price": 40,
+            "discounted_price": 4000,
+            "line_price": 4000,
+            "original_line_price": 4000,
+            "total_discount": 0,
+            "discounts": [],
+            "sku": null,
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 4000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Men's T-shirt",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 20000,
+        "cart_level_discount_applications": [],
+        "discount_codes": [
+          {
+            "code": "WELCOME10",
+            "applicable": false
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/en-eu/cart/43696932126742:1",
+      "status": 302,
+      "location": "/checkouts/cn/<token>/en-de?_r=<token>&cart_link_id=i6iwV9Kc",
+      "body": {}
+    },
+    {
+      "method": "GET",
+      "url": "/cart/1:1",
+      "status": 410,
+      "location": null,
+      "body": {
+        "html": "<page>"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart/43695847145494:1",
+      "status": 302,
+      "location": "/checkouts/cn/<token>/en-us?_r=<token>&cart_link_id=gNv4wx5f",
+      "body": {}
+    },
+    {
+      "method": "GET",
+      "url": "/cart.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 9000,
+        "total_price": 8100,
+        "total_discount": 900,
+        "total_weight": 600,
+        "item_count": 1,
+        "items": [
+          {
+            "id": 43695847145494,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43695847145494,
+            "key": "43695847145494:<hash>",
+            "title": "Hoodie - Clay / Small",
+            "price": 9000,
+            "original_price": 9000,
+            "presentment_price": 90,
+            "discounted_price": 8100,
+            "line_price": 8100,
+            "original_line_price": 9000,
+            "total_discount": 900,
+            "discounts": [
+              {
+                "amount": 900,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": null,
+            "grams": 600,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 10489561382934,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 9000,
+            "final_line_price": 9000,
+            "url": "/products/hoodie?variant=43695847145494",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Hoodie",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/f68a0d349c21e1fe5e33597cc4e6f98f60d7e92151a1c09747597d56e83707ef.jpg",
+            "handle": "hoodie",
+            "requires_shipping": true,
+            "product_type": "Hoodies",
+            "product_title": "Hoodie",
+            "product_description": "This hoodie is the perfect choice for comfort and warmth. Meticulously crafted from 100% cotton, the hoodie features a soft, plush fleece interior and a unisex sizing design. Soft and lightweight, it's sure to be your go-to for chilly days.",
+            "variant_title": "Clay / Small",
+            "variant_options": [
+              "Clay",
+              "Small"
+            ],
+            "options_with_values": [
+              {
+                "name": "Color",
+                "value": "Clay"
+              },
+              {
+                "name": "Size",
+                "value": "Small"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 9000,
+        "cart_level_discount_applications": [
+          {
+            "type": "discount_code",
+            "key": "de395752-c8f3-40eb-ac2e-147941900c51",
+            "title": "WELCOME10",
+            "description": null,
+            "value": "10.0",
+            "created_at": "2026-10-18T11:45:31.913Z",
+            "value_type": "percentage",
+            "allocation_method": "across",
+            "target_selection": "all",
+            "target_type": "line_item",
+            "total_allocated_amount": 900
+          }
+        ],
+        "discount_codes": [
+          {
+            "code": "WELCOME10",
+            "applicable": true
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart/43696932126742:0",
+      "status": 302,
+      "location": "/checkouts/cn/<token>/en-us?_r=<token>&cart_link_id=ZKKRacxN",
+      "body": {}
+    },
+    {
+      "method": "GET",
+      "url": "/cart/43696932126742",
+      "status": 404,
+      "location": null,
+      "body": {
+        "html": "<page>"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart/abc",
+      "status": 404,
+      "location": null,
+      "body": {
+        "html": "<page>"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart/43696932126742:1?storefront=true&discount=WELCOME10&note=Hi&attributes%5Bgift%5D=yes",
+      "status": 302,
+      "location": "/cart?cart_link_id=tUK8YbVw&discount=WELCOME10",
+      "body": {}
+    },
+    {
+      "method": "GET",
+      "url": "/cart.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "Hi",
+        "attributes": {
+          "gift": "yes"
+        },
+        "original_total_price": 4000,
+        "total_price": 3600,
+        "total_discount": 400,
+        "total_weight": 300,
+        "item_count": 1,
+        "items": [
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 1,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men&#39;s T-shirt - Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "presentment_price": 40,
+            "discounted_price": 3600,
+            "line_price": 3600,
+            "original_line_price": 4000,
+            "total_discount": 400,
+            "discounts": [
+              {
+                "amount": 400,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": null,
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 4000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Men's T-shirt",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 4000,
+        "cart_level_discount_applications": [
+          {
+            "type": "discount_code",
+            "key": "056245a8-eb0e-4e29-905a-b0c98866d9f7",
+            "title": "WELCOME10",
+            "description": null,
+            "value": "10.0",
+            "created_at": "2026-10-18T11:45:36.737Z",
+            "value_type": "percentage",
+            "allocation_method": "across",
+            "target_selection": "all",
+            "target_type": "line_item",
+            "total_allocated_amount": 400
+          }
+        ],
+        "discount_codes": [
+          {
+            "code": "WELCOME10",
+            "applicable": true
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "url": "/cart/43696932126742:99999",
+      "status": 302,
+      "location": "/checkouts/cn/<token>/en-us?_r=<token>&cart_link_id=gD6IioKj",
+      "body": {}
+    },
+    {
+      "method": "GET",
+      "url": "/cart.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 399996000,
+        "total_price": 359996400,
+        "total_discount": 39999600,
+        "total_weight": 29999700,
+        "item_count": 99999,
+        "items": [
+          {
+            "id": 43696932126742,
+            "properties": {},
+            "quantity": 99999,
+            "variant_id": 43696932126742,
+            "key": "43696932126742:<hash>",
+            "title": "Men&#39;s T-shirt - Small / Green",
+            "price": 4000,
+            "original_price": 4000,
+            "presentment_price": 40,
+            "discounted_price": 3600,
+            "line_price": 359996400,
+            "original_line_price": 399996000,
+            "total_discount": 39999600,
+            "discounts": [
+              {
+                "amount": 39999600,
+                "title": "WELCOME10"
+              }
+            ],
+            "sku": null,
+            "grams": 300,
+            "vendor": "Mock.shop",
+            "taxable": true,
+            "product_id": 7982902771734,
+            "product_has_only_default_variant": false,
+            "gift_card": false,
+            "final_price": 4000,
+            "final_line_price": 399996000,
+            "url": "/products/men-t-shirt?variant=43696932126742",
+            "featured_image": {
+              "aspect_ratio": 1,
+              "alt": "Men's T-shirt",
+              "height": 4096,
+              "url": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+              "width": 4096
+            },
+            "image": "https://cdn.shopify.com/mock-shop-production-media/_seeds/demostore/c99af4de567f8baafab47fa2d5267d83a997f9082892f01d7145c0eaa5403832.jpg",
+            "handle": "men-t-shirt",
+            "requires_shipping": true,
+            "product_type": "T-shirts",
+            "product_title": "Men's T-shirt",
+            "product_description": "Crafted from organic cotton, this classic T-shirt features a relaxed fit, crew neckline and timeless look. Enjoy the breathable comfort of 100% organic cotton.",
+            "variant_title": "Small / Green",
+            "variant_options": [
+              "Small",
+              "Green"
+            ],
+            "options_with_values": [
+              {
+                "name": "Size",
+                "value": "Small"
+              },
+              {
+                "name": "Color",
+                "value": "Green"
+              }
+            ],
+            "line_level_discount_allocations": [],
+            "line_level_total_discount": 0,
+            "quantity_rule": {
+              "min": 1,
+              "max": null,
+              "increment": 1
+            },
+            "has_components": false
+          }
+        ],
+        "requires_shipping": true,
+        "currency": "USD",
+        "items_subtotal_price": 399996000,
+        "cart_level_discount_applications": [
+          {
+            "type": "discount_code",
+            "key": "467ac4c2-dbaa-451d-8ecc-24a1254b5dfd",
+            "title": "WELCOME10",
+            "description": null,
+            "value": "10.0",
+            "created_at": "2026-10-18T11:45:37.847Z",
+            "value_type": "percentage",
+            "allocation_method": "across",
+            "target_selection": "all",
+            "target_type": "line_item",
+            "total_allocated_amount": 39999600
+          }
+        ],
+        "discount_codes": [
+          {
+            "code": "WELCOME10",
+            "applicable": true
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/cart/clear.js",
+      "status": 200,
+      "location": null,
+      "body": {
+        "token": "<token>",
+        "note": "",
+        "attributes": {},
+        "original_total_price": 0,
+        "total_price": 0,
+        "total_discount": 0,
+        "total_weight": 0,
+        "item_count": 0,
+        "items": [],
+        "requires_shipping": false,
+        "currency": "USD",
+        "items_subtotal_price": 0,
+        "cart_level_discount_applications": [],
+        "discount_codes": [
+          {
+            "code": "WELCOME10",
+            "applicable": false
+          }
+        ]
+      }
+    }
+  ]
+}

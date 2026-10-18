@@ -1,4 +1,4 @@
-import { cartJson, lineKey, predictiveJson, productJson, recommendationsJson, shippingRates } from '../shopify'
+import { cartJson, lineKey, oembedJson, predictiveJson, productJson, recommendationsJson, shippingRates } from '../shopify'
 import type { CartLineState, PageRequest } from '../shopify'
 import type { Fields } from './body'
 import { addToCart, CART_ERRORS, changeCart, clearCart, updateCart } from './cart'
@@ -210,6 +210,17 @@ const product: RouteHandler = async ctx => {
   return { response: found ? js(found) : empty(404) }
 }
 
+/** The type of an oEmbed answer, and of its 404 (scenario `ajax-endpoint-links`). */
+const OEMBED_HEADERS = typed('application/json+oembed; charset=utf-8')
+
+/** `GET /products/<handle>.oembed` and `GET /collections/<handle>.oembed`; a handle the store lacks answers 404 with an empty body (scenario `ajax-endpoint-links`). */
+const oembed: RouteHandler = async ctx => {
+  const route = ctx.routed.route
+  if (route.kind !== 'oembed') throw new Error('not an oembed route')
+  const found = oembedJson(ctx.data, route.resource, route.handle, ctx.view)
+  return { response: new Response(found, { status: found === null ? 404 : 200, headers: OEMBED_HEADERS }) }
+}
+
 /** `GET /search/suggest.json`; the terms are cut to `limits.search` characters. */
 const suggest: RouteHandler = async ctx => {
   const route = ctx.routed.route
@@ -234,4 +245,4 @@ const recommendations: RouteHandler = async ctx => {
 }
 
 /** The handlers this unit adds, by route kind; `cart` answers the `.js` format; `index.ts` sends the form format to the forms unit. */
-export const AJAX_HANDLERS: Partial<Record<Route['kind'], RouteHandler>> = { 'cart-json': cartGet, cart: cartOps, discount, shipping, 'product-json': product, 'suggest-json': suggest, 'recommendations-json': recommendations }
+export const AJAX_HANDLERS: Partial<Record<Route['kind'], RouteHandler>> = { 'cart-json': cartGet, cart: cartOps, discount, shipping, 'product-json': product, oembed, 'suggest-json': suggest, 'recommendations-json': recommendations }

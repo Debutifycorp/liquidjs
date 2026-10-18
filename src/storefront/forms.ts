@@ -3,6 +3,7 @@ import { localePrefixes } from '../shopify'
 import type { StoreData } from '../shopify'
 import type { Fields } from './body'
 import { addToCart, changeCart, clearCart, updateCart } from './cart'
+import { checkoutRedirect } from './checkout'
 import { redirect, refererPath, storeTarget } from './handler'
 import type { Context, RouteHandler } from './handler'
 import { cartErrorPage } from './html'
@@ -55,7 +56,7 @@ export function linkFields (query: URLSearchParams): Fields {
 const OPERATIONS = { add: addToCart, change: changeCart, update: updateCart }
 
 /**
- * The cart's form endpoints, `POST /cart/add`, `/cart/change`, `/cart/update`, `/cart/clear` and `/cart` (https://shopify.dev/docs/api/liquid/objects/routes: `cart_add_url`, `cart_change_url`, `cart_update_url`, `cart_clear_url`, and the `cart` form of https://shopify.dev/docs/api/liquid/tags/form), and the remove link `GET /cart/change?line=1&quantity=0` (a line's `url_to_remove`). They change the cart, then redirect: "each form type redirects customers to a specific page after the form submits. For example, the `product` form redirects to the cart page" (https://shopify.dev/docs/api/liquid/tags/form) unless `return_to` names another, a path on the store or `back` for the page the visitor came from. A `checkout` field, the cart form's checkout button, goes to `/checkout` (Shopify's own checkout is at `/checkouts/cn/<token>`, which the storefront answers with its notice page); the redirects follow fixture `ajax-cart-form-add`, whose steps 0 to 2 are the add form to `/cart`, the cart form with `checkout` to Shopify's checkout, and `GET /cart/change?line=1&quantity=0` to `/cart`. A cart error shows on its own page with Shopify's status and a link back, as the JSON endpoints answer it. A link reads the four fields the change takes, from its query (`linkFields`).
+ * The cart's form endpoints, `POST /cart/add`, `/cart/change`, `/cart/update`, `/cart/clear` and `/cart` (https://shopify.dev/docs/api/liquid/objects/routes: `cart_add_url`, `cart_change_url`, `cart_update_url`, `cart_clear_url`, and the `cart` form of https://shopify.dev/docs/api/liquid/tags/form), and the remove link `GET /cart/change?line=1&quantity=0` (a line's `url_to_remove`). They change the cart, then redirect: "each form type redirects customers to a specific page after the form submits. For example, the `product` form redirects to the cart page" (https://shopify.dev/docs/api/liquid/tags/form) unless `return_to` names another, a path on the store or `back` for the page the visitor came from. A `checkout` field, the cart form's checkout button, goes to Shopify's checkout address, `/checkouts/cn/<token>/<language>-<country>?_r=…`, which the storefront answers with its notice page (`checkoutPath`); the redirects follow fixture `ajax-cart-form-add`, whose steps 0 to 2 are the add form to `/cart`, the cart form with `checkout` to Shopify's checkout, and `GET /cart/change?line=1&quantity=0` to `/cart`. A cart error shows on its own page with Shopify's status and a link back, as the JSON endpoints answer it. A link reads the four fields the change takes, from its query (`linkFields`).
  */
 export const cartForm: RouteHandler = async ctx => {
   const route = ctx.routed.route
@@ -69,13 +70,13 @@ export const cartForm: RouteHandler = async ctx => {
   const returnTo = fields.return_to
   const back = returnTo === 'back' ? cameFrom(ctx) : undefined
   const response = fields.checkout !== undefined
-    ? redirect(ctx, '/checkout')
+    ? checkoutRedirect(ctx)
     : back ? redirect(under(ctx, back.prefix), back.path, '/cart') : redirect(ctx, typeof returnTo === 'string' ? returnTo : null, '/cart')
   return { response, state: result.state }
 }
 
 /**
- * `POST /contact`, the contact form (`form_type=contact`) and the newsletter form (`form_type=customer`), https://shopify.dev/docs/storefronts/themes/customer-engagement/add-contact-form and https://shopify.dev/docs/storefronts/themes/customer-engagement/email-consent. Nothing is sent anywhere. A valid form redirects to the page it came from with `contact_posted=true` or `customer_posted=true` and the form's `#contact_form` fragment, which the engine reads as a posted form; an invalid one renders that page with the form's errors (https://shopify.dev/docs/api/liquid/objects/form_errors) and status 200. Neither is recorded: Shopify's bot challenge answers a scripted `POST /contact` with 403, so there is no `flow-contact-*` fixture, and the error wording (`can't be blank`, `is invalid`) is this storefront's own.
+ * `POST /contact`, the contact form (`form_type=contact`) and the newsletter form (`form_type=customer`), https://shopify.dev/docs/storefronts/themes/customer-engagement/add-contact-form and https://shopify.dev/docs/storefronts/themes/customer-engagement/email-consent. Nothing is sent anywhere. A valid form redirects to the page it came from with `contact_posted=true` or `customer_posted=true`, which the engine reads as a posted form, and no fragment: a browser never sends one, so Shopify's server cannot name the form, and a redirect with none keeps the fragment of the form's action (RFC 9110 section 10.2.2), the form's own id (`/contact#ContactForm`); an invalid one renders that page with the form's errors (https://shopify.dev/docs/api/liquid/objects/form_errors) and status 200. Neither is recorded: Shopify's bot challenge answers a scripted `POST /contact` with 403, so there is no `flow-contact-*` fixture, and the error wording (`can't be blank`, `is invalid`) is this storefront's own.
  */
 const contact: RouteHandler = async ctx => {
   const type = ctx.fields.form_type === 'customer' ? 'customer' : 'contact'
@@ -96,7 +97,7 @@ const contact: RouteHandler = async ctx => {
     params.delete('contact_posted')
     params.delete('customer_posted')
     params.set(`${type}_posted`, 'true')
-    return { response: redirect(under(ctx, back.prefix), `${at < 0 ? back.path : back.path.slice(0, at)}?${params.toString()}#contact_form`) }
+    return { response: redirect(under(ctx, back.prefix), `${at < 0 ? back.path : back.path.slice(0, at)}?${params.toString()}`) }
   }
   const page = pageForPath(ctx, `${back.prefix}${back.path}`)
   return { response: await renderPageResponse(ctx, page, 200, { type, posted: false, errors, values }) }

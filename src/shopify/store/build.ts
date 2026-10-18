@@ -804,8 +804,11 @@ function buildLineItems (lines: Array<{ product_handle: string, variant_id: numb
 
 /** The `<option>` tags of https://shopify.dev/docs/api/liquid/objects/country_option_tags, one a line as its example prints them: a `---` option first, then each country, its subregions JSON-encoded in `data-provinces` (an empty array when it has none). The page shows no example for https://shopify.dev/docs/api/liquid/objects/all_country_option_tags, which is printed the same way; whether it starts with `---` too is not pinned. */
 function countryOptionTags (countries: CountryOptionData[]): string {
-  const option = (name: string, provinces: Array<[string, string]>) => `<option value="${escapeHtml(name)}" data-provinces="${escapeHtml(JSON.stringify(provinces))}">${escapeHtml(name)}</option>`
-  return [option('---', []), ...countries.map(country => option(country.name, country.provinces ?? []))].join('\n')
+  // as the parity store prints them: the name in a double-quoted attribute with `&`, `<`, `>` and `"` escaped and an apostrophe left (`Côte d'Ivoire`), the subregions as Ruby's `to_json` writes them (`&`, `<` and `>` as `\u0026`, `\u003c` and `\u003e`) and then escaped with the apostrophe too (`O&#39;Higgins`), and the label with `<` and `>` escaped and nothing else (`Antigua & Barbuda`)
+  const attr = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  const rubyJson = (value: unknown) => JSON.stringify(value).replace(/[&<>\u2028\u2029]/g, ch => `\\u${ch.charCodeAt(0).toString(16).padStart(4, '0')}`)
+  const option = (name: string, provinces: Array<[string, string]>, label = name) => `<option value="${attr(name)}" data-provinces="${escapeHtml(rubyJson(provinces))}">${label.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</option>`
+  return [option('---', []), ...countries.map(country => option(country.name, country.provinces ?? [], country.label))].join('\n')
 }
 
 /** https://shopify.dev/docs/api/liquid/objects/gift_card, with the properties that page lists: `last_four_characters` is the code's last four characters (spaces left out, as its example's code `WCGX 7X97 K9HJ DFR8` ends `DFR8`), `currency` defaults to the shop's, `enabled` to true, `expired` to false, `product` and `variant` are the store's own objects, and every other property the data leaves out is nil. `url` is the data's, a path such as `/gift_cards/<store_id>/<gift_card_token>` printed under `prefix` (the address the storefront serves the card at) or an absolute address as it is (Shopify's own, on `checkout.shopify.com`). */

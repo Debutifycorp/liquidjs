@@ -233,7 +233,7 @@ describe('shopify/store', () => {
     const canadaTag = '<option value="Canada" data-provinces="[[&quot;Alberta&quot;,&quot;Alberta&quot;],[&quot;British Columbia&quot;,&quot;British Columbia&quot;]]">Canada</option>'
     const afghanistan = '<option value="Afghanistan" data-provinces="[]">Afghanistan</option>'
     expect(await render('{{ country_option_tags }}', page.globals)).toBe([none, canadaTag, afghanistan].join('\n'))
-    expect(await render('{{ all_country_option_tags }}', page.globals)).toBe([none, afghanistan, canadaTag, '<option value="Côte d&#39;Ivoire" data-provinces="[]">Côte d&#39;Ivoire</option>'].join('\n'))
+    expect(await render('{{ all_country_option_tags }}', page.globals)).toBe([none, afghanistan, canadaTag, '<option value="Côte d\'Ivoire" data-provinces="[]">Côte d\'Ivoire</option>'].join('\n'))
   })
   it('lists the store country in country_option_tags when the data names none, and those countries in all_country_option_tags', async () => {
     const page = buildGlobals({ store, templateName: 'customers/addresses', request: {}, locale: 'en', report: new ReportCollector() })

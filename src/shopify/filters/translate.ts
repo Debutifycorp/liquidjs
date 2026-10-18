@@ -3,6 +3,7 @@ import { stringify } from '../../util'
 import { escapeHtml } from '../util/html'
 import { namedForDisplay, splitArgs } from '../util/args'
 import { hasOwn } from '../util/own'
+import { SafeHtmlDrop } from '../objects/safe-html'
 import { sectionLocales, shopifyState } from '../state'
 import type { LocaleTree } from '../types'
 import type { ShopifyFilterSet } from './types'
@@ -41,11 +42,19 @@ function translate (this: FilterImpl, key: unknown, ...args: unknown[]): string 
     state.report.missing('translation', path)
     return escapeHtml(`translation missing: ${state.translator.locale}.${path}`)
   }
-  const text = value.replace(PLACEHOLDER, (whole: string, name: string) => {
-    if (!hasOwn(named, name)) return whole
-    return stringify(display[name])
-  })
-  return html ? text : escapeHtml(text)
+  if (html) {
+    return value.replace(PLACEHOLDER, (whole: string, name: string) => hasOwn(named, name) ? stringify(display[name]) : whole)
+  }
+  // the key's text and each value are escaped alone, so a value that is HTML-safe already (a line item's `title`) is not escaped a second time
+  let out = ''
+  let from = 0
+  for (const found of value.matchAll(PLACEHOLDER)) {
+    out += escapeHtml(value.slice(from, found.index))
+    const [whole, name] = found
+    out += !hasOwn(named, name) ? escapeHtml(whole) : display[name] instanceof SafeHtmlDrop ? stringify(display[name]) : escapeHtml(stringify(display[name]))
+    from = found.index + whole.length
+  }
+  return out + escapeHtml(value.slice(from))
 }
 
 export const translateFilters: ShopifyFilterSet = {

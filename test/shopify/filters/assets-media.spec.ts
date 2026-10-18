@@ -115,8 +115,20 @@ describe('shopify/filters/assets', () => {
     expect(await render("{{ 'option_selection.js' | shopify_asset_url }}|{{ 'a.js' | asset_url }}", {}, {}, { shopifyAssetUrl: path => `//shopify.test/${path}` })).toBe(`//shopify.test/option_selection.js|${assetUrl('a.js')}`)
   })
   // https://shopify.dev/docs/api/liquid/filters/payment_button
-  it('payment_button writes the container the page names', async () => {
-    expect(await render('{{ form | payment_button }}', {})).toBe('<div data-shopify="payment-button" class="shopify-payment-button"><button type="button" class="shopify-payment-button__button shopify-payment-button__button--unbranded" disabled="disabled">Buy it now</button></div>')
+  it('payment_button writes the component Shopify prints for the form\'s product, as the parity store\'s product pages record it', async () => {
+    const scope = {
+      product: { id: 1, variants: [{ id: 11, requires_shipping: true }, { id: 12, requires_shipping: false }], selling_plan_groups: [] },
+      shop: { permanent_domain: 'a.myshopify.com', currency: 'USD' },
+      localization: { country: { iso_code: 'DE' } },
+      request: { locale: { iso_code: 'en' } }
+    }
+    const html = await render("{% form 'product', product %}{{ form | payment_button }}{% endform %}", scope)
+    const button = /<div data-shopify="payment-button".*<\/div>/.exec(html)![0]
+    expect(button).toMatch(/^<div data-shopify="payment-button" class="shopify-payment-button"> <shopify-accelerated-checkout recommended="null" fallback="\{&quot;supports_subs&quot;:true,&quot;supports_def_opts&quot;:true,&quot;name&quot;:&quot;buy_it_now&quot;,&quot;wallet_params&quot;:\{\}\}" access-token="[0-9a-f]{32}" buyer-country="DE" buyer-locale="en" buyer-currency="USD" variant-params="\[\{&quot;id&quot;:11,&quot;requiresShipping&quot;:true\},\{&quot;id&quot;:12,&quot;requiresShipping&quot;:false\}\]" shop-id="\d{11}" enabled-flags="\[&quot;1172c16a&quot;,&quot;a1d1f9a1&quot;,&quot;f5afabb3&quot;,&quot;370070f3&quot;,&quot;b311f899&quot;\]" disable-compat > <div class="shopify-payment-button__button" role="button" disabled aria-hidden="true" style="background-color: transparent; border: none"> <div class="shopify-payment-button__skeleton">&nbsp;<\/div> <\/div> <\/shopify-accelerated-checkout> <\/div>$/)
+    expect(button).not.toContain('shopify-buyer-consent')
+    const plans = await render("{% form 'product', product %}{{ form | payment_button }}{% endform %}", { ...scope, product: { ...scope.product, selling_plan_groups: [{ id: 1 }] } })
+    expect(plans).toContain('</shopify-accelerated-checkout> <small id="shopify-buyer-consent" class="hidden" aria-hidden="true" data-consent-type="subscription"> This item is a deferred, subscription, or recurring purchase.')
+    expect(await render('{{ form | payment_button }}', {})).toBe('')
   })
   // https://shopify.dev/docs/api/liquid/filters/payment_terms shows no output, and https://shopify.dev/docs/storefronts/themes/pricing-payments/installments says the banner "appears only if Shop Pay Installments is enabled in the merchant's store". Shopify's own output is recorded in liquid-spec (84bf25e, specs/shopify_theme_dawn/products-synergistic-wooden-car-main-product): Dawn puts `{{ form | payment_terms }}` in a product form, and in that store, whose `shop.enabled_payment_types` has no Shop Pay, it prints nothing.
   it('payment_terms prints nothing in a product form, as Shopify does for a store without Shop Pay Installments', async () => {

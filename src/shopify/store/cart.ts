@@ -3,6 +3,7 @@ import { LiquidFloat } from '../../util/liquid-float'
 import { stripTags } from '../../util/strip-tags'
 import { HandleMap } from '../objects/handle-map'
 import type { ImageDrop } from '../objects/image'
+import { SafeHtmlDrop } from '../objects/safe-html'
 import { escapeHtml } from '../util/html'
 import { buildStore, hidden, lazy, unitPrice } from './build'
 import type { LiquidObject, StoreObjects } from './build'
@@ -149,7 +150,7 @@ function propertiesOf (properties: Record<string, string>): Record<string, strin
 }
 
 /**
- * One line item, https://shopify.dev/docs/api/liquid/objects/line_item, for a line of the cart, in the view's currency (the built variant is). `index` (0-based) is not a property of that page, but themes read it as a row number (`item.index | plus: 1`); the page does not pin its base. A line under a selling plan carries the plan's allocation and its price, and its `url` names the plan (`?selling_plan=71001&variant=43695710371862`, fixture `ajax-cart-session`); `original_price` is that price too, as the parity store prints it. `url_to_remove` is the cart change address of the line's key, under the view's prefix (fixtures `ajax-cart-session` and `ajax-cart-en-ca`). `title` is HTML-escaped, as the parity store's Liquid prints it (`Men&#39;s T-shirt - Small / Green`, fixture `ajax-discount-codes`, steps 2 and 8, in `/cart.js` and in `{{ cart | json }}` too; `product_title` is not, and the `title` in the answers of add, change and update is not either, step 1). The discounts are not applied here: `buildCartObject` does that and sets the prices and allocations the line then holds.
+ * One line item, https://shopify.dev/docs/api/liquid/objects/line_item, for a line of the cart, in the view's currency (the built variant is). `index` (0-based) is not a property of that page, but themes read it as a row number (`item.index | plus: 1`); the page does not pin its base. A line under a selling plan carries the plan's allocation and its price, and its `url` names the plan (`?selling_plan=71001&variant=43695710371862`, fixture `ajax-cart-session`); `original_price` is that price too, as the parity store prints it. `url_to_remove` is the cart change address of the line's key, under the view's prefix (fixtures `ajax-cart-session` and `ajax-cart-en-ca`). `title` is HTML-escaped and HTML-safe, as the parity store's Liquid prints it (`escape` and the interpolation of `t` leave it alone: its `aria-label="Remove Men&#39;s T-shirt"` in the cart of all three themes) (`Men&#39;s T-shirt - Small / Green`, fixture `ajax-discount-codes`, steps 2 and 8, in `/cart.js` and in `{{ cart | json }}` too; `product_title` is not, and the `title` in the answers of add, change and update is not either, step 1). The discounts are not applied here: `buildCartObject` does that and sets the prices and allocations the line then holds.
  */
 function lineItem (store: StoreObjects, state: CartLineState, index: number): LiquidObject | null {
   const found = builtVariant(store, state.variantId)
@@ -168,7 +169,7 @@ function lineItem (store: StoreObjects, state: CartLineState, index: number): Li
     variant,
     product_id: product.id,
     variant_id: variant.id,
-    title: escapeHtml(defaultTitle ? product.title : `${product.title} - ${variant.title}`),
+    title: new SafeHtmlDrop(escapeHtml(defaultTitle ? product.title : `${product.title} - ${variant.title}`)),
     product_title: product.title,
     variant_title: defaultTitle ? null : variant.title,
     url: allocation ? `${product.url}?selling_plan=${state.sellingPlanId}&variant=${variant.id}` : variant.url,
@@ -374,7 +375,7 @@ export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): 
     quantity: item.quantity,
     variant_id: item.variant_id,
     key: item.key,
-    title: form !== 'change' ? item.title : item.variant_title ? `${item.product_title} - ${item.variant_title}` : item.product_title,
+    title: form !== 'change' ? String(item.title) : item.variant_title ? `${item.product_title} - ${item.variant_title}` : item.product_title,
     product_title: item.product_title,
     variant_title: item.variant_title,
     price: item.price,

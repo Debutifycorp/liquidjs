@@ -71,6 +71,8 @@ export interface RenderPageOptions {
 /** What `renderSection` takes: `renderPage`'s options and the `section` to render, the id `renderPage` reports for it (`template--product__main`), a key of the JSON template's `sections` (`main`) or a static section's name. The section is looked up in the template that renders, as for `renderPage`: when `view` or the resource's `template_suffix` picks an alternate template (`product.probe`), the ids are that template's (`template--product-probe__main`), and `RenderSectionResult.templateName` says which rendered. */
 export interface RenderSectionOptions extends RenderPageOptions {
   section: string
+  /** Answer only to the ids the Section Rendering API takes (the id `renderPage` reports, a static section's file name or a group's id), not to a bare key of the JSON template's `sections`: the parity store answers `?sections=cart-items` with `null` for a template's `cart-items` section, and renders it for `template--<id>__cart-items`. */
+  exact?: boolean
 }
 
 export interface RenderPageResult {
@@ -494,8 +496,8 @@ class PageRender implements ThemeHooks {
     return { html, report: this.state.report.toReport(this.errors, now() - this.started), templateName: this.templateName }
   }
 
-  public async section (key: string): Promise<RenderSectionResult> {
-    const html = await toPromise(this.renderOneSection(key))
+  public async section (key: string, exact = false): Promise<RenderSectionResult> {
+    const html = await toPromise(this.renderOneSection(key, exact))
     const { stylesheets, javascripts } = this.state.assets
     return { html, report: this.state.report.toReport(this.errors, now() - this.started), templateName: this.templateName, assets: { stylesheets: [...stylesheets.values()], javascripts: [...javascripts.values()] } }
   }
@@ -682,7 +684,7 @@ class PageRender implements ThemeHooks {
    *
    * A bare template key comes before a static name, so a static section whose name is also a key of the template (`{% section 'hero' %}` in the layout and a template section keyed `hero`) can be reached only as `renderPage` reports the other one, not by its name. A group whose JSON is not valid does not reject, as `renderPage` does not: the error is reported (`section-group`) and printed, escaped, as the section's html.
    */
-  private * renderOneSection (key: string): Generator<unknown, string, unknown> {
+  private * renderOneSection (key: string, exact = false): Generator<unknown, string, unknown> {
     const template = this.requireTemplate()
     const templateEntries = template ? this.templateEntries(template) : []
     const templatePrefix = `template--${this.templateId}__`
@@ -697,7 +699,7 @@ class PageRender implements ThemeHooks {
       if (typeof found === 'string') return found
       entry = found
     } else {
-      entry = templateEntries.find(candidate => candidate.key === key)
+      entry = exact ? undefined : templateEntries.find(candidate => candidate.key === key)
       if (!entry) return (yield this.renderStaticSection(key)) as string
     }
     if (!entry) {
@@ -1092,5 +1094,5 @@ export async function renderPage (options: RenderPageOptions): Promise<RenderPag
  * https://shopify.dev/docs/api/ajax/section-rendering returns a section's HTML alone, as this does, and addresses sections by these ids, but the section object's page says `index` is nil there, where this keeps the index the section has on the page so the section matches its place in a preview. The `assets` of the result hold the section's `{% stylesheet %}` and `{% javascript %}` bodies; see `RenderSectionResult`.
  */
 export async function renderSection (options: RenderSectionOptions): Promise<RenderSectionResult> {
-  return new PageRender(compileTheme(options.theme, options), options).section(options.section)
+  return new PageRender(compileTheme(options.theme, options), options).section(options.section, options.exact)
 }

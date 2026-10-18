@@ -51,9 +51,11 @@ export interface ShopifyState {
   /** The shop's money formats (`shop.money_format`, `shop.money_with_currency_format`). */
   money: { format: string, withCurrencyFormat: string }
   /** The request being rendered: its path (for pagination links), origin (for video embeds) and `?page=`, https://shopify.dev/docs/api/liquid/objects/request, and the prefix every URL of its view starts with (the base path, then the locale prefix; empty for none), which the `form` tag puts before its actions and `content_for_header` before the routes root; `alternates` are the `hreflang` links `content_for_header` prints, each a tag and the path of the page there, and `query` is the address's query pairs, which pagination links keep. */
-  request: { path: string, origin: string, page: number, prefix: string, alternates?: Array<{ hreflang: string, path: string }>, query?: Array<[string, string]> }
+  request: { path: string, origin: string, page: number, prefix: string, alternates?: Array<{ hreflang: string, path: string }>, endpoints?: { buy?: string, atom?: string, oembed?: string }, query?: Array<[string, string]> }
   /** The currency of the view's market and its rate against the shop's (`Shopify.currency` in `content_for_header`); the shop's currency at rate 1 when unset. */
   currency?: { iso_code: string, rate: number }
+  /** `payment_button` printed a dynamic checkout button on this page, so `content_for_header` adds the module that fills it (see `checkoutHeader`). */
+  checkoutButton?: boolean
   frames: Frame[]
   /** `{% stylesheet %}` and `{% javascript %}` bodies met while rendering, by file (its theme path), in the order first rendered; `content_for_header` inlines them, or links the compiled files that hold them and names the page's sections for `scripts.js` (see `contentForHeader`). */
   assets: { stylesheets: Map<string, string>, javascripts: Map<string, string> }
