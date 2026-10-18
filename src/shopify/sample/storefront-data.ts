@@ -90,10 +90,11 @@ const pages: PageData[] = [
   { id: 50004, handle: 'track-order', title: 'Track your order', content: '<p>Where is it?</p>', template_suffix: 'track-order' }
 ]
 
-function picture (handle: string, n: number): ImageData {
+/** The picture `n` of a catalogue product under an id of its own: the parity store gives every product its own media, and a recording turns Shopify's media id back into the dataset's, so two products that kept the catalogue's id would print one image id. */
+function picture (handle: string, n: number, id: number): ImageData {
   const found = product(handle).images?.[n]
   if (!found) throw new Error(`${handle} has no image ${n}`)
-  return { ...found }
+  return { ...found, id }
 }
 
 // The unlisted products. Shopify's status Unlisted keeps a product out of every collection, search, recommendation and list, while its page opens at its address, so these products hold the features the mock.shop catalogue cannot show (a gift card, video, a 3D model, unit prices, ratings, local pickup) and change none of the recordings of the products, collections and searches the parity store already had. Their pictures are the catalogue's, which Shopify fetches from their URLs; the files of the hosted video and of the model, and the pictures Shopify made of them, are the store's own (`tools/shopify-parity/seed/unlisted.mjs` puts them there and reads their addresses back).
@@ -114,7 +115,7 @@ const unlisted: ProductData[] = [
     tags: ['gift-card'],
     gift_card: true,
     unlisted: true,
-    images: [picture('beanie', 0)],
+    images: [picture('beanie', 0, 8100000000101)],
     options: ['Denominations'],
     variants: [2500, 5000, 10000].map((price, i) => ({ id: 8100000000011 + i, title: `$${price / 100}`, option1: `$${price / 100}`, price, available: true, requires_shipping: false, taxable: false, inventory_management: null }))
   },
@@ -130,9 +131,9 @@ const unlisted: ProductData[] = [
     type: 'Bags',
     tags: ['video'],
     unlisted: true,
-    images: [picture('beanie', 3)],
+    images: [picture('beanie', 3, 8100000000102)],
     media: [
-      { media_type: 'image', ...picture('beanie', 3) },
+      { media_type: 'image', ...picture('beanie', 3, 8100000000102) },
       {
         media_type: 'video',
         id: 8100000000041,
@@ -160,9 +161,9 @@ const unlisted: ProductData[] = [
     type: 'Decor',
     tags: ['3d'],
     unlisted: true,
-    images: [picture('beanie', 1)],
+    images: [picture('beanie', 1, 8100000000103)],
     media: [
-      { media_type: 'image', ...picture('beanie', 1) },
+      { media_type: 'image', ...picture('beanie', 1, 8100000000103) },
       {
         media_type: 'model',
         id: 8100000000052,
@@ -188,7 +189,7 @@ const unlisted: ProductData[] = [
     type: 'Pantry',
     tags: ['pantry'],
     unlisted: true,
-    images: [picture('beanie', 2)],
+    images: [picture('beanie', 2, 8100000000104)],
     options: ['Size'],
     metafields: { reviews: { rating: { type: 'rating', value: { scale_min: '1.0', scale_max: '5.0', value: '4.5' } }, rating_count: { type: 'number_integer', value: 37 } } },
     variants: [
@@ -211,7 +212,7 @@ const unlisted: ProductData[] = [
     unlisted: true,
     // Horizon shows local pickup only through a template of its own that the parity store adds (`tools/shopify-parity/lib/derived.mjs`); a theme without that template shows the product with its default one
     template_suffix: 'parity-pickup',
-    images: [picture('beanie', 4)],
+    images: [picture('beanie', 4, 8100000000105)],
     options: ['Size'],
     variants: [
       { id: 8100000000071, title: 'Small', option1: 'Small', price: 1400, available: true, inventory_management: 'shopify', inventory_quantity: 5, weight: 300 },
