@@ -173,7 +173,9 @@ function buildMedia (media: MediaData, index?: number, title = '', host = ''): u
   // the files of a video or a model are Shopify's CDN addresses in the data and the Ajax API (`https://cdn.shopify.com/videos/…`); Liquid prints them under the store (`//<host>/cdn/shop/videos/…?v=0`, https://shopify.dev/docs/api/liquid/objects/video_source and https://shopify.dev/docs/api/liquid/objects/model_source)
   if (media.media_type === 'video' || media.media_type === 'model') {
     hidden(built, 'ajax_sources', media.sources)
-    built.sources = (media.sources as Array<{ url: string }>).map(source => ({ ...source, url: storeFileUrl(source.url, host) }))
+    // Liquid lists a video's HLS playlist (`m3u8`) before its files, the Ajax API after them (scenario `page-product-video`: a theme's `{% for source in media.sources %}` writes the `.m3u8` first; fixture `ajax-product-js-media` lists the `mp4` first)
+    const files = (media.sources as Array<{ url: string, format?: string }>).map(source => ({ ...source, url: storeFileUrl(source.url, host) }))
+    built.sources = [...files.filter(source => source.format === 'm3u8'), ...files.filter(source => source.format !== 'm3u8')]
   }
   return built
 }

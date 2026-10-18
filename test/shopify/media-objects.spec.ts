@@ -1,5 +1,6 @@
-import { createShopifyLiquid, renderLiquid } from '../../src/shopify'
-import { buildProduct } from '../../src/shopify/store/build'
+import { createShopifyLiquid, renderLiquid, storefrontSampleData } from '../../src/shopify'
+import { buildProduct, buildStore } from '../../src/shopify/store/build'
+import { productJson } from '../../src/shopify/store/product-json'
 
 const liquid = createShopifyLiquid()
 const render = async (source: string, scope: object) => (await renderLiquid(liquid, source, scope)).html
@@ -43,6 +44,13 @@ describe('media objects', () => {
       variants: [{ id: 9, title: 'Default Title', price: 1, available: true, option1: 'Default Title' }]
     })
     expect(await render('{{ p.media[0].preview_image.alt }}|{{ p.media[0].preview_image | image_url: width: 300 | image_tag }}', { p })).toContain('The tote in a short clip|<img src="/p.jpg?width=300" alt="The tote in a short clip"')
+  })
+  it('lists the HLS playlist of a video first in Liquid and last in the Ajax answer, as the parity store does', async () => {
+    const data = { ...storefrontSampleData, products: (storefrontSampleData.products ?? []).filter(item => item.handle === 'video-tote') }
+    const p = buildStore(data).products.liquidMethodMissing('video-tote')
+    expect(await render('{% for s in p.media[1].sources %}{{ s.format }},{% endfor %}', { p })).toBe('m3u8,mp4,')
+    const media = productJson(data, 'video-tote')?.media as Array<{ sources?: Array<{ format: string }> }>
+    expect(media[1].sources?.map(source => source.format)).toEqual(['mp4', 'm3u8'])
   })
   it('marks the product images a variant shows, and lists those variants', async () => {
     const p = buildProduct({

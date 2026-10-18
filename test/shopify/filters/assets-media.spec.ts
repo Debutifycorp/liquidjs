@@ -333,10 +333,19 @@ describe('shopify/filters/media', () => {
   // https://shopify.dev/docs/api/liquid/filters/video_tag
   it('video_tag', async () => {
     const small = `${HOST}/products/thumb_small.jpg?v=1655255324`
-    const sources = `<source src="${HOST}/videos/beats.mp4?v=0" type="video/mp4"><source src="${HOST}/videos/beats.m3u8?v=0" type="application/x-mpegURL">`
-    expect(await render('{{ video | video_tag }}', { video })).toBe(`<video playsinline="playsinline" preload="metadata" aria-label="Potion beats" poster="${small}">${sources}<img src="${small}"></video>`)
+    // the parity store writes the files and not the HLS playlist, and the fallback picture has the alt text (scenarios `probe-product-video-media` and `page-product-video`)
+    const sources = `<source src="${HOST}/videos/beats.mp4?v=0" type="video/mp4">`
+    expect(await render('{{ video | video_tag }}', { video })).toBe(`<video playsinline="playsinline" preload="metadata" aria-label="Potion beats" poster="${small}">${sources}<img alt="Potion beats" src="${small}"></video>`)
     expect(await render("{{ video | video_tag: image_size: '400x' }}", { video })).toContain(`poster="${HOST}/products/thumb_400x.jpg?v=1655255324"><source`)
-    expect(await render('{{ video | video_tag: autoplay: true, loop: true, muted: true, controls: true }}', { video })).toBe(`<video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" controls="controls" preload="metadata" aria-label="Potion beats" poster="${small}"><source src="${HOST}/videos/beats.mp4?v=0" type="video/mp4"><img src="${small}"></video>`)
+    expect(await render('{{ video | video_tag: autoplay: true, loop: true, muted: true, controls: true }}', { video })).toBe(`<video playsinline="playsinline" autoplay="autoplay" loop="loop" muted="muted" controls="controls" preload="metadata" aria-label="Potion beats" poster="${small}"><source src="${HOST}/videos/beats.mp4?v=0" type="video/mp4"><img alt="Potion beats" src="${small}"></video>`)
+  })
+  it('video_tag writes a named preload where the template put it, adds muted to autoplay and keeps a playlist that has no file beside it', async () => {
+    const small = `${HOST}/products/thumb_small.jpg?v=1655255324`
+    const file = `<source src="${HOST}/videos/beats.mp4?v=0" type="video/mp4">`
+    expect(await render("{{ video | video_tag: autoplay: true, controls: true, preload: 'none' }}", { video })).toBe(`<video playsinline="playsinline" autoplay="autoplay" controls="controls" preload="none" muted="muted" aria-label="Potion beats" poster="${small}">${file}<img alt="Potion beats" src="${small}"></video>`)
+    expect(await render('{{ video | video_tag: autoplay: true, muted: true }}', { video })).toMatch(/^<video playsinline="playsinline" autoplay="autoplay" muted="muted" preload="metadata" aria-label=/)
+    const playlist = { ...video, sources: [video.sources[1]] }
+    expect(await render('{{ video | video_tag }}', { video: playlist })).toContain(`<source src="${HOST}/videos/beats.m3u8?v=0" type="application/x-mpegURL">`)
   })
   it('video_tag escapes the source URLs and lazy-loads like image_tag', async () => {
     const tricky = { ...video, sources: [{ url: `${HOST}/v.mp4?a=1&b="2"`, mime_type: 'video/mp4' }] }

@@ -44,6 +44,6 @@ describe('previewSampleData', () => {
   })
 
   it('has video and external video media beside the image', async () => {
-    expect(await render('{% for m in p.media %}{{ m.media_type }}{% if m.media_type == "video" %}:{{ m.sources.last.format }}{% endif %},{% endfor %}', { p: product('video-tote') })).toBe('image,video:m3u8,external_video,')
+    expect(await render('{% for m in p.media %}{{ m.media_type }}{% if m.media_type == "video" %}:{{ m.sources.last.format }}{% endif %},{% endfor %}', { p: product('video-tote') })).toBe('image,video:mp4,external_video,')
   })
 })

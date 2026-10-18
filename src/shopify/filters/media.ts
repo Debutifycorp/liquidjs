@@ -184,7 +184,9 @@ interface VideoSource {
   format?: string
 }
 
-/** `<video>` for a video media, in the attribute order of https://shopify.dev/docs/api/liquid/filters/video_tag. The poster and the `<img>` fallback are the preview image with the legacy `image_size` (`small` by default, `400x` in the page's example) in the file name. */
+/** `<video>` for a video media, in the attribute order of https://shopify.dev/docs/api/liquid/filters/video_tag. The poster and the `<img>` fallback are the preview image with the legacy `image_size` (`small` by default, `400x` in the page's example) in the file name.
+ *
+ * As the parity store prints it (scenarios `probe-product-video-media` and `page-product-video`): the template's attributes come in the order it wrote them, a `preload` among them replaces the default `preload="metadata"` in its place, `autoplay` without `muted` adds `muted` after the `preload`, only the files that are not an HLS playlist (`m3u8`) are written as `<source>`, and the `<img>` fallback has the media's alt text and then its `src`. */
 function videoTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const state = shopifyState(this.context)
   const media = toValue(input) as Record<string, unknown> | undefined
@@ -194,16 +196,18 @@ function videoTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const poster = preview ? state.services.imageUrl(preview.image, legacySize(named.image_size)) : ''
   let html = '<video playsinline="playsinline"'
   html += namedAttributes(state.report, 'video_tag', named, order, ['image_size', 'loading'])
-  html += ' preload="metadata"' + attribute('aria-label', altOrProductTitle(this.context, media.alt))
+  if (!hasOwn(named, 'preload')) html += attribute('preload', 'metadata')
+  if (named.autoplay === true && !hasOwn(named, 'muted')) html += attribute('muted', true)
+  html += attribute('aria-label', altOrProductTitle(this.context, media.alt))
   if (poster) html += attribute('poster', poster)
   const loading = hasOwn(named, 'loading') ? named.loading : (lazyByDefault(state) ? 'lazy' : undefined)
   html += attribute('loading', loading) + '>'
   const sources = (Array.isArray(media.sources) ? media.sources : []) as VideoSource[]
-  for (const source of sources) {
-    if (named.loop === true && /m3u8/.test(source.format ?? source.mime_type ?? '')) continue
+  const playlist = (source: VideoSource) => /m3u8/.test(source.format ?? source.mime_type ?? '')
+  for (const source of sources.some(source => !playlist(source)) ? sources.filter(source => !playlist(source)) : sources) {
     html += `<source src="${escapeHtml(source.url)}"${attribute('type', source.mime_type)}>`
   }
-  if (poster) html += `<img src="${escapeHtml(poster)}">`
+  if (poster) html += `<img${attribute('alt', altOrProductTitle(this.context, media.alt))} src="${escapeHtml(poster)}">`
   return html + '</video>'
 }
 
