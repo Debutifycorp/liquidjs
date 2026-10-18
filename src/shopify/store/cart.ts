@@ -58,12 +58,13 @@ const LINE_MARKER = '__line'
 /** Whether `value` is a line item built by `buildCartObject`. */
 export const isBuiltLine = (value: unknown): value is LiquidObject => typeof value === 'object' && value !== null && (value as LiquidObject)[LINE_MARKER] === true
 
-/** One line of a visitor's cart: a variant, how many of it, its line item properties and the selling plan it is bought under. A line holds at least one of its variant (the storefront removes a line whose quantity reaches zero); the engine leaves a line with less out of the cart. */
+/** One line of a visitor's cart: a variant, how many of it, its line item properties and the selling plan it is bought under. A line holds at least one of its variant (the storefront removes a line whose quantity reaches zero); the engine leaves a line with less out of the cart. `parentKey` is the key of the line this one is nested under (https://shopify.dev/docs/apps/build/product-merchandising/nested-cart-lines), and is part of the line's own key (`lineKey`). */
 export interface CartLineState {
   variantId: number
   quantity: number
   properties: Record<string, string>
   sellingPlanId: number | null
+  parentKey?: string
 }
 
 /**
@@ -83,11 +84,35 @@ export interface CartState {
  */
 export type LineItemForm = 'cart' | 'change' | 'liquid'
 
-/** A line's key: the variant id and a hash of its properties and selling plan, so the same line keeps its key (https://shopify.dev/docs/api/ajax/reference/cart: "Items with different prices, properties, or selling plans become separate lines"); the hash is 32 hex digits, as the parity store's keys are (the recorded keys that fixture `ajax-cart-session` keeps as `<hash>`). The hash is the engine's own, not Shopify's, and does not depend on the order the properties were set in. */
+/** A line's key: the variant id and a hash of its properties and selling plan, so the same line keeps its key (https://shopify.dev/docs/api/ajax/reference/cart: "Items with different prices, properties, or selling plans become separate lines"); the hash is 32 hex digits, as the parity store's keys are (the recorded keys that fixture `ajax-cart-session` keeps as `<hash>`). The hash is the engine's own, not Shopify's, and does not depend on the order the properties were set in. A nested line's hash also covers its parent's key, so the same add-on under two parents is two lines with two keys (Shopify lets such lines share a key, which Shopify's support calls known and intentional: https://community.shopify.dev/t/nested-cart-lines-for-addons-now-works/20784; no theme depends on it, and a key that names one line is what the Ajax answers need). */
 export function lineKey (line: CartLineState): string {
   const properties = Object.keys(line.properties).sort().map(name => [name, line.properties[name]])
-  const hash = createHash('md5').update(JSON.stringify([properties, line.sellingPlanId])).digest('hex')
+  const hash = createHash('md5').update(JSON.stringify(line.parentKey === undefined ? [properties, line.sellingPlanId] : [properties, line.sellingPlanId, line.parentKey])).digest('hex')
   return `${line.variantId}:${hash}`
+}
+
+/**
+ * The lines in the order a cart lists them once some are nested: "nested cart lines are always ordered after their parent line, and Shopify removes them from the cart if the parent line is removed" (https://shopify.dev/docs/apps/build/product-merchandising/nested-cart-lines), and a community test shows the child directly after its parent, not at the end of the cart (https://community.shopify.dev/t/nested-cart-lines-for-addons-now-works/20784: adding A, B, then C under A lists B, A, C). A nested line whose parent is not in `lines` is dropped, and so is one whose parent is itself nested ("only one level of parent-child is allowed"). Lines with no nesting come back as they were.
+ */
+export function arrangeNested (lines: CartLineState[]): CartLineState[] {
+  if (!lines.some(line => line.parentKey !== undefined)) return lines
+  const children = new Map<string, CartLineState[]>()
+  for (const line of lines) if (line.parentKey !== undefined) children.set(line.parentKey, [...children.get(line.parentKey) ?? [], line])
+  return lines.flatMap(line => line.parentKey === undefined ? [line, ...children.get(lineKey(line)) ?? []] : [])
+}
+
+/** A variant's quantity rule with the defaults https://shopify.dev/docs/api/liquid/objects/quantity_rule gives ("if no rule exists, then a default value is returned": a minimum and an increment of 1, no maximum). */
+export function quantityRuleOf (variant: VariantData): { min: number, max: number | null, increment: number } {
+  return { min: variant.quantity_rule?.min ?? 1, max: variant.quantity_rule?.max ?? null, increment: variant.quantity_rule?.increment ?? 1 }
+}
+
+/** The unit price of `quantity` units of a variant held in a cart: the price of the highest quantity price break the quantity reaches, else the variant's price (https://shopify.dev/docs/api/liquid/objects/quantity_price_break: "the quantity price break of a variant" applies from its `minimum_quantity`). `quantity` is all of the variant the cart holds, as Shopify's help says "customers need to meet the required quantity for each variant to qualify for the price break" (https://help.shopify.com/en/manual/b2b/catalogs/quantity-pricing), which does not say whether lines of one variant are added up; they are here. */
+export function priceFor (variant: LiquidObject, price: number, quantity: number): number {
+  let best: { minimum_quantity: number, price: number } | undefined
+  for (const entry of variant.quantity_price_breaks as Array<{ minimum_quantity: number, price: number }>) {
+    if (entry.minimum_quantity <= quantity && (!best || entry.minimum_quantity > best.minimum_quantity)) best = entry
+  }
+  return best ? best.price : price
 }
 
 /** The variant with `variantId` and the product it belongs to, or null when the store has none. */
@@ -152,12 +177,12 @@ function propertiesOf (properties: Record<string, string>): Record<string, strin
 /**
  * One line item, https://shopify.dev/docs/api/liquid/objects/line_item, for a line of the cart, in the view's currency (the built variant is). `index` (0-based) is not a property of that page, but themes read it as a row number (`item.index | plus: 1`); the page does not pin its base. A line under a selling plan carries the plan's allocation and its price, and its `url` names the plan (`?selling_plan=71001&variant=43695710371862`, fixture `ajax-cart-session`); `original_price` is that price too, as the parity store prints it. `url_to_remove` is the cart change address of the line's key, under the view's prefix (fixtures `ajax-cart-session` and `ajax-cart-en-ca`). `title` is HTML-escaped and HTML-safe, as the parity store's Liquid prints it (`escape` and the interpolation of `t` leave it alone: its `aria-label="Remove Men&#39;s T-shirt"` in the cart of all three themes) (`Men&#39;s T-shirt - Small / Green`, fixture `ajax-discount-codes`, steps 2 and 8, in `/cart.js` and in `{{ cart | json }}` too; `product_title` is not, and the `title` in the answers of add, change and update is not either, step 1). The discounts are not applied here: `buildCartObject` does that and sets the prices and allocations the line then holds.
  */
-function lineItem (store: StoreObjects, state: CartLineState, index: number): LiquidObject | null {
+function lineItem (store: StoreObjects, state: CartLineState, index: number, held: number = state.quantity): LiquidObject | null {
   const found = builtVariant(store, state.variantId)
   if (!found || !(state.quantity >= 1)) return null
   const { product, variant, untranslatedTitle } = found
   const allocation = state.sellingPlanId === null ? null : (variant.selling_plan_allocations as LiquidObject[]).find(entry => (entry.selling_plan as LiquidObject).id === state.sellingPlanId) ?? null
-  const price = allocation ? allocation.price as number : variant.price as number
+  const price = allocation ? allocation.price as number : priceFor(variant, variant.price as number, held)
   const key = lineKey(state)
   const defaultTitle = variant.title === 'Default Title'
   const item: LiquidObject = {
@@ -209,6 +234,15 @@ function lineItem (store: StoreObjects, state: CartLineState, index: number): Li
   return item
 }
 
+/** Sets `parent_relationship` of each nested line to its parent line item, https://shopify.dev/docs/api/liquid/objects/parent_relationship (`parent` is "the parent line item for the nested cart line item"); a line that is not nested has none, and `item.parent_relationship.parent` of a theme reads nil there. `sources` are the state lines `items` were made from. */
+function nestLines (items: LiquidObject[], sources: CartLineState[]): void {
+  sources.forEach((source, at) => {
+    if (source.parentKey === undefined) return
+    const parent = items.find((item, i) => sources[i].parentKey === undefined && item.key === source.parentKey)
+    if (parent) items[at].parent_relationship = { parent }
+  })
+}
+
 const collectionIndexes = new WeakMap<CollectionData[], Map<string, Set<string>>>()
 const noCollections = new Map<string, Set<string>>()
 
@@ -244,18 +278,24 @@ function discountLine (item: LiquidObject, allocations: LiquidObject[], index: n
 export function buildCartObject (store: StoreObjects, state: CartState): LiquidObject {
   const whole: LiquidObject[] = []
   const entries = new Map<LiquidObject, CartLineState>()
+  // the quantity price breaks go by all of a variant the cart holds
+  const held = new Map<number, number>()
+  for (const entry of state.lines) if (entry.quantity >= 1) held.set(entry.variantId, (held.get(entry.variantId) ?? 0) + entry.quantity)
   for (const entry of state.lines) {
-    const item = lineItem(store, entry, whole.length)
+    const item = lineItem(store, entry, whole.length, held.get(entry.variantId))
     if (!item) continue
     whole.push(item)
     entries.set(item, entry)
   }
   const discounts = applyDiscounts(whole, store.data.discounts ?? [], state.discountCodes, { collections: collectionsOf(store.data), currency: store.currency })
+  const sources: CartLineState[] = []
   const items = discounts.lines.map((line, index) => {
     const entry = entries.get(line.item) as CartLineState
-    const item = line.units === entry.quantity ? line.item : lineItem(store, { ...entry, quantity: line.units }, index) as LiquidObject
+    sources.push(entry)
+    const item = line.units === entry.quantity ? line.item : lineItem(store, { ...entry, quantity: line.units }, index, held.get(entry.variantId)) as LiquidObject
     return discountLine(item, line.allocations, index)
   })
+  nestLines(items, sources)
   const sum = (field: string) => items.reduce((total, item) => total + (item[field] as number), 0)
   const subtotal = sum('final_line_price')
   const original = sum('original_line_price')
@@ -411,7 +451,15 @@ export function lineItemJson (item: LiquidObject, form: LineItemForm = 'cart'): 
     quantity_rule: own(variant.quantity_rule),
     has_components: false
   }
-  const line = Object.fromEntries((form === 'cart' ? CART_LINE_KEYS : form === 'liquid' ? LIQUID_LINE_KEYS : CHANGE_LINE_KEYS).map(key => [key, fields[key]]))
+  const keys: string[] = [...(form === 'cart' ? CART_LINE_KEYS : form === 'liquid' ? LIQUID_LINE_KEYS : CHANGE_LINE_KEYS)]
+  const parent = (item.parent_relationship as LiquidObject | null)?.parent as LiquidObject | undefined
+  if (parent) {
+    // https://shopify.dev/docs/api/ajax/reference/cart prints `parent_relationship` after `requires_shipping`, and https://shopify.dev/docs/apps/build/product-merchandising/nested-cart-lines/create-nested-cart-lines shows `instructions` on the nested line beside it; a line that is not nested has neither (fixture `ajax-cart-session`)
+    fields.parent_relationship = { parent_key: parent.key }
+    fields.instructions = { can_remove: true, can_update_quantity: true }
+    keys.splice(keys.indexOf('requires_shipping') + 1, 0, 'parent_relationship', 'instructions')
+  }
+  const line = Object.fromEntries(keys.map(key => [key, fields[key]]))
   return allocation ? { ...line, selling_plan_allocation: allocationJson(allocation, form) } : line
 }
 

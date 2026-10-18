@@ -1,4 +1,4 @@
-import { findVariant, lineKey, stockFor } from '../shopify'
+import { arrangeNested, findVariant, lineKey, quantityRuleOf, stockFor } from '../shopify'
 import type { CartLineState, ProductData, StoreData, VariantData } from '../shopify'
 import { UNSAFE } from './body'
 import type { Fields } from './body'
@@ -20,7 +20,7 @@ const failWord = (status: number, word: string, description: string, message = d
 const failed = (value: object): value is Failure => 'ok' in value
 
 /**
- * The statuses and texts of Shopify's cart errors (https://shopify.dev/docs/api/ajax/reference/cart), word for word as the parity store answers them where a fixture records them (`ajax-cart-errors`): `status` is the number 422 and `message` repeats the description, except where `message` is `Cart Error`, or `status` is a word (`unprocessable_entity`, `bad_request`). `cantAddMore` is shopify.dev's text for an add when the cart already holds all the stock ("You can't add more #{item.name} to the cart.", status 422, message `Cart Error`), `badPlan` the text merchants report from the live Cart API for a selling plan the variant lacks (`{"status":422,"message":"Cart Error","description":"Cannot apply selling plan to variant"}`: https://community.shopify.com/t/status-422-message-cart-error-description-cannot-apply-selling-plan-to-variant/229194, https://community.shopify.com/t/cannot-apply-selling-plan-to-variant/88766, https://community.shopify.com/t/cart-error-cannot-apply-selling-plan-to-variant/57624), and `noLine` shopify.dev's 400 for a change that names no line of the cart ("no valid id or line parameter"); none of the three is in a recording. `limit` is the storefront's own limit, at 422 with a text of its own.
+ * The statuses and texts of Shopify's cart errors (https://shopify.dev/docs/api/ajax/reference/cart), word for word as the parity store answers them where a fixture records them (`ajax-cart-errors`): `status` is the number 422 and `message` repeats the description, except where `message` is `Cart Error`, or `status` is a word (`unprocessable_entity`, `bad_request`). `cantAddMore` is shopify.dev's text for an add when the cart already holds all the stock ("You can't add more #{item.name} to the cart.", status 422, message `Cart Error`), `badPlan` the text merchants report from the live Cart API for a selling plan the variant lacks (`{"status":422,"message":"Cart Error","description":"Cannot apply selling plan to variant"}`: https://community.shopify.com/t/status-422-message-cart-error-description-cannot-apply-selling-plan-to-variant/229194, https://community.shopify.com/t/cannot-apply-selling-plan-to-variant/88766, https://community.shopify.com/t/cart-error-cannot-apply-selling-plan-to-variant/57624), and `noLine` shopify.dev's 400 for a change that names no line of the cart ("no valid id or line parameter"); none of the three is in a recording. The quantity rules answer with the texts of the Storefront API's cart error codes `MINIMUM_NOT_MET`, `MAXIMUM_EXCEEDED` and `INVALID_INCREMENT` (https://shopify.dev/docs/api/storefront/latest/enums/CartErrorCode), as `needsPlan` does with `VARIANT_REQUIRES_SELLING_PLAN`, and nesting with `PARENT_LINE_NESTING_TOO_DEEP`; shopify.dev's Ajax reference gives no text for them, and no store the parity tool can record from holds a quantity rule or a nested line, so they are unrecorded. `parentLost` is the text a merchant reports from the live Cart API for a `parent_id` that names no line of the request (https://community.shopify.dev/t/nested-cart-lines-for-addons-now-works/20784: status 422, that text as message and description), and `parentBoth` is the storefront's own, for a line that names its parent twice, which shopify.dev says not to do. `limit` is the storefront's own limit, at 422 with a text of its own.
  */
 export const CART_ERRORS = {
   soldOut: (name: string) => fail(422, `The product '${name}' is already sold out.`, `The product '${name}' is already sold out.`),
@@ -36,7 +36,13 @@ export const CART_ERRORS = {
   badLine: () => failWord(422, 'unprocessable_entity', 'line parameter is invalid.'),
   badId: () => failWord(400, 'bad_request', 'expected Integer to be a (?-mix:(?-mix:\\A\\d+\\z)|(?-mix:\\A\\d+:[a-f0-9]{32}\\z)): id'),
   noLine: () => failWord(400, 'bad_request', 'no valid id or line parameter'),
-  limit: (description: string) => fail(422, description)
+  limit: (description: string) => fail(422, description),
+  belowMinimum: () => fail(422, 'The quantity must be above the specified minimum for the item.'),
+  aboveMaximum: () => fail(422, 'The quantity must be below the specified maximum for the item.'),
+  notIncrement: () => fail(422, 'The quantity must be a multiple of the specified increment.'),
+  parentLost: () => fail(422, 'Parent line does not match any existing or added lines', 'Parent line does not match any existing or added lines'),
+  parentNesting: () => fail(422, 'Parent line nesting is too deep or circular.'),
+  parentBoth: () => fail(422, 'A line names its parent by parent_id or by parent_line_key, not both.')
 }
 
 const quantityRange = (min: number, max: number) => CART_ERRORS.limit(`The quantity must be a whole number from ${min} to ${max}.`)
@@ -79,9 +85,9 @@ function propertiesOf (value: unknown, limits: StorefrontLimits): { value: Recor
 }
 
 /**
- * One line to hold, checked against the store: the variant exists, the quantity is within the storefront's limits, a selling plan is one the variant is sold under (and is there when the product requires one), and, when `checkStock` is set, the stock covers it. `inCart` is how many of the variant the cart holds in other lines. A variant that is sold out is "already sold out", one whose stock the cart already holds in full is "You can't add more", and a quantity over what is left is "Only N items were added" (fixture `ajax-cart-errors`, steps 0 and 1, records the 422 and its text; whether the cart keeps the units that fit is unrecorded, and shopify.dev says it adds the maximum, so this storefront's own choice is to add nothing).
+ * One line to hold, checked against the store: the variant exists, the quantity is within the storefront's limits, a selling plan is one the variant is sold under (and is there when the product requires one), when `checkStock` is set, the stock covers it, and, when `checkRules` is set, the quantity the cart would hold of the variant meets its quantity rule (`breaksRule`). `inCart` is how many of the variant the cart holds in other lines. A variant that is sold out is "already sold out", one whose stock the cart already holds in full is "You can't add more", and a quantity over what is left is "Only N items were added" (fixture `ajax-cart-errors`, steps 0 and 1, records the 422 and its text; whether the cart keeps the units that fit is unrecorded, and shopify.dev says it adds the maximum, so this storefront's own choice is to add nothing).
  */
-function lineFor (item: Fields, data: StoreData, limits: StorefrontLimits, inCart: number, checkStock: boolean): CartLineState | Failure {
+function lineFor (item: Fields, data: StoreData, limits: StorefrontLimits, inCart: number, checkStock: boolean, checkRules = false): CartLineState | Failure {
   const id = whole(item.id)
   const found = id === undefined ? null : findVariant(data, id)
   if (!found) return CART_ERRORS.notFound()
@@ -98,33 +104,67 @@ function lineFor (item: Fields, data: StoreData, limits: StorefrontLimits, inCar
     if (left <= 0) return CART_ERRORS.cantAddMore(title(product, variant))
     if (quantity > left) return CART_ERRORS.tooMany(left)
   }
+  const broken = checkRules ? breaksRule(variant, inCart + quantity) : null
+  if (broken) return broken
   const properties = propertiesOf(item.properties, limits)
   if (!('value' in properties)) return properties
   return { variantId: variant.id, quantity, properties: properties.value, sellingPlanId: plan }
 }
 
-const inCartOf = (lines: CartLineState[], variantId: number) => lines.reduce((total, line) => line.variantId === variantId ? total + line.quantity : total, 0)
+/** The failure for a variant held `total` times in the cart (counting every line of it) that breaks its quantity rule, https://shopify.dev/docs/api/liquid/objects/quantity_rule: the quantity is at least `min`, at most `max` when there is one, and a multiple of `increment`. */
+function breaksRule (variant: VariantData, total: number): Failure | null {
+  const { min, max, increment } = quantityRuleOf(variant)
+  if (total < min) return CART_ERRORS.belowMinimum()
+  if (max !== null && total > max) return CART_ERRORS.aboveMaximum()
+  return total % increment === 0 ? null : CART_ERRORS.notIncrement()
+}
 
-/** `/cart/add.js` and `/cart/add`: `items: [...]` or one item's `id`, `quantity` (1 when absent), `properties` and `selling_plan` (https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-add-js). Lines of the same variant, properties and selling plan merge: "if the same items have differing prices, properties, or selling plans, then they'll be split into their own line items" (fixture `ajax-cart-session`, steps 1 to 3). All items are added or none is; `lines` are the lines the items reached, in the order of the request, each as it stood after its item. */
+/** Whether an item of an add names its parent by `parent_id`, which is the variant of another item of the same request. */
+const namesParentId = (item: unknown): item is Fields => isFields(item) && !absent(item.parent_id)
+
+/** The key of the line an item is nested under: `parent_line_key` names a line the cart holds, `parent_id` the variant of another item of the request, which `made` holds the line of once it is made (https://shopify.dev/docs/apps/build/product-merchandising/nested-cart-lines/create-nested-cart-lines: "`parent_line_key` (for existing line items in the cart) or `parent_id` (for adding both parent and nested cart lines in the same request)", only one per line). A parent that is itself nested, or is the child's own variant, is the circular case ("a variant can't nest under itself because Shopify considers it a circular reference", "only one level of parent-child is allowed", https://shopify.dev/docs/apps/build/product-merchandising/nested-cart-lines). */
+function parentOf (item: Fields, variantId: number, items: unknown[], made: Array<CartLineState | undefined>, lines: CartLineState[]): string | undefined | Failure {
+  const byKey = !absent(item.parent_line_key)
+  if (byKey && namesParentId(item)) return CART_ERRORS.parentBoth()
+  if (byKey) {
+    const key = text(item.parent_line_key)
+    const parent = key === undefined ? undefined : lines.find(line => lineKey(line) === key)
+    if (!parent) return CART_ERRORS.parentLost()
+    return parent.parentKey !== undefined || parent.variantId === variantId ? CART_ERRORS.parentNesting() : lineKey(parent)
+  }
+  if (!namesParentId(item)) return undefined
+  const id = whole(item.parent_id)
+  const at = id === undefined ? -1 : items.findIndex(other => isFields(other) && other !== item && whole(other.id) === id)
+  const parent = at < 0 ? undefined : made[at]
+  if (!parent) return CART_ERRORS.parentLost()
+  return parent.parentKey !== undefined || parent.variantId === variantId ? CART_ERRORS.parentNesting() : lineKey(parent)
+}
+
+/** `/cart/add.js` and `/cart/add`: `items: [...]` or one item's `id`, `quantity` (1 when absent), `properties`, `selling_plan` and `parent_id` or `parent_line_key` (https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-add-js). Lines of the same variant, properties, selling plan and parent merge: "if the same items have differing prices, properties, or selling plans, then they'll be split into their own line items" (fixture `ajax-cart-session`, steps 1 to 3). All items are added or none is; `lines` are the lines the items reached, in the order of the request, each as it stood after its item. An item that names its parent by `parent_id` is made after the items that do not, so the parent exists when it is made wherever it stands in the request; a nested line is listed right after its parent (`arrangeNested`). The quantity of a variant the cart would hold after the add must meet the variant's quantity rule (`breaksRule`). `checkStock` is off for a checkout permalink, which carries its lines to checkout without a stock check. */
 export function addToCart (state: VisitorState, fields: Fields, data: StoreData, limits: StorefrontLimits, checkStock = true): CartResult {
   const items = Array.isArray(fields.items) ? fields.items as unknown[] : [fields]
   if (items.length === 0) return CART_ERRORS.notFound()
   if (items.length > limits.lines) return CART_ERRORS.limit(`A request can add at most ${limits.lines} items.`)
-  const lines = [...state.cart.lines]
+  let lines = [...state.cart.lines]
   const keys = lines.map(lineKey)
-  const touched: CartLineState[] = []
-  for (const raw of items) {
+  const made: Array<CartLineState | undefined> = []
+  const order = [...items.keys()].sort((a, b) => Number(namesParentId(items[a])) - Number(namesParentId(items[b])) || a - b)
+  for (const at of order) {
+    const raw = items[at]
     const item = isFields(raw) ? raw : {}
     const id = whole(item.id)
-    const line = lineFor(item, data, limits, id === undefined ? 0 : inCartOf(lines, id), checkStock)
-    if (failed(line)) return line
+    const built = lineFor(item, data, limits, id === undefined ? 0 : inCartOf(lines, id), checkStock, true)
+    if (failed(built)) return built
+    const parentKey = parentOf(item, built.variantId, items, made, lines)
+    if (typeof parentKey === 'object') return parentKey
+    const line = parentKey === undefined ? built : { ...built, parentKey }
     const key = lineKey(line)
-    const at = keys.indexOf(key)
-    if (at >= 0) {
-      const quantity = lines[at].quantity + line.quantity
+    const index = keys.indexOf(key)
+    if (index >= 0) {
+      const quantity = lines[index].quantity + line.quantity
       if (quantity > limits.quantity) return lineFull(limits.quantity)
-      lines[at] = { ...lines[at], quantity }
-      touched.push(lines[at])
+      lines[index] = { ...lines[index], quantity }
+      made[at] = lines[index]
       continue
     }
     if (lines.length >= limits.lines) return linesLimit(limits.lines)
@@ -135,10 +175,13 @@ export function addToCart (state: VisitorState, fields: Fields, data: StoreData,
       lines.push(line)
       keys.push(key)
     }
-    touched.push(line)
+    made[at] = line
   }
-  return { ok: true, state: changed({ ...state, cart: { ...state.cart, lines } }), lines: touched }
+  lines = arrangeNested(lines)
+  return { ok: true, state: changed({ ...state, cart: { ...state.cart, lines } }), lines: made.filter((line): line is CartLineState => line !== undefined) }
 }
+
+const inCartOf = (lines: CartLineState[], variantId: number) => lines.reduce((total, line) => line.variantId === variantId ? total + line.quantity : total, 0)
 
 /**
  * The indexes of the lines `change.js` names, https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-change-js: `line` (1-based; out of range is a 422, fixture `ajax-cart-errors`, step 4), or `id`, a line key (one line) or a variant id as a string (every line of that variant, as the parity store sets them, fixture `ajax-cart-session`, step 7; shopify.dev says "you can change only one line item at a time", and the fixture wins). An `id` that is a JSON number is a 400 with the recorded type error (fixture `ajax-cart-errors`, step 8); the same answer stands for a list, an object or a boolean, which no recording reaches. An `id` that names no line, no `id` or `line` at all, and a string that is neither a variant id nor a key (a guess: no recording reaches it, and this is the documented text that says "no valid id") is the 400 "no valid id or line parameter" shopify.dev documents ("If the item that you're attempting to change isn't already in the cart, then change.js doesn't add it").
@@ -177,9 +220,9 @@ function mergeLines (lines: CartLineState[], limits: StorefrontLimits): CartLine
 }
 
 /**
- * Sets the quantity of each line `fields` names (`lineIndexes`; 0 removes it), and its properties or selling plan when given. "Whenever a POST request includes properties, it overwrites the entire properties object" but "it's not possible to set a line item's properties property to an empty object once a value is set", so an empty object leaves them; a selling plan of `null` or an empty string removes the plan, and a change of selling plan without a quantity sets 1 ("If the quantity isn't specified, then it's assumed to be 1"), all https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-change-js. Nothing changes when one line fails. `checkStock` is off for `update.js`, which "doesn't validate the quantity on variants that are already in the cart" (https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-update-js); that can leave a line above its stock, so `change.js` checks the stock of a line only when it raises the quantity, and a change that lowers it, keeps it or only edits the line always works.
+ * Sets the quantity of each line `fields` names (`lineIndexes`; 0 removes it), and its properties or selling plan when given. "Whenever a POST request includes properties, it overwrites the entire properties object" but "it's not possible to set a line item's properties property to an empty object once a value is set", so an empty object leaves them; a selling plan of `null` or an empty string removes the plan, and a change of selling plan without a quantity sets 1 ("If the quantity isn't specified, then it's assumed to be 1"), all https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-change-js. Nothing changes when one line fails. `checkStock` is off for `update.js`, which "doesn't validate the quantity on variants that are already in the cart" (https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-update-js); that can leave a line above its stock, so `change.js` checks the stock of a line only when it raises the quantity, and a change that lowers it, keeps it or only edits the line always works. `checkRules` holds a new quantity to the variant's quantity rule (`breaksRule`): `change.js` does, when it changes the quantity, and `update.js` does not for a variant already in the cart, for the same reason as the stock. A line nested under another follows it when a change of properties or selling plan gives the parent a new key, and goes when the parent does (`arrangeNested`).
  */
-function setLines (state: VisitorState, fields: Fields, data: StoreData, limits: StorefrontLimits, checkStock: boolean): CartResult {
+function setLines (state: VisitorState, fields: Fields, data: StoreData, limits: StorefrontLimits, checkStock: boolean, checkRules = false): CartResult {
   const named = lineIndexes(state.cart.lines, fields)
   if (failed(named)) return named
   const targets = new Set(named)
@@ -188,6 +231,7 @@ function setLines (state: VisitorState, fields: Fields, data: StoreData, limits:
   const planGiven = fields.selling_plan !== undefined
   const lines: CartLineState[] = []
   const touched: CartLineState[] = []
+  const renamed = new Map<string, string>()
   for (const [i, current] of state.cart.lines.entries()) {
     if (!targets.has(i)) {
       lines.push(current)
@@ -197,19 +241,23 @@ function setLines (state: VisitorState, fields: Fields, data: StoreData, limits:
     if (quantity === undefined || quantity < 0 || quantity > limits.quantity) return quantityRange(0, limits.quantity)
     if (quantity === 0) continue
     const inCart = inCartOf(others, current.variantId) + inCartOf(touched, current.variantId)
-    const line = lineFor({ id: current.variantId, quantity, properties: properties ?? current.properties, selling_plan: planGiven ? fields.selling_plan : current.sellingPlanId }, data, limits, inCart, checkStock && quantity > current.quantity)
-    if (failed(line)) return line
+    const made = lineFor({ id: current.variantId, quantity, properties: properties ?? current.properties, selling_plan: planGiven ? fields.selling_plan : current.sellingPlanId }, data, limits, inCart, checkStock && quantity > current.quantity, checkRules && quantity !== current.quantity)
+    if (failed(made)) return made
+    const line = current.parentKey === undefined ? made : { ...made, parentKey: current.parentKey }
+    // a change of properties or selling plan gives a parent a key of its own: the lines nested under it follow
+    if (lineKey(line) !== lineKey(current)) renamed.set(lineKey(current), lineKey(line))
     lines.push(line)
     touched.push(line)
   }
-  const result = properties || planGiven ? mergeLines(lines, limits) : lines
+  const followed = renamed.size === 0 ? lines : lines.map(line => line.parentKey !== undefined && renamed.has(line.parentKey) ? { ...line, parentKey: renamed.get(line.parentKey) } : line)
+  const result = properties || planGiven ? mergeLines(followed, limits) : followed
   if (failed(result)) return result
-  return { ok: true, state: changed({ ...state, cart: { ...state.cart, lines: result } }), lines: touched }
+  return { ok: true, state: changed({ ...state, cart: { ...state.cart, lines: arrangeNested(result) } }), lines: touched }
 }
 
 /** `/cart/change.js` and `/cart/change`: sets the quantity of the line or lines `lineIndexes` names (0 removes), and its properties or selling plan when given. https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-change-js */
 export function changeCart (state: VisitorState, fields: Fields, data: StoreData, limits: StorefrontLimits): CartResult {
-  return setLines(state, fields, data, limits, true)
+  return setLines(state, fields, data, limits, true, true)
 }
 
 /** The index of the line an `updates` key names: a line key, or a variant id, which names "the first matching line item" (https://shopify.dev/docs/api/ajax/reference/cart#post-locale-cart-update-js), where `change.js` was recorded to set every line of the variant. */

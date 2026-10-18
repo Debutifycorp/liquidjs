@@ -42,13 +42,25 @@ One behaviour differs from upstream without an opt-in: the `slice` filter charge
 
 ## Upgrading from 1.4
 
-Every change is additive in the types: each new field is optional, and a store that leaves it out behaves as under 1.4.0, except where a bullet says what changed. The two behaviours that change for a store as it was are the search (a query with several words, the syntax of a query, the escaped `search.terms`) and the filter links (a space is `+`).
+Every change is additive in the types: each new field is optional, and a store that leaves it out behaves as under 1.4.0, except where a bullet says what changed. The three behaviours that change for a store as it was are the search (a query with several words, the syntax of a query, the escaped `search.terms`), the filter links (a space is `+`) and the prices and answers of a variant with quantity rules or price breaks.
 
 **Search**
 
 - **A search query reads Shopify's syntax.** `field:value` (`title`, `body`, `tag`, `vendor`, `product_type`, `id`, `variants.title`, `variants.sku` and `variants.barcode` for a product; `title`, `body` and `author` for a page; those and `tag` for an article), a quoted phrase, `-term` and `NOT term`, `OR`, `AND`, parentheses. Horizon's recently viewed products ask for `id:123 OR id:456`; 1.4.0 split that into words and found nothing. The meaning of each is what the parity store answers (fixtures `probe-search-q-*`, 34 recorded queries): a field narrows, `OR` joins, `AND` and a space meet, a negation takes the matches out, an unknown field and a wildcard are ignored, and the plain words beside a field or a negation only rank.
 - **A query of plain words finds what holds any of them.** The parity store finds the products with any word of `gray sneakers`, five of them, where the help centre says terms are joined with AND and 1.4.0 required all; the ones with more of the words come first. A lowercase `and` or `or` among other words is not searched.
 - **`search.terms` is HTML-escaped,** as the parity store prints it (`&quot;gray leather&quot;`), and the filter links write the query as Shopify does: a space is `+`, and `! ' ( ) *` are percent-encoded.
+
+**Objects**
+
+- **A cart line can be nested, and a variant's quantity rule and price breaks are held.** `CartLineState.parentKey` nests a line under another; `line_item.parent_relationship.parent` is the parent line item (Dawn and Horizon mark and label the nested line from it), and the Ajax answers print `parent_relationship` and `instructions` for it. A line under a quantity price break is priced at the highest break its variant's quantity in the cart reaches.
+
+**Storefront**
+
+- **`add.js` takes `parent_id` and `parent_line_key`, and holds the cart to the quantity rules.** `parent_id` names a variant of the same request, `parent_line_key` a line the cart holds; a nested line is listed right after its parent and goes with it. `add.js` and `change.js` answer 422 for a quantity under the minimum, over the maximum or off the increment of the variant (counting every line of it), and `update.js` does for a variant not yet in the cart. See [The cart](#the-cart).
+
+**Types**
+
+- **New optional fields and exports.** `CartLineState.parentKey`, and `arrangeNested` and `quantityRuleOf` from `/shopify`.
 
 ## Upgrading from 1.3
 
@@ -869,6 +881,8 @@ The Ajax endpoints read a JSON body, a url-encoded form or a multipart form, the
 - `change.js` takes `line` (1-based) or `id` (a line key, or a variant id as a string) and a `quantity` (0 removes the line), and `properties` or `selling_plan` to change them. It also lists the line that grew under `items_added` and the one that shrank under `items_removed`. A change that names no line, or an `id` that is not a string, is a 400.
 - `update.js` takes `updates` (quantities by variant id, line key or position), `note`, `attributes` and `discount` (comma-separated codes that replace the cart's). It lists the variants that grew under `items_changelog.added`.
 - `clear.js` empties the lines and keeps the note, attributes and discount codes.
+- `add.js` also takes `parent_id` (the variant of another item of the same request) or `parent_line_key` (the key of a line the cart holds) per item, to nest the line under that parent ([nested cart lines](https://shopify.dev/docs/apps/build/product-merchandising/nested-cart-lines)). A nested line is listed right after its parent and leaves the cart with it; the same add-on under another parent is a line of its own (its key covers the parent's). A `parent_id` that names no item of the request answers 422 `Parent line does not match any existing or added lines` (the text a merchant reports from the live Cart API), a parent that is itself nested or is the child's own variant 422 `Parent line nesting is too deep or circular.`, and naming the parent both ways 422 too. The Ajax answers print `parent_relationship` (`parent_key`) and `instructions` on a nested line, after `requires_shipping`, and Liquid has `item.parent_relationship.parent`.
+- A variant's quantity rule (`min`, `max`, `increment`, [quantity_rule](https://shopify.dev/docs/api/liquid/objects/quantity_rule)) holds `add.js` and `change.js` (when it changes the quantity) to a quantity of the variant, all its lines counted, that is at least `min`, at most `max` and a multiple of `increment`, with a 422 whose description is the text of the Storefront API's `MINIMUM_NOT_MET`, `MAXIMUM_EXCEEDED` or `INVALID_INCREMENT`; `update.js` checks only a variant not yet in the cart, as it does not check the stock of one that is. A line is priced at the highest of the variant's `quantity_price_breaks` that its quantity in the cart reaches (all the lines of the variant added up), in `price`, `original_price`, `final_price` and the line prices; a line under a selling plan keeps the plan's price.
 
 A request may name `sections` (a comma-separated string or an array of up to `limits.sections` ids): the answer then holds them under `sections`, rendered after the change with the new cart, in the context of the page named by `sections_url` in the body, else by the `X-Storefront-Page` header, else by the path of the `Referer`, else `/`. More sections than the limit are not an error here: the change is made and `sections` is `null`. A cart error is Shopify's `{ status, message, description }`, almost always a 422 (a variant that does not exist or is sold out, more than the stock, a selling plan the variant lacks, a limit of this storefront), and nothing changes when one occurs.
 

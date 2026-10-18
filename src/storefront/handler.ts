@@ -211,7 +211,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 
 /** Whether a stored cart is one the cart code can read: lines with a variant, a quantity and properties, a note that is text or null, attributes that are text, and discount codes that are text. */
 const isCart = (cart: unknown): boolean => isRecord(cart) && Array.isArray(cart.lines) &&
-  cart.lines.every(line => isRecord(line) && Number.isFinite(line.variantId) && Number.isFinite(line.quantity) && isRecord(line.properties) && (line.sellingPlanId === undefined || line.sellingPlanId === null || Number.isFinite(line.sellingPlanId))) &&
+  cart.lines.every(line => isRecord(line) && Number.isFinite(line.variantId) && Number.isFinite(line.quantity) && isRecord(line.properties) && (line.sellingPlanId === undefined || line.sellingPlanId === null || Number.isFinite(line.sellingPlanId)) && (line.parentKey === undefined || typeof line.parentKey === 'string')) &&
   (cart.note === undefined || cart.note === null || typeof cart.note === 'string') &&
   isRecord(cart.attributes) && Object.values(cart.attributes).every(value => typeof value === 'string') &&
   Array.isArray(cart.discountCodes) && cart.discountCodes.every(code => typeof code === 'string')
