@@ -701,10 +701,10 @@ function linkType (url: string): string {
 }
 
 /**
- * One menu link, https://shopify.dev/docs/api/liquid/objects/link. Its `url` sits under `prefix` (`withPrefix`), as a link of the parity store's menu does under a locale prefix (fixture `probe-page-fr-ca`); `type` and the comparisons below read the store's own path, without the prefix, and so does the request `path`, which carries it. `current` is true when the link's path is the request path and `active` when it is the path or a parent of it ("matches, or contains, the link's url"); both ignore query strings, `current` also reads a product in a collection as the product, and `child_active` and `child_current` look at the children. `levels` counts the nested levels below the link. `object` is always nil: the page says it is the article, blog, collection, metaobject, page, policy or product the link points at, which this layer does not resolve from a URL. `handle` is the one `buildLinks` gives it: the data's, else its title handleized, the title of the store's primary language (`translateData` keeps it on a translated link): the parity store prints Dawn's `HeaderMenu-{{ link.handle }}` as `HeaderMenu-news` for the link `News`, and as the same on its French pages, where the link reads `Actualités` (its recordings `page-home` and `page-home-fr-ca`); the handle of a link whose data gives none is the engine's choice beyond those recordings. `data_sharing_opt_out_icon` is nil: the page gives it to the data-sale opt-out link Shopify adds, which the store data has no setting for.
+ * One menu link, https://shopify.dev/docs/api/liquid/objects/link. Its `url` sits under `prefix` (`withPrefix`), as a link of the parity store's menu does under a locale prefix (fixture `probe-page-fr-ca`); `type` and the comparisons below read the store's own path, without the prefix, and so does the request `path`, which carries it. `current` is true when the link's path is the request path and `active` when it is the path or a parent of it ("matches, or contains, the link's url"); both ignore query strings, `current` also reads a product in a collection as the product, and `child_active` and `child_current` look at the children. `levels` counts the nested levels below the link. `object` is the article, blog, collection, page, policy or product the link points at (`linkObject`), read from the link's address; a link to the catalogue, the list of collections, a product type or vendor, or an address outside the store has none, as the Admin's menu items of those types hold no resource, and a metaobject has no address in the store data. `handle` is the one `buildLinks` gives it: the data's, else its title handleized, the title of the store's primary language (`translateData` keeps it on a translated link): the parity store prints Dawn's `HeaderMenu-{{ link.handle }}` as `HeaderMenu-news` for the link `News`, and as the same on its French pages, where the link reads `Actualités` (its recordings `page-home` and `page-home-fr-ca`); the handle of a link whose data gives none is the engine's choice beyond those recordings. `data_sharing_opt_out_icon` is nil: the page gives it to the data-sale opt-out link Shopify adds, which the store data has no setting for.
  */
-function buildLink (data: LinkData, path: string, prefix: string, handle: string): LiquidObject {
-  const links = buildLinks(data.links ?? [], path, prefix)
+function buildLink (data: LinkData, path: string, prefix: string, handle: string, objects?: LinkObjects): LiquidObject {
+  const links = buildLinks(data.links ?? [], path, prefix, objects)
   const here = withoutPrefix(prefix, path)
   const current = linkPath(data.url) === linkPath(here)
   const target = stripQuery(data.url)
@@ -723,7 +723,7 @@ function buildLink (data: LinkData, path: string, prefix: string, handle: string
     child_current: links.some(link => link.current || link.child_current),
     levels: links.length ? 1 + Math.max(...links.map(link => link.levels as number)) : 0,
     links,
-    object: null,
+    object: objects ? linkObject(objects, data.url) : null,
     data_sharing_opt_out_icon: null
   }
 }
@@ -731,7 +731,7 @@ function buildLink (data: LinkData, path: string, prefix: string, handle: string
 /**
  * The links of one list, each with its own handle among its siblings: the data's handle, else its title handleized (`buildLink`). A handle that comes out empty (a title of only non-Latin letters, such as `ホーム`, which `handleize` drops) is `link-<position>`, and one a sibling already has gets `-1`, `-2` and so on, so every `HeaderMenu-{{ link.handle }}` id of a list is its own. Shopify's menu item handles for such titles are not recorded, so both fallbacks are the engine's and not pinned.
  */
-function buildLinks (list: LinkData[], path: string, prefix: string): LiquidObject[] {
+function buildLinks (list: LinkData[], path: string, prefix: string, objects?: LinkObjects): LiquidObject[] {
   const used = new Set<string>()
   return list.map((link, i) => {
     let handle = link.handle || handleize(link.title) || `link-${i + 1}`
@@ -741,7 +741,7 @@ function buildLinks (list: LinkData[], path: string, prefix: string): LiquidObje
       handle = `${handle}-${n}`
     }
     used.add(handle)
-    return buildLink(link, path, prefix, handle)
+    return buildLink(link, path, prefix, handle, objects)
   })
 }
 
@@ -750,9 +750,9 @@ function buildLinks (list: LinkData[], path: string, prefix: string): LiquidObje
  *
  * A handle that names no menu is nil, so `linklists['x'].links` is nil and a loop over it prints nothing: shopify.dev does not say what a missing menu gives, but its `link_list` setting is "blank, if either no selection has been made or the selection no longer exists". Whether Shopify gives nil or an empty menu to `linklists['x']` itself is not pinned.
  */
-export function buildLinklists (lists: LinkListData[], path: string, prefix = ''): HandleMap<LiquidObject> {
+export function buildLinklists (lists: LinkListData[], path: string, prefix = '', objects?: LinkObjects): HandleMap<LiquidObject> {
   return new HandleMap(lists.map(list => {
-    const links = buildLinks(list.links, path, prefix)
+    const links = buildLinks(list.links, path, prefix, objects)
     return [list.handle, printsHandle({ handle: list.handle, title: list.title, links, levels: links.length ? 1 + Math.max(...links.map(link => link.levels as number)) : 0 })]
   }))
 }
@@ -764,6 +764,25 @@ function buildLineItems (lines: Array<{ product_handle: string, variant_id: numb
     const product = HandleMap.get(products, line.product_handle)
     const variant = (product?.variants as LiquidObject[] | undefined)?.find(item => item.id === line.variant_id)
     if (!product || !variant) continue
+/** The objects a menu link can point at, by the kind of link (`StoreObjects` holds them all). */
+export type LinkObjects = Pick<StoreObjects, 'products' | 'collections' | 'pages' | 'blogs' | 'articles' | 'policies'>
+
+/**
+ * The object a link points at, https://shopify.dev/docs/api/liquid/objects/link#link-object: "the article, blog, collection, metaobject, page, policy or product" (shopify.dev does not say how a menu item holds it; the Admin API's MenuItem carries a `resourceId` for those types only, https://shopify.dev/docs/api/admin-graphql/latest/objects/MenuItem), so the catalogue (`/collections/all`), the list of collections and the other links have none. The object is the one of the link's type and handle, so a product reached through a collection is the product.
+ */
+function linkObject (objects: LinkObjects, url: string): LiquidObject | null {
+  const path = linkPath(url)
+  const type = linkType(url)
+  const handle = decodeURIComponent(path.split('/').slice(2).join('/'))
+  if (type === 'product_link') return HandleMap.get(objects.products, handle) ?? null
+  if (type === 'collection_link') return path === '/collections/all' ? null : HandleMap.get(objects.collections, handle) ?? null
+  if (type === 'page_link') return HandleMap.get(objects.pages, handle) ?? null
+  if (type === 'blog_link') return HandleMap.get(objects.blogs, handle) ?? null
+  if (type === 'article_link') return HandleMap.get(objects.articles, handle) ?? null
+  if (type === 'policy_link') return HandleMap.get(objects.policies, handle) ?? null
+  return null
+}
+
     const price = variant.price as number
     items.push({
       // `index` (0-based) is not a property of https://shopify.dev/docs/api/liquid/objects/line_item, but themes read it as a row number (`item.index | plus: 1`), so it is built; the page does not pin its base

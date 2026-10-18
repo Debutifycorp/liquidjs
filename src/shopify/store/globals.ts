@@ -244,7 +244,7 @@ export function buildGlobals (input: GlobalsInput): PageGlobals {
   // the collection as the request shows it: its tags, filters and sort order; the filters' links extend the address without its query
   if (template.name === 'collection' && resource) resources.collection = collectionView(resource, request, store.storefrontFilters, store.currency, path.split('?')[0])
   const page = request.page ?? 1
-  const linklists = buildLinklists(store.linklists, path, view.prefix)
+  const linklists = buildLinklists(store.linklists, path, view.prefix, store)
   // the shopper's country is per request, so a request that names another country than the view's default gets its own localization
   const localization = request.country && request.country !== (store.localization.country as LiquidObject | null)?.iso_code ? buildLocalization(data, view, request.country) : store.localization
   // the cart is per visitor, so one the caller hands in is built on the shared store's products, currency and prefix; recommendations leave out the products of that cart

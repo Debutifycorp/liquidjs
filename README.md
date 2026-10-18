@@ -52,6 +52,7 @@ Every change is additive in the types: each new field is optional, and a store t
 
 **Objects**
 
+- **`link.object` is the object a menu link points at.** The collection, page, blog, article, policy or product of the link's address, which Horizon's mega menu reads for its images and featured products; 1.4.0 held nil. A link to the catalogue, the list of collections, a product type or vendor or another site has none.
 - **A cart line can be nested, and a variant's quantity rule and price breaks are held.** `CartLineState.parentKey` nests a line under another; `line_item.parent_relationship.parent` is the parent line item (Dawn and Horizon mark and label the nested line from it), and the Ajax answers print `parent_relationship` and `instructions` for it. A line under a quantity price break is priced at the highest break its variant's quantity in the cart reaches.
 
 **Storefront**

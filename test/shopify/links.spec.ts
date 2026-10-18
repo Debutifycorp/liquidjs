@@ -30,3 +30,54 @@ describe('link.handle', () => {
     expect(await render("{% for l in linklists['main-menu'].links %}{{ l.title }}={{ l.handle }} {% endfor %}", { linklists })).toBe('Actualités=news Hommes et femmes=mens-womens Soldes=summer-sale ')
   })
 })
+
+describe('link.object', () => {
+  const content: StoreData = {
+    shop: { name: 'S', domain: 's.example', currency: 'USD', locale: 'en', policies: [{ type: 'privacy_policy', body: '<p>Private</p>' }] },
+    products: [{ id: 1, handle: 'tee', title: 'Tee', options: ['Size'], variants: [{ id: 11, title: 'S', option1: 'S', price: 3000, available: true }] }],
+    collections: [{ id: 5, handle: 'tops', title: 'Tops', products: ['tee'] }],
+    pages: [{ id: 7, handle: 'about', title: 'About', content: '<p>About</p>' }],
+    blogs: [{ id: 9, handle: 'news', title: 'News', articles: [{ id: 91, handle: 'hello', title: 'Hello', content: '<p>Hi</p>', published_at: '2026-01-01T00:00:00Z' }] }],
+    linklists: [{
+      handle: 'main-menu',
+      title: 'Main menu',
+      links: [
+        { title: 'Tops', url: '/collections/tops', links: [{ title: 'Tee', url: '/collections/tops/products/tee?variant=11' }] },
+        { title: 'About', url: '/pages/about' },
+        { title: 'News', url: '/blogs/news', links: [{ title: 'Hello', url: '/blogs/news/hello' }] },
+        { title: 'Privacy', url: '/policies/privacy-policy' },
+        { title: 'Catalog', url: '/collections/all' },
+        { title: 'All collections', url: '/collections' },
+        { title: 'Vendor', url: '/collections/vendors?q=Acme' },
+        { title: 'Gone', url: '/products/missing' },
+        { title: 'Elsewhere', url: 'https://example.com/products/tee' },
+        { title: 'Home', url: '/' }
+      ]
+    }]
+  }
+  const kinds = '{% for l in linklists["main-menu"].links %}{{ l.title }}={{ l.object.handle | default: l.object.title | default: "nil" }};{% for c in l.links %}{{ c.title }}={{ c.object.handle | default: "nil" }};{% endfor %}{% endfor %}'
+
+  it('is the collection, page, blog, article, policy or product the link points at, read from its address', async () => {
+    const store = buildStore(content)
+    const linklists = buildLinklists(content.linklists!, '/', '', store)
+    expect(await render(kinds, { linklists })).toBe('Tops=tops;Tee=tee;About=about;News=news;Hello=hello;Privacy=Privacy policy;Catalog=nil;All collections=nil;Vendor=nil;Gone=nil;Elsewhere=nil;Home=nil;')
+  })
+
+  it('is the very object the store holds, so a theme reads its image and products', async () => {
+    const store = buildStore(content)
+    const linklists = buildLinklists(content.linklists!, '/', '', store)
+    expect(await render('{{ linklists["main-menu"].links.first.object.products.first.title }}|{{ linklists["main-menu"].links.first.object.products_count }}|{{ linklists["main-menu"].links.first.links.first.object.variants.first.price }}', { linklists })).toBe('Tee|1|3000')
+  })
+
+  it('is nil when the menu is built without the store\'s objects', async () => {
+    const linklists = buildLinklists(content.linklists!, '/')
+    expect(await render('{{ linklists["main-menu"].links.first.object | json }}', { linklists })).toBe('null')
+  })
+
+  it('serves the objects of the page\'s language on a translated view', async () => {
+    const translated: StoreData = { ...content, languages: [{ iso_code: 'en', name: 'English', endonym_name: 'English' }, { iso_code: 'fr', name: 'French', endonym_name: 'français' }], translations: { fr: { collections: { tops: { title: 'Hauts' } } } } }
+    const store = buildStore(translated, resolveView(translated, { language: 'fr', localePrefix: '/fr' }))
+    const linklists = buildLinklists(store.linklists, '/fr', store.prefix, store)
+    expect(await render('{{ linklists["main-menu"].links.first.object.title }}|{{ linklists["main-menu"].links.first.object.url }}', { linklists })).toBe('Hauts|/fr/collections/tops')
+  })
+})
