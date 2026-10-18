@@ -133,10 +133,13 @@ export function imageLiquidJson (image: ImageDrop, place: ImageRole): unknown {
   }
 }
 
-/** The preview picture of a video, an external video or a model: its fields as `previewImage` writes them, the aspect ratio of the Ajax answer to three places (`1.778` for 960 by 540, fixture `ajax-product-js-media`). */
+/** The preview picture of a video, an external video or a model: its fields as `previewImage` writes them, the aspect ratio to three places in both answers (`1.778` for 960 by 540 and `1.333` for 480 by 360, fixtures `ajax-product-js-media` and `probe-product-video-media`: `product | json` and `media | json` print the rounded ratio where `{{ media.preview_image.aspect_ratio }}` prints the full one, scenario `page-product-video`: `--preview-ratio: 1.7777777777777777`). */
 function mediaPreview (image: ImageDrop | null | undefined, shape: 'ajax' | 'liquid'): Record<string, unknown> | null {
   const preview = previewImage(image, shape)
-  if (preview && shape === 'ajax' && typeof preview.aspect_ratio === 'number') preview.aspect_ratio = Math.round(preview.aspect_ratio * 1000) / 1000
+  if (!preview) return preview
+  const ratio = preview.aspect_ratio
+  if (typeof ratio === 'number') preview.aspect_ratio = Math.round(ratio * 1000) / 1000
+  else if (ratio instanceof LiquidFloat) preview.aspect_ratio = new LiquidFloat(Math.round(ratio.value * 1000) / 1000)
   return preview
 }
 

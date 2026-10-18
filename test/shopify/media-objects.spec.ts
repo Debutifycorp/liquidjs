@@ -68,6 +68,14 @@ describe('media objects', () => {
     const media = productJson(data, 'video-tote')?.media as Array<{ sources?: Array<{ format: string }> }>
     expect(media[1].sources?.map(source => source.format)).toEqual(['mp4', 'm3u8'])
   })
+  it('rounds the aspect ratio of a media preview to three places in json only, as the parity store does', async () => {
+    const data = { ...storefrontSampleData, products: (storefrontSampleData.products ?? []).filter(item => item.handle === 'video-tote') }
+    const p = buildStore(data).products.liquidMethodMissing('video-tote')
+    const ratios = await render('{% for m in p.media %}{% if m.media_type != "image" %}{{ m | json }};{% endif %}{% endfor %}', { p })
+    expect(ratios).toContain('"preview_image":{"aspect_ratio":1.778,')
+    expect(ratios).toContain('"preview_image":{"aspect_ratio":1.333,')
+    expect(await render('{{ p.media[1].preview_image.aspect_ratio }}', { p })).toBe('1.7777777777777777')
+  })
   it('marks the product images a variant shows, and lists those variants', async () => {
     const p = buildProduct({
       id: 1,
