@@ -174,6 +174,7 @@ const now = () => getPerformance().now()
 const LOCALE_FILE = /^locales\/([\w-]+?)(\.default)?(\.schema)?\.json$/
 const TAG_NAME = /^[a-z][a-z0-9-]*$/
 const GROUP_ID_PREFIX = 'sections--'
+const TEMPLATE_ID_PREFIX = 'template--'
 
 /** How many sections and theme blocks may be open inside one another. Ruby Liquid stops a render nested deeper than `Liquid::Block::MAX_DEPTH`, 100, with `Nesting too deep` (`Liquid::Context#check_overflow` and `#overflow?` in Shopify/liquid, `lib/liquid/context.rb` and `lib/liquid/block.rb`). shopify.dev does not document a section nesting limit, so applying that depth to `{% section %}`, `{% sections %}` and `{% content_for %}` is Debutify's choice. */
 const MAX_NESTING_DEPTH = 100
@@ -607,6 +608,18 @@ class PageRender implements ThemeHooks {
     return this.entries(template, `templates/${this.templateName}.json`, (key, index) => ({ id: `template--${this.templateId}__${key}`, location: 'template', index }))
   }
 
+  /** The section a `template--<template>__<key>` id names in a JSON template other than the one rendering, found by the template's id (its name with every character but letters, digits, `_` and `-` as `-`, so `product.probe` is `product-probe`); the longest matching template name wins. Undefined when the theme has no such template or it has no such section. */
+  private otherTemplateEntry (key: string): Entry | undefined {
+    const names = this.theme.paths('templates/').flatMap(path => /^templates\/(.+)\.json$/.exec(path)?.[1] ?? [])
+    const name = names.filter(candidate => key.startsWith(`${TEMPLATE_ID_PREFIX}${candidate.replace(/[^\w-]/g, '-')}__`)).sort((a, b) => b.length - a.length)[0]
+    if (name === undefined) return undefined
+    const path = `templates/${name}.json`
+    const template = this.theme.json(path)
+    if (!isRecord(template)) throw new Error(`${path}: must be a JSON object`)
+    const id = name.replace(/[^\w-]/g, '-')
+    return this.entries(template, path, (entryKey, index) => ({ id: `${TEMPLATE_ID_PREFIX}${id}__${entryKey}`, location: 'template', index })).find(candidate => candidate.placement.id === key)
+  }
+
   private templateJson (): TemplateJson | undefined {
     const path = `templates/${this.templateName}.json`
     if (!this.theme.has(path)) return undefined
@@ -660,7 +673,7 @@ class PageRender implements ThemeHooks {
   /**
    * One section of the page, found by the id `renderPage` reports for it. The Section Rendering API addresses a section the same way, by a static file name (`social`), `sections--<id>__<name>` for a section of a group and `template--<id>__<name>` for one of a template: https://shopify.dev/docs/api/ajax/section-rendering. In order:
    *
-   * 1. `template--<template>__<key>`: the section `<key>` of the template.
+   * 1. `template--<template>__<key>`: the section `<key>` of the template. An id that names another JSON template of the theme (`template--product__related` asked at `/recommendations/products`, which renders the `index` template) finds the section there: https://shopify.dev/docs/api/ajax/section-rendering says `section_id` "can be used to render a section in the context of any page", so the section keeps the requested page's objects and takes the settings of the template it is in.
    * 2. `sections--<group>__<key>`: the section `<key>` of the group, with the request's contextual file applied. A key may hold `__` or start with `_`, and so may a group name, so every `__` in the id is tried as the split, shortest group name first, and the first group file that exists and holds the key is the one. When no group file exists at all, the last split names the missing group in the report.
    * 3. A bare key of the template's `sections` (`featured`), so a caller need not build the id.
    * 4. A static section's name.
@@ -677,6 +690,8 @@ class PageRender implements ThemeHooks {
     let entry: Entry | undefined
     if (key.startsWith(templatePrefix)) {
       entry = templateEntries.find(candidate => candidate.key === key.slice(templatePrefix.length))
+    } else if (key.startsWith(TEMPLATE_ID_PREFIX)) {
+      entry = this.otherTemplateEntry(key)
     } else if (splits.length) {
       const found = this.findGroupEntry(splits)
       if (typeof found === 'string') return found
