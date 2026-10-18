@@ -152,6 +152,11 @@ export function legacySize (size: unknown): ImageUrlParams {
   return params
 }
 
+/** The file name size of the picture a tag writes for its `image_size` (a `video_tag` poster, a `model_viewer_tag` poster, the `src` of an image `media_tag`): `legacySize`, except `master`, which names the image as it was uploaded and so adds nothing to the file name (scenario `probe-product-video-media`: `video_tag: image_size: 'master'` prints `…thumbnail.0000000000.jpg`, where `small` prints `…_small.jpg`). */
+function pictureSize (size: unknown): ImageUrlParams {
+  return stringify(size) === 'master' ? {} : legacySize(size)
+}
+
 /** Deprecated `img_url`: the same image through the `imageUrl` service, with the legacy `size` that names the file (`small` by default), so the default service prints `..._480x.jpg?v=...` as the page does. `scale` multiplies the pixel `width` and `height` handed to services; the page's `scale`, `crop` and `format` examples print the same URL as the plain one, so the default service ignores all three. https://shopify.dev/docs/api/liquid/filters/img_url */
 function imgUrl (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const source = imageSource(input)
@@ -195,7 +200,7 @@ function videoTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   if (!media || typeof media !== 'object') return ''
   const { named, order } = splitArgs(args)
   const preview = imageSource(media.preview_image)
-  const poster = preview ? state.services.imageUrl(preview.image, legacySize(named.image_size)) : ''
+  const poster = preview ? state.services.imageUrl(preview.image, pictureSize(named.image_size)) : ''
   let html = '<video playsinline="playsinline"'
   html += namedAttributes(state.report, 'video_tag', named, order, ['image_size', 'loading'])
   if (!hasOwn(named, 'preload')) html += attribute('preload', 'metadata')
@@ -268,13 +273,19 @@ function externalVideoTag (this: FilterImpl, input: unknown, ...args: unknown[])
 /**
  * The tag for any media: `image_tag` (an `ImageDrop` from `product.media` or an image record), `video_tag` (with controls), `external_video_tag`, and `model_viewer_tag` for a 3D model, which the parity store prints with the template's attributes first (`<model-viewer toggleable="true" src=…`, scenario `page-product-model`). https://shopify.dev/docs/api/liquid/filters/media_tag
  *
- * The page has no image example, so the image branch is not pinned: it renders `image_tag` at the image's own width (1100 when it has none).
+ * An image is an `<img>` with the template's attributes, `alt` and the `src` of the legacy `image_size` file, as the parity store prints it (scenario `probe-product-video-media`). The `loading` an image gets in a late section is not pinned.
  */
 function mediaTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
   const imageTagFor = (image: unknown) => {
     const source = imageSource(image)
     if (!source) return ''
-    return imageTag.call(this, imageUrl.call(this, image, ['width', source.image.width ?? 1100]), ...args)
+    const state = shopifyState(this.context)
+    const { named, order } = splitArgs(args)
+    const src = state.services.imageUrl(source.image, pictureSize(named.image_size))
+    const alt = hasOwn(named, 'alt') ? named.alt : source.alt
+    const loading = !hasOwn(named, 'loading') && lazyByDefault(state) ? attribute('loading', 'lazy') : ''
+    // the template's attributes in the order it wrote them, then `alt` and `src` (scenario `probe-product-video-media`: `<img class="a b" loading="lazy" alt="Tote with a video" src="…_small.jpg?v=…">`); the picture is the legacy `image_size` file (`small` by default, `_400x` for `400x`), with no `srcset`, `width` or `height`
+    return new SafeHtmlDrop(`<img${namedAttributes(state.report, 'media_tag', named, order, ['image_size', 'alt', 'src'])}${attribute('alt', alt ?? '')} src="${escapeHtml(src)}"${loading}>`)
   }
   if (input instanceof ImageDrop) return imageTagFor(input)
   const media = toValue(input) as Record<string, unknown> | undefined
@@ -313,7 +324,7 @@ function modelViewerTag (this: FilterImpl, input: unknown, ...args: unknown[]) {
     style: '--poster-color: transparent;',
     'data-shopify-feature': '1.12',
     alt: altOrProductTitle(this.context, media.alt),
-    poster: preview ? state.services.imageUrl(preview.image, legacySize(named.image_size)) : undefined
+    poster: preview ? state.services.imageUrl(preview.image, pictureSize(named.image_size)) : undefined
   }
   // a boolean argument is written as text, `toggleable: true` as `toggleable="true"` and `camera-controls: false` as `camera-controls="false"` (scenario `probe-product-model-media`)
   const written = Object.fromEntries(Object.entries(named).map(([name, value]) => [name, typeof value === 'boolean' ? String(value) : value]))

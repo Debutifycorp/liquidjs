@@ -398,12 +398,20 @@ describe('shopify/filters/media', () => {
     const iframe = '<iframe frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="allowfullscreen" image_size="400x" src="https://www.youtube.com/embed/vj01PAffOac?controls=1&amp;enablejsapi=1&amp;modestbranding=1&amp;origin=https%3A%2F%2Fpolinas-potent-potions.myshopify.com&amp;playsinline=1&amp;rel=0" title="Potion beats"></iframe>'
     expect(await render("{{ media | media_tag: image_size: '400x' }}", { media: external }, origin)).toBe(iframe)
     expect(await render('{{ media | media_tag }}', { media: video })).toMatch(/^<video playsinline="playsinline" controls="controls" preload="metadata" aria-label="Potion beats" poster="/)
-    expect(await render('{{ media | media_tag }}', { media: { media_type: 'image', alt: 'Bottle', src: BEAKERS, width: 800, height: 400 } })).toBe(`<img src="${BEAKERS}&amp;width=800" alt="Bottle" srcset="${BEAKERS}&amp;width=352 352w" width="800" height="400">`)
+    expect(await render('{{ media | media_tag }}', { media: { media_type: 'image', alt: 'Bottle', src: BEAKERS, width: 800, height: 400 } })).toBe(`<img alt="Bottle" src="${HOST}/files/science-beakers-blue-light-new_small.jpg?v=1683744744">`)
   })
   it('media_tag renders an ImageDrop from product.media, which is how Task 7 builds image media', async () => {
     const media = [new ImageDrop({ src: BEAKERS, width: 800, height: 400, alt: 'Bottle' }, true), video, external]
-    expect(await render('{% for m in media %}{{ m | media_tag }}|{% endfor %}', { media }, origin)).toMatch(/^<img src="[^"]+&amp;width=800" alt="Bottle" srcset="[^"]+&amp;width=352 352w" width="800" height="400">\|<video [^|]*<\/video>\|<iframe [^|]*<\/iframe>\|$/)
-    expect(await render('{{ m | media_tag: class: "hero" }}', { m: new ImageDrop({ src: BEAKERS, width: 800, height: 400, alt: 'Bottle' }) })).toContain('height="400" class="hero">')
+    expect(await render('{% for m in media %}{{ m | media_tag }}|{% endfor %}', { media }, origin)).toMatch(/^<img alt="Bottle" src="[^"]+_small\.jpg\?v=1683744744">\|<video [^|]*<\/video>\|<iframe [^|]*<\/iframe>\|$/)
+    expect(await render('{{ m | media_tag: class: "hero" }}', { m: new ImageDrop({ src: BEAKERS, width: 800, height: 400, alt: 'Bottle' }) })).toContain('<img class="hero" alt="Bottle" src=')
+  })
+  // scenario `probe-product-video-media`: an image media prints the template's attributes in the order written, then `alt` and `src` of the legacy `image_size` file, with no `srcset`, `width` or `height`; a `master` poster is the uploaded file with no suffix
+  it('media_tag of an image writes its attributes, alt and the legacy size file, as the parity store does', async () => {
+    const image = { media_type: 'image', alt: 'Bottle', src: BEAKERS, width: 800, height: 400 }
+    expect(await render("{{ m | media_tag: class: 'a b', loading: 'lazy' }}", { m: image })).toBe(`<img class="a b" loading="lazy" alt="Bottle" src="${HOST}/files/science-beakers-blue-light-new_small.jpg?v=1683744744">`)
+    expect(await render("{{ m | media_tag: image_size: '400x' }}", { m: image })).toBe(`<img alt="Bottle" src="${HOST}/files/science-beakers-blue-light-new_400x.jpg?v=1683744744">`)
+    expect(await render("{{ m | media_tag: image_size: 'master' }}", { m: image })).toBe(`<img alt="Bottle" src="${BEAKERS}">`)
+    expect(await render("{{ media | video_tag: image_size: 'master' }}", { media: video })).not.toContain('_master')
   })
   it('media_tag writes controls once, whether or not the template names them', async () => {
     expect(await render('{{ media | media_tag: controls: true }}', { media: video })).toMatch(/^<video playsinline="playsinline" controls="controls" preload=/)
